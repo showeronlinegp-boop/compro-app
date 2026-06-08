@@ -1,0 +1,6 @@
+**/node_modules
+**/dist
+**/.git
+compro.db
+compro.db.lock
+*.log

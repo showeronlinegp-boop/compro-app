@@ -1,0 +1,16 @@
+services:
+  compro:
+    image: compro:latest
+    ports:
+      - "3001:3001"
+    volumes:
+      - compro-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/api/sync/status', r => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  compro-data:

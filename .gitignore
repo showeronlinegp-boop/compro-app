@@ -1,0 +1,30 @@
+# Dependencias
+node_modules/
+
+# Base de datos local
+compro.db
+compro.db-shm
+compro.db-wal
+*.db
+*.db-shm
+*.db-wal
+
+# Build del frontend
+frontend/dist/
+
+# Variables de entorno
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
