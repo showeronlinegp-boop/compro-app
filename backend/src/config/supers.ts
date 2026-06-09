@@ -1,8 +1,50 @@
-import type { SuperConfig, SuperKey } from '../shared/types.js';
+import type { CrawlConcurrency, SuperConfig, SuperKey } from '../shared/types.js';
+import {
+  ENV_CRAWLER_PAGE_CONC,
+  ENV_CRAWLER_PARTITION_CONC,
+  ENV_CRAWLER_PROBE_CONC,
+  ENV_CRAWLER_THROTTLE_MS,
+} from './env.js';
 
 export const SUPERS: Record<SuperKey, SuperConfig> = {
   vea: { baseUrl: 'https://www.vea.com.ar', promoSeller: 'jumboargentinav700cordoba700' },
   masonline: { baseUrl: 'https://www.masonline.com.ar' },
-  carrefour: { baseUrl: 'https://www.carrefour.com.ar' },
+  // Carrefour renders JSON-LD client-side: data_found=0/18303 in production runs.
+  // Discounts come from the IS-API crawl (PriceWithoutDiscount vs Price → ~2659 products
+  // with discount_pct > 0). Scraping 18k pages for zero data is dead work — skip entirely.
+  carrefour: { baseUrl: 'https://www.carrefour.com.ar', enrichStrategy: 'none' },
   dia: { baseUrl: 'https://diaonline.supermercadosdia.com.ar' },
 };
+
+/**
+ * Resolve the effective CrawlConcurrency for a given super.
+ *
+ * Precedence (highest wins): per-super override > env vars > static defaults.
+ * Never throws — missing or invalid values always fall back gracefully.
+ */
+export function resolveCrawlConfig(superKey: string): CrawlConcurrency {
+  const perSuper = SUPERS[superKey as SuperKey]?.crawl ?? {};
+
+  return {
+    probeConc: perSuper.probeConc ?? ENV_CRAWLER_PROBE_CONC,
+    pageConc: perSuper.pageConc ?? ENV_CRAWLER_PAGE_CONC,
+    partitionConc: perSuper.partitionConc ?? ENV_CRAWLER_PARTITION_CONC,
+    throttleMs: perSuper.throttleMs ?? ENV_CRAWLER_THROTTLE_MS,
+  };
+}
+
+/**
+ * Resolve the enrichment strategy for a given super.
+ *
+ * Precedence: explicit enrichStrategy config > derived from promoSeller.
+ * - Explicit 'none'        → skip enrichment (e.g. Carrefour: client-side JSON-LD, crawl has discounts).
+ * - Explicit 'promotions'  → use search-promotions endpoint.
+ * - Explicit 'jsonld'      → use HTML JSON-LD scraping.
+ * - Unset + promoSeller    → 'promotions' (e.g. vea).
+ * - Unset + no promoSeller → 'jsonld' (e.g. dia, masonline).
+ */
+export function resolveEnrichStrategy(superKey: string): 'promotions' | 'jsonld' | 'none' {
+  const cfg = SUPERS[superKey as SuperKey];
+  if (cfg?.enrichStrategy != null) return cfg.enrichStrategy;
+  return cfg?.promoSeller ? 'promotions' : 'jsonld';
+}

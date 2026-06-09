@@ -10,6 +10,7 @@
  * NOT yet wired into the running app — Slice 6 cutover.
  */
 
+import { fetchText, fetchWithRetry } from '../../shared/fetch.js';
 import { UA } from '../../config/throttles.js';
 
 // ---------------------------------------------------------------------------
@@ -104,23 +105,63 @@ export function parseJsonLdFromHtml(html: string): PromoPriceResult | null {
   return null;
 }
 
+// ---------------------------------------------------------------------------
+// Strategy B — discriminated outcome (replaces nullable return)
+// ---------------------------------------------------------------------------
+
+/**
+ * Discriminated result for fetchPromoPrice.
+ *
+ * - fetch_error: network threw or HTTP non-2xx (URL resolution failure falls here too)
+ * - no_data:     fetched ok but no parseable ld+json offers block in the HTML
+ * - found:       fetched ok AND offers.price / lowPrice found
+ *
+ * Replaces the previous `PromoPriceResult | null` return so callers can
+ * distinguish "broken" from "no promo" — fixing the observability gap.
+ */
+export type PromoFetchOutcome =
+  | { kind: 'fetch_error' }
+  | { kind: 'no_data' }
+  | { kind: 'found'; result: PromoPriceResult };
+
 /**
  * GET product HTML page and parse JSON-LD offers.price / lowPrice.
  *
- * Port of fetchPromoPrice() in enricher.js — identical match logic.
+ * Accepts an optional baseUrl so relative product_url values (e.g. "/x/p")
+ * are resolved to absolute before fetching. Already-absolute URLs are
+ * unchanged (new URL(abs, base).href === abs).
+ *
+ * Returns a PromoFetchOutcome discriminated union so callers can tally
+ * fetch_error / no_data / found separately for observability.
+ *
  * NOTE: carrefour renders JSON-LD client-side; fixture confirms the HTML
- * body contains no ld+json blocks, so this function correctly returns null.
+ * body contains no ld+json blocks — this function will return no_data for
+ * carrefour products regardless of URL resolution.
  */
-export async function fetchPromoPrice(productUrl: string): Promise<PromoPriceResult | null> {
+export async function fetchPromoPrice(
+  productUrl: string,
+  baseUrl?: string,
+): Promise<PromoFetchOutcome> {
+  let resolvedUrl: string;
   try {
-    const r = await fetch(productUrl, {
-      headers: { 'User-Agent': UA, Accept: 'text/html' },
-      signal: AbortSignal.timeout(8_000),
-    });
-    if (!r.ok) return null;
-    const html = await r.text();
-    return parseJsonLdFromHtml(html);
+    resolvedUrl = baseUrl ? new URL(productUrl, baseUrl).href : productUrl;
   } catch {
-    return null;
+    return { kind: 'fetch_error' };
+  }
+
+  try {
+    // fetchText throws HttpError on non-2xx; fetchWithRetry retries 429/5xx with
+    // exponential backoff + full jitter. 403 is NOT retried (WAF hard block).
+    // On final retry exhaustion or non-retryable status, the HttpError propagates
+    // to the outer catch which maps it to { kind: 'fetch_error' }.
+    const html = await fetchWithRetry(() =>
+      fetchText(resolvedUrl, {
+        headers: { 'User-Agent': UA, Accept: 'text/html' },
+      }),
+    );
+    const result = parseJsonLdFromHtml(html);
+    return result ? { kind: 'found', result } : { kind: 'no_data' };
+  } catch {
+    return { kind: 'fetch_error' };
   }
 }

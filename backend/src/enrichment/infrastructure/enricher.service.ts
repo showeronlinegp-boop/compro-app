@@ -5,31 +5,37 @@
  * Strategy A: search-promotions endpoint (supers with promoSeller configured).
  * Strategy B: HTML JSON-LD scraping (all other supers).
  *
- * Concurrency constants match legacy exactly:
- *   ENRICH_CONCURRENCY=15  (HTML scraping parallel requests)
- *   ENRICH_PROMO_CONC=8    (search-promotions parallel requests)
- *   ENRICH_SKU_CONC=10     (SKU-ID variation API parallel requests)
- *   ENRICH_THROTTLE_MS=250 (sleep between batches)
+ * Concurrency model (modernized — matches crawler pattern):
+ *   ENRICH_HTML_CONC=20    (HTML scraping sliding-window pool, env: ENRICH_HTML_CONC)
+ *   ENRICH_PROMO_CONC=8    (search-promotions parallel requests, env: ENRICH_PROMO_CONC)
+ *   ENRICH_SKU_CONC=10     (SKU-ID variation API parallel requests, env: ENRICH_SKU_CONC)
  *   ENRICH_PROMO_BATCH=20  (SKUs per search-promotions POST — hard endpoint limit)
+ *
+ * Both strategies use runPool (bounded sliding-window) instead of manual
+ * for(i+=CONC) { await Promise.all(slice) } + per-batch sleep(THROTTLE_MS).
+ * Rate control: concurrency cap + fetchWithRetry exponential backoff (inside fetchPromoPrice).
+ * Rollback: set ENRICH_HTML_CONC=1 env var → sequential behavior, no code change.
  *
  * fetchSkuId imported from catalog-client (SINGLE canonical source — dedup enforced).
  * DB update SQL matches legacy: UPDATE products SET offer_price=?, discount_pct=? WHERE id=?
+ * better-sqlite3 is synchronous + single-threaded JS: updateStmt.run() calls inside
+ * concurrent workers (between awaits) are safe — no DB race possible.
  */
 
 import type Database from 'better-sqlite3';
-import { SUPERS } from '../../config/supers.js';
 import {
-  ENRICH_CONCURRENCY,
-  ENRICH_PROMO_BATCH,
-  ENRICH_PROMO_CONC,
-  ENRICH_SKU_CONC,
-  ENRICH_THROTTLE_MS,
-} from '../../config/throttles.js';
+  ENV_ENRICH_HTML_CONC,
+  ENV_ENRICH_PROMO_BATCH,
+  ENV_ENRICH_PROMO_CONC,
+  ENV_ENRICH_SKU_CONC,
+} from '../../config/env.js';
+import { SUPERS, resolveEnrichStrategy } from '../../config/supers.js';
 import { fetchSkuId } from '../../infrastructure/vtex/catalog-client.js';
 import {
   fetchPromoPrice,
   fetchSearchPromotions,
 } from '../../infrastructure/vtex/promotions-client.js';
+import { runPool } from '../../shared/pool.js';
 import type { EnrichStatus, SuperKey } from '../../shared/types.js';
 import { effectiveDiscount, offerPrice } from '../domain/discount.js';
 import { getStatus, isRunning, setStatus } from './enrich-state.js';
@@ -39,8 +45,6 @@ export interface EnrichService {
   getStatus: () => Record<string, EnrichStatus>;
   isRunning: (superKey: string) => boolean;
 }
-
-const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
 interface ProductEnrichRow {
   id: number;
@@ -59,87 +63,72 @@ async function enrichViaPromos(
   st: EnrichStatus,
   db: Database.Database,
 ): Promise<void> {
+  const skuConc = ENV_ENRICH_SKU_CONC;
+  const promoConc = ENV_ENRICH_PROMO_CONC;
+  const promoBatch = ENV_ENRICH_PROMO_BATCH;
+
   const updateSkuStmt = db.prepare('UPDATE products SET sku_id = ? WHERE id = ?');
   const updateStmt = db.prepare(
     'UPDATE products SET offer_price = ?, discount_pct = ? WHERE id = ?',
   );
 
-  // First: fill missing sku_ids in batches (parallel, SKU_CONC at a time)
+  // Phase 1: fill missing sku_ids via runPool (skuConc workers in flight at once).
   const withoutSku = products.filter((p) => !p.sku_id);
   if (withoutSku.length) {
     console.log(`[enrich:${superKey}] Fetching sku_id for ${withoutSku.length} products...`);
-    for (let i = 0; i < withoutSku.length; i += ENRICH_SKU_CONC) {
-      const chunk = withoutSku.slice(i, i + ENRICH_SKU_CONC);
-      const results = await Promise.all(
-        chunk.map((p) =>
-          fetchSkuId({ baseUrl: cfg.baseUrl }, p.product_id).then((skuId) => ({ p, skuId })),
-        ),
-      );
-      for (const { p, skuId } of results) {
-        if (skuId) {
-          p.sku_id = skuId;
-          updateSkuStmt.run(skuId, p.id);
+
+    let skuLogged = 0;
+    await runPool(withoutSku, skuConc, async (p, idx) => {
+      const skuId = await fetchSkuId({ baseUrl: cfg.baseUrl }, p.product_id);
+      if (skuId) {
+        p.sku_id = skuId;
+        // better-sqlite3 is synchronous; .run() between awaits is safe (single-threaded JS).
+        updateSkuStmt.run(skuId, p.id);
+      }
+      const soFar = idx + 1;
+      if (soFar % 500 === 0 || soFar === withoutSku.length) {
+        if (soFar > skuLogged) {
+          skuLogged = soFar;
+          console.log(`[enrich:${superKey}] sku_ids: ${soFar}/${withoutSku.length}`);
         }
       }
-      if (i + ENRICH_SKU_CONC < withoutSku.length) {
-        await sleep(ENRICH_THROTTLE_MS);
-      }
-      const soFar = Math.min(i + ENRICH_SKU_CONC, withoutSku.length);
-      if (soFar % 500 === 0 || soFar === withoutSku.length) {
-        console.log(`[enrich:${superKey}] sku_ids: ${soFar}/${withoutSku.length}`);
-      }
-    }
+    });
   }
 
+  // Phase 2: build 20-SKU batches (hard endpoint limit) then process via runPool.
   const withSku = products.filter((p) => p.sku_id);
-
-  // Build batches of PROMO_BATCH
   const batches: ProductEnrichRow[][] = [];
-  for (let i = 0; i < withSku.length; i += ENRICH_PROMO_BATCH) {
-    batches.push(withSku.slice(i, i + ENRICH_PROMO_BATCH));
+  for (let i = 0; i < withSku.length; i += promoBatch) {
+    batches.push(withSku.slice(i, i + promoBatch));
   }
 
-  for (let i = 0; i < batches.length; i += ENRICH_PROMO_CONC) {
-    const chunk = batches.slice(i, i + ENRICH_PROMO_CONC);
+  let lastLogged = 0;
+  await runPool(batches, promoConc, async (batch) => {
+    const skus = batch.map((p) => p.sku_id as string);
+    const r = await fetchSearchPromotions(cfg.baseUrl, cfg.promoSeller, skus);
+    const generic = r?.promotions?.generic?.promotions ?? {};
 
-    const results = await Promise.all(
-      chunk.map((batch) => {
-        const skus = batch.map((p) => p.sku_id as string);
-        return fetchSearchPromotions(cfg.baseUrl, cfg.promoSeller, skus).then((r) => ({
-          batch,
-          r,
-        }));
-      }),
-    );
+    for (const p of batch) {
+      st.done++;
+      if (!p.sku_id) continue;
 
-    for (const { batch, r } of results) {
-      const generic = r?.promotions?.generic?.promotions ?? {};
+      const result = effectiveDiscount(p.sku_id, p.raw_price, generic);
+      if (!result) continue;
 
-      for (const p of batch) {
-        st.done++;
-        if (!p.sku_id) continue;
-
-        const result = effectiveDiscount(p.sku_id, p.raw_price, generic);
-        if (!result) continue;
-
-        updateStmt.run(result.offer_price, result.discount_pct, p.id);
-        st.updated++;
-      }
+      // better-sqlite3 is synchronous; .run() between awaits is safe (single-threaded JS).
+      updateStmt.run(result.offer_price, result.discount_pct, p.id);
+      st.updated++;
     }
 
-    if (i + ENRICH_PROMO_CONC < batches.length) {
-      await sleep(ENRICH_THROTTLE_MS);
-    }
-
-    const totalDone = st.done + withoutSku.length;
-    if (totalDone % 500 === 0 || st.done === withSku.length) {
+    if (st.done - lastLogged >= 500 || st.done === withSku.length) {
+      lastLogged = st.done;
       console.log(
         `[enrich:${superKey}] ${st.done}/${withSku.length} (search-promotions) — ${st.updated} with promo`,
       );
     }
-  }
+  });
 
-  // Products without sku_id counted as done (legacy: st.done += withoutSku.length at end)
+  // Products without sku_id counted as done (legacy: st.done += withoutSku.length at end).
   st.done += withoutSku.length;
 }
 
@@ -147,39 +136,67 @@ async function enrichViaPromos(
 
 async function enrichViaHtmlScraping(
   superKey: string,
+  baseUrl: string,
   products: ProductEnrichRow[],
   st: EnrichStatus,
   db: Database.Database,
 ): Promise<void> {
+  const htmlConc = ENV_ENRICH_HTML_CONC;
+
+  // better-sqlite3 is synchronous; .run() between awaits is safe (single-threaded JS).
   const updateStmt = db.prepare(
     'UPDATE products SET offer_price = ?, discount_pct = ? WHERE id = ?',
   );
 
-  for (let i = 0; i < products.length; i += ENRICH_CONCURRENCY) {
-    const batch = products.slice(i, i + ENRICH_CONCURRENCY);
+  // Observability counters — track each outcome kind so "broken" never looks like "no promos found".
+  let fetched_ok = 0;
+  let fetch_errors = 0;
+  let data_found = 0;
+  let lastLogged = 0;
 
-    const results = await Promise.all(
-      batch.map((p) => fetchPromoPrice(p.product_url ?? '').then((r) => ({ p, r }))),
+  // runPool replaces the manual for(i+=CONC){await Promise.all(slice)} + sleep(THROTTLE_MS) loop.
+  // No discrete batches → no inter-batch idle time. Rate control = concurrency cap + fetchWithRetry
+  // backoff inside fetchPromoPrice. Counters/st mutations are safe (single-threaded JS).
+  await runPool(products, htmlConc, async (p) => {
+    const outcome = await fetchPromoPrice(p.product_url ?? '', baseUrl);
+    st.done++;
+
+    if (outcome.kind === 'fetch_error') {
+      fetch_errors++;
+    } else {
+      fetched_ok++;
+
+      if (outcome.kind === 'found') {
+        data_found++;
+        const result = offerPrice(p.raw_price, outcome.result);
+        if (result) {
+          updateStmt.run(result.offer_price, result.discount_pct, p.id);
+          st.updated++;
+        }
+      }
+    }
+
+    if (st.done - lastLogged >= 600 || st.done === st.total) {
+      lastLogged = st.done;
+      console.log(
+        `[enrich:${superKey}] ${st.done}/${st.total} — fetched_ok=${fetched_ok} data_found=${data_found} promo=${st.updated}`,
+      );
+    }
+  });
+
+  // Summary line for observability — make every counter visible at run end.
+  console.log(
+    `[enrich:${superKey}] done — fetched_ok=${fetched_ok} fetch_errors=${fetch_errors} data_found=${data_found} promo_applied=${st.updated}`,
+  );
+
+  // Safety-net monitor: if ZERO pages had server-side JSON-LD but we fetched products,
+  // the store may have switched to client-side rendering (like Carrefour).
+  // This does NOT abort the run — it just flags the situation so an operator can set
+  // enrichStrategy='none' for that super.
+  if (data_found === 0 && products.length > 0) {
+    console.warn(
+      `[enrich:${superKey}] WARNING: 0/${products.length} pages had server-side JSON-LD — store may have gone client-side; consider enrichStrategy='none'`,
     );
-
-    for (const { p, r } of results) {
-      st.done++;
-      if (!r) continue;
-
-      const result = offerPrice(p.raw_price, r);
-      if (!result) continue;
-
-      updateStmt.run(result.offer_price, result.discount_pct, p.id);
-      st.updated++;
-    }
-
-    if (i + ENRICH_CONCURRENCY < products.length) {
-      await sleep(ENRICH_THROTTLE_MS);
-    }
-
-    if (st.done % 200 === 0 || st.done === st.total) {
-      console.log(`[enrich:${superKey}] ${st.done}/${st.total} — ${st.updated} with promo`);
-    }
   }
 }
 
@@ -209,11 +226,17 @@ export function makeEnricher(db: Database.Database): EnrichService {
     };
     setStatus(superKey, st);
 
-    const strategy = cfg?.promoSeller ? 'search-promotions' : 'html-scraping';
+    const strategy = resolveEnrichStrategy(superKey);
     console.log(`[enrich:${superKey}] Starting (${strategy}) — ${st.total} products`);
 
     try {
-      if (cfg?.promoSeller) {
+      if (strategy === 'none') {
+        // Skip enrichment entirely. Discounts for this super come from the crawl itself
+        // (IS-API PriceWithoutDiscount vs Price). The DB records are already correct — do
+        // not overwrite them with zeros. Just mark the run complete immediately.
+        st.done = st.total;
+        console.log(`[enrich:${superKey}] skipped — strategy=none (discounts come from the crawl)`);
+      } else if (strategy === 'promotions') {
         await enrichViaPromos(
           superKey,
           cfg as { baseUrl: string; promoSeller: string },
@@ -222,7 +245,9 @@ export function makeEnricher(db: Database.Database): EnrichService {
           db,
         );
       } else {
-        await enrichViaHtmlScraping(superKey, products, st, db);
+        // strategy === 'jsonld'
+        const baseUrl = cfg?.baseUrl ?? '';
+        await enrichViaHtmlScraping(superKey, baseUrl, products, st, db);
       }
       console.log(`[enrich:${superKey}] Done. ${st.updated}/${st.total} products with promo.`);
     } catch (err) {

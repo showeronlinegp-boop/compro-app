@@ -9,8 +9,7 @@
 // ---------------------------------------------------------------------------
 // Crawler (vtex-crawler.js)
 // PAGE_SIZE, IS_SAFE_MAX, THROTTLE_MS are used by the IS product_search loop.
-// The crawler is sequential per partition (sleep THROTTLE_MS between pages);
-// vtex-crawler.js has no parallel CONCURRENCY constant.
+// Concurrency constants control the bounded runPool workers per phase.
 // ---------------------------------------------------------------------------
 
 /** Number of items per IS product_search page (vtex-crawler.js: PAGE_SIZE) */
@@ -19,8 +18,37 @@ export const CRAWLER_PAGE_SIZE = 50;
 /** IS API hard limit is 2500; we leave margin (vtex-crawler.js: IS_SAFE_MAX) */
 export const CRAWLER_IS_SAFE_MAX = 2450;
 
-/** Milliseconds to sleep between sequential crawler requests (vtex-crawler.js: THROTTLE_MS) */
-export const CRAWLER_THROTTLE_MS = 500;
+/**
+ * Milliseconds of courtesy delay (inter-partition spacing).
+ * Lowered from 500 → 150 for parallel mode; pacing is now primarily via
+ * concurrency caps. Set CRAWLER_THROTTLE_MS env var to override at runtime.
+ */
+export const CRAWLER_THROTTLE_MS = 150;
+
+/** Max concurrent IS-API probe requests in the probe phase. */
+export const CRAWLER_PROBE_CONC = 8;
+
+/** Max concurrent page requests within a single partition. */
+export const CRAWLER_PAGE_CONC = 6;
+
+/** Max concurrent partition workers in the syncSuper loop. */
+export const CRAWLER_PARTITION_CONC = 2;
+
+// ---------------------------------------------------------------------------
+// Crawler retry / backoff defaults (fetchWithRetry)
+// ---------------------------------------------------------------------------
+
+/** Maximum retry attempts for retriable IS-API errors. */
+export const CRAWLER_RETRY_MAX = 4;
+
+/** Base backoff in ms for exponential backoff (doubles each attempt). */
+export const CRAWLER_RETRY_BASE_MS = 500;
+
+/** Exponential factor for backoff growth. */
+export const CRAWLER_RETRY_FACTOR = 2;
+
+/** Cap for computed backoff in ms (full-jitter capped here). */
+export const CRAWLER_RETRY_CAP_MS = 8_000;
 
 // ---------------------------------------------------------------------------
 // Enricher (backend/enricher.js)
@@ -28,10 +56,21 @@ export const CRAWLER_THROTTLE_MS = 500;
 // PROMO_BATCH is a HARD endpoint limit — sending more returns HTTP 500.
 // ---------------------------------------------------------------------------
 
-/** Max concurrent enricher requests for HTML scraping (enricher.js: CONCURRENCY) */
-export const ENRICH_CONCURRENCY = 15;
+/**
+ * Max concurrent enricher requests for HTML scraping (Strategy B).
+ * Default 40: DIA was measured handling 50 concurrent with 0 errors / 0 429s
+ * (4762 pages in ~28s), so 40 leaves margin while staying ~8x faster than the
+ * old batched model. fetchWithRetry backoff absorbs 429/503 bursts if a stricter
+ * store pushes back. Override per-environment via ENRICH_HTML_CONC; set =1 for
+ * sequential rollback.
+ */
+export const ENRICH_HTML_CONC = 40;
 
-/** Milliseconds to sleep between enricher request batches (enricher.js: THROTTLE_MS) */
+/**
+ * Milliseconds to sleep between enricher request batches (legacy: enricher.js THROTTLE_MS).
+ * No longer used as inter-batch sleep (runPool has no discrete batches).
+ * Kept for reference / potential future use.
+ */
 export const ENRICH_THROTTLE_MS = 250;
 
 /**
