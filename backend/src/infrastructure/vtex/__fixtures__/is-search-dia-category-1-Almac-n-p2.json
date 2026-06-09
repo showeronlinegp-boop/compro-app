@@ -1,0 +1,2266 @@
+{
+  "recordsFiltered": 1043,
+  "products": [
+    {
+      "cacheId": "sp-282730",
+      "productId": "282730",
+      "description": "",
+      "productName": "Mix De Semillas Genser Ensaladas Y Sopas 150 Gr.",
+      "productReference": "",
+      "linkText": "mix-de-semillas-genser-ensaladas-y-sopas-150-gr-282730",
+      "brand": "SIN MARCA",
+      "brandId": 15,
+      "link": "/mix-de-semillas-genser-ensaladas-y-sopas-150-gr-282730/p",
+      "categories": [
+        "/Almacén/Pastas y arroces/Legumbres y Semillas/",
+        "/Almacén/Pastas y arroces/",
+        "/Almacén/"
+      ],
+      "categoryId": "31",
+      "priceRange": {
+        "sellingPrice": {
+          "highPrice": 2125,
+          "lowPrice": 2125
+        },
+        "listPrice": {
+          "highPrice": 3269,
+          "lowPrice": 3269
+        }
+      },
+      "specificationGroups": [
+        {
+          "originalName": "FOOD",
+          "name": "FOOD",
+          "specifications": [
+            {
+              "originalName": "IVA",
+              "name": "IVA",
+              "values": [
+                "21"
+              ]
+            },
+            {
+              "originalName": "InternalTax",
+              "name": "InternalTax",
+              "values": [
+                "0"
+              ]
+            }
+          ]
+        },
+        {
+          "originalName": "allSpecifications",
+          "name": "allSpecifications",
+          "specifications": [
+            {
+              "originalName": "IVA",
+              "name": "IVA",
+              "values": [
+                "21"
+              ]
+            },
+            {
+              "originalName": "InternalTax",
+              "name": "InternalTax",
+              "values": [
+                "0"
+              ]
+            },
+            {
+              "originalName": "sellerId",
+              "name": "sellerId",
+              "values": [
+                "1"
+              ]
+            }
+          ]
+        }
+      ],
+      "skuSpecifications": [],
+      "productClusters": [
+        {
+          "id": "567",
+          "name": "Todas las Ofertas"
+        },
+        {
+          "id": "569",
+          "name": "Especial Verano"
+        },
+        {
+          "id": "889",
+          "name": "Ofertas Almacen"
+        },
+        {
+          "id": "1531",
+          "name": "rein"
+        }
+      ],
+      "clusterHighlights": [],
+      "properties": [
+        {
+          "name": "IVA",
+          "originalName": "IVA",
+          "values": [
+            "21"
+          ]
+        },
+        {
+          "name": "InternalTax",
+          "originalName": "InternalTax",
+          "values": [
+            "0"
+          ]
+        },
+        {
+          "name": "sellerId",
+          "originalName": "sellerId",
+          "values": [
+            "1"
+          ]
+        }
+      ],
+      "items": [
+        {
+          "sellers": [
+            {
+              "sellerId": "1",
+              "sellerName": "Supermercados DIA",
+              "addToCartLink": "",
+              "sellerDefault": true,
+              "commertialOffer": {
+                "DeliverySlaSamplesPerRegion": {},
+                "DeliverySlaSamples": [],
+                "AvailableQuantity": 10000,
+                "discountHighlights": [],
+                "Installments": [
+                  {
+                    "Value": 2125,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2125,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express à vista"
+                  },
+                  {
+                    "Value": 2125,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2125,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa à vista"
+                  },
+                  {
+                    "Value": 2125,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2125,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard à vista"
+                  },
+                  {
+                    "Value": 2125,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2125,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Visa Electron",
+                    "PaymentSystemGroupName": "debitCardPaymentGroup",
+                    "Name": "Visa Electron à vista"
+                  },
+                  {
+                    "Value": 2125,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2125,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Vale",
+                    "PaymentSystemGroupName": "giftCardPaymentGroup",
+                    "Name": "Vale à vista"
+                  },
+                  {
+                    "Value": 2125,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2125,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal à vista"
+                  },
+                  {
+                    "Value": 2125,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2125,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja à vista"
+                  },
+                  {
+                    "Value": 708.33,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2125,
+                    "NumberOfInstallments": 3,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja 3 vezes sem juros"
+                  },
+                  {
+                    "Value": 2125,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2125,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Maestro",
+                    "PaymentSystemGroupName": "debitCardPaymentGroup",
+                    "Name": "Maestro à vista"
+                  },
+                  {
+                    "Value": 2125,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2125,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Mastercard Debit",
+                    "PaymentSystemGroupName": "debitCardPaymentGroup",
+                    "Name": "Mastercard Debit à vista"
+                  },
+                  {
+                    "Value": 2125,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2125,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "MercadoPagoPro",
+                    "PaymentSystemGroupName": "MercadoPagoProPaymentGroup",
+                    "Name": "MercadoPagoPro à vista"
+                  },
+                  {
+                    "Value": 2125,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2125,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "GOcuotas",
+                    "PaymentSystemGroupName": "GOcuotasPaymentGroup",
+                    "Name": "GOcuotas à vista"
+                  },
+                  {
+                    "Value": 2125,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2125,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Modo Payment",
+                    "PaymentSystemGroupName": "Modo PaymentPaymentGroup",
+                    "Name": "Modo Payment à vista"
+                  }
+                ],
+                "Price": 2125,
+                "ListPrice": 3269,
+                "spotPrice": 2125,
+                "taxPercentage": 0,
+                "PriceWithoutDiscount": 2125,
+                "Tax": 0,
+                "GiftSkuIds": [],
+                "BuyTogether": [],
+                "ItemMetadataAttachment": [],
+                "RewardValue": 0,
+                "PriceValidUntil": "2027-06-09T17:47:39Z",
+                "GetInfoErrorMessage": null,
+                "CacheVersionUsedToCallCheckout": "",
+                "teasers": []
+              }
+            }
+          ],
+          "images": [
+            {
+              "imageId": "347018",
+              "cacheId": "347018",
+              "imageTag": "",
+              "imageLabel": "",
+              "imageText": "",
+              "imageUrl": "https://diaio.vtexassets.com/arquivos/ids/347018/Mix-De-Semillas-Genser-Ensaladas-Y-Sopas-150-Gr-_1.jpg?v=639040202034370000"
+            }
+          ],
+          "itemId": "282730",
+          "name": "Mix De Semillas Genser Ensaladas Y Sopas 150 Gr.",
+          "nameComplete": "Mix De Semillas Genser Ensaladas Y Sopas 150 Gr.",
+          "complementName": "",
+          "referenceId": [
+            {
+              "Key": "RefId",
+              "Value": "282730"
+            }
+          ],
+          "measurementUnit": "un",
+          "unitMultiplier": 1,
+          "variations": [],
+          "ean": "7793433000671",
+          "modalType": "",
+          "videos": [],
+          "attachments": [],
+          "isKit": false,
+          "attributes": []
+        }
+      ],
+      "categoriesIds": [
+        "/1/25/31/",
+        "/1/25/",
+        "/1/"
+      ],
+      "releaseDate": 1780963200000,
+      "metaTagDescription": "",
+      "origin": "intelligent-search",
+      "productTitle": ""
+    },
+    {
+      "cacheId": "sp-15595",
+      "productId": "15595",
+      "description": "",
+      "productName": "Caldo de Carne Con Vegetales Knorr 12 Ud.",
+      "productReference": "",
+      "linkText": "caldo-de-carne-con-vegetales-knorr-12-ud-15595",
+      "brand": "KNORR",
+      "brandId": 157,
+      "link": "/caldo-de-carne-con-vegetales-knorr-12-ud-15595/p",
+      "categories": [
+        "/Almacén/Comidas listas/Caldos/",
+        "/Almacén/Comidas listas/",
+        "/Almacén/"
+      ],
+      "categoryId": "50",
+      "priceRange": {
+        "sellingPrice": {
+          "highPrice": 2390,
+          "lowPrice": 2390
+        },
+        "listPrice": {
+          "highPrice": 2990,
+          "lowPrice": 2990
+        }
+      },
+      "specificationGroups": [
+        {
+          "originalName": "FOOD",
+          "name": "FOOD",
+          "specifications": [
+            {
+              "originalName": "PrecioPorUnd",
+              "name": "PrecioPorUnd",
+              "values": [
+                "26228.07"
+              ]
+            },
+            {
+              "originalName": "UnidaddeMedida",
+              "name": "UnidaddeMedida",
+              "values": [
+                "1 Kg"
+              ]
+            },
+            {
+              "originalName": "IVA",
+              "name": "IVA",
+              "values": [
+                "21"
+              ]
+            },
+            {
+              "originalName": "InternalTax",
+              "name": "InternalTax",
+              "values": [
+                "0"
+              ]
+            }
+          ]
+        },
+        {
+          "originalName": "allSpecifications",
+          "name": "allSpecifications",
+          "specifications": [
+            {
+              "originalName": "PrecioPorUnd",
+              "name": "PrecioPorUnd",
+              "values": [
+                "26228.07"
+              ]
+            },
+            {
+              "originalName": "UnidaddeMedida",
+              "name": "UnidaddeMedida",
+              "values": [
+                "1 Kg"
+              ]
+            },
+            {
+              "originalName": "IVA",
+              "name": "IVA",
+              "values": [
+                "21"
+              ]
+            },
+            {
+              "originalName": "InternalTax",
+              "name": "InternalTax",
+              "values": [
+                "0"
+              ]
+            },
+            {
+              "originalName": "sellerId",
+              "name": "sellerId",
+              "values": [
+                "1"
+              ]
+            }
+          ]
+        }
+      ],
+      "skuSpecifications": [],
+      "productClusters": [
+        {
+          "id": "567",
+          "name": "Todas las Ofertas"
+        },
+        {
+          "id": "572",
+          "name": "Ahorrames"
+        },
+        {
+          "id": "889",
+          "name": "Ofertas Almacen"
+        },
+        {
+          "id": "1332",
+          "name": "Unilever"
+        },
+        {
+          "id": "1531",
+          "name": "rein"
+        },
+        {
+          "id": "4845",
+          "name": "ONE UL Abril"
+        },
+        {
+          "id": "5537",
+          "name": "ONE UL Junio"
+        },
+        {
+          "id": "5539",
+          "name": "Especial Invierno Knorr UL Junio"
+        },
+        {
+          "id": "5635",
+          "name": "Unilever Junio"
+        },
+        {
+          "id": "5638",
+          "name": "Super Despiertos"
+        },
+        {
+          "id": "5640",
+          "name": "Knorr Guisos s23"
+        },
+        {
+          "id": "6014",
+          "name": "Knorr Agosto UL"
+        },
+        {
+          "id": "6276",
+          "name": "Nutrition UL9"
+        },
+        {
+          "id": "6415",
+          "name": "Flash Sale UL"
+        },
+        {
+          "id": "6991",
+          "name": "ONE UL Diciembre"
+        },
+        {
+          "id": "7130",
+          "name": "ONE UL Enero"
+        },
+        {
+          "id": "7131",
+          "name": "FOODS UL Enero"
+        },
+        {
+          "id": "7430",
+          "name": "One UL feb"
+        },
+        {
+          "id": "7431",
+          "name": "Foods UL feb"
+        },
+        {
+          "id": "7489",
+          "name": "Alimentos y Bebidas s08"
+        },
+        {
+          "id": "7523",
+          "name": "Almacen s09"
+        },
+        {
+          "id": "7607",
+          "name": "Foods UL Mar"
+        },
+        {
+          "id": "7849",
+          "name": "Alimentos y Bebidas s18"
+        },
+        {
+          "id": "7866",
+          "name": "Ver mas mas vendidos s18"
+        },
+        {
+          "id": "8027",
+          "name": "Especial Patrio s21"
+        },
+        {
+          "id": "8043",
+          "name": "Alimentos y Bebidas s21"
+        },
+        {
+          "id": "8149",
+          "name": "Knorr RM 2025"
+        },
+        {
+          "id": "8254",
+          "name": "Caldos Knorr s25"
+        },
+        {
+          "id": "8261",
+          "name": "Almacen s25"
+        },
+        {
+          "id": "8273",
+          "name": "Alimentos y Bebidas s25"
+        },
+        {
+          "id": "8277",
+          "name": "Mas Destacados s25"
+        },
+        {
+          "id": "8283",
+          "name": "Hasta 2x1 s25"
+        },
+        {
+          "id": "8310",
+          "name": "Alimentos y Bebidas s26"
+        },
+        {
+          "id": "9096",
+          "name": "Almacen DP s40"
+        },
+        {
+          "id": "9108",
+          "name": "Knorr DP s40"
+        },
+        {
+          "id": "9156",
+          "name": "Knorr RM Oct25"
+        },
+        {
+          "id": "9211",
+          "name": "Ofertas Dia"
+        },
+        {
+          "id": "9263",
+          "name": "Almacen s44"
+        },
+        {
+          "id": "9265",
+          "name": "Knorr s44"
+        },
+        {
+          "id": "9291",
+          "name": "Alimentos y Bebidas s44"
+        },
+        {
+          "id": "10105",
+          "name": "Almacen s09"
+        },
+        {
+          "id": "10108",
+          "name": "Almacen y Frescos SD s09"
+        },
+        {
+          "id": "10117",
+          "name": "Alimentos y Bebidas s09"
+        },
+        {
+          "id": "10309",
+          "name": "Stockeate s14"
+        },
+        {
+          "id": "10328",
+          "name": "Alimentos y Bebidas s14"
+        },
+        {
+          "id": "10410",
+          "name": "Alimentos y bebidas s16"
+        },
+        {
+          "id": "10480",
+          "name": "Alimentos y Bebidas s18"
+        },
+        {
+          "id": "10509",
+          "name": "Almacen s18"
+        },
+        {
+          "id": "10526",
+          "name": "Campeones de la Previa"
+        },
+        {
+          "id": "10744",
+          "name": "Alimentos y Bebidas s22"
+        }
+      ],
+      "clusterHighlights": [
+        {
+          "id": "572",
+          "name": "Ahorrames"
+        }
+      ],
+      "properties": [
+        {
+          "name": "PrecioPorUnd",
+          "originalName": "PrecioPorUnd",
+          "values": [
+            "26228.07"
+          ]
+        },
+        {
+          "name": "UnidaddeMedida",
+          "originalName": "UnidaddeMedida",
+          "values": [
+            "1 Kg"
+          ]
+        },
+        {
+          "name": "IVA",
+          "originalName": "IVA",
+          "values": [
+            "21"
+          ]
+        },
+        {
+          "name": "InternalTax",
+          "originalName": "InternalTax",
+          "values": [
+            "0"
+          ]
+        },
+        {
+          "name": "sellerId",
+          "originalName": "sellerId",
+          "values": [
+            "1"
+          ]
+        }
+      ],
+      "items": [
+        {
+          "sellers": [
+            {
+              "sellerId": "1",
+              "sellerName": "Supermercados DIA",
+              "addToCartLink": "",
+              "sellerDefault": true,
+              "commertialOffer": {
+                "DeliverySlaSamplesPerRegion": {},
+                "DeliverySlaSamples": [],
+                "AvailableQuantity": 10000,
+                "discountHighlights": [],
+                "Installments": [
+                  {
+                    "Value": 2390,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2390,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express à vista"
+                  },
+                  {
+                    "Value": 2390,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2390,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa à vista"
+                  },
+                  {
+                    "Value": 2390,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2390,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard à vista"
+                  },
+                  {
+                    "Value": 2390,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2390,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Visa Electron",
+                    "PaymentSystemGroupName": "debitCardPaymentGroup",
+                    "Name": "Visa Electron à vista"
+                  },
+                  {
+                    "Value": 2390,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2390,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Vale",
+                    "PaymentSystemGroupName": "giftCardPaymentGroup",
+                    "Name": "Vale à vista"
+                  },
+                  {
+                    "Value": 2390,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2390,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal à vista"
+                  },
+                  {
+                    "Value": 2390,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2390,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja à vista"
+                  },
+                  {
+                    "Value": 796.66,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2390,
+                    "NumberOfInstallments": 3,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja 3 vezes sem juros"
+                  },
+                  {
+                    "Value": 2390,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2390,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Maestro",
+                    "PaymentSystemGroupName": "debitCardPaymentGroup",
+                    "Name": "Maestro à vista"
+                  },
+                  {
+                    "Value": 2390,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2390,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Mastercard Debit",
+                    "PaymentSystemGroupName": "debitCardPaymentGroup",
+                    "Name": "Mastercard Debit à vista"
+                  },
+                  {
+                    "Value": 2390,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2390,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "MercadoPagoPro",
+                    "PaymentSystemGroupName": "MercadoPagoProPaymentGroup",
+                    "Name": "MercadoPagoPro à vista"
+                  },
+                  {
+                    "Value": 2390,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2390,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "GOcuotas",
+                    "PaymentSystemGroupName": "GOcuotasPaymentGroup",
+                    "Name": "GOcuotas à vista"
+                  },
+                  {
+                    "Value": 2390,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2390,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Modo Payment",
+                    "PaymentSystemGroupName": "Modo PaymentPaymentGroup",
+                    "Name": "Modo Payment à vista"
+                  }
+                ],
+                "Price": 2390,
+                "ListPrice": 2990,
+                "spotPrice": 2390,
+                "taxPercentage": 0,
+                "PriceWithoutDiscount": 2390,
+                "Tax": 0,
+                "GiftSkuIds": [],
+                "BuyTogether": [],
+                "ItemMetadataAttachment": [],
+                "RewardValue": 0,
+                "PriceValidUntil": "2027-06-09T17:45:56Z",
+                "GetInfoErrorMessage": null,
+                "CacheVersionUsedToCallCheckout": "",
+                "teasers": []
+              }
+            }
+          ],
+          "images": [
+            {
+              "imageId": "332344",
+              "cacheId": "332344",
+              "imageTag": "",
+              "imageLabel": "",
+              "imageText": "",
+              "imageUrl": "https://diaio.vtexassets.com/arquivos/ids/332344/Caldo-de-Carne-Con-Vegetales-Knorr-12-Ud-_1.jpg?v=638987246041570000"
+            },
+            {
+              "imageId": "332345",
+              "cacheId": "332345",
+              "imageTag": "",
+              "imageLabel": "",
+              "imageText": "",
+              "imageUrl": "https://diaio.vtexassets.com/arquivos/ids/332345/Caldo-de-Carne-Con-Vegetales-Knorr-12-Ud-_2.jpg?v=638987246041870000"
+            }
+          ],
+          "itemId": "15595",
+          "name": "Caldo de Carne Con Vegetales Knorr 12 Ud.",
+          "nameComplete": "Caldo de Carne Con Vegetales Knorr 12 Ud.",
+          "complementName": "",
+          "referenceId": [
+            {
+              "Key": "RefId"
+            }
+          ],
+          "measurementUnit": "un",
+          "unitMultiplier": 1,
+          "variations": [],
+          "ean": "7794000008533",
+          "modalType": "",
+          "videos": [],
+          "attachments": [],
+          "isKit": false,
+          "attributes": []
+        }
+      ],
+      "categoriesIds": [
+        "/1/48/50/",
+        "/1/48/",
+        "/1/"
+      ],
+      "releaseDate": 1708387200000,
+      "metaTagDescription": "",
+      "origin": "intelligent-search",
+      "productTitle": ""
+    },
+    {
+      "cacheId": "sp-307327",
+      "productId": "307327",
+      "description": "",
+      "productName": "Mix de Especias Sabor Hongos Knorr 24 Gr.",
+      "productReference": "",
+      "linkText": "mix-de-especias-sabor-hongos-knorr-24-gr-307327",
+      "brand": "KNORR",
+      "brandId": 157,
+      "link": "/mix-de-especias-sabor-hongos-knorr-24-gr-307327/p",
+      "categories": [
+        "/Almacén/Aceites y Aderezos/Especias/",
+        "/Almacén/Aceites y Aderezos/",
+        "/Almacén/"
+      ],
+      "categoryId": "15",
+      "priceRange": {
+        "sellingPrice": {
+          "highPrice": 1365,
+          "lowPrice": 1365
+        },
+        "listPrice": {
+          "highPrice": 1705,
+          "lowPrice": 1705
+        }
+      },
+      "specificationGroups": [
+        {
+          "originalName": "FOOD",
+          "name": "FOOD",
+          "specifications": [
+            {
+              "originalName": "PrecioPorUnd",
+              "name": "PrecioPorUnd",
+              "values": [
+                "710.42"
+              ]
+            },
+            {
+              "originalName": "UnidaddeMedida",
+              "name": "UnidaddeMedida",
+              "values": [
+                "10 Gr"
+              ]
+            }
+          ]
+        },
+        {
+          "originalName": "allSpecifications",
+          "name": "allSpecifications",
+          "specifications": [
+            {
+              "originalName": "PrecioPorUnd",
+              "name": "PrecioPorUnd",
+              "values": [
+                "710.42"
+              ]
+            },
+            {
+              "originalName": "UnidaddeMedida",
+              "name": "UnidaddeMedida",
+              "values": [
+                "10 Gr"
+              ]
+            },
+            {
+              "originalName": "sellerId",
+              "name": "sellerId",
+              "values": [
+                "1"
+              ]
+            }
+          ]
+        }
+      ],
+      "skuSpecifications": [],
+      "productClusters": [
+        {
+          "id": "567",
+          "name": "Todas las Ofertas"
+        },
+        {
+          "id": "572",
+          "name": "Ahorrames"
+        },
+        {
+          "id": "889",
+          "name": "Ofertas Almacen"
+        },
+        {
+          "id": "1332",
+          "name": "Unilever"
+        },
+        {
+          "id": "1531",
+          "name": "rein"
+        },
+        {
+          "id": "5121",
+          "name": "Hot Sale 2025"
+        },
+        {
+          "id": "7959",
+          "name": "35% HS 2025"
+        },
+        {
+          "id": "7965",
+          "name": "Almacen y Bebidas HS 2025"
+        },
+        {
+          "id": "7981",
+          "name": "35% HS 2025"
+        },
+        {
+          "id": "8043",
+          "name": "Alimentos y Bebidas s21"
+        },
+        {
+          "id": "8052",
+          "name": "2do al 50% s21"
+        },
+        {
+          "id": "8149",
+          "name": "Knorr RM 2025"
+        },
+        {
+          "id": "8219",
+          "name": "Mix Especias Knorr s23"
+        },
+        {
+          "id": "8310",
+          "name": "Alimentos y Bebidas s26"
+        },
+        {
+          "id": "8699",
+          "name": "Mix Sabores s32"
+        },
+        {
+          "id": "9033",
+          "name": "Alimentos y Bebidas s39"
+        },
+        {
+          "id": "9047",
+          "name": "Destacado Alimentos y Bebidas s39"
+        },
+        {
+          "id": "9096",
+          "name": "Almacen DP s40"
+        },
+        {
+          "id": "9108",
+          "name": "Knorr DP s40"
+        },
+        {
+          "id": "9156",
+          "name": "Knorr RM Oct25"
+        },
+        {
+          "id": "9211",
+          "name": "Ofertas Dia"
+        },
+        {
+          "id": "9263",
+          "name": "Almacen s44"
+        },
+        {
+          "id": "9265",
+          "name": "Knorr s44"
+        },
+        {
+          "id": "9291",
+          "name": "Alimentos y Bebidas s44"
+        },
+        {
+          "id": "9299",
+          "name": "Mas Destacados s44"
+        },
+        {
+          "id": "9745",
+          "name": "Ahorra mes Enero"
+        },
+        {
+          "id": "9929",
+          "name": "Alimentos y Bebidas s05"
+        },
+        {
+          "id": "10105",
+          "name": "Almacen s09"
+        },
+        {
+          "id": "10117",
+          "name": "Alimentos y Bebidas s09"
+        },
+        {
+          "id": "10309",
+          "name": "Stockeate s14"
+        },
+        {
+          "id": "10328",
+          "name": "Alimentos y Bebidas s14"
+        },
+        {
+          "id": "10410",
+          "name": "Alimentos y bebidas s16"
+        },
+        {
+          "id": "10480",
+          "name": "Alimentos y Bebidas s18"
+        },
+        {
+          "id": "10509",
+          "name": "Almacen s18"
+        },
+        {
+          "id": "10523",
+          "name": "Hot Sale 2026"
+        },
+        {
+          "id": "10524",
+          "name": "Unilever Food Hot Sale 2026"
+        },
+        {
+          "id": "10526",
+          "name": "Campeones de la Previa"
+        },
+        {
+          "id": "10549",
+          "name": "Almacen HS 2026"
+        },
+        {
+          "id": "10565",
+          "name": "Comidas listas y Aderezos HS 2026"
+        },
+        {
+          "id": "10592",
+          "name": "40%  HS 2026"
+        },
+        {
+          "id": "10600",
+          "name": "UL Food HS 2026"
+        },
+        {
+          "id": "10619",
+          "name": "Destacado 40% Hot Sale 2026"
+        },
+        {
+          "id": "10628",
+          "name": "40% HS 2026"
+        },
+        {
+          "id": "10632",
+          "name": "Alimentos y Bebidas HotSale 2026"
+        },
+        {
+          "id": "10634",
+          "name": "Destacado Alimentos y Bebidas HS 2026"
+        },
+        {
+          "id": "10637",
+          "name": "Almacen y Congelados HS 2026"
+        },
+        {
+          "id": "10640",
+          "name": "Knorr HS26"
+        },
+        {
+          "id": "10659",
+          "name": "Aderezos y Especias HS 2026"
+        },
+        {
+          "id": "10744",
+          "name": "Alimentos y Bebidas s22"
+        }
+      ],
+      "clusterHighlights": [
+        {
+          "id": "572",
+          "name": "Ahorrames"
+        }
+      ],
+      "properties": [
+        {
+          "name": "PrecioPorUnd",
+          "originalName": "PrecioPorUnd",
+          "values": [
+            "710.42"
+          ]
+        },
+        {
+          "name": "UnidaddeMedida",
+          "originalName": "UnidaddeMedida",
+          "values": [
+            "10 Gr"
+          ]
+        },
+        {
+          "name": "sellerId",
+          "originalName": "sellerId",
+          "values": [
+            "1"
+          ]
+        }
+      ],
+      "items": [
+        {
+          "sellers": [
+            {
+              "sellerId": "1",
+              "sellerName": "Supermercados DIA",
+              "addToCartLink": "",
+              "sellerDefault": true,
+              "commertialOffer": {
+                "DeliverySlaSamplesPerRegion": {},
+                "DeliverySlaSamples": [],
+                "AvailableQuantity": 10000,
+                "discountHighlights": [],
+                "Installments": [
+                  {
+                    "Value": 1365,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1365,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express à vista"
+                  },
+                  {
+                    "Value": 1365,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1365,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa à vista"
+                  },
+                  {
+                    "Value": 1365,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1365,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard à vista"
+                  },
+                  {
+                    "Value": 1365,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1365,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Visa Electron",
+                    "PaymentSystemGroupName": "debitCardPaymentGroup",
+                    "Name": "Visa Electron à vista"
+                  },
+                  {
+                    "Value": 1365,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1365,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Vale",
+                    "PaymentSystemGroupName": "giftCardPaymentGroup",
+                    "Name": "Vale à vista"
+                  },
+                  {
+                    "Value": 1365,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1365,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal à vista"
+                  },
+                  {
+                    "Value": 1365,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1365,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja à vista"
+                  },
+                  {
+                    "Value": 455,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1365,
+                    "NumberOfInstallments": 3,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja 3 vezes sem juros"
+                  },
+                  {
+                    "Value": 1365,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1365,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Maestro",
+                    "PaymentSystemGroupName": "debitCardPaymentGroup",
+                    "Name": "Maestro à vista"
+                  },
+                  {
+                    "Value": 1365,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1365,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Mastercard Debit",
+                    "PaymentSystemGroupName": "debitCardPaymentGroup",
+                    "Name": "Mastercard Debit à vista"
+                  },
+                  {
+                    "Value": 1365,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1365,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "MercadoPagoPro",
+                    "PaymentSystemGroupName": "MercadoPagoProPaymentGroup",
+                    "Name": "MercadoPagoPro à vista"
+                  },
+                  {
+                    "Value": 1365,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1365,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "GOcuotas",
+                    "PaymentSystemGroupName": "GOcuotasPaymentGroup",
+                    "Name": "GOcuotas à vista"
+                  },
+                  {
+                    "Value": 1365,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1365,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Modo Payment",
+                    "PaymentSystemGroupName": "Modo PaymentPaymentGroup",
+                    "Name": "Modo Payment à vista"
+                  }
+                ],
+                "Price": 1365,
+                "ListPrice": 1705,
+                "spotPrice": 1365,
+                "taxPercentage": 0,
+                "PriceWithoutDiscount": 1365,
+                "Tax": 0,
+                "GiftSkuIds": [],
+                "BuyTogether": [],
+                "ItemMetadataAttachment": [],
+                "RewardValue": 0,
+                "PriceValidUntil": "2027-06-09T17:52:23Z",
+                "GetInfoErrorMessage": null,
+                "CacheVersionUsedToCallCheckout": "",
+                "teasers": []
+              }
+            }
+          ],
+          "images": [
+            {
+              "imageId": "350382",
+              "cacheId": "350382",
+              "imageTag": "",
+              "imageLabel": "",
+              "imageText": "",
+              "imageUrl": "https://diaio.vtexassets.com/arquivos/ids/350382/Mix-de-Especias-Sabor-Hongos-Knorr-24-Gr-_1.jpg?v=638822086611470000"
+            }
+          ],
+          "itemId": "307327",
+          "name": "Mix de Especias Sabor Hongos Knorr 24 Gr.",
+          "nameComplete": "Mix de Especias Sabor Hongos Knorr 24 Gr.",
+          "complementName": "",
+          "referenceId": [
+            {
+              "Key": "RefId",
+              "Value": "307327"
+            }
+          ],
+          "measurementUnit": "un",
+          "unitMultiplier": 1,
+          "variations": [],
+          "ean": "7794000009158",
+          "modalType": "",
+          "videos": [],
+          "attachments": [],
+          "isKit": false,
+          "attributes": []
+        }
+      ],
+      "categoriesIds": [
+        "/1/2/15/",
+        "/1/2/",
+        "/1/"
+      ],
+      "releaseDate": 1746489600000,
+      "metaTagDescription": "",
+      "origin": "intelligent-search",
+      "productTitle": ""
+    },
+    {
+      "cacheId": "sp-311324",
+      "productId": "311324",
+      "description": "",
+      "productName": "Mayonesa Sabor Asado Hellmanns 250 Ml.",
+      "productReference": "",
+      "linkText": "mayonesa-sabor-asado-hellmanns-250-ml-311324",
+      "brand": "HELLMANNS",
+      "brandId": 287,
+      "link": "/mayonesa-sabor-asado-hellmanns-250-ml-311324/p",
+      "categories": [
+        "/Almacén/Aceites y Aderezos/Mayonesa/",
+        "/Almacén/Aceites y Aderezos/",
+        "/Almacén/"
+      ],
+      "categoryId": "10",
+      "priceRange": {
+        "sellingPrice": {
+          "highPrice": 2679,
+          "lowPrice": 2679
+        },
+        "listPrice": {
+          "highPrice": 3349,
+          "lowPrice": 3349
+        }
+      },
+      "specificationGroups": [
+        {
+          "originalName": "FOOD",
+          "name": "FOOD",
+          "specifications": [
+            {
+              "originalName": "PrecioPorUnd",
+              "name": "PrecioPorUnd",
+              "values": [
+                "13396.00"
+              ]
+            },
+            {
+              "originalName": "UnidaddeMedida",
+              "name": "UnidaddeMedida",
+              "values": [
+                "1 LT"
+              ]
+            }
+          ]
+        },
+        {
+          "originalName": "allSpecifications",
+          "name": "allSpecifications",
+          "specifications": [
+            {
+              "originalName": "PrecioPorUnd",
+              "name": "PrecioPorUnd",
+              "values": [
+                "13396.00"
+              ]
+            },
+            {
+              "originalName": "UnidaddeMedida",
+              "name": "UnidaddeMedida",
+              "values": [
+                "1 LT"
+              ]
+            },
+            {
+              "originalName": "sellerId",
+              "name": "sellerId",
+              "values": [
+                "1"
+              ]
+            }
+          ]
+        }
+      ],
+      "skuSpecifications": [],
+      "productClusters": [
+        {
+          "id": "567",
+          "name": "Todas las Ofertas"
+        },
+        {
+          "id": "572",
+          "name": "Ahorrames"
+        },
+        {
+          "id": "889",
+          "name": "Ofertas Almacen"
+        },
+        {
+          "id": "1332",
+          "name": "Unilever"
+        },
+        {
+          "id": "1531",
+          "name": "rein"
+        },
+        {
+          "id": "8148",
+          "name": "Hellmans RM 2025"
+        },
+        {
+          "id": "9211",
+          "name": "Ofertas Dia"
+        },
+        {
+          "id": "10254",
+          "name": "Hellmanns s12"
+        },
+        {
+          "id": "10266",
+          "name": "Alimentos y Bebidas s12"
+        },
+        {
+          "id": "10271",
+          "name": "UL - Asado"
+        },
+        {
+          "id": "10289",
+          "name": "Alimentos y Bebidas S13"
+        },
+        {
+          "id": "10309",
+          "name": "Stockeate s14"
+        },
+        {
+          "id": "10328",
+          "name": "Alimentos y Bebidas s14"
+        },
+        {
+          "id": "10410",
+          "name": "Alimentos y bebidas s16"
+        },
+        {
+          "id": "10480",
+          "name": "Alimentos y Bebidas s18"
+        },
+        {
+          "id": "10509",
+          "name": "Almacen s18"
+        },
+        {
+          "id": "10523",
+          "name": "Hot Sale 2026"
+        },
+        {
+          "id": "10524",
+          "name": "Unilever Food Hot Sale 2026"
+        },
+        {
+          "id": "10526",
+          "name": "Campeones de la Previa"
+        },
+        {
+          "id": "10545",
+          "name": "Alimentos y Bebidas s19"
+        },
+        {
+          "id": "10549",
+          "name": "Almacen HS 2026"
+        },
+        {
+          "id": "10565",
+          "name": "Comidas listas y Aderezos HS 2026"
+        },
+        {
+          "id": "10592",
+          "name": "40%  HS 2026"
+        },
+        {
+          "id": "10600",
+          "name": "UL Food HS 2026"
+        },
+        {
+          "id": "10628",
+          "name": "40% HS 2026"
+        },
+        {
+          "id": "10632",
+          "name": "Alimentos y Bebidas HotSale 2026"
+        },
+        {
+          "id": "10637",
+          "name": "Almacen y Congelados HS 2026"
+        },
+        {
+          "id": "10659",
+          "name": "Aderezos y Especias HS 2026"
+        },
+        {
+          "id": "10744",
+          "name": "Alimentos y Bebidas s22"
+        }
+      ],
+      "clusterHighlights": [
+        {
+          "id": "572",
+          "name": "Ahorrames"
+        }
+      ],
+      "properties": [
+        {
+          "name": "PrecioPorUnd",
+          "originalName": "PrecioPorUnd",
+          "values": [
+            "13396.00"
+          ]
+        },
+        {
+          "name": "UnidaddeMedida",
+          "originalName": "UnidaddeMedida",
+          "values": [
+            "1 LT"
+          ]
+        },
+        {
+          "name": "sellerId",
+          "originalName": "sellerId",
+          "values": [
+            "1"
+          ]
+        }
+      ],
+      "items": [
+        {
+          "sellers": [
+            {
+              "sellerId": "1",
+              "sellerName": "Supermercados DIA",
+              "addToCartLink": "",
+              "sellerDefault": true,
+              "commertialOffer": {
+                "DeliverySlaSamplesPerRegion": {},
+                "DeliverySlaSamples": [],
+                "AvailableQuantity": 10000,
+                "discountHighlights": [],
+                "Installments": [
+                  {
+                    "Value": 2679,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2679,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express à vista"
+                  },
+                  {
+                    "Value": 2679,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2679,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa à vista"
+                  },
+                  {
+                    "Value": 2679,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2679,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard à vista"
+                  },
+                  {
+                    "Value": 2679,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2679,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Visa Electron",
+                    "PaymentSystemGroupName": "debitCardPaymentGroup",
+                    "Name": "Visa Electron à vista"
+                  },
+                  {
+                    "Value": 2679,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2679,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Vale",
+                    "PaymentSystemGroupName": "giftCardPaymentGroup",
+                    "Name": "Vale à vista"
+                  },
+                  {
+                    "Value": 2679,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2679,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal à vista"
+                  },
+                  {
+                    "Value": 2679,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2679,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja à vista"
+                  },
+                  {
+                    "Value": 893,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2679,
+                    "NumberOfInstallments": 3,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja 3 vezes sem juros"
+                  },
+                  {
+                    "Value": 2679,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2679,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Maestro",
+                    "PaymentSystemGroupName": "debitCardPaymentGroup",
+                    "Name": "Maestro à vista"
+                  },
+                  {
+                    "Value": 2679,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2679,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Mastercard Debit",
+                    "PaymentSystemGroupName": "debitCardPaymentGroup",
+                    "Name": "Mastercard Debit à vista"
+                  },
+                  {
+                    "Value": 2679,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2679,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "MercadoPagoPro",
+                    "PaymentSystemGroupName": "MercadoPagoProPaymentGroup",
+                    "Name": "MercadoPagoPro à vista"
+                  },
+                  {
+                    "Value": 2679,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2679,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "GOcuotas",
+                    "PaymentSystemGroupName": "GOcuotasPaymentGroup",
+                    "Name": "GOcuotas à vista"
+                  },
+                  {
+                    "Value": 2679,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 2679,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Modo Payment",
+                    "PaymentSystemGroupName": "Modo PaymentPaymentGroup",
+                    "Name": "Modo Payment à vista"
+                  }
+                ],
+                "Price": 2679,
+                "ListPrice": 3349,
+                "spotPrice": 2679,
+                "taxPercentage": 0,
+                "PriceWithoutDiscount": 2679,
+                "Tax": 0,
+                "GiftSkuIds": [],
+                "BuyTogether": [],
+                "ItemMetadataAttachment": [],
+                "RewardValue": 0,
+                "PriceValidUntil": "2027-06-09T17:41:24Z",
+                "GetInfoErrorMessage": null,
+                "CacheVersionUsedToCallCheckout": "",
+                "teasers": []
+              }
+            }
+          ],
+          "images": [
+            {
+              "imageId": "365754",
+              "cacheId": "365754",
+              "imageTag": "",
+              "imageLabel": "",
+              "imageText": "",
+              "imageUrl": "https://diaio.vtexassets.com/arquivos/ids/365754/Mayonesa-Sabor-Asado-Hellmanns-250-Ml-_1.jpg?v=639077822229900000"
+            },
+            {
+              "imageId": "365755",
+              "cacheId": "365755",
+              "imageTag": "",
+              "imageLabel": "",
+              "imageText": "",
+              "imageUrl": "https://diaio.vtexassets.com/arquivos/ids/365755/Mayonesa-Sabor-Asado-Hellmanns-250-Ml-_2.jpg?v=639077822236570000"
+            },
+            {
+              "imageId": "365756",
+              "cacheId": "365756",
+              "imageTag": "",
+              "imageLabel": "",
+              "imageText": "",
+              "imageUrl": "https://diaio.vtexassets.com/arquivos/ids/365756/Mayonesa-Sabor-Asado-Hellmanns-250-Ml-_3.jpg?v=639077822243200000"
+            }
+          ],
+          "itemId": "311324",
+          "name": "Mayonesa Sabor Asado Hellmanns 250 Ml.",
+          "nameComplete": "Mayonesa Sabor Asado Hellmanns 250 Ml.",
+          "complementName": "",
+          "referenceId": [
+            {
+              "Key": "RefId",
+              "Value": "311324"
+            }
+          ],
+          "measurementUnit": "un",
+          "unitMultiplier": 1,
+          "variations": [],
+          "ean": "7794000009431",
+          "modalType": "",
+          "videos": [],
+          "attachments": [],
+          "isKit": false,
+          "attributes": []
+        }
+      ],
+      "categoriesIds": [
+        "/1/2/10/",
+        "/1/2/",
+        "/1/"
+      ],
+      "releaseDate": 1772150400000,
+      "metaTagDescription": "",
+      "origin": "intelligent-search",
+      "productTitle": ""
+    },
+    {
+      "cacheId": "sp-307328",
+      "productId": "307328",
+      "description": "",
+      "productName": "Mix De Especias Sabor Mediterráneo Knorr 24 Gr.",
+      "productReference": "",
+      "linkText": "mix-de-especias-sabor-mediterraneo-knorr-24-gr-307328",
+      "brand": "KNORR",
+      "brandId": 157,
+      "link": "/mix-de-especias-sabor-mediterraneo-knorr-24-gr-307328/p",
+      "categories": [
+        "/Almacén/Aceites y Aderezos/Especias/",
+        "/Almacén/Aceites y Aderezos/",
+        "/Almacén/"
+      ],
+      "categoryId": "15",
+      "priceRange": {
+        "sellingPrice": {
+          "highPrice": 1365,
+          "lowPrice": 1365
+        },
+        "listPrice": {
+          "highPrice": 1705,
+          "lowPrice": 1705
+        }
+      },
+      "specificationGroups": [
+        {
+          "originalName": "FOOD",
+          "name": "FOOD",
+          "specifications": [
+            {
+              "originalName": "PrecioPorUnd",
+              "name": "PrecioPorUnd",
+              "values": [
+                "710.42"
+              ]
+            },
+            {
+              "originalName": "UnidaddeMedida",
+              "name": "UnidaddeMedida",
+              "values": [
+                "10 Gr"
+              ]
+            }
+          ]
+        },
+        {
+          "originalName": "allSpecifications",
+          "name": "allSpecifications",
+          "specifications": [
+            {
+              "originalName": "PrecioPorUnd",
+              "name": "PrecioPorUnd",
+              "values": [
+                "710.42"
+              ]
+            },
+            {
+              "originalName": "UnidaddeMedida",
+              "name": "UnidaddeMedida",
+              "values": [
+                "10 Gr"
+              ]
+            },
+            {
+              "originalName": "sellerId",
+              "name": "sellerId",
+              "values": [
+                "1"
+              ]
+            }
+          ]
+        }
+      ],
+      "skuSpecifications": [],
+      "productClusters": [
+        {
+          "id": "567",
+          "name": "Todas las Ofertas"
+        },
+        {
+          "id": "572",
+          "name": "Ahorrames"
+        },
+        {
+          "id": "889",
+          "name": "Ofertas Almacen"
+        },
+        {
+          "id": "1332",
+          "name": "Unilever"
+        },
+        {
+          "id": "1531",
+          "name": "rein"
+        },
+        {
+          "id": "5121",
+          "name": "Hot Sale 2025"
+        },
+        {
+          "id": "7959",
+          "name": "35% HS 2025"
+        },
+        {
+          "id": "7960",
+          "name": "Destacados 35% HS 2025"
+        },
+        {
+          "id": "7965",
+          "name": "Almacen y Bebidas HS 2025"
+        },
+        {
+          "id": "7981",
+          "name": "35% HS 2025"
+        },
+        {
+          "id": "8043",
+          "name": "Alimentos y Bebidas s21"
+        },
+        {
+          "id": "8052",
+          "name": "2do al 50% s21"
+        },
+        {
+          "id": "8053",
+          "name": "Mas Destacados s21"
+        },
+        {
+          "id": "8149",
+          "name": "Knorr RM 2025"
+        },
+        {
+          "id": "8219",
+          "name": "Mix Especias Knorr s23"
+        },
+        {
+          "id": "8310",
+          "name": "Alimentos y Bebidas s26"
+        },
+        {
+          "id": "8699",
+          "name": "Mix Sabores s32"
+        },
+        {
+          "id": "9033",
+          "name": "Alimentos y Bebidas s39"
+        },
+        {
+          "id": "9096",
+          "name": "Almacen DP s40"
+        },
+        {
+          "id": "9108",
+          "name": "Knorr DP s40"
+        },
+        {
+          "id": "9156",
+          "name": "Knorr RM Oct25"
+        },
+        {
+          "id": "9211",
+          "name": "Ofertas Dia"
+        },
+        {
+          "id": "9263",
+          "name": "Almacen s44"
+        },
+        {
+          "id": "9265",
+          "name": "Knorr s44"
+        },
+        {
+          "id": "9291",
+          "name": "Alimentos y Bebidas s44"
+        },
+        {
+          "id": "9745",
+          "name": "Ahorra mes Enero"
+        },
+        {
+          "id": "9929",
+          "name": "Alimentos y Bebidas s05"
+        },
+        {
+          "id": "10105",
+          "name": "Almacen s09"
+        },
+        {
+          "id": "10117",
+          "name": "Alimentos y Bebidas s09"
+        },
+        {
+          "id": "10309",
+          "name": "Stockeate s14"
+        },
+        {
+          "id": "10328",
+          "name": "Alimentos y Bebidas s14"
+        },
+        {
+          "id": "10410",
+          "name": "Alimentos y bebidas s16"
+        },
+        {
+          "id": "10480",
+          "name": "Alimentos y Bebidas s18"
+        },
+        {
+          "id": "10509",
+          "name": "Almacen s18"
+        },
+        {
+          "id": "10523",
+          "name": "Hot Sale 2026"
+        },
+        {
+          "id": "10524",
+          "name": "Unilever Food Hot Sale 2026"
+        },
+        {
+          "id": "10526",
+          "name": "Campeones de la Previa"
+        },
+        {
+          "id": "10549",
+          "name": "Almacen HS 2026"
+        },
+        {
+          "id": "10565",
+          "name": "Comidas listas y Aderezos HS 2026"
+        },
+        {
+          "id": "10592",
+          "name": "40%  HS 2026"
+        },
+        {
+          "id": "10600",
+          "name": "UL Food HS 2026"
+        },
+        {
+          "id": "10628",
+          "name": "40% HS 2026"
+        },
+        {
+          "id": "10632",
+          "name": "Alimentos y Bebidas HotSale 2026"
+        },
+        {
+          "id": "10637",
+          "name": "Almacen y Congelados HS 2026"
+        },
+        {
+          "id": "10640",
+          "name": "Knorr HS26"
+        },
+        {
+          "id": "10659",
+          "name": "Aderezos y Especias HS 2026"
+        },
+        {
+          "id": "10744",
+          "name": "Alimentos y Bebidas s22"
+        }
+      ],
+      "clusterHighlights": [
+        {
+          "id": "572",
+          "name": "Ahorrames"
+        }
+      ],
+      "properties": [
+        {
+          "name": "PrecioPorUnd",
+          "originalName": "PrecioPorUnd",
+          "values": [
+            "710.42"
+          ]
+        },
+        {
+          "name": "UnidaddeMedida",
+          "originalName": "UnidaddeMedida",
+          "values": [
+            "10 Gr"
+          ]
+        },
+        {
+          "name": "sellerId",
+          "originalName": "sellerId",
+          "values": [
+            "1"
+          ]
+        }
+      ],
+      "items": [
+        {
+          "sellers": [
+            {
+              "sellerId": "1",
+              "sellerName": "Supermercados DIA",
+              "addToCartLink": "",
+              "sellerDefault": true,
+              "commertialOffer": {
+                "DeliverySlaSamplesPerRegion": {},
+                "DeliverySlaSamples": [],
+                "AvailableQuantity": 10000,
+                "discountHighlights": [],
+                "Installments": [
+                  {
+                    "Value": 1365,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1365,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express à vista"
+                  },
+                  {
+                    "Value": 1365,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1365,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa à vista"
+                  },
+                  {
+                    "Value": 1365,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1365,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard à vista"
+                  },
+                  {
+                    "Value": 1365,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1365,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Visa Electron",
+                    "PaymentSystemGroupName": "debitCardPaymentGroup",
+                    "Name": "Visa Electron à vista"
+                  },
+                  {
+                    "Value": 1365,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1365,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Vale",
+                    "PaymentSystemGroupName": "giftCardPaymentGroup",
+                    "Name": "Vale à vista"
+                  },
+                  {
+                    "Value": 1365,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1365,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal à vista"
+                  },
+                  {
+                    "Value": 1365,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1365,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja à vista"
+                  },
+                  {
+                    "Value": 455,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1365,
+                    "NumberOfInstallments": 3,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja 3 vezes sem juros"
+                  },
+                  {
+                    "Value": 1365,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1365,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Maestro",
+                    "PaymentSystemGroupName": "debitCardPaymentGroup",
+                    "Name": "Maestro à vista"
+                  },
+                  {
+                    "Value": 1365,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1365,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Mastercard Debit",
+                    "PaymentSystemGroupName": "debitCardPaymentGroup",
+                    "Name": "Mastercard Debit à vista"
+                  },
+                  {
+                    "Value": 1365,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1365,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "MercadoPagoPro",
+                    "PaymentSystemGroupName": "MercadoPagoProPaymentGroup",
+                    "Name": "MercadoPagoPro à vista"
+                  },
+                  {
+                    "Value": 1365,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1365,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "GOcuotas",
+                    "PaymentSystemGroupName": "GOcuotasPaymentGroup",
+                    "Name": "GOcuotas à vista"
+                  },
+                  {
+                    "Value": 1365,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1365,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Modo Payment",
+                    "PaymentSystemGroupName": "Modo PaymentPaymentGroup",
+                    "Name": "Modo Payment à vista"
+                  }
+                ],
+                "Price": 1365,
+                "ListPrice": 1705,
+                "spotPrice": 1365,
+                "taxPercentage": 0,
+                "PriceWithoutDiscount": 1365,
+                "Tax": 0,
+                "GiftSkuIds": [],
+                "BuyTogether": [],
+                "ItemMetadataAttachment": [],
+                "RewardValue": 0,
+                "PriceValidUntil": "2027-06-09T17:47:36Z",
+                "GetInfoErrorMessage": null,
+                "CacheVersionUsedToCallCheckout": "",
+                "teasers": []
+              }
+            }
+          ],
+          "images": [
+            {
+              "imageId": "350383",
+              "cacheId": "350383",
+              "imageTag": "",
+              "imageLabel": "",
+              "imageText": "",
+              "imageUrl": "https://diaio.vtexassets.com/arquivos/ids/350383/Mix-De-Especias-Sabor-Mediterraneo-Knorr-24-Gr-_1.jpg?v=638822086625830000"
+            }
+          ],
+          "itemId": "307328",
+          "name": "Mix De Especias Sabor Mediterráneo Knorr 24 Gr.",
+          "nameComplete": "Mix De Especias Sabor Mediterráneo Knorr 24 Gr.",
+          "complementName": "",
+          "referenceId": [
+            {
+              "Key": "RefId",
+              "Value": "307328"
+            }
+          ],
+          "measurementUnit": "un",
+          "unitMultiplier": 1,
+          "variations": [],
+          "ean": "7794000009141",
+          "modalType": "",
+          "videos": [],
+          "attachments": [],
+          "isKit": false,
+          "attributes": []
+        }
+      ],
+      "categoriesIds": [
+        "/1/2/15/",
+        "/1/2/",
+        "/1/"
+      ],
+      "releaseDate": 1746489600000,
+      "metaTagDescription": "",
+      "origin": "intelligent-search",
+      "productTitle": ""
+    }
+  ]
+}

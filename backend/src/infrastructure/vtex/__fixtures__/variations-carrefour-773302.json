@@ -1,0 +1,42 @@
+{
+  "productId": 773302,
+  "name": "Impresora multifuncion HP deskjet ink advantaje 2975 wif",
+  "salesChannel": "1",
+  "available": true,
+  "displayMode": "especificacao",
+  "dimensions": [],
+  "dimensionsInputType": {},
+  "dimensionsMap": {},
+  "skus": [
+    {
+      "sku": 277879,
+      "skuname": "Impresora multifuncion HP deskjet ink advantaje 2975 wif",
+      "dimensions": {},
+      "available": true,
+      "availablequantity": 99999,
+      "cacheVersionUsedToCallCheckout": "_",
+      "listPriceFormated": "$ 179.000,00",
+      "listPrice": 17900000,
+      "taxFormated": "$ 0,00",
+      "taxAsInt": 0,
+      "bestPriceFormated": "$ 159.000,00",
+      "bestPrice": 15900000,
+      "spotPrice": 15900000,
+      "installments": 1,
+      "installmentsValue": 15900000,
+      "installmentsInsterestRate": 0,
+      "image": "https://carrefourar.vteximg.com.br/arquivos/ids/800647-292-292/198828486035_01.jpg?v=639070272757370000",
+      "sellerId": "1",
+      "seller": "CARREFOUR",
+      "measures": {
+        "cubicweight": 0,
+        "height": 1,
+        "length": 1,
+        "weight": 3000,
+        "width": 1
+      },
+      "unitMultiplier": 1,
+      "rewardValue": 0
+    }
+  ]
+}

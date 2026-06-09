@@ -1,0 +1,42 @@
+{
+  "productId": 25417,
+  "name": "Arroz Largo Fino Ala 1 Kg.",
+  "salesChannel": "1",
+  "available": true,
+  "displayMode": "especificacao",
+  "dimensions": [],
+  "dimensionsInputType": {},
+  "dimensionsMap": {},
+  "skus": [
+    {
+      "sku": 25417,
+      "skuname": "Arroz Largo Fino Ala 1 Kg.",
+      "dimensions": {},
+      "available": true,
+      "availablequantity": 99999,
+      "cacheVersionUsedToCallCheckout": "_",
+      "listPriceFormated": "$ 1.970,00",
+      "listPrice": 197000,
+      "taxFormated": "$ 0,00",
+      "taxAsInt": 0,
+      "bestPriceFormated": "$ 1.575,00",
+      "bestPrice": 157500,
+      "spotPrice": 157500,
+      "installments": 3,
+      "installmentsValue": 52500,
+      "installmentsInsterestRate": 0,
+      "image": "https://ardiaprod.vteximg.com.br/arquivos/ids/370748-500-500/Arroz-Largo-Fino-Ala-1-Kg-_1.jpg?v=639149534004170000",
+      "sellerId": "1",
+      "seller": "Supermercados DIA",
+      "measures": {
+        "cubicweight": 1,
+        "height": 1,
+        "length": 1,
+        "weight": 1,
+        "width": 1
+      },
+      "unitMultiplier": 1,
+      "rewardValue": 0
+    }
+  ]
+}

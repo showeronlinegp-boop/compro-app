@@ -1,0 +1,42 @@
+{
+  "productId": 4251,
+  "name": "Aceite De Girasol Cocinero 1.5 L",
+  "salesChannel": "34",
+  "available": true,
+  "displayMode": "especificacao",
+  "dimensions": [],
+  "dimensionsInputType": {},
+  "dimensionsMap": {},
+  "skus": [
+    {
+      "sku": 244750,
+      "skuname": "Aceite De Girasol Cocinero 1.5 L",
+      "dimensions": {},
+      "available": true,
+      "availablequantity": 99999,
+      "cacheVersionUsedToCallCheckout": "_",
+      "listPriceFormated": "$ 528.017,00",
+      "listPrice": 52801700,
+      "taxFormated": "$ 0,00",
+      "taxAsInt": 0,
+      "bestPriceFormated": "$ 6.389,00",
+      "bestPrice": 638900,
+      "spotPrice": 638900,
+      "installments": 30,
+      "installmentsValue": 21296,
+      "installmentsInsterestRate": null,
+      "image": "https://jumboargentina.vteximg.com.br/arquivos/ids/614743-750-750/Aceite-De-Girasol-Cocinero-1-5-L-1-245602.jpg?v=637409203109900000",
+      "sellerId": "1",
+      "seller": "Vea Argentina",
+      "measures": {
+        "cubicweight": 50.22,
+        "height": 31,
+        "length": 90,
+        "weight": 1420,
+        "width": 90
+      },
+      "unitMultiplier": 1,
+      "rewardValue": 0
+    }
+  ]
+}

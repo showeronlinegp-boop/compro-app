@@ -1,0 +1,42 @@
+{
+  "productId": 698913,
+  "name": "Tostadora Electrolux  ETS11 blanca",
+  "salesChannel": "1",
+  "available": true,
+  "displayMode": "especificacao",
+  "dimensions": [],
+  "dimensionsInputType": {},
+  "dimensionsMap": {},
+  "skus": [
+    {
+      "sku": 92831,
+      "skuname": "Tostadora Electrolux  ETS11 blanca",
+      "dimensions": {},
+      "available": true,
+      "availablequantity": 10,
+      "cacheVersionUsedToCallCheckout": "_",
+      "listPriceFormated": "$ 0,00",
+      "listPrice": 0,
+      "taxFormated": "$ 0,00",
+      "taxAsInt": 0,
+      "bestPriceFormated": "$ 48.900,00",
+      "bestPrice": 4890000,
+      "spotPrice": 4890000,
+      "installments": 1,
+      "installmentsValue": 4890000,
+      "installmentsInsterestRate": 0,
+      "image": "https://carrefourar.vteximg.com.br/arquivos/ids/242100-292-292/7896347187787_01.jpg?v=637865951839100000",
+      "sellerId": "1",
+      "seller": "CARREFOUR",
+      "measures": {
+        "cubicweight": 0,
+        "height": 1,
+        "length": 1,
+        "weight": 1,
+        "width": 1
+      },
+      "unitMultiplier": 1,
+      "rewardValue": 0
+    }
+  ]
+}
