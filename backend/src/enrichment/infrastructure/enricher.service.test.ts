@@ -209,14 +209,18 @@ describe('enricher.service — Strategy B (JSON-LD HTML / dia)', () => {
     });
 
     (fetchPromoPrice as ReturnType<typeof vi.fn>).mockResolvedValue({
-      promoPrice: 1575,
-      listPrice: null,
+      kind: 'found',
+      result: { promoPrice: 1575, listPrice: null },
     });
 
     const enricher = makeEnricher(db);
     await enricher.enrichSuper('dia');
 
-    expect(fetchPromoPrice).toHaveBeenCalledWith('https://diaonline.supermercadosdia.com.ar/p');
+    // fetchPromoPrice now receives (productUrl, baseUrl) — baseUrl is the super's baseUrl
+    expect(fetchPromoPrice).toHaveBeenCalledWith(
+      'https://diaonline.supermercadosdia.com.ar/p',
+      'https://diaonline.supermercadosdia.com.ar',
+    );
     expect(fetchSearchPromotions).not.toHaveBeenCalled();
   });
 
@@ -228,8 +232,8 @@ describe('enricher.service — Strategy B (JSON-LD HTML / dia)', () => {
     });
 
     (fetchPromoPrice as ReturnType<typeof vi.fn>).mockResolvedValue({
-      promoPrice: 1575,
-      listPrice: null,
+      kind: 'found',
+      result: { promoPrice: 1575, listPrice: null },
     });
 
     const enricher = makeEnricher(db);
@@ -245,14 +249,35 @@ describe('enricher.service — Strategy B (JSON-LD HTML / dia)', () => {
     expect(row?.discount_pct).toBe(21);
   });
 
-  it('carrefour: writes nothing when fetchPromoPrice returns null', async () => {
+  it('carrefour: writes nothing when fetchPromoPrice returns no_data', async () => {
     insertProduct(db, {
       super: 'carrefour',
       product_url: 'https://www.carrefour.com.ar/p',
       raw_price: 5000,
     });
 
-    (fetchPromoPrice as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    // carrefour renders JSON-LD client-side → no_data (was: null)
+    (fetchPromoPrice as ReturnType<typeof vi.fn>).mockResolvedValue({ kind: 'no_data' });
+
+    const enricher = makeEnricher(db);
+    await enricher.enrichSuper('carrefour');
+
+    const row = db.prepare('SELECT offer_price, discount_pct FROM products WHERE id = 1').get() as
+      | { offer_price: number | null; discount_pct: number }
+      | undefined;
+
+    expect(row?.offer_price).toBeNull();
+    expect(row?.discount_pct).toBe(0);
+  });
+
+  it('carrefour: writes nothing when fetchPromoPrice returns fetch_error', async () => {
+    insertProduct(db, {
+      super: 'carrefour',
+      product_url: 'https://www.carrefour.com.ar/p',
+      raw_price: 5000,
+    });
+
+    (fetchPromoPrice as ReturnType<typeof vi.fn>).mockResolvedValue({ kind: 'fetch_error' });
 
     const enricher = makeEnricher(db);
     await enricher.enrichSuper('carrefour');
@@ -269,7 +294,7 @@ describe('enricher.service — Strategy B (JSON-LD HTML / dia)', () => {
     insertProduct(db, { super: 'dia', id: 1 });
     insertProduct(db, { super: 'dia', id: 2, product_id: 'prod-2' });
 
-    (fetchPromoPrice as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    (fetchPromoPrice as ReturnType<typeof vi.fn>).mockResolvedValue({ kind: 'no_data' });
 
     const enricher = makeEnricher(db);
     await enricher.enrichSuper('dia');
@@ -278,5 +303,78 @@ describe('enricher.service — Strategy B (JSON-LD HTML / dia)', () => {
     expect(st.dia?.total).toBe(2);
     expect(st.dia?.done).toBe(2);
     expect(st.dia?.running).toBe(false);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("enricher.service — Strategy 'none' (carrefour)", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = makeTempDb();
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    db.close();
+  });
+
+  it("performs NO fetches when enrichStrategy='none' (carrefour)", async () => {
+    insertProduct(db, {
+      super: 'carrefour',
+      id: 1,
+      product_url: 'https://www.carrefour.com.ar/p',
+      raw_price: 5000,
+    });
+    insertProduct(db, {
+      super: 'carrefour',
+      id: 2,
+      product_id: 'prod-2',
+      product_url: 'https://www.carrefour.com.ar/p2',
+      raw_price: 3000,
+    });
+
+    const enricher = makeEnricher(db);
+    await enricher.enrichSuper('carrefour');
+
+    // Neither fetch function should have been called at all
+    expect(fetchPromoPrice).not.toHaveBeenCalled();
+    expect(fetchSearchPromotions).not.toHaveBeenCalled();
+    expect(fetchSkuId).not.toHaveBeenCalled();
+  });
+
+  it("sets updated=0 and done=total when enrichStrategy='none'", async () => {
+    insertProduct(db, { super: 'carrefour', id: 1, raw_price: 5000 });
+    insertProduct(db, { super: 'carrefour', id: 2, product_id: 'prod-2', raw_price: 3000 });
+
+    const enricher = makeEnricher(db);
+    await enricher.enrichSuper('carrefour');
+
+    const st = enricher.getStatus();
+    expect(st.carrefour?.updated).toBe(0);
+    expect(st.carrefour?.done).toBe(2); // equals total
+    expect(st.carrefour?.total).toBe(2);
+    expect(st.carrefour?.running).toBe(false);
+    expect(st.carrefour?.error).toBeNull();
+  });
+
+  it("leaves existing crawl discounts untouched in DB when enrichStrategy='none'", async () => {
+    // Simulate a product that already has a crawl-sourced discount
+    db.prepare(
+      `INSERT INTO products (id, super, product_id, sku_id, raw_price, product_url, offer_price, discount_pct)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(1, 'carrefour', 'prod-1', null, 5000, 'https://www.carrefour.com.ar/p', 4000, 20);
+
+    const enricher = makeEnricher(db);
+    await enricher.enrichSuper('carrefour');
+
+    // DB values must remain exactly as set by the crawl
+    const row = db.prepare('SELECT offer_price, discount_pct FROM products WHERE id = 1').get() as
+      | { offer_price: number | null; discount_pct: number }
+      | undefined;
+
+    expect(row?.offer_price).toBe(4000);
+    expect(row?.discount_pct).toBe(20);
   });
 });

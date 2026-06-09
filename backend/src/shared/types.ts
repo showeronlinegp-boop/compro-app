@@ -2,9 +2,36 @@
 
 export type SuperKey = 'vea' | 'masonline' | 'carrefour' | 'dia';
 
+/**
+ * Per-phase concurrency and throttle settings for the crawler.
+ * All fields are optional — missing values fall back to env then static defaults.
+ */
+export interface CrawlConcurrency {
+  /** Max concurrent IS-API probe requests in the probe phase. */
+  probeConc: number;
+  /** Max concurrent page requests within a single partition. */
+  pageConc: number;
+  /** Max concurrent partition workers in syncSuper. */
+  partitionConc: number;
+  /** Inter-partition courtesy delay in ms. */
+  throttleMs: number;
+}
+
 export interface SuperConfig {
   baseUrl: string;
   promoSeller?: string;
+  /** Optional per-super concurrency overrides (wins over env and static defaults). */
+  crawl?: Partial<CrawlConcurrency>;
+  /**
+   * Enrichment strategy override for this super.
+   *
+   * - 'promotions': use the search-promotions endpoint (requires promoSeller).
+   * - 'jsonld':     scrape product pages for server-side JSON-LD price data.
+   * - 'none':       skip enrichment entirely; discounts come from the crawl itself.
+   *
+   * When unset, the strategy is derived: promoSeller present → 'promotions', else → 'jsonld'.
+   */
+  enrichStrategy?: 'promotions' | 'jsonld' | 'none';
 }
 
 // ─── DB row types ─────────────────────────────────────────────────────────────

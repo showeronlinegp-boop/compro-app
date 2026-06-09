@@ -17,7 +17,7 @@
  */
 
 import type Database from 'better-sqlite3';
-import { SUPERS } from '../../config/supers.js';
+import { SUPERS, resolveEnrichStrategy } from '../../config/supers.js';
 import {
   ENRICH_CONCURRENCY,
   ENRICH_PROMO_BATCH,
@@ -27,6 +27,7 @@ import {
 } from '../../config/throttles.js';
 import { fetchSkuId } from '../../infrastructure/vtex/catalog-client.js';
 import {
+  type PromoFetchOutcome,
   fetchPromoPrice,
   fetchSearchPromotions,
 } from '../../infrastructure/vtex/promotions-client.js';
@@ -147,6 +148,7 @@ async function enrichViaPromos(
 
 async function enrichViaHtmlScraping(
   superKey: string,
+  baseUrl: string,
   products: ProductEnrichRow[],
   st: EnrichStatus,
   db: Database.Database,
@@ -155,18 +157,41 @@ async function enrichViaHtmlScraping(
     'UPDATE products SET offer_price = ?, discount_pct = ? WHERE id = ?',
   );
 
+  // Observability counters — track each outcome kind so "broken" never looks
+  // like "no promos found".
+  let fetched_ok = 0;
+  let fetch_errors = 0;
+  let data_found = 0;
+  // promo_applied mirrors st.updated — tracked here for the summary log.
+
   for (let i = 0; i < products.length; i += ENRICH_CONCURRENCY) {
     const batch = products.slice(i, i + ENRICH_CONCURRENCY);
 
-    const results = await Promise.all(
-      batch.map((p) => fetchPromoPrice(p.product_url ?? '').then((r) => ({ p, r }))),
+    const outcomes = await Promise.all(
+      batch.map((p) =>
+        fetchPromoPrice(p.product_url ?? '', baseUrl).then(
+          (outcome): { p: ProductEnrichRow; outcome: PromoFetchOutcome } => ({ p, outcome }),
+        ),
+      ),
     );
 
-    for (const { p, r } of results) {
+    for (const { p, outcome } of outcomes) {
       st.done++;
-      if (!r) continue;
 
-      const result = offerPrice(p.raw_price, r);
+      if (outcome.kind === 'fetch_error') {
+        fetch_errors++;
+        continue;
+      }
+
+      fetched_ok++;
+
+      if (outcome.kind === 'no_data') {
+        continue;
+      }
+
+      // outcome.kind === 'found'
+      data_found++;
+      const result = offerPrice(p.raw_price, outcome.result);
       if (!result) continue;
 
       updateStmt.run(result.offer_price, result.discount_pct, p.id);
@@ -180,6 +205,21 @@ async function enrichViaHtmlScraping(
     if (st.done % 200 === 0 || st.done === st.total) {
       console.log(`[enrich:${superKey}] ${st.done}/${st.total} — ${st.updated} with promo`);
     }
+  }
+
+  // Summary line for observability — make every counter visible at run end.
+  console.log(
+    `[enrich:${superKey}] done — fetched_ok=${fetched_ok} fetch_errors=${fetch_errors} data_found=${data_found} promo_applied=${st.updated}`,
+  );
+
+  // Safety-net monitor: if ZERO pages had server-side JSON-LD but we fetched products,
+  // the store may have switched to client-side rendering (like Carrefour).
+  // This does NOT abort the run — it just flags the situation so an operator can set
+  // enrichStrategy='none' for that super.
+  if (data_found === 0 && products.length > 0) {
+    console.warn(
+      `[enrich:${superKey}] WARNING: 0/${products.length} pages had server-side JSON-LD — store may have gone client-side; consider enrichStrategy='none'`,
+    );
   }
 }
 
@@ -209,11 +249,17 @@ export function makeEnricher(db: Database.Database): EnrichService {
     };
     setStatus(superKey, st);
 
-    const strategy = cfg?.promoSeller ? 'search-promotions' : 'html-scraping';
+    const strategy = resolveEnrichStrategy(superKey);
     console.log(`[enrich:${superKey}] Starting (${strategy}) — ${st.total} products`);
 
     try {
-      if (cfg?.promoSeller) {
+      if (strategy === 'none') {
+        // Skip enrichment entirely. Discounts for this super come from the crawl itself
+        // (IS-API PriceWithoutDiscount vs Price). The DB records are already correct — do
+        // not overwrite them with zeros. Just mark the run complete immediately.
+        st.done = st.total;
+        console.log(`[enrich:${superKey}] skipped — strategy=none (discounts come from the crawl)`);
+      } else if (strategy === 'promotions') {
         await enrichViaPromos(
           superKey,
           cfg as { baseUrl: string; promoSeller: string },
@@ -222,7 +268,9 @@ export function makeEnricher(db: Database.Database): EnrichService {
           db,
         );
       } else {
-        await enrichViaHtmlScraping(superKey, products, st, db);
+        // strategy === 'jsonld'
+        const baseUrl = cfg?.baseUrl ?? '';
+        await enrichViaHtmlScraping(superKey, baseUrl, products, st, db);
       }
       console.log(`[enrich:${superKey}] Done. ${st.updated}/${st.total} products with promo.`);
     } catch (err) {
