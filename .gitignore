@@ -12,6 +12,9 @@ compro.db-wal
 # Build del frontend
 frontend/dist/
 
+# Build del backend
+backend/dist/
+
 # Variables de entorno
 .env
 .env.local

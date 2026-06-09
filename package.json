@@ -3,14 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "backend": "cd backend && node server.js",
-    "backend:dev": "cd backend && node --watch server.js",
+    "backend": "cd backend && npm start",
+    "backend:dev": "cd backend && npm run dev",
     "frontend": "cd frontend && npm run dev",
     "dev": "concurrently \"npm run backend:dev\" \"npm run frontend\"",
-    "build": "cd frontend && npm run build",
-    "start": "cd backend && node server.js",
-    "sync": "cd backend && node -e \"require('./crawler-service').syncAll().then(r=>console.log(r))\"",
-    "install:all": "cd backend && npm install && cd ../frontend && npm install"
+    "build": "cd backend && npm run build && cd ../frontend && npm run build",
+    "start": "cd backend && npm start",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

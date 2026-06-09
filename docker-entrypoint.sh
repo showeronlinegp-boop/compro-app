@@ -1,10 +1,9 @@
 #!/bin/sh
 set -e
 
-# Si el contenedor crasheó, node-sqlite3-wasm deja un .lock huérfano
-rm -rf "${DB_PATH}.lock"
-
 # Crear directorio de datos si no existe
 mkdir -p "$(dirname "$DB_PATH")"
 
-exec node backend/server.js
+# Pure TypeScript mode (Slice 6 final cutover): run compiled dist/main.js directly.
+# tsx is no longer needed — all legacy CJS files have been removed.
+exec node /app/backend/dist/main.js

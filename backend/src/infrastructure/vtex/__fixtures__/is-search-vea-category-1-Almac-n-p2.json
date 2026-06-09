@@ -1,0 +1,3746 @@
+{
+  "recordsFiltered": 2223,
+  "products": [
+    {
+      "cacheId": "sp-3069078",
+      "productId": "3069078",
+      "description": "<h2>Disfrutá un momento dulce y explosivo</h2>Dale un gusto a tu día con el Alfajor Block 40 Gr Cofler. La combinación perfecta de dulce de leche, chocolate y el toque inconfundible del Block que tanto te gusta, en un formato ideal para llevar a todos lados.<h3>Porque elegir el Alfajor Block 40 Gr Cofler</h3><ul><li>Relleno cremoso de dulce de leche</li><li>Baño de chocolate Cofler con pedacitos de Block</li><li>Textura crocante y sabor irresistible</li><li>Tamaño justo para darte ese gustito cuando querés</li></ul>Sumalo a tus pausas y hacelas mucho más ricas. Compralo ahora con envío a domicilio o retiro en tienda.",
+      "productName": "Alfajor Block 40 Gr Cofler",
+      "productReference": "11840530003",
+      "linkText": "alfajor-block-40-gr-cofler-2",
+      "brand": "BON O BON",
+      "brandId": 131,
+      "link": "/alfajor-block-40-gr-cofler-2/p",
+      "categories": [
+        "/Almacén/Golosinas y Chocolates/Alfajores/",
+        "/Almacén/Golosinas y Chocolates/",
+        "/Almacén/"
+      ],
+      "categoryId": "165",
+      "priceRange": {
+        "sellingPrice": {
+          "highPrice": 1242,
+          "lowPrice": 1242
+        },
+        "listPrice": {
+          "highPrice": 102645,
+          "lowPrice": 102645
+        }
+      },
+      "specificationGroups": [
+        {
+          "originalName": "Características Destacadas",
+          "name": "Características Destacadas",
+          "specifications": [
+            {
+              "originalName": "Tipo de Producto",
+              "name": "Tipo de Producto",
+              "values": [
+                "Alfajores"
+              ]
+            },
+            {
+              "originalName": "País de Origen",
+              "name": "País de Origen",
+              "values": [
+                "Argentina"
+              ]
+            },
+            {
+              "originalName": "Origen",
+              "name": "Origen",
+              "values": [
+                "Nacional"
+              ]
+            }
+          ]
+        },
+        {
+          "originalName": "Informacion Nutricional OkTo",
+          "name": "Informacion Nutricional OkTo",
+          "specifications": [
+            {
+              "originalName": "Ingredientes",
+              "name": "Ingredientes",
+              "values": [
+                "'emulsionante lecitina de soja', 'emulsionante poliglicerol poliricinoleato', 'emulsionante triestearato de sorbitán', 'aromatizante cacao 36%', 'harina de trigo', 'hierro', 'ácido fólico', 'tiamina', 'riboflavina', 'niacina', 'maní tostado 17%', 'azúcar', 'aceite vegetal de palma interesterificado y fraccionado', 'aceite vegetal de girasol alto oleico', 'aceite vegetal de soja hidrogenado', 'grasa bovina refinada', 'cacao en polvo', 'jarabe de maíz de alta fructosa', 'leche descremada en polvo', 'sal', 'almidón', 'leudante químico bicarbonato amonio', 'leudante químico bicarbonato de sodio', 'conservador propionato de calcio', 'emulsionante lecitina de soja', 'aromatizante artificial vainillina', 'aroma avellana', 'aroma leche condensada', 'maní', 'leche', 'derivados de trigo', 'soja'"
+              ]
+            },
+            {
+              "originalName": "Trazas",
+              "name": "Trazas",
+              "values": [
+                "'almendra', 'avena', 'cebada', 'centeno', 'huevo'"
+              ]
+            },
+            {
+              "originalName": "Condiciones Alimentarias",
+              "name": "Condiciones Alimentarias",
+              "values": [
+                "'maní', 'leche', 'derivados de trigo', 'soja'"
+              ]
+            },
+            {
+              "originalName": "Tabla Nutricional",
+              "name": "Tabla Nutricional",
+              "values": [
+                "{'nutritional_table_set_name': 'Tabla Nutricional', 'basic_unit_name': 'g', 'portion_text': '1 Alfajor', 'portion_value': 40.7, 'portion_unit_name': 'g', 'num_portions': 1, 'energy_value': 529, 'energy_value_per_portion': 215.3, 'energy_unit_name': 'kCal', 'protein_value': 8.5, 'protein_value_per_portion': 3.5, 'protein_unit_name': 'g', 'fat_total_value': 31, 'fat_total_value_per_portion': 12.6, 'fat_total_unit_name': 'g', 'fat_sat_value': 14, 'fat_sat_value_per_portion': 5.7, 'fat_sat_unit_name': 'g', 'fat_mono_value': 13, 'fat_mono_value_per_portion': 5.3, 'fat_mono_unit_name': 'g', 'fat_poli_value': 1.8, 'fat_poli_value_per_portion': 0.7, 'fat_poli_unit_name': 'g', 'fat_trans_value': 0.4, 'fat_trans_value_per_portion': 0.2, 'fat_trans_unit_name': 'g', 'fat_cholesterol_value': 19, 'fat_cholesterol_value_per_portion': 7.7, 'fat_cholesterol_unit_name': 'mg', 'sugars_value': 22, 'sugars_value_per_portion': 9, 'sugars_unit_name': 'g', 'fiber_value': 3.1, 'fiber_value_per_portion': 1.3, 'fiber_unit_name': 'g', 'sodium_value': 59, 'sodium_value_per_portion': 24, 'sodium_unit_name': 'mg'}"
+              ]
+            },
+            {
+              "originalName": "Sellos",
+              "name": "Sellos",
+              "values": [
+                "[{'certification_type_code': 'fish_free', 'certification_type_name': 'Libre de Peces', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1778445952}]}, {'certification_type_code': 'seafood_free', 'certification_type_name': 'Libre de Mariscos', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1778445952}]}, {'certification_type_code': 'walnuts_free', 'certification_type_name': 'Libre de Nueces', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1778445952}]}, {'certification_type_code': 'sulphite_free', 'certification_type_name': 'Libre de Sulfitos', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1778445952}]}]"
+              ]
+            }
+          ]
+        },
+        {
+          "originalName": "Configuraciones",
+          "name": "Configuraciones",
+          "specifications": [
+            {
+              "originalName": "ProductData",
+              "name": "ProductData",
+              "values": [
+                "{\"allow_notes\":true,\"allow_substitute\":true,\"cart_limit\":\"0\",\"brandName\":\"BON O BON\",\"brandEcomId\":\"131\",\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"measurement_unit_un\":\"gr.\",\"unit_multiplier_un\":40,\"measurement_unit_selector\":false,\"url_canonical\":null,\"provider_code\":\"6493\"}"
+              ]
+            },
+            {
+              "originalName": "SkuData",
+              "name": "SkuData",
+              "values": [
+                "{\"3068792\":{\"ref_id\":\"11840530003\",\"cart_limit\":0,\"allow_notes\":true,\"allow_substitute\":true,\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"promotions\":[],\"url_canonical\":null,\"measurement_unit_un\":\"gr.\",\"unit_multiplier_un\":40,\"measurement_unit_selector\":false,\"release_data\":{\"is_new\":false},\"cart_type\":\"1\"}}"
+              ]
+            }
+          ]
+        },
+        {
+          "originalName": "allSpecifications",
+          "name": "allSpecifications",
+          "specifications": [
+            {
+              "originalName": "ProductData",
+              "name": "ProductData",
+              "values": [
+                "{\"allow_notes\":true,\"allow_substitute\":true,\"cart_limit\":\"0\",\"brandName\":\"BON O BON\",\"brandEcomId\":\"131\",\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"measurement_unit_un\":\"gr.\",\"unit_multiplier_un\":40,\"measurement_unit_selector\":false,\"url_canonical\":null,\"provider_code\":\"6493\"}"
+              ]
+            },
+            {
+              "originalName": "SkuData",
+              "name": "SkuData",
+              "values": [
+                "{\"3068792\":{\"ref_id\":\"11840530003\",\"cart_limit\":0,\"allow_notes\":true,\"allow_substitute\":true,\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"promotions\":[],\"url_canonical\":null,\"measurement_unit_un\":\"gr.\",\"unit_multiplier_un\":40,\"measurement_unit_selector\":false,\"release_data\":{\"is_new\":false},\"cart_type\":\"1\"}}"
+              ]
+            },
+            {
+              "originalName": "Ingredientes",
+              "name": "Ingredientes",
+              "values": [
+                "'emulsionante lecitina de soja', 'emulsionante poliglicerol poliricinoleato', 'emulsionante triestearato de sorbitán', 'aromatizante cacao 36%', 'harina de trigo', 'hierro', 'ácido fólico', 'tiamina', 'riboflavina', 'niacina', 'maní tostado 17%', 'azúcar', 'aceite vegetal de palma interesterificado y fraccionado', 'aceite vegetal de girasol alto oleico', 'aceite vegetal de soja hidrogenado', 'grasa bovina refinada', 'cacao en polvo', 'jarabe de maíz de alta fructosa', 'leche descremada en polvo', 'sal', 'almidón', 'leudante químico bicarbonato amonio', 'leudante químico bicarbonato de sodio', 'conservador propionato de calcio', 'emulsionante lecitina de soja', 'aromatizante artificial vainillina', 'aroma avellana', 'aroma leche condensada', 'maní', 'leche', 'derivados de trigo', 'soja'"
+              ]
+            },
+            {
+              "originalName": "Trazas",
+              "name": "Trazas",
+              "values": [
+                "'almendra', 'avena', 'cebada', 'centeno', 'huevo'"
+              ]
+            },
+            {
+              "originalName": "Condiciones Alimentarias",
+              "name": "Condiciones Alimentarias",
+              "values": [
+                "'maní', 'leche', 'derivados de trigo', 'soja'"
+              ]
+            },
+            {
+              "originalName": "Tabla Nutricional",
+              "name": "Tabla Nutricional",
+              "values": [
+                "{'nutritional_table_set_name': 'Tabla Nutricional', 'basic_unit_name': 'g', 'portion_text': '1 Alfajor', 'portion_value': 40.7, 'portion_unit_name': 'g', 'num_portions': 1, 'energy_value': 529, 'energy_value_per_portion': 215.3, 'energy_unit_name': 'kCal', 'protein_value': 8.5, 'protein_value_per_portion': 3.5, 'protein_unit_name': 'g', 'fat_total_value': 31, 'fat_total_value_per_portion': 12.6, 'fat_total_unit_name': 'g', 'fat_sat_value': 14, 'fat_sat_value_per_portion': 5.7, 'fat_sat_unit_name': 'g', 'fat_mono_value': 13, 'fat_mono_value_per_portion': 5.3, 'fat_mono_unit_name': 'g', 'fat_poli_value': 1.8, 'fat_poli_value_per_portion': 0.7, 'fat_poli_unit_name': 'g', 'fat_trans_value': 0.4, 'fat_trans_value_per_portion': 0.2, 'fat_trans_unit_name': 'g', 'fat_cholesterol_value': 19, 'fat_cholesterol_value_per_portion': 7.7, 'fat_cholesterol_unit_name': 'mg', 'sugars_value': 22, 'sugars_value_per_portion': 9, 'sugars_unit_name': 'g', 'fiber_value': 3.1, 'fiber_value_per_portion': 1.3, 'fiber_unit_name': 'g', 'sodium_value': 59, 'sodium_value_per_portion': 24, 'sodium_unit_name': 'mg'}"
+              ]
+            },
+            {
+              "originalName": "Sellos",
+              "name": "Sellos",
+              "values": [
+                "[{'certification_type_code': 'fish_free', 'certification_type_name': 'Libre de Peces', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1778445952}]}, {'certification_type_code': 'seafood_free', 'certification_type_name': 'Libre de Mariscos', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1778445952}]}, {'certification_type_code': 'walnuts_free', 'certification_type_name': 'Libre de Nueces', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1778445952}]}, {'certification_type_code': 'sulphite_free', 'certification_type_name': 'Libre de Sulfitos', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1778445952}]}]"
+              ]
+            },
+            {
+              "originalName": "Tipo de Producto",
+              "name": "Tipo de Producto",
+              "values": [
+                "Alfajores"
+              ]
+            },
+            {
+              "originalName": "País de Origen",
+              "name": "País de Origen",
+              "values": [
+                "Argentina"
+              ]
+            },
+            {
+              "originalName": "Origen",
+              "name": "Origen",
+              "values": [
+                "Nacional"
+              ]
+            },
+            {
+              "originalName": "sellerId",
+              "name": "sellerId",
+              "values": [
+                "1"
+              ]
+            }
+          ]
+        }
+      ],
+      "skuSpecifications": [],
+      "productClusters": [
+        {
+          "id": "55707",
+          "name": "Jumbo Ofertas"
+        },
+        {
+          "id": "59443",
+          "name": "Marcas Participantes | Lookeados de Gloria"
+        },
+        {
+          "id": "59613",
+          "name": "Pasaporte a la Gloria"
+        },
+        {
+          "id": "60723",
+          "name": "Jumbo al 100 | Almacén, Bebidas, Frescos y más"
+        },
+        {
+          "id": "60732",
+          "name": "Jumbo al 70"
+        },
+        {
+          "id": "60748",
+          "name": "Hasta J100 en Almacén"
+        },
+        {
+          "id": "60977",
+          "name": "Jumbo al 70"
+        },
+        {
+          "id": "60988",
+          "name": "Hasta 3x2"
+        }
+      ],
+      "clusterHighlights": [
+        {
+          "id": "60723",
+          "name": "Jumbo al 100 | Almacén, Bebidas, Frescos y más"
+        },
+        {
+          "id": "60732",
+          "name": "Jumbo al 70"
+        },
+        {
+          "id": "60748",
+          "name": "Hasta J100 en Almacén"
+        },
+        {
+          "id": "60977",
+          "name": "Jumbo al 70"
+        }
+      ],
+      "properties": [
+        {
+          "name": "ProductData",
+          "originalName": "ProductData",
+          "values": [
+            "{\"allow_notes\":true,\"allow_substitute\":true,\"cart_limit\":\"0\",\"brandName\":\"BON O BON\",\"brandEcomId\":\"131\",\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"measurement_unit_un\":\"gr.\",\"unit_multiplier_un\":40,\"measurement_unit_selector\":false,\"url_canonical\":null,\"provider_code\":\"6493\"}"
+          ]
+        },
+        {
+          "name": "SkuData",
+          "originalName": "SkuData",
+          "values": [
+            "{\"3068792\":{\"ref_id\":\"11840530003\",\"cart_limit\":0,\"allow_notes\":true,\"allow_substitute\":true,\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"promotions\":[],\"url_canonical\":null,\"measurement_unit_un\":\"gr.\",\"unit_multiplier_un\":40,\"measurement_unit_selector\":false,\"release_data\":{\"is_new\":false},\"cart_type\":\"1\"}}"
+          ]
+        },
+        {
+          "name": "Ingredientes",
+          "originalName": "Ingredientes",
+          "values": [
+            "'emulsionante lecitina de soja', 'emulsionante poliglicerol poliricinoleato', 'emulsionante triestearato de sorbitán', 'aromatizante cacao 36%', 'harina de trigo', 'hierro', 'ácido fólico', 'tiamina', 'riboflavina', 'niacina', 'maní tostado 17%', 'azúcar', 'aceite vegetal de palma interesterificado y fraccionado', 'aceite vegetal de girasol alto oleico', 'aceite vegetal de soja hidrogenado', 'grasa bovina refinada', 'cacao en polvo', 'jarabe de maíz de alta fructosa', 'leche descremada en polvo', 'sal', 'almidón', 'leudante químico bicarbonato amonio', 'leudante químico bicarbonato de sodio', 'conservador propionato de calcio', 'emulsionante lecitina de soja', 'aromatizante artificial vainillina', 'aroma avellana', 'aroma leche condensada', 'maní', 'leche', 'derivados de trigo', 'soja'"
+          ]
+        },
+        {
+          "name": "Trazas",
+          "originalName": "Trazas",
+          "values": [
+            "'almendra', 'avena', 'cebada', 'centeno', 'huevo'"
+          ]
+        },
+        {
+          "name": "Condiciones Alimentarias",
+          "originalName": "Condiciones Alimentarias",
+          "values": [
+            "'maní', 'leche', 'derivados de trigo', 'soja'"
+          ]
+        },
+        {
+          "name": "Tabla Nutricional",
+          "originalName": "Tabla Nutricional",
+          "values": [
+            "{'nutritional_table_set_name': 'Tabla Nutricional', 'basic_unit_name': 'g', 'portion_text': '1 Alfajor', 'portion_value': 40.7, 'portion_unit_name': 'g', 'num_portions': 1, 'energy_value': 529, 'energy_value_per_portion': 215.3, 'energy_unit_name': 'kCal', 'protein_value': 8.5, 'protein_value_per_portion': 3.5, 'protein_unit_name': 'g', 'fat_total_value': 31, 'fat_total_value_per_portion': 12.6, 'fat_total_unit_name': 'g', 'fat_sat_value': 14, 'fat_sat_value_per_portion': 5.7, 'fat_sat_unit_name': 'g', 'fat_mono_value': 13, 'fat_mono_value_per_portion': 5.3, 'fat_mono_unit_name': 'g', 'fat_poli_value': 1.8, 'fat_poli_value_per_portion': 0.7, 'fat_poli_unit_name': 'g', 'fat_trans_value': 0.4, 'fat_trans_value_per_portion': 0.2, 'fat_trans_unit_name': 'g', 'fat_cholesterol_value': 19, 'fat_cholesterol_value_per_portion': 7.7, 'fat_cholesterol_unit_name': 'mg', 'sugars_value': 22, 'sugars_value_per_portion': 9, 'sugars_unit_name': 'g', 'fiber_value': 3.1, 'fiber_value_per_portion': 1.3, 'fiber_unit_name': 'g', 'sodium_value': 59, 'sodium_value_per_portion': 24, 'sodium_unit_name': 'mg'}"
+          ]
+        },
+        {
+          "name": "Sellos",
+          "originalName": "Sellos",
+          "values": [
+            "[{'certification_type_code': 'fish_free', 'certification_type_name': 'Libre de Peces', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1778445952}]}, {'certification_type_code': 'seafood_free', 'certification_type_name': 'Libre de Mariscos', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1778445952}]}, {'certification_type_code': 'walnuts_free', 'certification_type_name': 'Libre de Nueces', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1778445952}]}, {'certification_type_code': 'sulphite_free', 'certification_type_name': 'Libre de Sulfitos', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1778445952}]}]"
+          ]
+        },
+        {
+          "name": "Tipo de Producto",
+          "originalName": "Tipo de Producto",
+          "values": [
+            "Alfajores"
+          ]
+        },
+        {
+          "name": "País de Origen",
+          "originalName": "País de Origen",
+          "values": [
+            "Argentina"
+          ]
+        },
+        {
+          "name": "Origen",
+          "originalName": "Origen",
+          "values": [
+            "Nacional"
+          ]
+        },
+        {
+          "name": "sellerId",
+          "originalName": "sellerId",
+          "values": [
+            "1"
+          ]
+        }
+      ],
+      "items": [
+        {
+          "sellers": [
+            {
+              "sellerId": "1",
+              "sellerName": "Jumbo Argentina",
+              "addToCartLink": "",
+              "sellerDefault": true,
+              "commertialOffer": {
+                "DeliverySlaSamplesPerRegion": {},
+                "DeliverySlaSamples": [],
+                "AvailableQuantity": 10000,
+                "discountHighlights": [],
+                "Installments": [
+                  {
+                    "Value": 1242,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 414,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 3,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 207,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 6,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 103.5,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 12,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 69,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 18,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 51.75,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 24,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 41.4,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 30,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 1242,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 414,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 3,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 207,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 6,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 103.5,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 12,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 82.8,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 15,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 69,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 18,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 1242,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 414,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 3,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 207,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 6,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 103.5,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 12,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 82.8,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 15,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 69,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 18,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 1242,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 414,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 3,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 207,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 6,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 103.5,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 12,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 82.8,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 15,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 69,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 18,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 1242,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja"
+                  },
+                  {
+                    "Value": 207,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 6,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja"
+                  },
+                  {
+                    "Value": 112.9,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 11,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja"
+                  },
+                  {
+                    "Value": 103.5,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 12,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja"
+                  },
+                  {
+                    "Value": 1242,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Cencosud Pay",
+                    "PaymentSystemGroupName": "Cencosud PayPaymentGroup",
+                    "Name": "Cencosud Pay à vista"
+                  },
+                  {
+                    "Value": 1242,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Cuenta Corriente",
+                    "PaymentSystemGroupName": "custom201PaymentGroupPaymentGroup",
+                    "Name": "Cuenta Corriente à vista"
+                  },
+                  {
+                    "Value": 1242,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Tarjeta de Débito",
+                    "PaymentSystemGroupName": "custom202PaymentGroupPaymentGroup",
+                    "Name": "Tarjeta de Débito à vista"
+                  },
+                  {
+                    "Value": 1242,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Gift Card Cencosud",
+                    "PaymentSystemGroupName": "custom203PaymentGroupPaymentGroup",
+                    "Name": "Gift Card Cencosud à vista"
+                  },
+                  {
+                    "Value": 1242,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1242,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Transferencia",
+                    "PaymentSystemGroupName": "custom205PaymentGroupPaymentGroup",
+                    "Name": "Transferencia à vista"
+                  }
+                ],
+                "Price": 1242,
+                "ListPrice": 102645,
+                "spotPrice": 1242,
+                "taxPercentage": 0,
+                "PriceWithoutDiscount": 1242,
+                "Tax": 0,
+                "GiftSkuIds": [],
+                "BuyTogether": [],
+                "ItemMetadataAttachment": [],
+                "RewardValue": 0,
+                "PriceValidUntil": "2027-06-09T17:42:40Z",
+                "GetInfoErrorMessage": null,
+                "CacheVersionUsedToCallCheckout": "",
+                "teasers": []
+              }
+            }
+          ],
+          "images": [
+            {
+              "imageId": "898069",
+              "cacheId": "898069",
+              "imageTag": "",
+              "imageLabel": "",
+              "imageText": "",
+              "imageUrl": "https://veaargentina.vtexassets.com/arquivos/ids/898069/11840530003.jpg?v=639063477290770000"
+            },
+            {
+              "imageId": "898070",
+              "cacheId": "898070",
+              "imageTag": "",
+              "imageLabel": "",
+              "imageText": "",
+              "imageUrl": "https://veaargentina.vtexassets.com/arquivos/ids/898070/11840530003-1.jpg?v=639063477290770000"
+            }
+          ],
+          "itemId": "3068792",
+          "name": "Alfajor Block 40 Gr Cofler",
+          "nameComplete": "Alfajor Block 40 Gr Cofler",
+          "complementName": "",
+          "referenceId": [
+            {
+              "Key": "RefId",
+              "Value": "11840530003"
+            }
+          ],
+          "measurementUnit": "un",
+          "unitMultiplier": 1,
+          "variations": [],
+          "ean": "7790040143654",
+          "modalType": "",
+          "videos": [],
+          "attachments": [],
+          "isKit": false,
+          "attributes": []
+        }
+      ],
+      "categoriesIds": [
+        "/1/22/165/",
+        "/1/22/",
+        "/1/"
+      ],
+      "releaseDate": 1778198400000,
+      "metaTagDescription": "",
+      "origin": "intelligent-search",
+      "productTitle": ""
+    },
+    {
+      "cacheId": "sp-351777",
+      "productId": "351777",
+      "description": "<h2>Aceite de Girasol 1.5 Lts Legitimo</h2> <p>El aceite de girasol Legitimo es un recurso fundamental para la preparación de tus comidas diarias. Con su presentación de 1.5 Lts, vas a contar con la cantidad necesaria para cubrir las demandas de tu cocina de manera eficiente.</p> <h3>Características Destacadas Aceite de Girasol 1.5 Lts Legitimo</h3> <ul> <li>Contenido neto de 1.5 Lts, ideal para el uso frecuente en tu casa.</li> <li>Producto de origen nacional, elaborado en Argentina bajo estándares locales.</li> <li>Presentación de 1 Un, diseñada para facilitar el almacenamiento en tu alacena o heladera.</li> <li>Aceite de girasol versátil, apto para diversas técnicas de cocción.</li> </ul> <h3>Por qué nos gusta el Aceite de Girasol 1.5 Lts Legitimo</h3> <p>Este aceite es un instrumento esencial que te permitirá preparar tus platos con practicidad. Al elegir un producto de origen nacional, vas a disponer de un insumo confiable que se adapta a tus necesidades culinarias en el día a día, optimizando el tiempo que dedicás a cocinar.</p> <p>Hacé ahora tu compra con retiro en el punto de entrega más próximo o envío a domicilio.</p>",
+      "productName": "Aceite de Girasol 1.5 Lts Legitimo",
+      "productReference": "12610932006",
+      "linkText": "aceite-girasol-legitimo-1-5-l",
+      "brand": "LEGITIMO",
+      "brandId": 9100,
+      "link": "/aceite-girasol-legitimo-1-5-l/p",
+      "categories": [
+        "/Almacén/Aceites y Vinagres/Aceites Comunes/",
+        "/Almacén/Aceites y Vinagres/",
+        "/Almacén/"
+      ],
+      "categoryId": "134",
+      "priceRange": {
+        "sellingPrice": {
+          "highPrice": 5865,
+          "lowPrice": 5865
+        },
+        "listPrice": {
+          "highPrice": 484711,
+          "lowPrice": 484711
+        }
+      },
+      "specificationGroups": [
+        {
+          "originalName": "Configuraciones",
+          "name": "Configuraciones",
+          "specifications": [
+            {
+              "originalName": "ProductData",
+              "name": "ProductData",
+              "values": [
+                "{\"allow_notes\":false,\"allow_substitute\":false,\"cart_limit\":\"0\",\"brandName\":\"LEGITIMO\",\"brandEcomId\":\"9100\",\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"measurement_unit_un\":\"Lt\",\"unit_multiplier_un\":1.5,\"measurement_unit_selector\":false,\"url_canonical\":\"\",\"provider_code\":\"13879\"}"
+              ]
+            },
+            {
+              "originalName": "SkuData",
+              "name": "SkuData",
+              "values": [
+                "{\"350413\":{\"ref_id\":\"12610932006\",\"cart_limit\":0,\"allow_notes\":true,\"allow_substitute\":true,\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"promotions\":[],\"url_canonical\":\"\",\"measurement_unit_un\":\"Lt\",\"unit_multiplier_un\":1.5,\"measurement_unit_selector\":false,\"release_data\":{\"is_new\":false},\"cart_type\":\"1\"}}"
+              ]
+            }
+          ]
+        },
+        {
+          "originalName": "Características Destacadas",
+          "name": "Características Destacadas",
+          "specifications": [
+            {
+              "originalName": "Tipo de Producto",
+              "name": "Tipo de Producto",
+              "values": [
+                "Aceites de Girasol"
+              ]
+            },
+            {
+              "originalName": "País de Origen",
+              "name": "País de Origen",
+              "values": [
+                "Argentina"
+              ]
+            },
+            {
+              "originalName": "Origen",
+              "name": "Origen",
+              "values": [
+                "Nacional"
+              ]
+            }
+          ]
+        },
+        {
+          "originalName": "Informacion Nutricional OkTo",
+          "name": "Informacion Nutricional OkTo",
+          "specifications": [
+            {
+              "originalName": "Ingredientes",
+              "name": "Ingredientes",
+              "values": [
+                "'aceite de girasol'"
+              ]
+            },
+            {
+              "originalName": "Tabla Nutricional",
+              "name": "Tabla Nutricional",
+              "values": [
+                "{'nutritional_table_set_name': 'Tabla Nutricional', 'basic_unit_name': 'ml', 'portion_text': '1 Cuchara de Sopa', 'portion_value': 13, 'portion_unit_name': 'ml', 'num_portions': 115, 'energy_value': 830.77, 'energy_value_per_portion': 108, 'energy_unit_name': 'kCal', 'protein_value': 0, 'protein_value_per_portion': 0, 'protein_unit_name': 'g', 'fat_total_value': 92.31, 'fat_total_value_per_portion': 12, 'fat_total_unit_name': 'g', 'fat_sat_value': 9.23, 'fat_sat_value_per_portion': 1.2, 'fat_sat_unit_name': 'g', 'fat_mono_value': 36.92, 'fat_mono_value_per_portion': 4.8, 'fat_mono_unit_name': 'g', 'fat_poli_value': 46.15, 'fat_poli_value_per_portion': 6, 'fat_poli_unit_name': 'g', 'fat_trans_value': 0, 'fat_trans_value_per_portion': 0, 'fat_trans_unit_name': 'g', 'fat_cholesterol_value': 0, 'fat_cholesterol_value_per_portion': 0, 'fat_cholesterol_unit_name': 'mg', 'sugars_value': 0, 'sugars_value_per_portion': 0, 'sugars_unit_name': 'g', 'fiber_value': 0, 'fiber_value_per_portion': 0, 'fiber_unit_name': 'g', 'sodium_value': 0, 'sodium_value_per_portion': 0, 'sodium_unit_name': 'mg'}"
+              ]
+            },
+            {
+              "originalName": "Sellos",
+              "name": "Sellos",
+              "values": [
+                "[{'certification_type_code': 'aplv_suitable', 'certification_type_name': 'Apto para APLV', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1774550877}]}, {'certification_type_code': 'lactose_free', 'certification_type_name': 'Libre de Lactosa', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1774550877}]}, {'certification_type_code': 'vegan', 'certification_type_name': 'Vegano', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1774550877}]}, {'certification_type_code': 'vegetarian', 'certification_type_name': 'Vegetariano', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1774550877}]}, {'certification_type_code': 'soy_free', 'certification_type_name': 'Libre de Soya', 'certifiers': [{'certifier_i"
+              ]
+            }
+          ]
+        },
+        {
+          "originalName": "allSpecifications",
+          "name": "allSpecifications",
+          "specifications": [
+            {
+              "originalName": "ProductData",
+              "name": "ProductData",
+              "values": [
+                "{\"allow_notes\":false,\"allow_substitute\":false,\"cart_limit\":\"0\",\"brandName\":\"LEGITIMO\",\"brandEcomId\":\"9100\",\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"measurement_unit_un\":\"Lt\",\"unit_multiplier_un\":1.5,\"measurement_unit_selector\":false,\"url_canonical\":\"\",\"provider_code\":\"13879\"}"
+              ]
+            },
+            {
+              "originalName": "SkuData",
+              "name": "SkuData",
+              "values": [
+                "{\"350413\":{\"ref_id\":\"12610932006\",\"cart_limit\":0,\"allow_notes\":true,\"allow_substitute\":true,\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"promotions\":[],\"url_canonical\":\"\",\"measurement_unit_un\":\"Lt\",\"unit_multiplier_un\":1.5,\"measurement_unit_selector\":false,\"release_data\":{\"is_new\":false},\"cart_type\":\"1\"}}"
+              ]
+            },
+            {
+              "originalName": "Ingredientes",
+              "name": "Ingredientes",
+              "values": [
+                "'aceite de girasol'"
+              ]
+            },
+            {
+              "originalName": "Tabla Nutricional",
+              "name": "Tabla Nutricional",
+              "values": [
+                "{'nutritional_table_set_name': 'Tabla Nutricional', 'basic_unit_name': 'ml', 'portion_text': '1 Cuchara de Sopa', 'portion_value': 13, 'portion_unit_name': 'ml', 'num_portions': 115, 'energy_value': 830.77, 'energy_value_per_portion': 108, 'energy_unit_name': 'kCal', 'protein_value': 0, 'protein_value_per_portion': 0, 'protein_unit_name': 'g', 'fat_total_value': 92.31, 'fat_total_value_per_portion': 12, 'fat_total_unit_name': 'g', 'fat_sat_value': 9.23, 'fat_sat_value_per_portion': 1.2, 'fat_sat_unit_name': 'g', 'fat_mono_value': 36.92, 'fat_mono_value_per_portion': 4.8, 'fat_mono_unit_name': 'g', 'fat_poli_value': 46.15, 'fat_poli_value_per_portion': 6, 'fat_poli_unit_name': 'g', 'fat_trans_value': 0, 'fat_trans_value_per_portion': 0, 'fat_trans_unit_name': 'g', 'fat_cholesterol_value': 0, 'fat_cholesterol_value_per_portion': 0, 'fat_cholesterol_unit_name': 'mg', 'sugars_value': 0, 'sugars_value_per_portion': 0, 'sugars_unit_name': 'g', 'fiber_value': 0, 'fiber_value_per_portion': 0, 'fiber_unit_name': 'g', 'sodium_value': 0, 'sodium_value_per_portion': 0, 'sodium_unit_name': 'mg'}"
+              ]
+            },
+            {
+              "originalName": "Sellos",
+              "name": "Sellos",
+              "values": [
+                "[{'certification_type_code': 'aplv_suitable', 'certification_type_name': 'Apto para APLV', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1774550877}]}, {'certification_type_code': 'lactose_free', 'certification_type_name': 'Libre de Lactosa', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1774550877}]}, {'certification_type_code': 'vegan', 'certification_type_name': 'Vegano', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1774550877}]}, {'certification_type_code': 'vegetarian', 'certification_type_name': 'Vegetariano', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1774550877}]}, {'certification_type_code': 'soy_free', 'certification_type_name': 'Libre de Soya', 'certifiers': [{'certifier_i"
+              ]
+            },
+            {
+              "originalName": "Tipo de Producto",
+              "name": "Tipo de Producto",
+              "values": [
+                "Aceites de Girasol"
+              ]
+            },
+            {
+              "originalName": "País de Origen",
+              "name": "País de Origen",
+              "values": [
+                "Argentina"
+              ]
+            },
+            {
+              "originalName": "Origen",
+              "name": "Origen",
+              "values": [
+                "Nacional"
+              ]
+            },
+            {
+              "originalName": "sellerId",
+              "name": "sellerId",
+              "values": [
+                "1"
+              ]
+            }
+          ]
+        }
+      ],
+      "skuSpecifications": [],
+      "productClusters": [
+        {
+          "id": "20053",
+          "name": "Receta | dona de avena y yogurt"
+        },
+        {
+          "id": "24078",
+          "name": "Almacén y Bebidas"
+        },
+        {
+          "id": "42405",
+          "name": "¡Aprovechá!"
+        },
+        {
+          "id": "56778",
+          "name": "15% (20% con Cencopay)"
+        }
+      ],
+      "clusterHighlights": [],
+      "properties": [
+        {
+          "name": "ProductData",
+          "originalName": "ProductData",
+          "values": [
+            "{\"allow_notes\":false,\"allow_substitute\":false,\"cart_limit\":\"0\",\"brandName\":\"LEGITIMO\",\"brandEcomId\":\"9100\",\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"measurement_unit_un\":\"Lt\",\"unit_multiplier_un\":1.5,\"measurement_unit_selector\":false,\"url_canonical\":\"\",\"provider_code\":\"13879\"}"
+          ]
+        },
+        {
+          "name": "SkuData",
+          "originalName": "SkuData",
+          "values": [
+            "{\"350413\":{\"ref_id\":\"12610932006\",\"cart_limit\":0,\"allow_notes\":true,\"allow_substitute\":true,\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"promotions\":[],\"url_canonical\":\"\",\"measurement_unit_un\":\"Lt\",\"unit_multiplier_un\":1.5,\"measurement_unit_selector\":false,\"release_data\":{\"is_new\":false},\"cart_type\":\"1\"}}"
+          ]
+        },
+        {
+          "name": "Ingredientes",
+          "originalName": "Ingredientes",
+          "values": [
+            "'aceite de girasol'"
+          ]
+        },
+        {
+          "name": "Tabla Nutricional",
+          "originalName": "Tabla Nutricional",
+          "values": [
+            "{'nutritional_table_set_name': 'Tabla Nutricional', 'basic_unit_name': 'ml', 'portion_text': '1 Cuchara de Sopa', 'portion_value': 13, 'portion_unit_name': 'ml', 'num_portions': 115, 'energy_value': 830.77, 'energy_value_per_portion': 108, 'energy_unit_name': 'kCal', 'protein_value': 0, 'protein_value_per_portion': 0, 'protein_unit_name': 'g', 'fat_total_value': 92.31, 'fat_total_value_per_portion': 12, 'fat_total_unit_name': 'g', 'fat_sat_value': 9.23, 'fat_sat_value_per_portion': 1.2, 'fat_sat_unit_name': 'g', 'fat_mono_value': 36.92, 'fat_mono_value_per_portion': 4.8, 'fat_mono_unit_name': 'g', 'fat_poli_value': 46.15, 'fat_poli_value_per_portion': 6, 'fat_poli_unit_name': 'g', 'fat_trans_value': 0, 'fat_trans_value_per_portion': 0, 'fat_trans_unit_name': 'g', 'fat_cholesterol_value': 0, 'fat_cholesterol_value_per_portion': 0, 'fat_cholesterol_unit_name': 'mg', 'sugars_value': 0, 'sugars_value_per_portion': 0, 'sugars_unit_name': 'g', 'fiber_value': 0, 'fiber_value_per_portion': 0, 'fiber_unit_name': 'g', 'sodium_value': 0, 'sodium_value_per_portion': 0, 'sodium_unit_name': 'mg'}"
+          ]
+        },
+        {
+          "name": "Sellos",
+          "originalName": "Sellos",
+          "values": [
+            "[{'certification_type_code': 'aplv_suitable', 'certification_type_name': 'Apto para APLV', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1774550877}]}, {'certification_type_code': 'lactose_free', 'certification_type_name': 'Libre de Lactosa', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1774550877}]}, {'certification_type_code': 'vegan', 'certification_type_name': 'Vegano', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1774550877}]}, {'certification_type_code': 'vegetarian', 'certification_type_name': 'Vegetariano', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1774550877}]}, {'certification_type_code': 'soy_free', 'certification_type_name': 'Libre de Soya', 'certifiers': [{'certifier_i"
+          ]
+        },
+        {
+          "name": "Tipo de Producto",
+          "originalName": "Tipo de Producto",
+          "values": [
+            "Aceites de Girasol"
+          ]
+        },
+        {
+          "name": "País de Origen",
+          "originalName": "País de Origen",
+          "values": [
+            "Argentina"
+          ]
+        },
+        {
+          "name": "Origen",
+          "originalName": "Origen",
+          "values": [
+            "Nacional"
+          ]
+        },
+        {
+          "name": "sellerId",
+          "originalName": "sellerId",
+          "values": [
+            "1"
+          ]
+        }
+      ],
+      "items": [
+        {
+          "sellers": [
+            {
+              "sellerId": "1",
+              "sellerName": "Jumbo Argentina",
+              "addToCartLink": "",
+              "sellerDefault": true,
+              "commertialOffer": {
+                "DeliverySlaSamplesPerRegion": {},
+                "DeliverySlaSamples": [],
+                "AvailableQuantity": 10000,
+                "discountHighlights": [],
+                "Installments": [
+                  {
+                    "Value": 5865,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 1955,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 3,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 977.5,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 6,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 488.75,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 12,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 325.83,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 18,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 244.37,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 24,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 195.5,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 30,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 5865,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 1955,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 3,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 977.5,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 6,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 488.75,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 12,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 391,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 15,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 325.83,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 18,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 5865,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 1955,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 3,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 977.5,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 6,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 488.75,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 12,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 391,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 15,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 325.83,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 18,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 5865,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 1955,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 3,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 977.5,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 6,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 488.75,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 12,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 391,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 15,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 325.83,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 18,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 5865,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja"
+                  },
+                  {
+                    "Value": 977.5,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 6,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja"
+                  },
+                  {
+                    "Value": 533.18,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 11,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja"
+                  },
+                  {
+                    "Value": 488.75,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 12,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja"
+                  },
+                  {
+                    "Value": 5865,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Cencosud Pay",
+                    "PaymentSystemGroupName": "Cencosud PayPaymentGroup",
+                    "Name": "Cencosud Pay à vista"
+                  },
+                  {
+                    "Value": 5865,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Cuenta Corriente",
+                    "PaymentSystemGroupName": "custom201PaymentGroupPaymentGroup",
+                    "Name": "Cuenta Corriente à vista"
+                  },
+                  {
+                    "Value": 5865,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Tarjeta de Débito",
+                    "PaymentSystemGroupName": "custom202PaymentGroupPaymentGroup",
+                    "Name": "Tarjeta de Débito à vista"
+                  },
+                  {
+                    "Value": 5865,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Gift Card Cencosud",
+                    "PaymentSystemGroupName": "custom203PaymentGroupPaymentGroup",
+                    "Name": "Gift Card Cencosud à vista"
+                  },
+                  {
+                    "Value": 5865,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 5865,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Transferencia",
+                    "PaymentSystemGroupName": "custom205PaymentGroupPaymentGroup",
+                    "Name": "Transferencia à vista"
+                  }
+                ],
+                "Price": 5865,
+                "ListPrice": 484711,
+                "spotPrice": 5865,
+                "taxPercentage": 0,
+                "PriceWithoutDiscount": 5865,
+                "Tax": 0,
+                "GiftSkuIds": [],
+                "BuyTogether": [],
+                "ItemMetadataAttachment": [],
+                "RewardValue": 0,
+                "PriceValidUntil": "2027-06-09T17:43:11Z",
+                "GetInfoErrorMessage": null,
+                "CacheVersionUsedToCallCheckout": "",
+                "teasers": []
+              }
+            }
+          ],
+          "images": [
+            {
+              "imageId": "713315",
+              "cacheId": "713315",
+              "imageTag": "",
+              "imageLabel": "12610932006-01",
+              "imageText": "12610932006-01",
+              "imageUrl": "https://veaargentina.vtexassets.com/arquivos/ids/713315/Aceite-Girasol-Legitimo-X1-5l-1-890347.jpg?v=637949973680600000"
+            }
+          ],
+          "itemId": "350413",
+          "name": "Aceite de Girasol 1.5 Lts Legitimo",
+          "nameComplete": "Aceite de Girasol 1.5 Lts Legitimo",
+          "complementName": "",
+          "referenceId": [
+            {
+              "Key": "RefId",
+              "Value": "12610932006"
+            }
+          ],
+          "measurementUnit": "un",
+          "unitMultiplier": 1,
+          "variations": [],
+          "ean": "7798316700815",
+          "modalType": "",
+          "videos": [],
+          "attachments": [],
+          "isKit": false,
+          "attributes": []
+        }
+      ],
+      "categoriesIds": [
+        "/1/17/134/",
+        "/1/17/",
+        "/1/"
+      ],
+      "releaseDate": 1776038400000,
+      "metaTagDescription": "",
+      "origin": "intelligent-search",
+      "productTitle": ""
+    },
+    {
+      "cacheId": "sp-348251",
+      "productId": "348251",
+      "description": "<h2>Arvejas Secas Remojadas 300 Grs Inalpa</h2> <p>Las arvejas secas remojadas Inalpa son un recurso práctico para incorporar en tus preparaciones diarias. Este producto de origen nacional te permite optimizar el tiempo en la cocina al contar con un elemento listo para utilizar en diversas recetas.</p> <h3>Características Destacadas de Arvejas Secas Remojadas 300 Grs Inalpa</h3> <ul> <li>Contenido neto de 300 Grs, ideal para el consumo en tu casa.</li> <li>Presentación en lata que facilita su almacenamiento y conservación.</li> <li>Producto de origen nacional, elaborado en Argentina.</li> <li>Formato de pack unitario para una gestión eficiente de tus compras.</li> </ul> <h3>Por qué nos gustan las Arvejas Secas Remojadas 300 Grs Inalpa</h3> <p>Elegimos este producto porque simplifica la organización de tus comidas. Al estar previamente remojadas, vas a ahorrar tiempo y esfuerzo al cocinar, integrándolas de manera directa en tus platos preferidos. Es un instrumento versátil que aporta practicidad a tu rutina en la cocina.</p> <p>Hacé ahora tu compra con retiro en el punto de entrega más próximo o envío a domicilio.</p>",
+      "productName": "Arvejas Inalpa Secas Remojadas X300gr",
+      "productReference": "11620147003",
+      "linkText": "arvejas-inalpa-secas-remojadas-x300gr-2",
+      "brand": "INALPA",
+      "brandId": 5636,
+      "link": "/arvejas-inalpa-secas-remojadas-x300gr-2/p",
+      "categories": [
+        "/Almacén/Conservas/Conservas de Verduras y Legumbres/",
+        "/Almacén/Conservas/",
+        "/Almacén/"
+      ],
+      "categoryId": "152",
+      "priceRange": {
+        "sellingPrice": {
+          "highPrice": 599,
+          "lowPrice": 599
+        },
+        "listPrice": {
+          "highPrice": 49504,
+          "lowPrice": 49504
+        }
+      },
+      "specificationGroups": [
+        {
+          "originalName": "Informacion Nutricional OkTo",
+          "name": "Informacion Nutricional OkTo",
+          "specifications": [
+            {
+              "originalName": "Ingredientes",
+              "name": "Ingredientes",
+              "values": [
+                "'arvejas', 'agua', 'sal', 'fir cloruro de calcio'"
+              ]
+            },
+            {
+              "originalName": "Trazas",
+              "name": "Trazas",
+              "values": [
+                "'soja'"
+              ]
+            },
+            {
+              "originalName": "Tabla Nutricional",
+              "name": "Tabla Nutricional",
+              "values": [
+                "{'nutritional_table_set_name': 'Tabla Nutricional', 'basic_unit_name': 'g', 'portion_text': '1 Taza de Té', 'portion_value': 130, 'portion_unit_name': 'g', 'num_portions': 2, 'energy_value': 113.08, 'energy_value_per_portion': 147, 'energy_unit_name': 'kCal', 'protein_value': 9.23, 'protein_value_per_portion': 12, 'protein_unit_name': 'g', 'fat_total_value': 1.31, 'fat_total_value_per_portion': 1.7, 'fat_total_unit_name': 'g', 'fat_sat_value': 0.31, 'fat_sat_value_per_portion': 0.4, 'fat_sat_unit_name': 'g', 'fat_trans_value': 0, 'fat_trans_value_per_portion': 0, 'fat_trans_unit_name': 'g', 'sugars_value': 2, 'sugars_value_per_portion': 2.6, 'sugars_unit_name': 'g', 'fiber_value': 7.31, 'fiber_value_per_portion': 9.5, 'fiber_unit_name': 'g', 'sodium_value': 83.85, 'sodium_value_per_portion': 109, 'sodium_unit_name': 'mg'}"
+              ]
+            },
+            {
+              "originalName": "Sellos",
+              "name": "Sellos",
+              "values": [
+                "[{'certification_type_code': 'aplv_suitable', 'certification_type_name': 'Apto para APLV', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'lactose_free', 'certification_type_name': 'Libre de Lactosa', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'egg_free', 'certification_type_name': 'Libre de Huevo', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'fish_free', 'certification_type_name': 'Libre de Peces', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'seafood_free', 'certification_type_name': 'Libre de Mariscos', 'certif"
+              ]
+            }
+          ]
+        },
+        {
+          "originalName": "Características Destacadas",
+          "name": "Características Destacadas",
+          "specifications": [
+            {
+              "originalName": "Tipo de Producto",
+              "name": "Tipo de Producto",
+              "values": [
+                "Arvejas"
+              ]
+            },
+            {
+              "originalName": "País de Origen",
+              "name": "País de Origen",
+              "values": [
+                "Argentina"
+              ]
+            },
+            {
+              "originalName": "Origen",
+              "name": "Origen",
+              "values": [
+                "Nacional"
+              ]
+            }
+          ]
+        },
+        {
+          "originalName": "Configuraciones",
+          "name": "Configuraciones",
+          "specifications": [
+            {
+              "originalName": "ProductData",
+              "name": "ProductData",
+              "values": [
+                "{\"allow_notes\":false,\"allow_substitute\":false,\"cart_limit\":\"0\",\"brandName\":\"INALPA\",\"brandEcomId\":\"5636\",\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"measurement_unit_un\":\"gr.\",\"unit_multiplier_un\":300,\"measurement_unit_selector\":false,\"url_canonical\":null,\"provider_code\":\"1589\"}"
+              ]
+            },
+            {
+              "originalName": "SkuData",
+              "name": "SkuData",
+              "values": [
+                "{\"346918\":{\"ref_id\":\"11620147003\",\"cart_limit\":0,\"allow_notes\":true,\"allow_substitute\":true,\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"promotions\":[],\"url_canonical\":null,\"measurement_unit_un\":\"gr.\",\"unit_multiplier_un\":300,\"measurement_unit_selector\":false,\"release_data\":{\"is_new\":false},\"cart_type\":\"1\"}}"
+              ]
+            }
+          ]
+        },
+        {
+          "originalName": "allSpecifications",
+          "name": "allSpecifications",
+          "specifications": [
+            {
+              "originalName": "ProductData",
+              "name": "ProductData",
+              "values": [
+                "{\"allow_notes\":false,\"allow_substitute\":false,\"cart_limit\":\"0\",\"brandName\":\"INALPA\",\"brandEcomId\":\"5636\",\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"measurement_unit_un\":\"gr.\",\"unit_multiplier_un\":300,\"measurement_unit_selector\":false,\"url_canonical\":null,\"provider_code\":\"1589\"}"
+              ]
+            },
+            {
+              "originalName": "SkuData",
+              "name": "SkuData",
+              "values": [
+                "{\"346918\":{\"ref_id\":\"11620147003\",\"cart_limit\":0,\"allow_notes\":true,\"allow_substitute\":true,\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"promotions\":[],\"url_canonical\":null,\"measurement_unit_un\":\"gr.\",\"unit_multiplier_un\":300,\"measurement_unit_selector\":false,\"release_data\":{\"is_new\":false},\"cart_type\":\"1\"}}"
+              ]
+            },
+            {
+              "originalName": "Ingredientes",
+              "name": "Ingredientes",
+              "values": [
+                "'arvejas', 'agua', 'sal', 'fir cloruro de calcio'"
+              ]
+            },
+            {
+              "originalName": "Trazas",
+              "name": "Trazas",
+              "values": [
+                "'soja'"
+              ]
+            },
+            {
+              "originalName": "Tabla Nutricional",
+              "name": "Tabla Nutricional",
+              "values": [
+                "{'nutritional_table_set_name': 'Tabla Nutricional', 'basic_unit_name': 'g', 'portion_text': '1 Taza de Té', 'portion_value': 130, 'portion_unit_name': 'g', 'num_portions': 2, 'energy_value': 113.08, 'energy_value_per_portion': 147, 'energy_unit_name': 'kCal', 'protein_value': 9.23, 'protein_value_per_portion': 12, 'protein_unit_name': 'g', 'fat_total_value': 1.31, 'fat_total_value_per_portion': 1.7, 'fat_total_unit_name': 'g', 'fat_sat_value': 0.31, 'fat_sat_value_per_portion': 0.4, 'fat_sat_unit_name': 'g', 'fat_trans_value': 0, 'fat_trans_value_per_portion': 0, 'fat_trans_unit_name': 'g', 'sugars_value': 2, 'sugars_value_per_portion': 2.6, 'sugars_unit_name': 'g', 'fiber_value': 7.31, 'fiber_value_per_portion': 9.5, 'fiber_unit_name': 'g', 'sodium_value': 83.85, 'sodium_value_per_portion': 109, 'sodium_unit_name': 'mg'}"
+              ]
+            },
+            {
+              "originalName": "Sellos",
+              "name": "Sellos",
+              "values": [
+                "[{'certification_type_code': 'aplv_suitable', 'certification_type_name': 'Apto para APLV', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'lactose_free', 'certification_type_name': 'Libre de Lactosa', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'egg_free', 'certification_type_name': 'Libre de Huevo', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'fish_free', 'certification_type_name': 'Libre de Peces', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'seafood_free', 'certification_type_name': 'Libre de Mariscos', 'certif"
+              ]
+            },
+            {
+              "originalName": "Tipo de Producto",
+              "name": "Tipo de Producto",
+              "values": [
+                "Arvejas"
+              ]
+            },
+            {
+              "originalName": "País de Origen",
+              "name": "País de Origen",
+              "values": [
+                "Argentina"
+              ]
+            },
+            {
+              "originalName": "Origen",
+              "name": "Origen",
+              "values": [
+                "Nacional"
+              ]
+            },
+            {
+              "originalName": "sellerId",
+              "name": "sellerId",
+              "values": [
+                "1"
+              ]
+            }
+          ]
+        }
+      ],
+      "skuSpecifications": [],
+      "productClusters": [
+        {
+          "id": "23958",
+          "name": "Promoción exclusiva con VEA Ahorro!"
+        },
+        {
+          "id": "29666",
+          "name": "Hasta 30% en bebidas, desayuno, almacén, frescos, perfumería y limpieza"
+        },
+        {
+          "id": "36830",
+          "name": "coleccion prueba"
+        },
+        {
+          "id": "37775",
+          "name": "colection_test_407_collections_118"
+        },
+        {
+          "id": "37776",
+          "name": "colection_test_407_collections_119"
+        },
+        {
+          "id": "37777",
+          "name": "colection_test_407_collections_120"
+        },
+        {
+          "id": "37782",
+          "name": "colection_test_407_collections_1"
+        },
+        {
+          "id": "38191",
+          "name": "colection_test_407_collections_carlos"
+        },
+        {
+          "id": "38192",
+          "name": "colection_test_407_collections_carlos2"
+        },
+        {
+          "id": "38287",
+          "name": "colection_test_407_collections_carlos3"
+        },
+        {
+          "id": "38822",
+          "name": "colection_test_407_collections_120 (clone)"
+        },
+        {
+          "id": "38823",
+          "name": "colection_test_407_collections_121"
+        },
+        {
+          "id": "38824",
+          "name": "colection_test_407_collections_121 (clone)"
+        },
+        {
+          "id": "38854",
+          "name": "colection_test_407_collections_carlos4"
+        },
+        {
+          "id": "38857",
+          "name": "colection_test_407_collections_carlos4 (clone)"
+        },
+        {
+          "id": "38858",
+          "name": "colection_test_407_collections_carlos5"
+        },
+        {
+          "id": "38859",
+          "name": "colection_test_407_collections_carlos6"
+        },
+        {
+          "id": "56778",
+          "name": "15% (20% con Cencopay)"
+        }
+      ],
+      "clusterHighlights": [],
+      "properties": [
+        {
+          "name": "ProductData",
+          "originalName": "ProductData",
+          "values": [
+            "{\"allow_notes\":false,\"allow_substitute\":false,\"cart_limit\":\"0\",\"brandName\":\"INALPA\",\"brandEcomId\":\"5636\",\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"measurement_unit_un\":\"gr.\",\"unit_multiplier_un\":300,\"measurement_unit_selector\":false,\"url_canonical\":null,\"provider_code\":\"1589\"}"
+          ]
+        },
+        {
+          "name": "SkuData",
+          "originalName": "SkuData",
+          "values": [
+            "{\"346918\":{\"ref_id\":\"11620147003\",\"cart_limit\":0,\"allow_notes\":true,\"allow_substitute\":true,\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"promotions\":[],\"url_canonical\":null,\"measurement_unit_un\":\"gr.\",\"unit_multiplier_un\":300,\"measurement_unit_selector\":false,\"release_data\":{\"is_new\":false},\"cart_type\":\"1\"}}"
+          ]
+        },
+        {
+          "name": "Ingredientes",
+          "originalName": "Ingredientes",
+          "values": [
+            "'arvejas', 'agua', 'sal', 'fir cloruro de calcio'"
+          ]
+        },
+        {
+          "name": "Trazas",
+          "originalName": "Trazas",
+          "values": [
+            "'soja'"
+          ]
+        },
+        {
+          "name": "Tabla Nutricional",
+          "originalName": "Tabla Nutricional",
+          "values": [
+            "{'nutritional_table_set_name': 'Tabla Nutricional', 'basic_unit_name': 'g', 'portion_text': '1 Taza de Té', 'portion_value': 130, 'portion_unit_name': 'g', 'num_portions': 2, 'energy_value': 113.08, 'energy_value_per_portion': 147, 'energy_unit_name': 'kCal', 'protein_value': 9.23, 'protein_value_per_portion': 12, 'protein_unit_name': 'g', 'fat_total_value': 1.31, 'fat_total_value_per_portion': 1.7, 'fat_total_unit_name': 'g', 'fat_sat_value': 0.31, 'fat_sat_value_per_portion': 0.4, 'fat_sat_unit_name': 'g', 'fat_trans_value': 0, 'fat_trans_value_per_portion': 0, 'fat_trans_unit_name': 'g', 'sugars_value': 2, 'sugars_value_per_portion': 2.6, 'sugars_unit_name': 'g', 'fiber_value': 7.31, 'fiber_value_per_portion': 9.5, 'fiber_unit_name': 'g', 'sodium_value': 83.85, 'sodium_value_per_portion': 109, 'sodium_unit_name': 'mg'}"
+          ]
+        },
+        {
+          "name": "Sellos",
+          "originalName": "Sellos",
+          "values": [
+            "[{'certification_type_code': 'aplv_suitable', 'certification_type_name': 'Apto para APLV', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'lactose_free', 'certification_type_name': 'Libre de Lactosa', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'egg_free', 'certification_type_name': 'Libre de Huevo', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'fish_free', 'certification_type_name': 'Libre de Peces', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'seafood_free', 'certification_type_name': 'Libre de Mariscos', 'certif"
+          ]
+        },
+        {
+          "name": "Tipo de Producto",
+          "originalName": "Tipo de Producto",
+          "values": [
+            "Arvejas"
+          ]
+        },
+        {
+          "name": "País de Origen",
+          "originalName": "País de Origen",
+          "values": [
+            "Argentina"
+          ]
+        },
+        {
+          "name": "Origen",
+          "originalName": "Origen",
+          "values": [
+            "Nacional"
+          ]
+        },
+        {
+          "name": "sellerId",
+          "originalName": "sellerId",
+          "values": [
+            "1"
+          ]
+        }
+      ],
+      "items": [
+        {
+          "sellers": [
+            {
+              "sellerId": "1",
+              "sellerName": "Jumbo Argentina",
+              "addToCartLink": "",
+              "sellerDefault": true,
+              "commertialOffer": {
+                "DeliverySlaSamplesPerRegion": {},
+                "DeliverySlaSamples": [],
+                "AvailableQuantity": 10000,
+                "discountHighlights": [],
+                "Installments": [
+                  {
+                    "Value": 599,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 199.66,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 3,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 99.83,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 6,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 49.91,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 12,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 33.27,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 18,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 24.95,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 24,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 19.96,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 30,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 599,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 199.66,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 3,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 99.83,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 6,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 49.91,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 12,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 39.93,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 15,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 33.27,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 18,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 599,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 199.66,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 3,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 99.83,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 6,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 49.91,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 12,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 39.93,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 15,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 33.27,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 18,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 599,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 199.66,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 3,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 99.83,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 6,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 49.91,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 12,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 39.93,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 15,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 33.27,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 18,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 599,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja"
+                  },
+                  {
+                    "Value": 99.83,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 6,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja"
+                  },
+                  {
+                    "Value": 54.45,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 11,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja"
+                  },
+                  {
+                    "Value": 49.91,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 12,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja"
+                  },
+                  {
+                    "Value": 599,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Cencosud Pay",
+                    "PaymentSystemGroupName": "Cencosud PayPaymentGroup",
+                    "Name": "Cencosud Pay à vista"
+                  },
+                  {
+                    "Value": 599,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Cuenta Corriente",
+                    "PaymentSystemGroupName": "custom201PaymentGroupPaymentGroup",
+                    "Name": "Cuenta Corriente à vista"
+                  },
+                  {
+                    "Value": 599,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Tarjeta de Débito",
+                    "PaymentSystemGroupName": "custom202PaymentGroupPaymentGroup",
+                    "Name": "Tarjeta de Débito à vista"
+                  },
+                  {
+                    "Value": 599,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Gift Card Cencosud",
+                    "PaymentSystemGroupName": "custom203PaymentGroupPaymentGroup",
+                    "Name": "Gift Card Cencosud à vista"
+                  },
+                  {
+                    "Value": 599,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 599,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Transferencia",
+                    "PaymentSystemGroupName": "custom205PaymentGroupPaymentGroup",
+                    "Name": "Transferencia à vista"
+                  }
+                ],
+                "Price": 599,
+                "ListPrice": 49504,
+                "spotPrice": 599,
+                "taxPercentage": 0,
+                "PriceWithoutDiscount": 599,
+                "Tax": 0,
+                "GiftSkuIds": [],
+                "BuyTogether": [],
+                "ItemMetadataAttachment": [],
+                "RewardValue": 0,
+                "PriceValidUntil": "2027-06-09T17:43:11Z",
+                "GetInfoErrorMessage": null,
+                "CacheVersionUsedToCallCheckout": "",
+                "teasers": []
+              }
+            }
+          ],
+          "images": [
+            {
+              "imageId": "693206",
+              "cacheId": "693206",
+              "imageTag": "",
+              "imageLabel": "11620147003-01",
+              "imageText": "11620147003-01",
+              "imageUrl": "https://veaargentina.vtexassets.com/arquivos/ids/693206/Arvejas-Inalpa-Secas-Remojadas-X300gr-1-886851.jpg?v=637828905784670000"
+            }
+          ],
+          "itemId": "346918",
+          "name": "Arvejas Inalpa Secas Remojadas X300gr",
+          "nameComplete": "Arvejas Inalpa Secas Remojadas X300gr",
+          "complementName": "",
+          "referenceId": [
+            {
+              "Key": "RefId",
+              "Value": "11620147003"
+            }
+          ],
+          "measurementUnit": "un",
+          "unitMultiplier": 1,
+          "variations": [],
+          "ean": "7792350067019",
+          "modalType": "",
+          "videos": [],
+          "attachments": [],
+          "isKit": false,
+          "attributes": []
+        }
+      ],
+      "categoriesIds": [
+        "/1/20/152/",
+        "/1/20/",
+        "/1/"
+      ],
+      "releaseDate": 1778630400000,
+      "metaTagDescription": "",
+      "origin": "intelligent-search",
+      "productTitle": ""
+    },
+    {
+      "cacheId": "sp-3075397",
+      "productId": "3075397",
+      "description": "",
+      "productName": "Choclo Al Vapor Cuisine & Co 225/200 Gr",
+      "productReference": "11620360003",
+      "linkText": "choclo-al-vapor-cuisine-co-225-200-gr",
+      "brand": "CUISINE & CO PREMIUM",
+      "brandId": 2000227,
+      "link": "/choclo-al-vapor-cuisine-co-225-200-gr/p",
+      "categories": [
+        "/Almacén/Conservas/Conservas de Verduras y Legumbres/",
+        "/Almacén/Conservas/",
+        "/Almacén/"
+      ],
+      "categoryId": "152",
+      "priceRange": {
+        "sellingPrice": {
+          "highPrice": 1680,
+          "lowPrice": 1680
+        },
+        "listPrice": {
+          "highPrice": 138843,
+          "lowPrice": 138843
+        }
+      },
+      "specificationGroups": [
+        {
+          "originalName": "Informacion Nutricional OkTo",
+          "name": "Informacion Nutricional OkTo",
+          "specifications": [
+            {
+              "originalName": "Ingredientes",
+              "name": "Ingredientes",
+              "values": [
+                "'granos choclo amarillo', 'agua', 'azúcar', 'sal'"
+              ]
+            },
+            {
+              "originalName": "Tabla Nutricional",
+              "name": "Tabla Nutricional",
+              "values": [
+                "{'nutritional_table_set_name': 'Tabla Nutricional', 'basic_unit_name': 'g', 'portion_text': '1 Taza de Té', 'portion_value': 130, 'portion_unit_name': 'g', 'num_portions': 1, 'energy_value': 84.62, 'energy_value_per_portion': 110, 'energy_unit_name': 'kCal', 'protein_value': 3.46, 'protein_value_per_portion': 4.5, 'protein_unit_name': 'g', 'fat_total_value': 1, 'fat_total_value_per_portion': 1.3, 'fat_total_unit_name': 'g', 'fat_sat_value': 0.38, 'fat_sat_value_per_portion': 0.5, 'fat_sat_unit_name': 'g', 'fat_trans_value': 0, 'fat_trans_value_per_portion': 0, 'fat_trans_unit_name': 'g', 'carb_value': 10.77, 'carb_value_per_portion': 14, 'carb_unit_name': 'g', 'sugars_value': 6.69, 'sugars_value_per_portion': 8.7, 'sugars_unit_name': 'g', 'fiber_value': 2.92, 'fiber_value_per_portion': 3.8, 'fiber_unit_name': 'g', 'sodium_value': 200, 'sodium_value_per_portion': 260, 'sodium_unit_name': 'mg'}"
+              ]
+            },
+            {
+              "originalName": "Sellos",
+              "name": "Sellos",
+              "values": [
+                "[{'certification_type_code': 'aplv_suitable', 'certification_type_name': 'Apto para APLV', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'lactose_free', 'certification_type_name': 'Libre de Lactosa', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'vegan', 'certification_type_name': 'Vegano', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'vegetarian', 'certification_type_name': 'Vegetariano', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'soy_free', 'certification_type_name': 'Libre de Soya', 'certifiers': [{'certifier_i"
+              ]
+            }
+          ]
+        },
+        {
+          "originalName": "Configuraciones",
+          "name": "Configuraciones",
+          "specifications": [
+            {
+              "originalName": "ProductData",
+              "name": "ProductData",
+              "values": [
+                "{\"allow_notes\":true,\"allow_substitute\":true,\"cart_limit\":\"0\",\"brandName\":\"CUISINE & CO PREMIUM MP\",\"brandEcomId\":\"2000227\",\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"measurement_unit_un\":\"gr.\",\"unit_multiplier_un\":200,\"measurement_unit_selector\":false,\"url_canonical\":null,\"provider_code\":\"14040\"}"
+              ]
+            },
+            {
+              "originalName": "SkuData",
+              "name": "SkuData",
+              "values": [
+                "{\"3074855\":{\"ref_id\":\"11620360003\",\"cart_limit\":0,\"allow_notes\":true,\"allow_substitute\":true,\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"promotions\":[],\"url_canonical\":null,\"measurement_unit_un\":\"gr.\",\"unit_multiplier_un\":200,\"measurement_unit_selector\":false,\"release_data\":{\"is_new\":false},\"cart_type\":\"1\"}}"
+              ]
+            }
+          ]
+        },
+        {
+          "originalName": "Características Destacadas",
+          "name": "Características Destacadas",
+          "specifications": [
+            {
+              "originalName": "Tipo de Producto",
+              "name": "Tipo de Producto",
+              "values": [
+                "Choclos"
+              ]
+            },
+            {
+              "originalName": "País de Origen",
+              "name": "País de Origen",
+              "values": [
+                "Brasil"
+              ]
+            },
+            {
+              "originalName": "Color",
+              "name": "Color",
+              "values": [
+                "Amarillo"
+              ]
+            },
+            {
+              "originalName": "Contenido",
+              "name": "Contenido",
+              "values": [
+                "200 Grs"
+              ]
+            },
+            {
+              "originalName": "Origen",
+              "name": "Origen",
+              "values": [
+                "Nacional"
+              ]
+            }
+          ]
+        },
+        {
+          "originalName": "allSpecifications",
+          "name": "allSpecifications",
+          "specifications": [
+            {
+              "originalName": "ProductData",
+              "name": "ProductData",
+              "values": [
+                "{\"allow_notes\":true,\"allow_substitute\":true,\"cart_limit\":\"0\",\"brandName\":\"CUISINE & CO PREMIUM MP\",\"brandEcomId\":\"2000227\",\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"measurement_unit_un\":\"gr.\",\"unit_multiplier_un\":200,\"measurement_unit_selector\":false,\"url_canonical\":null,\"provider_code\":\"14040\"}"
+              ]
+            },
+            {
+              "originalName": "SkuData",
+              "name": "SkuData",
+              "values": [
+                "{\"3074855\":{\"ref_id\":\"11620360003\",\"cart_limit\":0,\"allow_notes\":true,\"allow_substitute\":true,\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"promotions\":[],\"url_canonical\":null,\"measurement_unit_un\":\"gr.\",\"unit_multiplier_un\":200,\"measurement_unit_selector\":false,\"release_data\":{\"is_new\":false},\"cart_type\":\"1\"}}"
+              ]
+            },
+            {
+              "originalName": "Ingredientes",
+              "name": "Ingredientes",
+              "values": [
+                "'granos choclo amarillo', 'agua', 'azúcar', 'sal'"
+              ]
+            },
+            {
+              "originalName": "Tabla Nutricional",
+              "name": "Tabla Nutricional",
+              "values": [
+                "{'nutritional_table_set_name': 'Tabla Nutricional', 'basic_unit_name': 'g', 'portion_text': '1 Taza de Té', 'portion_value': 130, 'portion_unit_name': 'g', 'num_portions': 1, 'energy_value': 84.62, 'energy_value_per_portion': 110, 'energy_unit_name': 'kCal', 'protein_value': 3.46, 'protein_value_per_portion': 4.5, 'protein_unit_name': 'g', 'fat_total_value': 1, 'fat_total_value_per_portion': 1.3, 'fat_total_unit_name': 'g', 'fat_sat_value': 0.38, 'fat_sat_value_per_portion': 0.5, 'fat_sat_unit_name': 'g', 'fat_trans_value': 0, 'fat_trans_value_per_portion': 0, 'fat_trans_unit_name': 'g', 'carb_value': 10.77, 'carb_value_per_portion': 14, 'carb_unit_name': 'g', 'sugars_value': 6.69, 'sugars_value_per_portion': 8.7, 'sugars_unit_name': 'g', 'fiber_value': 2.92, 'fiber_value_per_portion': 3.8, 'fiber_unit_name': 'g', 'sodium_value': 200, 'sodium_value_per_portion': 260, 'sodium_unit_name': 'mg'}"
+              ]
+            },
+            {
+              "originalName": "Sellos",
+              "name": "Sellos",
+              "values": [
+                "[{'certification_type_code': 'aplv_suitable', 'certification_type_name': 'Apto para APLV', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'lactose_free', 'certification_type_name': 'Libre de Lactosa', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'vegan', 'certification_type_name': 'Vegano', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'vegetarian', 'certification_type_name': 'Vegetariano', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'soy_free', 'certification_type_name': 'Libre de Soya', 'certifiers': [{'certifier_i"
+              ]
+            },
+            {
+              "originalName": "Tipo de Producto",
+              "name": "Tipo de Producto",
+              "values": [
+                "Choclos"
+              ]
+            },
+            {
+              "originalName": "País de Origen",
+              "name": "País de Origen",
+              "values": [
+                "Brasil"
+              ]
+            },
+            {
+              "originalName": "Color",
+              "name": "Color",
+              "values": [
+                "Amarillo"
+              ]
+            },
+            {
+              "originalName": "Contenido",
+              "name": "Contenido",
+              "values": [
+                "200 Grs"
+              ]
+            },
+            {
+              "originalName": "Origen",
+              "name": "Origen",
+              "values": [
+                "Nacional"
+              ]
+            },
+            {
+              "originalName": "sellerId",
+              "name": "sellerId",
+              "values": [
+                "1"
+              ]
+            }
+          ]
+        }
+      ],
+      "skuSpecifications": [],
+      "productClusters": [
+        {
+          "id": "46848",
+          "name": "Im-Precio-Nante"
+        },
+        {
+          "id": "55705",
+          "name": "Superofertas"
+        },
+        {
+          "id": "55706",
+          "name": "Fin de Semana de Ofertas"
+        },
+        {
+          "id": "55707",
+          "name": "Jumbo Ofertas"
+        },
+        {
+          "id": "56778",
+          "name": "15% (20% con Cencopay)"
+        },
+        {
+          "id": "58289",
+          "name": "CUISINE & CO PREMIUM"
+        },
+        {
+          "id": "59443",
+          "name": "Marcas Participantes | Lookeados de Gloria"
+        },
+        {
+          "id": "59613",
+          "name": "Pasaporte a la Gloria"
+        },
+        {
+          "id": "60436",
+          "name": "Marca Exclusiva"
+        },
+        {
+          "id": "60558",
+          "name": "Marca Exclusiva"
+        },
+        {
+          "id": "60723",
+          "name": "Jumbo al 100 | Almacén, Bebidas, Frescos y más"
+        },
+        {
+          "id": "60732",
+          "name": "Jumbo al 70"
+        },
+        {
+          "id": "60748",
+          "name": "Hasta J100 en Almacén"
+        },
+        {
+          "id": "60781",
+          "name": "DISCO_rpainfoexclusivoonline-d01al14sar"
+        },
+        {
+          "id": "60782",
+          "name": "VEA_rpainfoexclusivoonline-v01al14sar"
+        },
+        {
+          "id": "60977",
+          "name": "Jumbo al 70"
+        },
+        {
+          "id": "60988",
+          "name": "Hasta 3x2"
+        },
+        {
+          "id": "60990",
+          "name": "Hasta 3x2 en Almacen"
+        },
+        {
+          "id": "61000",
+          "name": "Hasta 3x2 en Almacén y Bebidas"
+        },
+        {
+          "id": "61004",
+          "name": "Hasta 4x2 en Almacén y Bebidas"
+        },
+        {
+          "id": "61028",
+          "name": "Hasta 2do al 80% en Almacén"
+        },
+        {
+          "id": "61030",
+          "name": "Hasta 40% en Almacén, Bebidas, Frescos, Perfumería y Limpieza"
+        },
+        {
+          "id": "61061",
+          "name": "Hasta 2do al 80% en Infaltables de Almacén"
+        }
+      ],
+      "clusterHighlights": [
+        {
+          "id": "58289",
+          "name": "CUISINE & CO PREMIUM"
+        },
+        {
+          "id": "60723",
+          "name": "Jumbo al 100 | Almacén, Bebidas, Frescos y más"
+        },
+        {
+          "id": "60732",
+          "name": "Jumbo al 70"
+        },
+        {
+          "id": "60748",
+          "name": "Hasta J100 en Almacén"
+        },
+        {
+          "id": "60781",
+          "name": "DISCO_rpainfoexclusivoonline-d01al14sar"
+        },
+        {
+          "id": "60782",
+          "name": "VEA_rpainfoexclusivoonline-v01al14sar"
+        },
+        {
+          "id": "60977",
+          "name": "Jumbo al 70"
+        },
+        {
+          "id": "60990",
+          "name": "Hasta 3x2 en Almacen"
+        },
+        {
+          "id": "61000",
+          "name": "Hasta 3x2 en Almacén y Bebidas"
+        },
+        {
+          "id": "61004",
+          "name": "Hasta 4x2 en Almacén y Bebidas"
+        },
+        {
+          "id": "61028",
+          "name": "Hasta 2do al 80% en Almacén"
+        }
+      ],
+      "properties": [
+        {
+          "name": "ProductData",
+          "originalName": "ProductData",
+          "values": [
+            "{\"allow_notes\":true,\"allow_substitute\":true,\"cart_limit\":\"0\",\"brandName\":\"CUISINE & CO PREMIUM MP\",\"brandEcomId\":\"2000227\",\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"measurement_unit_un\":\"gr.\",\"unit_multiplier_un\":200,\"measurement_unit_selector\":false,\"url_canonical\":null,\"provider_code\":\"14040\"}"
+          ]
+        },
+        {
+          "name": "SkuData",
+          "originalName": "SkuData",
+          "values": [
+            "{\"3074855\":{\"ref_id\":\"11620360003\",\"cart_limit\":0,\"allow_notes\":true,\"allow_substitute\":true,\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"promotions\":[],\"url_canonical\":null,\"measurement_unit_un\":\"gr.\",\"unit_multiplier_un\":200,\"measurement_unit_selector\":false,\"release_data\":{\"is_new\":false},\"cart_type\":\"1\"}}"
+          ]
+        },
+        {
+          "name": "Ingredientes",
+          "originalName": "Ingredientes",
+          "values": [
+            "'granos choclo amarillo', 'agua', 'azúcar', 'sal'"
+          ]
+        },
+        {
+          "name": "Tabla Nutricional",
+          "originalName": "Tabla Nutricional",
+          "values": [
+            "{'nutritional_table_set_name': 'Tabla Nutricional', 'basic_unit_name': 'g', 'portion_text': '1 Taza de Té', 'portion_value': 130, 'portion_unit_name': 'g', 'num_portions': 1, 'energy_value': 84.62, 'energy_value_per_portion': 110, 'energy_unit_name': 'kCal', 'protein_value': 3.46, 'protein_value_per_portion': 4.5, 'protein_unit_name': 'g', 'fat_total_value': 1, 'fat_total_value_per_portion': 1.3, 'fat_total_unit_name': 'g', 'fat_sat_value': 0.38, 'fat_sat_value_per_portion': 0.5, 'fat_sat_unit_name': 'g', 'fat_trans_value': 0, 'fat_trans_value_per_portion': 0, 'fat_trans_unit_name': 'g', 'carb_value': 10.77, 'carb_value_per_portion': 14, 'carb_unit_name': 'g', 'sugars_value': 6.69, 'sugars_value_per_portion': 8.7, 'sugars_unit_name': 'g', 'fiber_value': 2.92, 'fiber_value_per_portion': 3.8, 'fiber_unit_name': 'g', 'sodium_value': 200, 'sodium_value_per_portion': 260, 'sodium_unit_name': 'mg'}"
+          ]
+        },
+        {
+          "name": "Sellos",
+          "originalName": "Sellos",
+          "values": [
+            "[{'certification_type_code': 'aplv_suitable', 'certification_type_name': 'Apto para APLV', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'lactose_free', 'certification_type_name': 'Libre de Lactosa', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'vegan', 'certification_type_name': 'Vegano', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'vegetarian', 'certification_type_name': 'Vegetariano', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'soy_free', 'certification_type_name': 'Libre de Soya', 'certifiers': [{'certifier_i"
+          ]
+        },
+        {
+          "name": "Tipo de Producto",
+          "originalName": "Tipo de Producto",
+          "values": [
+            "Choclos"
+          ]
+        },
+        {
+          "name": "País de Origen",
+          "originalName": "País de Origen",
+          "values": [
+            "Brasil"
+          ]
+        },
+        {
+          "name": "Color",
+          "originalName": "Color",
+          "values": [
+            "Amarillo"
+          ]
+        },
+        {
+          "name": "Contenido",
+          "originalName": "Contenido",
+          "values": [
+            "200 Grs"
+          ]
+        },
+        {
+          "name": "Origen",
+          "originalName": "Origen",
+          "values": [
+            "Nacional"
+          ]
+        },
+        {
+          "name": "sellerId",
+          "originalName": "sellerId",
+          "values": [
+            "1"
+          ]
+        }
+      ],
+      "items": [
+        {
+          "sellers": [
+            {
+              "sellerId": "1",
+              "sellerName": "Jumbo Argentina",
+              "addToCartLink": "",
+              "sellerDefault": true,
+              "commertialOffer": {
+                "DeliverySlaSamplesPerRegion": {},
+                "DeliverySlaSamples": [],
+                "AvailableQuantity": 10000,
+                "discountHighlights": [],
+                "Installments": [
+                  {
+                    "Value": 1680,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 560,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 3,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 280,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 6,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 140,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 12,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 93.33,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 18,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 70,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 24,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 56,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 30,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 1680,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 560,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 3,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 280,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 6,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 140,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 12,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 112,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 15,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 93.33,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 18,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 1680,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 560,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 3,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 280,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 6,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 140,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 12,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 112,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 15,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 93.33,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 18,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 1680,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 560,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 3,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 280,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 6,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 140,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 12,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 112,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 15,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 93.33,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 18,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 1680,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja"
+                  },
+                  {
+                    "Value": 280,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 6,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja"
+                  },
+                  {
+                    "Value": 152.72,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 11,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja"
+                  },
+                  {
+                    "Value": 140,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 12,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja"
+                  },
+                  {
+                    "Value": 1680,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Cencosud Pay",
+                    "PaymentSystemGroupName": "Cencosud PayPaymentGroup",
+                    "Name": "Cencosud Pay à vista"
+                  },
+                  {
+                    "Value": 1680,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Cuenta Corriente",
+                    "PaymentSystemGroupName": "custom201PaymentGroupPaymentGroup",
+                    "Name": "Cuenta Corriente à vista"
+                  },
+                  {
+                    "Value": 1680,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Tarjeta de Débito",
+                    "PaymentSystemGroupName": "custom202PaymentGroupPaymentGroup",
+                    "Name": "Tarjeta de Débito à vista"
+                  },
+                  {
+                    "Value": 1680,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Gift Card Cencosud",
+                    "PaymentSystemGroupName": "custom203PaymentGroupPaymentGroup",
+                    "Name": "Gift Card Cencosud à vista"
+                  },
+                  {
+                    "Value": 1680,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 1680,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Transferencia",
+                    "PaymentSystemGroupName": "custom205PaymentGroupPaymentGroup",
+                    "Name": "Transferencia à vista"
+                  }
+                ],
+                "Price": 1680,
+                "ListPrice": 138843,
+                "spotPrice": 1680,
+                "taxPercentage": 0,
+                "PriceWithoutDiscount": 1680,
+                "Tax": 0,
+                "GiftSkuIds": [],
+                "BuyTogether": [],
+                "ItemMetadataAttachment": [],
+                "RewardValue": 0,
+                "PriceValidUntil": "2027-06-09T17:44:17Z",
+                "GetInfoErrorMessage": null,
+                "CacheVersionUsedToCallCheckout": "",
+                "teasers": []
+              }
+            }
+          ],
+          "images": [
+            {
+              "imageId": "879497",
+              "cacheId": "879497",
+              "imageTag": "",
+              "imageLabel": "11620360003-01",
+              "imageText": "11620360003-01",
+              "imageUrl": "https://veaargentina.vtexassets.com/arquivos/ids/879497/Choclo-Al-Vapor-200-Grs-Cuisine-Co-1-1044967.jpg?v=638901564703470000"
+            }
+          ],
+          "itemId": "3074855",
+          "name": "Choclo Al Vapor Cuisine & Co 225/200 Gr",
+          "nameComplete": "Choclo Al Vapor Cuisine & Co 225/200 Gr",
+          "complementName": "",
+          "referenceId": [
+            {
+              "Key": "RefId",
+              "Value": "11620360003"
+            }
+          ],
+          "measurementUnit": "un",
+          "unitMultiplier": 1,
+          "variations": [],
+          "ean": "7792052768924",
+          "modalType": "",
+          "videos": [],
+          "attachments": [],
+          "isKit": false,
+          "attributes": []
+        }
+      ],
+      "categoriesIds": [
+        "/1/20/152/",
+        "/1/20/",
+        "/1/"
+      ],
+      "releaseDate": 1777248000000,
+      "metaTagDescription": "",
+      "origin": "intelligent-search",
+      "productTitle": ""
+    },
+    {
+      "cacheId": "sp-1362586",
+      "productId": "1362586",
+      "description": "<h2>Galletitas Secas Sabor Original 96 Grs Traviata</h2> <p>Las galletitas secas Traviata sabor original son un recurso práctico para incorporar en tus comidas diarias. Su formato envasado permite un almacenamiento sencillo a temperatura ambiente, manteniendo su estado hasta el momento de su consumo.</p> <h3>Características Destacadas de las Galletitas Secas Sabor Original 96 Grs Traviata</h3> <ul> <li>Contenido neto de 96 Grs, ideal para el consumo individual.</li> <li>Producto de origen nacional, elaborado bajo estándares locales.</li> <li>Presentación en paquete unitario que facilita su transporte y manipulación.</li> <li>Formato de galleta seca, versátil para diversas combinaciones en tu casa.</li> </ul> <h3>Por qué nos gustan las Galletitas Secas Sabor Original 96 Grs Traviata</h3> <p>Elegimos este producto por su practicidad en el día a día. Al ser un alimento de fácil conservación, vas a poder disponer de ellas en tu alacena sin ocupar espacio extra, contando siempre con un elemento versátil para acompañar tus infusiones o comidas en cualquier momento.</p> <p>Hacé ahora tu compra con retiro en el punto de entrega más próximo o envío a domicilio.</p>",
+      "productName": "Galletitas Secas Sabor Original 96 Grs Traviata",
+      "productReference": "11111704008",
+      "linkText": "galletitas-cracker-original-traviata-96-gr",
+      "brand": "TRAVIATA",
+      "brandId": 1035,
+      "link": "/galletitas-cracker-original-traviata-96-gr/p",
+      "categories": [
+        "/Almacén/Desayuno y Merienda/Galletitas Saladas/",
+        "/Almacén/Desayuno y Merienda/",
+        "/Almacén/"
+      ],
+      "categoryId": "159",
+      "priceRange": {
+        "sellingPrice": {
+          "highPrice": 898,
+          "lowPrice": 898
+        },
+        "listPrice": {
+          "highPrice": 74215,
+          "lowPrice": 74215
+        }
+      },
+      "specificationGroups": [
+        {
+          "originalName": "Informacion Nutricional OkTo",
+          "name": "Informacion Nutricional OkTo",
+          "specifications": [
+            {
+              "originalName": "Ingredientes",
+              "name": "Ingredientes",
+              "values": [
+                "'harina de trigo', 'hierro', 'ácido fólico', 'tiamina', 'riboflavina', 'niacina', 'aceite de girasol alto oleico', 'almidón', 'azúcar', 'sal', 'jarabe de glucosa', 'levadura', 'emulsionante mono y diglicéridos de ácidos grasos', 'emulsionante ésteres de ácidos grasos con propilenglicol', 'sales de ácidos grasos con potasio', 'lecitina de soja/soya', 'antioxidante bht', 'derivados de trigo', 'derivados de soja/soya'"
+              ]
+            },
+            {
+              "originalName": "Trazas",
+              "name": "Trazas",
+              "values": [
+                "'almendra', 'avellana', 'avena', 'cebada', 'centeno', 'huevo', 'leche', 'maní'"
+              ]
+            },
+            {
+              "originalName": "Condiciones Alimentarias",
+              "name": "Condiciones Alimentarias",
+              "values": [
+                "'derivados de trigo', 'derivados de soja/soya'"
+              ]
+            },
+            {
+              "originalName": "Tabla Nutricional",
+              "name": "Tabla Nutricional",
+              "values": [
+                "{'nutritional_table_set_name': 'Tabla Nutricional', 'basic_unit_name': 'g', 'portion_text': '12 Galletitas', 'portion_value': 30, 'portion_unit_name': 'g', 'num_portions': 3, 'energy_value': 470, 'energy_value_per_portion': 141, 'energy_unit_name': 'kCal', 'protein_value': 9.2, 'protein_value_per_portion': 2.8, 'protein_unit_name': 'g', 'fat_total_value': 19, 'fat_total_value_per_portion': 5.7, 'fat_total_unit_name': 'g', 'fat_sat_value': 1.8, 'fat_sat_value_per_portion': 0.5, 'fat_sat_unit_name': 'g', 'fat_mono_value': 15, 'fat_mono_value_per_portion': 4.5, 'fat_mono_unit_name': 'g', 'fat_poli_value': 1.8, 'fat_poli_value_per_portion': 0.5, 'fat_poli_unit_name': 'g', 'fat_trans_value': 0, 'fat_trans_value_per_portion': 0, 'fat_trans_unit_name': 'g', 'fat_cholesterol_value': 0, 'fat_cholesterol_value_per_portion': 0, 'fat_cholesterol_unit_name': 'mg', 'sugars_value': 2.9, 'sugars_value_per_portion': 0.9, 'sugars_unit_name': 'g', 'fiber_value': 2.1, 'fiber_value_per_portion': 0.6, 'fiber_unit_name': 'g', 'sodium_value': 731, 'sodium_value_per_portion': 219.3, 'sodium_unit_name': 'mg'}"
+              ]
+            },
+            {
+              "originalName": "Sellos",
+              "name": "Sellos",
+              "values": [
+                "[{'certification_type_code': 'lactose_free', 'certification_type_name': 'Libre de Lactosa', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'fish_free', 'certification_type_name': 'Libre de Peces', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'seafood_free', 'certification_type_name': 'Libre de Mariscos', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'walnuts_free', 'certification_type_name': 'Libre de Nueces', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'sulphite_free', 'certification_type_name': 'Libre de Sulfitos',"
+              ]
+            }
+          ]
+        },
+        {
+          "originalName": "Características Destacadas",
+          "name": "Características Destacadas",
+          "specifications": [
+            {
+              "originalName": "Tipo de Producto",
+              "name": "Tipo de Producto",
+              "values": [
+                "Galletas Secas"
+              ]
+            },
+            {
+              "originalName": "País de Origen",
+              "name": "País de Origen",
+              "values": [
+                "Argentina"
+              ]
+            },
+            {
+              "originalName": "Contenido Neto",
+              "name": "Contenido Neto",
+              "values": [
+                "96 Grs"
+              ]
+            },
+            {
+              "originalName": "Contiene Azúcar",
+              "name": "Contiene Azúcar",
+              "values": [
+                "No"
+              ]
+            },
+            {
+              "originalName": "Envase",
+              "name": "Envase",
+              "values": [
+                "Paquete"
+              ]
+            },
+            {
+              "originalName": "Formato",
+              "name": "Formato",
+              "values": [
+                "Envasado"
+              ]
+            },
+            {
+              "originalName": "Origen",
+              "name": "Origen",
+              "values": [
+                "Nacional"
+              ]
+            },
+            {
+              "originalName": "Pack-Unitario",
+              "name": "Pack-Unitario",
+              "values": [
+                "Unitario"
+              ]
+            }
+          ]
+        },
+        {
+          "originalName": "Configuraciones",
+          "name": "Configuraciones",
+          "specifications": [
+            {
+              "originalName": "ProductData",
+              "name": "ProductData",
+              "values": [
+                "{\"allow_notes\":true,\"allow_substitute\":true,\"cart_limit\":\"45\",\"brandName\":\"TRAVIATA\",\"brandEcomId\":\"1035\",\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"measurement_unit_un\":\"gr.\",\"unit_multiplier_un\":95,\"measurement_unit_selector\":false,\"url_canonical\":null,\"provider_code\":\"6493\"}"
+              ]
+            },
+            {
+              "originalName": "SkuData",
+              "name": "SkuData",
+              "values": [
+                "{\"1361829\":{\"ref_id\":\"11111704008\",\"cart_limit\":0,\"allow_notes\":true,\"allow_substitute\":true,\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"promotions\":[],\"url_canonical\":null,\"measurement_unit_un\":\"gr.\",\"unit_multiplier_un\":95,\"measurement_unit_selector\":false,\"release_data\":{\"is_new\":false},\"cart_type\":\"1\"}}"
+              ]
+            }
+          ]
+        },
+        {
+          "originalName": "Observaciones y Recomendaciones",
+          "name": "Observaciones y Recomendaciones",
+          "specifications": [
+            {
+              "originalName": "Almacenamiento",
+              "name": "Almacenamiento",
+              "values": [
+                "Conservar temperatura ambiente"
+              ]
+            }
+          ]
+        },
+        {
+          "originalName": "allSpecifications",
+          "name": "allSpecifications",
+          "specifications": [
+            {
+              "originalName": "ProductData",
+              "name": "ProductData",
+              "values": [
+                "{\"allow_notes\":true,\"allow_substitute\":true,\"cart_limit\":\"45\",\"brandName\":\"TRAVIATA\",\"brandEcomId\":\"1035\",\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"measurement_unit_un\":\"gr.\",\"unit_multiplier_un\":95,\"measurement_unit_selector\":false,\"url_canonical\":null,\"provider_code\":\"6493\"}"
+              ]
+            },
+            {
+              "originalName": "SkuData",
+              "name": "SkuData",
+              "values": [
+                "{\"1361829\":{\"ref_id\":\"11111704008\",\"cart_limit\":0,\"allow_notes\":true,\"allow_substitute\":true,\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"promotions\":[],\"url_canonical\":null,\"measurement_unit_un\":\"gr.\",\"unit_multiplier_un\":95,\"measurement_unit_selector\":false,\"release_data\":{\"is_new\":false},\"cart_type\":\"1\"}}"
+              ]
+            },
+            {
+              "originalName": "Ingredientes",
+              "name": "Ingredientes",
+              "values": [
+                "'harina de trigo', 'hierro', 'ácido fólico', 'tiamina', 'riboflavina', 'niacina', 'aceite de girasol alto oleico', 'almidón', 'azúcar', 'sal', 'jarabe de glucosa', 'levadura', 'emulsionante mono y diglicéridos de ácidos grasos', 'emulsionante ésteres de ácidos grasos con propilenglicol', 'sales de ácidos grasos con potasio', 'lecitina de soja/soya', 'antioxidante bht', 'derivados de trigo', 'derivados de soja/soya'"
+              ]
+            },
+            {
+              "originalName": "Trazas",
+              "name": "Trazas",
+              "values": [
+                "'almendra', 'avellana', 'avena', 'cebada', 'centeno', 'huevo', 'leche', 'maní'"
+              ]
+            },
+            {
+              "originalName": "Condiciones Alimentarias",
+              "name": "Condiciones Alimentarias",
+              "values": [
+                "'derivados de trigo', 'derivados de soja/soya'"
+              ]
+            },
+            {
+              "originalName": "Tabla Nutricional",
+              "name": "Tabla Nutricional",
+              "values": [
+                "{'nutritional_table_set_name': 'Tabla Nutricional', 'basic_unit_name': 'g', 'portion_text': '12 Galletitas', 'portion_value': 30, 'portion_unit_name': 'g', 'num_portions': 3, 'energy_value': 470, 'energy_value_per_portion': 141, 'energy_unit_name': 'kCal', 'protein_value': 9.2, 'protein_value_per_portion': 2.8, 'protein_unit_name': 'g', 'fat_total_value': 19, 'fat_total_value_per_portion': 5.7, 'fat_total_unit_name': 'g', 'fat_sat_value': 1.8, 'fat_sat_value_per_portion': 0.5, 'fat_sat_unit_name': 'g', 'fat_mono_value': 15, 'fat_mono_value_per_portion': 4.5, 'fat_mono_unit_name': 'g', 'fat_poli_value': 1.8, 'fat_poli_value_per_portion': 0.5, 'fat_poli_unit_name': 'g', 'fat_trans_value': 0, 'fat_trans_value_per_portion': 0, 'fat_trans_unit_name': 'g', 'fat_cholesterol_value': 0, 'fat_cholesterol_value_per_portion': 0, 'fat_cholesterol_unit_name': 'mg', 'sugars_value': 2.9, 'sugars_value_per_portion': 0.9, 'sugars_unit_name': 'g', 'fiber_value': 2.1, 'fiber_value_per_portion': 0.6, 'fiber_unit_name': 'g', 'sodium_value': 731, 'sodium_value_per_portion': 219.3, 'sodium_unit_name': 'mg'}"
+              ]
+            },
+            {
+              "originalName": "Sellos",
+              "name": "Sellos",
+              "values": [
+                "[{'certification_type_code': 'lactose_free', 'certification_type_name': 'Libre de Lactosa', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'fish_free', 'certification_type_name': 'Libre de Peces', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'seafood_free', 'certification_type_name': 'Libre de Mariscos', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'walnuts_free', 'certification_type_name': 'Libre de Nueces', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'sulphite_free', 'certification_type_name': 'Libre de Sulfitos',"
+              ]
+            },
+            {
+              "originalName": "Tipo de Producto",
+              "name": "Tipo de Producto",
+              "values": [
+                "Galletas Secas"
+              ]
+            },
+            {
+              "originalName": "País de Origen",
+              "name": "País de Origen",
+              "values": [
+                "Argentina"
+              ]
+            },
+            {
+              "originalName": "Contenido Neto",
+              "name": "Contenido Neto",
+              "values": [
+                "96 Grs"
+              ]
+            },
+            {
+              "originalName": "Contiene Azúcar",
+              "name": "Contiene Azúcar",
+              "values": [
+                "No"
+              ]
+            },
+            {
+              "originalName": "Envase",
+              "name": "Envase",
+              "values": [
+                "Paquete"
+              ]
+            },
+            {
+              "originalName": "Formato",
+              "name": "Formato",
+              "values": [
+                "Envasado"
+              ]
+            },
+            {
+              "originalName": "Origen",
+              "name": "Origen",
+              "values": [
+                "Nacional"
+              ]
+            },
+            {
+              "originalName": "Pack-Unitario",
+              "name": "Pack-Unitario",
+              "values": [
+                "Unitario"
+              ]
+            },
+            {
+              "originalName": "Almacenamiento",
+              "name": "Almacenamiento",
+              "values": [
+                "Conservar temperatura ambiente"
+              ]
+            },
+            {
+              "originalName": "sellerId",
+              "name": "sellerId",
+              "values": [
+                "1"
+              ]
+            }
+          ]
+        }
+      ],
+      "skuSpecifications": [],
+      "productClusters": [
+        {
+          "id": "53919",
+          "name": "Cencopay"
+        },
+        {
+          "id": "55566",
+          "name": "Llegó el CARRITO ONLINE"
+        },
+        {
+          "id": "55707",
+          "name": "Jumbo Ofertas"
+        },
+        {
+          "id": "56778",
+          "name": "15% (20% con Cencopay)"
+        },
+        {
+          "id": "59443",
+          "name": "Marcas Participantes | Lookeados de Gloria"
+        },
+        {
+          "id": "59613",
+          "name": "Pasaporte a la Gloria"
+        },
+        {
+          "id": "60723",
+          "name": "Jumbo al 100 | Almacén, Bebidas, Frescos y más"
+        },
+        {
+          "id": "60728",
+          "name": "Jumbo al 100"
+        },
+        {
+          "id": "60748",
+          "name": "Hasta J100 en Almacén"
+        },
+        {
+          "id": "60852",
+          "name": "Jumbo al 100 en Picada"
+        },
+        {
+          "id": "60976",
+          "name": "Jumbo al 100"
+        },
+        {
+          "id": "60988",
+          "name": "Hasta 3x2"
+        },
+        {
+          "id": "61004",
+          "name": "Hasta 4x2 en Almacén y Bebidas"
+        },
+        {
+          "id": "61067",
+          "name": "Hasta 2do al 70% en Galletitas Dulces y Saladas"
+        },
+        {
+          "id": "61072",
+          "name": "Hasta 3x2 en Galletitas"
+        }
+      ],
+      "clusterHighlights": [
+        {
+          "id": "60723",
+          "name": "Jumbo al 100 | Almacén, Bebidas, Frescos y más"
+        },
+        {
+          "id": "60728",
+          "name": "Jumbo al 100"
+        },
+        {
+          "id": "60748",
+          "name": "Hasta J100 en Almacén"
+        },
+        {
+          "id": "60852",
+          "name": "Jumbo al 100 en Picada"
+        },
+        {
+          "id": "60976",
+          "name": "Jumbo al 100"
+        },
+        {
+          "id": "61004",
+          "name": "Hasta 4x2 en Almacén y Bebidas"
+        }
+      ],
+      "properties": [
+        {
+          "name": "ProductData",
+          "originalName": "ProductData",
+          "values": [
+            "{\"allow_notes\":true,\"allow_substitute\":true,\"cart_limit\":\"45\",\"brandName\":\"TRAVIATA\",\"brandEcomId\":\"1035\",\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"measurement_unit_un\":\"gr.\",\"unit_multiplier_un\":95,\"measurement_unit_selector\":false,\"url_canonical\":null,\"provider_code\":\"6493\"}"
+          ]
+        },
+        {
+          "name": "SkuData",
+          "originalName": "SkuData",
+          "values": [
+            "{\"1361829\":{\"ref_id\":\"11111704008\",\"cart_limit\":0,\"allow_notes\":true,\"allow_substitute\":true,\"measurement_unit\":\"un\",\"unit_multiplier\":1,\"promotions\":[],\"url_canonical\":null,\"measurement_unit_un\":\"gr.\",\"unit_multiplier_un\":95,\"measurement_unit_selector\":false,\"release_data\":{\"is_new\":false},\"cart_type\":\"1\"}}"
+          ]
+        },
+        {
+          "name": "Ingredientes",
+          "originalName": "Ingredientes",
+          "values": [
+            "'harina de trigo', 'hierro', 'ácido fólico', 'tiamina', 'riboflavina', 'niacina', 'aceite de girasol alto oleico', 'almidón', 'azúcar', 'sal', 'jarabe de glucosa', 'levadura', 'emulsionante mono y diglicéridos de ácidos grasos', 'emulsionante ésteres de ácidos grasos con propilenglicol', 'sales de ácidos grasos con potasio', 'lecitina de soja/soya', 'antioxidante bht', 'derivados de trigo', 'derivados de soja/soya'"
+          ]
+        },
+        {
+          "name": "Trazas",
+          "originalName": "Trazas",
+          "values": [
+            "'almendra', 'avellana', 'avena', 'cebada', 'centeno', 'huevo', 'leche', 'maní'"
+          ]
+        },
+        {
+          "name": "Condiciones Alimentarias",
+          "originalName": "Condiciones Alimentarias",
+          "values": [
+            "'derivados de trigo', 'derivados de soja/soya'"
+          ]
+        },
+        {
+          "name": "Tabla Nutricional",
+          "originalName": "Tabla Nutricional",
+          "values": [
+            "{'nutritional_table_set_name': 'Tabla Nutricional', 'basic_unit_name': 'g', 'portion_text': '12 Galletitas', 'portion_value': 30, 'portion_unit_name': 'g', 'num_portions': 3, 'energy_value': 470, 'energy_value_per_portion': 141, 'energy_unit_name': 'kCal', 'protein_value': 9.2, 'protein_value_per_portion': 2.8, 'protein_unit_name': 'g', 'fat_total_value': 19, 'fat_total_value_per_portion': 5.7, 'fat_total_unit_name': 'g', 'fat_sat_value': 1.8, 'fat_sat_value_per_portion': 0.5, 'fat_sat_unit_name': 'g', 'fat_mono_value': 15, 'fat_mono_value_per_portion': 4.5, 'fat_mono_unit_name': 'g', 'fat_poli_value': 1.8, 'fat_poli_value_per_portion': 0.5, 'fat_poli_unit_name': 'g', 'fat_trans_value': 0, 'fat_trans_value_per_portion': 0, 'fat_trans_unit_name': 'g', 'fat_cholesterol_value': 0, 'fat_cholesterol_value_per_portion': 0, 'fat_cholesterol_unit_name': 'mg', 'sugars_value': 2.9, 'sugars_value_per_portion': 0.9, 'sugars_unit_name': 'g', 'fiber_value': 2.1, 'fiber_value_per_portion': 0.6, 'fiber_unit_name': 'g', 'sodium_value': 731, 'sodium_value_per_portion': 219.3, 'sodium_unit_name': 'mg'}"
+          ]
+        },
+        {
+          "name": "Sellos",
+          "originalName": "Sellos",
+          "values": [
+            "[{'certification_type_code': 'lactose_free', 'certification_type_name': 'Libre de Lactosa', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'fish_free', 'certification_type_name': 'Libre de Peces', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'seafood_free', 'certification_type_name': 'Libre de Mariscos', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'walnuts_free', 'certification_type_name': 'Libre de Nueces', 'certifiers': [{'certifier_id': 0, 'certifier_name': '', 'certifier_logo_url': '', 'certification_country_id': 32, 'certification_country_name': 'Argentina', 'certification_degree_id': 1, 'certification_degree_name': 'APTO, Según lista de Ingredientes y Trazas', 'certification_start': 0, 'certification_end': 0, 'certification_comments': '', 'certification_last_update': 1780309582}]}, {'certification_type_code': 'sulphite_free', 'certification_type_name': 'Libre de Sulfitos',"
+          ]
+        },
+        {
+          "name": "Tipo de Producto",
+          "originalName": "Tipo de Producto",
+          "values": [
+            "Galletas Secas"
+          ]
+        },
+        {
+          "name": "País de Origen",
+          "originalName": "País de Origen",
+          "values": [
+            "Argentina"
+          ]
+        },
+        {
+          "name": "Contenido Neto",
+          "originalName": "Contenido Neto",
+          "values": [
+            "96 Grs"
+          ]
+        },
+        {
+          "name": "Contiene Azúcar",
+          "originalName": "Contiene Azúcar",
+          "values": [
+            "No"
+          ]
+        },
+        {
+          "name": "Envase",
+          "originalName": "Envase",
+          "values": [
+            "Paquete"
+          ]
+        },
+        {
+          "name": "Formato",
+          "originalName": "Formato",
+          "values": [
+            "Envasado"
+          ]
+        },
+        {
+          "name": "Origen",
+          "originalName": "Origen",
+          "values": [
+            "Nacional"
+          ]
+        },
+        {
+          "name": "Pack-Unitario",
+          "originalName": "Pack-Unitario",
+          "values": [
+            "Unitario"
+          ]
+        },
+        {
+          "name": "Almacenamiento",
+          "originalName": "Almacenamiento",
+          "values": [
+            "Conservar temperatura ambiente"
+          ]
+        },
+        {
+          "name": "sellerId",
+          "originalName": "sellerId",
+          "values": [
+            "1"
+          ]
+        }
+      ],
+      "items": [
+        {
+          "sellers": [
+            {
+              "sellerId": "1",
+              "sellerName": "Jumbo Argentina",
+              "addToCartLink": "",
+              "sellerDefault": true,
+              "commertialOffer": {
+                "DeliverySlaSamplesPerRegion": {},
+                "DeliverySlaSamples": [],
+                "AvailableQuantity": 10000,
+                "discountHighlights": [],
+                "Installments": [
+                  {
+                    "Value": 898,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 299.33,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 3,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 149.66,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 6,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 74.83,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 12,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 49.88,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 18,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 37.41,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 24,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 29.93,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 30,
+                    "PaymentSystemName": "American Express",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "American Express"
+                  },
+                  {
+                    "Value": 898,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 299.33,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 3,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 149.66,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 6,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 74.83,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 12,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 59.86,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 15,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 49.88,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 18,
+                    "PaymentSystemName": "Visa",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Visa"
+                  },
+                  {
+                    "Value": 898,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 299.33,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 3,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 149.66,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 6,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 74.83,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 12,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 59.86,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 15,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 49.88,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 18,
+                    "PaymentSystemName": "Mastercard",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Mastercard"
+                  },
+                  {
+                    "Value": 898,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 299.33,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 3,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 149.66,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 6,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 74.83,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 12,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 59.86,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 15,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 49.88,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 18,
+                    "PaymentSystemName": "Cabal",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Cabal"
+                  },
+                  {
+                    "Value": 898,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja"
+                  },
+                  {
+                    "Value": 149.66,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 6,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja"
+                  },
+                  {
+                    "Value": 81.63,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 11,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja"
+                  },
+                  {
+                    "Value": 74.83,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 12,
+                    "PaymentSystemName": "Naranja",
+                    "PaymentSystemGroupName": "creditCardPaymentGroup",
+                    "Name": "Naranja"
+                  },
+                  {
+                    "Value": 898,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Cencosud Pay",
+                    "PaymentSystemGroupName": "Cencosud PayPaymentGroup",
+                    "Name": "Cencosud Pay à vista"
+                  },
+                  {
+                    "Value": 898,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Cuenta Corriente",
+                    "PaymentSystemGroupName": "custom201PaymentGroupPaymentGroup",
+                    "Name": "Cuenta Corriente à vista"
+                  },
+                  {
+                    "Value": 898,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Tarjeta de Débito",
+                    "PaymentSystemGroupName": "custom202PaymentGroupPaymentGroup",
+                    "Name": "Tarjeta de Débito à vista"
+                  },
+                  {
+                    "Value": 898,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Gift Card Cencosud",
+                    "PaymentSystemGroupName": "custom203PaymentGroupPaymentGroup",
+                    "Name": "Gift Card Cencosud à vista"
+                  },
+                  {
+                    "Value": 898,
+                    "InterestRate": 0,
+                    "TotalValuePlusInterestRate": 898,
+                    "NumberOfInstallments": 1,
+                    "PaymentSystemName": "Transferencia",
+                    "PaymentSystemGroupName": "custom205PaymentGroupPaymentGroup",
+                    "Name": "Transferencia à vista"
+                  }
+                ],
+                "Price": 898,
+                "ListPrice": 74215,
+                "spotPrice": 898,
+                "taxPercentage": 0,
+                "PriceWithoutDiscount": 898,
+                "Tax": 0,
+                "GiftSkuIds": [],
+                "BuyTogether": [],
+                "ItemMetadataAttachment": [],
+                "RewardValue": 0,
+                "PriceValidUntil": "2027-06-09T17:45:25Z",
+                "GetInfoErrorMessage": null,
+                "CacheVersionUsedToCallCheckout": "",
+                "teasers": []
+              }
+            }
+          ],
+          "images": [
+            {
+              "imageId": "827542",
+              "cacheId": "827542",
+              "imageTag": "",
+              "imageLabel": "11111704008-01",
+              "imageText": "11111704008-01",
+              "imageUrl": "https://veaargentina.vtexassets.com/arquivos/ids/827542/Galletitas-Cracker-Original-Traviata-96-Gr-1-1019779.jpg?v=638558014928100000"
+            }
+          ],
+          "itemId": "1361829",
+          "name": "Galletitas Secas Sabor Original 96 Grs Traviata",
+          "nameComplete": "Galletitas Secas Sabor Original 96 Grs Traviata",
+          "complementName": "",
+          "referenceId": [
+            {
+              "Key": "RefId",
+              "Value": "11111704008"
+            }
+          ],
+          "measurementUnit": "un",
+          "unitMultiplier": 1,
+          "variations": [],
+          "ean": "7790040143937",
+          "modalType": "",
+          "videos": [],
+          "attachments": [],
+          "isKit": false,
+          "attributes": []
+        }
+      ],
+      "categoriesIds": [
+        "/1/21/159/",
+        "/1/21/",
+        "/1/"
+      ],
+      "releaseDate": 1775952000000,
+      "metaTagDescription": "",
+      "origin": "intelligent-search",
+      "productTitle": ""
+    }
+  ]
+}

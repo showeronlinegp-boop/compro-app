@@ -1,0 +1,42 @@
+{
+  "productId": 417209,
+  "name": "Galletitas Sabor Chocolate 250 Grs Chocolinas",
+  "salesChannel": "34",
+  "available": true,
+  "displayMode": "especificacao",
+  "dimensions": [],
+  "dimensionsInputType": {},
+  "dimensionsMap": {},
+  "skus": [
+    {
+      "sku": 412694,
+      "skuname": "Galletitas Sabor Chocolate 250 Grs Chocolinas",
+      "dimensions": {},
+      "available": true,
+      "availablequantity": 99999,
+      "cacheVersionUsedToCallCheckout": "_",
+      "listPriceFormated": "$ 199.339,00",
+      "listPrice": 19933900,
+      "taxFormated": "$ 0,00",
+      "taxAsInt": 0,
+      "bestPriceFormated": "$ 2.412,00",
+      "bestPrice": 241200,
+      "spotPrice": 241200,
+      "installments": 30,
+      "installmentsValue": 8040,
+      "installmentsInsterestRate": null,
+      "image": "https://jumboargentina.vteximg.com.br/arquivos/ids/814283-750-750/Galletitas-Chocolinas-X250g-1-1008715.jpg?v=638452605691770000",
+      "sellerId": "1",
+      "seller": "Vea Argentina",
+      "measures": {
+        "cubicweight": 112.0392,
+        "height": 57,
+        "length": 252,
+        "weight": 342,
+        "width": 39
+      },
+      "unitMultiplier": 1,
+      "rewardValue": 0
+    }
+  ]
+}
