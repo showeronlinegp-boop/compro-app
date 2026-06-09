@@ -56,10 +56,21 @@ export const CRAWLER_RETRY_CAP_MS = 8_000;
 // PROMO_BATCH is a HARD endpoint limit — sending more returns HTTP 500.
 // ---------------------------------------------------------------------------
 
-/** Max concurrent enricher requests for HTML scraping (enricher.js: CONCURRENCY) */
-export const ENRICH_CONCURRENCY = 15;
+/**
+ * Max concurrent enricher requests for HTML scraping (Strategy B).
+ * Default 40: DIA was measured handling 50 concurrent with 0 errors / 0 429s
+ * (4762 pages in ~28s), so 40 leaves margin while staying ~8x faster than the
+ * old batched model. fetchWithRetry backoff absorbs 429/503 bursts if a stricter
+ * store pushes back. Override per-environment via ENRICH_HTML_CONC; set =1 for
+ * sequential rollback.
+ */
+export const ENRICH_HTML_CONC = 40;
 
-/** Milliseconds to sleep between enricher request batches (enricher.js: THROTTLE_MS) */
+/**
+ * Milliseconds to sleep between enricher request batches (legacy: enricher.js THROTTLE_MS).
+ * No longer used as inter-batch sleep (runPool has no discrete batches).
+ * Kept for reference / potential future use.
+ */
 export const ENRICH_THROTTLE_MS = 250;
 
 /**

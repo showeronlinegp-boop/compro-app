@@ -10,6 +10,7 @@
  * NOT yet wired into the running app — Slice 6 cutover.
  */
 
+import { fetchText, fetchWithRetry } from '../../shared/fetch.js';
 import { UA } from '../../config/throttles.js';
 
 // ---------------------------------------------------------------------------
@@ -149,12 +150,15 @@ export async function fetchPromoPrice(
   }
 
   try {
-    const r = await fetch(resolvedUrl, {
-      headers: { 'User-Agent': UA, Accept: 'text/html' },
-      signal: AbortSignal.timeout(8_000),
-    });
-    if (!r.ok) return { kind: 'fetch_error' };
-    const html = await r.text();
+    // fetchText throws HttpError on non-2xx; fetchWithRetry retries 429/5xx with
+    // exponential backoff + full jitter. 403 is NOT retried (WAF hard block).
+    // On final retry exhaustion or non-retryable status, the HttpError propagates
+    // to the outer catch which maps it to { kind: 'fetch_error' }.
+    const html = await fetchWithRetry(() =>
+      fetchText(resolvedUrl, {
+        headers: { 'User-Agent': UA, Accept: 'text/html' },
+      }),
+    );
     const result = parseJsonLdFromHtml(html);
     return result ? { kind: 'found', result } : { kind: 'no_data' };
   } catch {

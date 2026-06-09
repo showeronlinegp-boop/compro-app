@@ -9,6 +9,10 @@ import {
   CRAWLER_RETRY_FACTOR,
   CRAWLER_RETRY_MAX,
   CRAWLER_THROTTLE_MS,
+  ENRICH_HTML_CONC,
+  ENRICH_PROMO_BATCH,
+  ENRICH_PROMO_CONC,
+  ENRICH_SKU_CONC,
 } from './throttles.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -80,3 +84,19 @@ export const ENV_CRAWLER_RETRY_CAP_MS: number = numEnv(
   'CRAWLER_RETRY_CAP_MS',
   CRAWLER_RETRY_CAP_MS,
 );
+
+// ---------------------------------------------------------------------------
+// Enricher runtime config — resolved from env with static defaults as fallback.
+// ---------------------------------------------------------------------------
+
+/** Max concurrent HTML scraping requests (env: ENRICH_HTML_CONC). Set to 1 for sequential rollback. */
+export const ENV_ENRICH_HTML_CONC: number = numEnv('ENRICH_HTML_CONC', ENRICH_HTML_CONC);
+
+/** Max concurrent search-promotions requests (env: ENRICH_PROMO_CONC). */
+export const ENV_ENRICH_PROMO_CONC: number = numEnv('ENRICH_PROMO_CONC', ENRICH_PROMO_CONC);
+
+/** Max concurrent SKU-ID variation fetches (env: ENRICH_SKU_CONC). */
+export const ENV_ENRICH_SKU_CONC: number = numEnv('ENRICH_SKU_CONC', ENRICH_SKU_CONC);
+
+/** SKUs per search-promotions POST request (env: ENRICH_PROMO_BATCH). Hard endpoint limit = 20. */
+export const ENV_ENRICH_PROMO_BATCH: number = numEnv('ENRICH_PROMO_BATCH', ENRICH_PROMO_BATCH);
