@@ -12,9 +12,10 @@ interface SyncPanelProps {
   status: SyncLog[];
   syncing: string;
   onSync: (key: SuperKey) => Promise<void>;
+  onSyncAll: () => Promise<void>;
 }
 
-function SyncPanel({ status, syncing, onSync }: SyncPanelProps) {
+function SyncPanel({ status, syncing, onSync, onSyncAll }: SyncPanelProps) {
   const [open, setOpen] = useState(false);
   const SYNC_KEYS: SuperKey[] = ['vea', 'carrefour', 'dia', 'masonline'];
   const anyRunning = status.some((s) => s.status === 'running') || !!syncing;
@@ -36,6 +37,19 @@ function SyncPanel({ status, syncing, onSync }: SyncPanelProps) {
       {open && (
         <div className="absolute right-0 top-full mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 p-3 w-72 z-50">
           <p className="text-xs font-semibold text-gray-500 mb-3 px-1">Sincronizar precios</p>
+
+          <button
+            type="button"
+            onClick={() => {
+              onSyncAll();
+              setOpen(false);
+            }}
+            disabled={anyRunning}
+            className="w-full mb-3 text-xs font-medium px-3 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {anyRunning ? 'Sincronizando…' : '⚡ Sincronizar todos'}
+          </button>
+
           {SYNC_KEYS.map((key) => {
             const s = status.find((x) => x.super === key);
             const isRunning = syncing === key || s?.status === 'running';
@@ -52,7 +66,7 @@ function SyncPanel({ status, syncing, onSync }: SyncPanelProps) {
                       onSync(key);
                       setOpen(false);
                     }}
-                    disabled={isRunning || !!syncing}
+                    disabled={anyRunning}
                     className="text-xs px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 disabled:opacity-40 font-medium"
                   >
                     {isRunning ? 'Corriendo' : 'Sync'}
@@ -170,6 +184,17 @@ export default function App() {
     }
   }
 
+  async function triggerSyncAll() {
+    setSyncing('all');
+    try {
+      await api.sync.triggerAll();
+      const fresh = await api.sync.status();
+      setSyncStatus(fresh);
+    } catch {
+      setSyncing('');
+    }
+  }
+
   const shoppingIds = new Set(shopping.map((s) => s.id));
 
   return (
@@ -209,7 +234,12 @@ export default function App() {
           </div>
 
           {/* Sync panel */}
-          <SyncPanel status={syncStatus} syncing={syncing} onSync={triggerSync} />
+          <SyncPanel
+            status={syncStatus}
+            syncing={syncing}
+            onSync={triggerSync}
+            onSyncAll={triggerSyncAll}
+          />
         </div>
       </nav>
 

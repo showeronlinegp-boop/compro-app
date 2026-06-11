@@ -2,12 +2,14 @@
  * crawler.routes.ts — HTTP routes for the sync API.
  *
  * Port of the /api/sync/* endpoints from backend/server.js (as wired in main.ts).
- * Contract is IDENTICAL to the legacy implementation:
+ * Contract:
  *   GET  /status  → getSyncStatus() result (all supers)
+ *   POST /all      → fire-and-forget syncAll (every super, sequential); 409 if any running
  *   POST /:super  → fire-and-forget syncSuper; 409 if already running
  */
 
 import { Router } from 'express';
+import { SUPERS } from '../../config/supers.js';
 import type { CrawlerService } from './crawler.service.js';
 
 export function makeCrawlerRouter(service: CrawlerService): Router {
@@ -15,6 +17,19 @@ export function makeCrawlerRouter(service: CrawlerService): Router {
 
   router.get('/status', (_req, res) => {
     res.json(service.getSyncStatus());
+  });
+
+  // Registered before /:super so the literal path wins over the param route.
+  router.post('/all', (_req, res) => {
+    const busy = Object.keys(SUPERS).some((key) => service.isRunning(key));
+    if (busy) {
+      return void res.status(409).json({ error: 'Sync ya en curso' });
+    }
+
+    res.json({ ok: true, message: 'Sync de todos los supers iniciado' });
+
+    // Sequential crawl of every super (single SQLite writer); fire-and-forget.
+    service.syncAll().catch((err: Error) => console.error('Sync all failed:', err.message));
   });
 
   router.post('/:super', (req, res) => {

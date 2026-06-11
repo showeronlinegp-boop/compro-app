@@ -55,6 +55,7 @@ export const api = {
     status: () => req<SyncLog[]>('/sync/status'),
     trigger: (s: SuperKey) =>
       req<{ ok: boolean; message: string }>(`/sync/${s}`, { method: 'POST' }),
+    triggerAll: () => req<{ ok: boolean; message: string }>('/sync/all', { method: 'POST' }),
   },
   enrich: {
     status: () => req<Record<string, EnrichStatus>>('/enrich/status'),
