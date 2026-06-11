@@ -2,14 +2,17 @@
  * Pure query builder for the products search endpoint.
  * No IO — fully unit-testable.
  *
- * Mirrors the query-building logic in backend/routes/products.js exactly:
- *   - q           → name LIKE %value%
+ * Query-building logic for the products search endpoint:
+ *   - q           → tokenized name search: each token must match norm(name)
+ *                   (accent/punctuation-insensitive, order-independent)
  *   - super       → super = value
  *   - category    → one OR clause per vtex string (categories LIKE %s%)
  *   - discount    → discount_pct > 0  (only when '1')
  *   - available   → available = 1     (only when '1')
  *   - page/limit  → LIMIT/OFFSET (LIMIT/OFFSET are inlined as integers, not params)
  */
+
+import { buildNameSearch } from '../../../shared/text.js';
 
 export interface ProductQueryParams {
   q?: string;
@@ -45,8 +48,11 @@ export function buildProductsQuery(params: ProductQueryParams): BuiltQuery {
   const bindings: unknown[] = [];
 
   if (params.q) {
-    conds.push('name LIKE ?');
-    bindings.push(`%${params.q}%`);
+    const nameSearch = buildNameSearch(params.q);
+    if (nameSearch) {
+      conds.push(`(${nameSearch.clause})`);
+      bindings.push(...nameSearch.bindings);
+    }
   }
 
   if (params.super) {

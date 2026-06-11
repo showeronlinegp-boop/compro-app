@@ -24,15 +24,27 @@ describe('buildProductsQuery', () => {
   });
 
   describe('q filter', () => {
-    it('adds name LIKE binding with % wildcards', () => {
+    it('adds a single tokenized norm(name) LIKE binding', () => {
       const { sql, bindings } = buildProductsQuery({ q: 'leche' });
       expect(bindings).toEqual(['%leche%']);
-      expect(sql).toContain('name LIKE ?');
+      expect(sql).toContain('norm(name) LIKE ?');
     });
 
-    it('handles q with spaces', () => {
-      const { bindings } = buildProductsQuery({ q: 'leche entera' });
-      expect(bindings).toEqual(['%leche entera%']);
+    it('splits q into one AND-ed token per word', () => {
+      const { sql, bindings } = buildProductsQuery({ q: 'leche entera' });
+      expect(bindings).toEqual(['%leche%', '%entera%']);
+      expect(sql).toContain('norm(name) LIKE ? AND norm(name) LIKE ?');
+    });
+
+    it('normalizes tokens (accent/punctuation insensitive)', () => {
+      const { bindings } = buildProductsQuery({ q: 'Coca-Cola Café' });
+      expect(bindings).toEqual(['%coca%', '%cola%', '%cafe%']);
+    });
+
+    it('adds no name condition when q has no usable tokens', () => {
+      const { sql, bindings } = buildProductsQuery({ q: '-' });
+      expect(bindings).toEqual([]);
+      expect(sql).not.toContain('norm(name)');
     });
   });
 
@@ -142,7 +154,7 @@ describe('buildProductsQuery', () => {
         discount: '1',
       });
       expect(bindings).toEqual(['%arroz%', 'carrefour']);
-      expect(sql).toContain('name LIKE ?');
+      expect(sql).toContain('norm(name) LIKE ?');
       expect(sql).toContain('super = ?');
       expect(sql).toContain('discount_pct > 0');
     });

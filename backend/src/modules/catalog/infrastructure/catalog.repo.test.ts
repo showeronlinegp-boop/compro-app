@@ -3,6 +3,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { registerDbFunctions } from '../../../infrastructure/db/functions.js';
 import { runMigrations } from '../../../infrastructure/db/migrations.js';
 import { makeCatalogRepo } from './catalog.repo.js';
 
@@ -13,6 +14,7 @@ function createTempDb(): Database.Database {
   const db = new Database(tmpFile);
   db.pragma('foreign_keys = ON');
   runMigrations(db);
+  registerDbFunctions(db);
   return db;
 }
 
@@ -113,6 +115,30 @@ describe('makeCatalogRepo', () => {
       const result = repo.search({ q: 'leche' });
       expect(result.total).toBe(1);
       expect(result.data[0]?.name).toBe('Leche entera');
+    });
+
+    it('q is punctuation-insensitive: "coca cola zero" matches "Coca-Cola Zero"', () => {
+      seedProduct(db, { product_id: 'h1', name: 'Gaseosa Coca-Cola Zero 2,5 Lt.' });
+      seedProduct(db, { product_id: 'h2', name: 'Pan integral' });
+      const repo = makeCatalogRepo(db);
+      const result = repo.search({ q: 'coca cola zero' });
+      expect(result.total).toBe(1);
+      expect(result.data[0]?.name).toBe('Gaseosa Coca-Cola Zero 2,5 Lt.');
+    });
+
+    it('q is accent-insensitive and order-independent', () => {
+      seedProduct(db, { product_id: 'a1', name: 'Café Molido La Virginia' });
+      const repo = makeCatalogRepo(db);
+      expect(repo.search({ q: 'cafe' }).total).toBe(1);
+      expect(repo.search({ q: 'virginia cafe' }).total).toBe(1);
+    });
+
+    it('q with only punctuation yields no tokens → no name filter applied', () => {
+      seedProduct(db, { product_id: 'p1', name: 'Leche' });
+      seedProduct(db, { product_id: 'p2', name: 'Pan' });
+      const repo = makeCatalogRepo(db);
+      // "-" normalizes to empty → buildNameSearch returns null → all rows returned
+      expect(repo.search({ q: '-' }).total).toBe(2);
     });
 
     it('filters by super', () => {
@@ -237,6 +263,24 @@ describe('makeCatalogRepo', () => {
       expect(result.data[0]?.variants).toHaveLength(1);
     });
 
+    it('finds a single-super hyphenated product by space-separated query (regression)', () => {
+      // Real bug: DIA-exclusive "Gaseosa Coca-Cola Zero 2,5 Lt." (hyphen) was
+      // invisible to the query "coca cola zero" (space) because no sibling row
+      // shared its barcode to pull the singleton group into the results.
+      seedProduct(db, {
+        super_key: 'dia',
+        product_id: 'dia25',
+        name: 'Gaseosa Coca-Cola Zero 2,5 Lt.',
+        barcode: '7790895068096',
+        available: 1,
+      });
+      const repo = makeCatalogRepo(db);
+      const result = repo.getGroups({ q: 'coca cola zero' });
+      expect(result.total).toBe(1);
+      expect(result.data[0]?.barcode).toBe('7790895068096');
+      expect(result.data[0]?.variants[0]?.super).toBe('dia');
+    });
+
     it('excludes unavailable rows from grouping but keeps the available singleton', () => {
       seedProduct(db, {
         super_key: 'vea',
@@ -272,8 +316,20 @@ describe('makeCatalogRepo', () => {
     describe('super filter = "include super, still compare"', () => {
       beforeEach(() => {
         // BCX: dia + vea ; BCY: only carrefour
-        seedProduct(db, { super_key: 'dia', product_id: 'd1', name: 'P', barcode: 'BCX', raw_price: 50 });
-        seedProduct(db, { super_key: 'vea', product_id: 'v1', name: 'P', barcode: 'BCX', raw_price: 60 });
+        seedProduct(db, {
+          super_key: 'dia',
+          product_id: 'd1',
+          name: 'P',
+          barcode: 'BCX',
+          raw_price: 50,
+        });
+        seedProduct(db, {
+          super_key: 'vea',
+          product_id: 'v1',
+          name: 'P',
+          barcode: 'BCX',
+          raw_price: 60,
+        });
         seedProduct(db, { super_key: 'carrefour', product_id: 'c1', name: 'Q', barcode: 'BCY' });
       });
 
@@ -296,8 +352,18 @@ describe('makeCatalogRepo', () => {
 
     it('paginates groups correctly', () => {
       for (let i = 1; i <= 4; i++) {
-        seedProduct(db, { super_key: 'vea', product_id: `v${i}`, name: `Product ${i}`, barcode: `BC${i}` });
-        seedProduct(db, { super_key: 'carrefour', product_id: `c${i}`, name: `Product ${i}`, barcode: `BC${i}` });
+        seedProduct(db, {
+          super_key: 'vea',
+          product_id: `v${i}`,
+          name: `Product ${i}`,
+          barcode: `BC${i}`,
+        });
+        seedProduct(db, {
+          super_key: 'carrefour',
+          product_id: `c${i}`,
+          name: `Product ${i}`,
+          barcode: `BC${i}`,
+        });
       }
       const repo = makeCatalogRepo(db);
       const page1 = repo.getGroups({ limit: '2', page: '1' });

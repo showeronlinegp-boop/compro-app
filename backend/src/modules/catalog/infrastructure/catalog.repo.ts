@@ -1,4 +1,5 @@
 import type Database from 'better-sqlite3';
+import { buildNameSearch } from '../../../shared/text.js';
 import type { Product, ProductRow } from '../../../shared/types.js';
 import { parseRow } from '../domain/product.js';
 import { type ProductQueryParams, buildProductsQuery } from '../domain/query.js';
@@ -86,8 +87,11 @@ export function makeCatalogRepo(db: Database.Database): CatalogRepo {
       const bindings: unknown[] = [];
 
       if (params.q) {
-        conds.push('name LIKE ?');
-        bindings.push(`%${params.q}%`);
+        const nameSearch = buildNameSearch(params.q);
+        if (nameSearch) {
+          conds.push(`(${nameSearch.clause})`);
+          bindings.push(...nameSearch.bindings);
+        }
       }
 
       if (params.category) {
