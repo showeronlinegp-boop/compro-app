@@ -95,7 +95,6 @@ export interface TaxonomyEntry {
   slug: string;
   label: string;
   icon: string;
-  vtex: string[];
 }
 
 // ─── Catalog result wrappers (defined in backend catalog repo, cross-wire shapes) ─
