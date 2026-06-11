@@ -1,17 +1,31 @@
-import { superCfg, pesos } from '../supers.js';
+import { pesos, superCfg } from '../supers';
+import type { Product } from '../types/api';
 
-export default function ProductCard({ product, isInterest, onToggleInterest, onAddToShopping }) {
-  const cfg   = superCfg(product.super);
+export interface ProductCardProps {
+  product: Product;
+  isInterest: boolean;
+  onToggleInterest: (product: Product) => void;
+  onAddToShopping: (product: Product) => void;
+}
+
+export default function ProductCard({
+  product,
+  isInterest,
+  onToggleInterest,
+  onAddToShopping,
+}: ProductCardProps) {
+  const cfg = superCfg(product.super);
   const price = product.offer_price ?? product.raw_price;
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-md transition-shadow duration-200">
       {/* Imagen */}
       <div className="relative bg-gray-50 h-40 flex items-center justify-center p-3">
-        {product.image_url
-          ? <img src={product.image_url} alt={product.name} className="h-full object-contain" />
-          : <span className="text-5xl text-gray-200">🛒</span>
-        }
+        {product.image_url ? (
+          <img src={product.image_url} alt={product.name} className="h-full object-contain" />
+        ) : (
+          <span className="text-5xl text-gray-200">🛒</span>
+        )}
         {product.discount_pct > 0 && (
           <span className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
             -{product.discount_pct}%
@@ -21,7 +35,9 @@ export default function ProductCard({ product, isInterest, onToggleInterest, onA
 
       {/* Info */}
       <div className="p-3 flex flex-col flex-1 gap-2">
-        <span className={`self-start text-xs font-bold px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}>
+        <span
+          className={`self-start text-xs font-bold px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}
+        >
           {cfg.label}
         </span>
 
@@ -32,15 +48,17 @@ export default function ProductCard({ product, isInterest, onToggleInterest, onA
         <div className="flex items-end gap-2">
           <span className="text-base font-bold text-gray-900">{pesos(price)}</span>
           {product.offer_price && (
-            <span className="text-xs text-gray-400 line-through mb-0.5">{pesos(product.raw_price)}</span>
+            <span className="text-xs text-gray-400 line-through mb-0.5">
+              {pesos(product.raw_price)}
+            </span>
           )}
         </div>
 
         {product.promotions?.length > 0 && (
           <div className="flex flex-wrap gap-1">
-            {product.promotions.map((promo, i) => (
+            {product.promotions.map((promo) => (
               <span
-                key={i}
+                key={promo.label}
                 className="self-start text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800"
               >
                 {promo.label}
@@ -52,6 +70,7 @@ export default function ProductCard({ product, isInterest, onToggleInterest, onA
         {/* Acciones */}
         <div className="flex gap-1.5 mt-1">
           <button
+            type="button"
             onClick={() => onToggleInterest(product)}
             title={isInterest ? 'Quitar de intereses' : 'Guardar en intereses'}
             className={`flex-1 text-xs py-1.5 rounded-xl font-medium border transition-colors ${
@@ -65,6 +84,7 @@ export default function ProductCard({ product, isInterest, onToggleInterest, onA
 
           {isInterest && (
             <button
+              type="button"
               onClick={() => onAddToShopping(product)}
               title="Agregar a lista de compras"
               className="text-xs px-2.5 py-1.5 rounded-xl font-medium border bg-indigo-50 text-indigo-600 border-indigo-200 hover:bg-indigo-100 transition-colors"

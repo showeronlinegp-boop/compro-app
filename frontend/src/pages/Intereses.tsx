@@ -1,11 +1,25 @@
 import { useState } from 'react';
-import { superCfg, pesos } from '../supers.js';
-import FreqModal from '../components/FreqModal.jsx';
+import FreqModal from '../components/FreqModal';
+import { pesos, superCfg } from '../supers';
+import type { Interest, Product } from '../types/api';
 
-export default function Intereses({ interests, onToggleInterest, onAddToShopping, shoppingIds }) {
-  const [freqTarget, setFreqTarget] = useState(null);
+export interface InteresesProps {
+  interests: Interest[];
+  onToggleInterest: (item: Product) => Promise<void>;
+  onAddToShopping: (item: Product, days: number) => Promise<void>;
+  shoppingIds: Set<number>;
+}
 
-  async function confirmFreq(days) {
+export default function Intereses({
+  interests,
+  onToggleInterest,
+  onAddToShopping,
+  shoppingIds,
+}: InteresesProps) {
+  const [freqTarget, setFreqTarget] = useState<Interest | null>(null);
+
+  async function confirmFreq(days: number) {
+    if (!freqTarget) return;
     await onAddToShopping(freqTarget, days);
     setFreqTarget(null);
   }
@@ -25,25 +39,35 @@ export default function Intereses({ interests, onToggleInterest, onAddToShopping
       <p className="text-xs text-gray-400 mb-4">{interests.length} productos guardados</p>
 
       <div className="flex flex-col gap-2">
-        {interests.map(item => {
-          const cfg   = superCfg(item.super);
+        {interests.map((item) => {
+          const cfg = superCfg(item.super);
           const price = item.offer_price ?? item.raw_price;
           const inList = shoppingIds.has(item.id);
 
           return (
-            <div key={item.interest_id} className="bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3 p-3 hover:shadow-md transition-shadow">
+            <div
+              key={item.interest_id}
+              className="bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3 p-3 hover:shadow-md transition-shadow"
+            >
               {/* Imagen */}
               <div className="w-14 h-14 flex-shrink-0 rounded-xl bg-gray-50 flex items-center justify-center overflow-hidden">
-                {item.image_url
-                  ? <img src={item.image_url} alt={item.name} className="w-full h-full object-contain" />
-                  : <span className="text-2xl text-gray-200">🛒</span>
-                }
+                {item.image_url ? (
+                  <img
+                    src={item.image_url}
+                    alt={item.name}
+                    className="w-full h-full object-contain"
+                  />
+                ) : (
+                  <span className="text-2xl text-gray-200">🛒</span>
+                )}
               </div>
 
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 mb-0.5">
-                  <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}>
+                  <span
+                    className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}
+                  >
                     {cfg.label}
                   </span>
                   {item.discount_pct > 0 && (
@@ -54,7 +78,9 @@ export default function Intereses({ interests, onToggleInterest, onAddToShopping
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span className="text-sm font-bold text-gray-900">{pesos(price)}</span>
                   {item.offer_price && (
-                    <span className="text-xs text-gray-400 line-through">{pesos(item.raw_price)}</span>
+                    <span className="text-xs text-gray-400 line-through">
+                      {pesos(item.raw_price)}
+                    </span>
                   )}
                 </div>
               </div>
@@ -63,6 +89,7 @@ export default function Intereses({ interests, onToggleInterest, onAddToShopping
               <div className="flex flex-col gap-1.5 flex-shrink-0">
                 {!inList ? (
                   <button
+                    type="button"
                     onClick={() => setFreqTarget(item)}
                     className="text-xs px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 font-medium transition-colors"
                   >
@@ -74,6 +101,7 @@ export default function Intereses({ interests, onToggleInterest, onAddToShopping
                   </span>
                 )}
                 <button
+                  type="button"
                   onClick={() => onToggleInterest(item)}
                   className="text-xs px-3 py-1.5 rounded-xl bg-gray-50 text-gray-500 border border-gray-200 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors"
                 >

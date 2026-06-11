@@ -1,4 +1,12 @@
-import { superCfg, pesos } from '../supers.js';
+import { pesos, superCfg } from '../supers';
+import type { Product, ProductGroup, Promotion } from '../types/api';
+
+export interface GroupedCardProps {
+  group: ProductGroup;
+  interestIds?: Set<number>;
+  onToggleInterest?: (p: Product) => void;
+  onAddToShopping?: (p: Product) => void;
+}
 
 /**
  * Some supers (Carrefour) store internal promo codes like
@@ -6,13 +14,13 @@ import { superCfg, pesos } from '../supers.js';
  * drop the "PROMO-" prefix and the "-Reg-..." engine suffix. DIA labels
  * ("2do al 80%", "2x1") have neither, so they pass through unchanged.
  */
-function cleanPromoLabel(label) {
+function cleanPromoLabel(label: string | null | undefined): string | null | undefined {
   if (!label) return label;
   return label
-    .replace(/^PROMO-/i, '')                       // Carrefour code prefix
-    .replace(/-Reg-.*$/i, '')                       // Carrefour engine suffix
-    .replace(/\s+Max\s+\d+\s+unidades.*$/i, '')     // "Max 24 unidades Combinable QUILMES"
-    .replace(/\s+Combinable.*$/i, '')               // bare "Combinable ..." qualifier
+    .replace(/^PROMO-/i, '') // Carrefour code prefix
+    .replace(/-Reg-.*$/i, '') // Carrefour engine suffix
+    .replace(/\s+Max\s+\d+\s+unidades.*$/i, '') // "Max 24 unidades Combinable QUILMES"
+    .replace(/\s+Combinable.*$/i, '') // bare "Combinable ..." qualifier
     .trim();
 }
 
@@ -26,62 +34,75 @@ function cleanPromoLabel(label) {
  * Returns null when the variant has no usable conditional promo — we never
  * fabricate a discount.
  */
-function promoUnitPrice(v) {
+function promoUnitPrice(
+  v: Product,
+): { perUnit: number; label: string | null | undefined; minQty: number } | null {
   const base = v.offer_price ?? v.raw_price;
   if (base == null) return null;
-  const promo = (v.promotions ?? []).find(
+  const promo: Promotion | undefined = (v.promotions ?? []).find(
     (p) => (p.min_qty ?? 0) >= 2 && (p.discount_pct ?? 0) > 0,
   );
   if (!promo) return null;
-  const n = promo.min_qty;
-  const perUnit = (base * (n - promo.discount_pct / 100)) / n;
+  // Capture with explicit ?? 0 fallback to mirror runtime behavior.
+  // The .find predicate already guarantees min_qty >= 2 and discount_pct > 0,
+  // so ?? 0 is a no-op on real data but satisfies noUncheckedIndexedAccess.
+  const n = promo.min_qty ?? 0;
+  const pct = promo.discount_pct ?? 0;
+  const perUnit = (base * (n - pct / 100)) / n;
   return { perUnit, label: cleanPromoLabel(promo.label), minQty: n };
 }
 
 /** Price used to rank/compare a variant: the promo per-unit when it applies, else the shelf price. */
-function comparePrice(v) {
+function comparePrice(v: Product): number | null {
   return promoUnitPrice(v)?.perUnit ?? v.offer_price ?? v.raw_price;
 }
 
-export default function GroupedCard({ group, interestIds, onToggleInterest, onAddToShopping }) {
+export default function GroupedCard({
+  group,
+  interestIds,
+  onToggleInterest,
+  onAddToShopping,
+}: GroupedCardProps) {
   const { name, image_url, variants } = group;
 
   if (!variants?.length) return null;
 
-  // Ordenar por precio comparable ascendente (la promo cuenta para el ranking).
-  const sorted = [...variants].sort((a, b) => comparePrice(a) - comparePrice(b));
+  // Sort ascending by comparable price (promo counts for ranking).
+  const sorted = [...variants].sort((a, b) => (comparePrice(a) ?? 0) - (comparePrice(b) ?? 0));
+
+  // Guard sorted[0] for noUncheckedIndexedAccess — unreachable at runtime
+  // because variants.length > 0 is already checked, but TS needs the narrowing.
+  const target = sorted[0];
+  if (!target) return null;
 
   const isComparison = sorted.length > 1;
-  const bestPrice = comparePrice(sorted[0]);
+  const bestPrice = comparePrice(target);
 
-  // Las acciones (guardar / lista) operan sobre la mejor oferta del grupo.
-  const target = sorted[0];
   const isInterest = interestIds?.has(target.id) ?? false;
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-md transition-shadow duration-200">
       {/* Imagen */}
       <div className="relative bg-gray-50 h-36 flex items-center justify-center p-3">
-        {image_url
-          ? <img src={image_url} alt={name} className="h-full object-contain" />
-          : <span className="text-5xl text-gray-200">🛒</span>
-        }
+        {image_url ? (
+          <img src={image_url} alt={name} className="h-full object-contain" />
+        ) : (
+          <span className="text-5xl text-gray-200">🛒</span>
+        )}
       </div>
 
       {/* Nombre */}
       <div className="px-3 pt-2 pb-1">
-        <p className="text-xs font-medium text-gray-800 leading-snug line-clamp-2">
-          {name}
-        </p>
+        <p className="text-xs font-medium text-gray-800 leading-snug line-clamp-2">{name}</p>
       </div>
 
       {/* Fila de precios por super */}
       <div className="px-3 pb-2 flex flex-col gap-1 mt-1 flex-1">
-        {sorted.map(v => {
-          const cfg     = superCfg(v.super);
-          const price   = v.offer_price ?? v.raw_price;
-          const promo   = promoUnitPrice(v);
-          const isBest  = isComparison && comparePrice(v) === bestPrice;
+        {sorted.map((v) => {
+          const cfg = superCfg(v.super);
+          const price = v.offer_price ?? v.raw_price;
+          const promo = promoUnitPrice(v);
+          const isBest = isComparison && comparePrice(v) === bestPrice;
 
           return (
             <div
@@ -92,19 +113,23 @@ export default function GroupedCard({ group, interestIds, onToggleInterest, onAd
             >
               {/* Precio real de góndola (1 unidad) — siempre honesto */}
               <a
-                href={v.product_url}
+                href={v.product_url ?? undefined}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-between gap-2 transition-colors hover:opacity-80"
               >
-                <span className={`shrink-0 font-bold px-1.5 py-0.5 rounded-md text-white text-[10px] ${cfg.bg}`}>
+                <span
+                  className={`shrink-0 font-bold px-1.5 py-0.5 rounded-md text-white text-[10px] ${cfg.bg}`}
+                >
                   {cfg.label}
                 </span>
                 <div className="flex items-center gap-1.5 whitespace-nowrap">
                   {v.offer_price && (
                     <span className="text-gray-400 line-through">{pesos(v.raw_price)}</span>
                   )}
-                  <span className={`font-bold ${isBest && !promo ? 'text-green-700' : 'text-gray-800'}`}>
+                  <span
+                    className={`font-bold ${isBest && !promo ? 'text-green-700' : 'text-gray-800'}`}
+                  >
                     {pesos(price)}
                   </span>
                   {isBest && !promo && <span className="text-green-600 font-bold">✓</span>}
@@ -114,7 +139,10 @@ export default function GroupedCard({ group, interestIds, onToggleInterest, onAd
               {/* Precio efectivo por la promo — etiquetado para no confundir */}
               {promo && (
                 <div className="mt-1 flex items-center justify-between gap-1.5 rounded-lg bg-amber-50 border border-amber-200 px-1.5 py-1">
-                  <span className="min-w-0 truncate text-[10px] font-bold text-amber-700" title={promo.label}>
+                  <span
+                    className="min-w-0 truncate text-[10px] font-bold text-amber-700"
+                    title={promo.label ?? undefined}
+                  >
                     🏷️ {promo.label}
                   </span>
                   <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
@@ -134,6 +162,7 @@ export default function GroupedCard({ group, interestIds, onToggleInterest, onAd
       {/* Acciones — operan sobre la mejor oferta */}
       <div className="px-3 pb-3 flex gap-1.5">
         <button
+          type="button"
           onClick={() => onToggleInterest?.(target)}
           title={isInterest ? 'Quitar de intereses' : 'Guardar en intereses'}
           className={`flex-1 text-xs py-1.5 rounded-xl font-medium border transition-colors ${
@@ -147,6 +176,7 @@ export default function GroupedCard({ group, interestIds, onToggleInterest, onAd
 
         {isInterest && (
           <button
+            type="button"
             onClick={() => onAddToShopping?.(target)}
             title="Agregar a lista de compras"
             className="text-xs px-2.5 py-1.5 rounded-xl font-medium border bg-indigo-50 text-indigo-600 border-indigo-200 hover:bg-indigo-100 transition-colors"
