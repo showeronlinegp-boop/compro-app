@@ -36,6 +36,19 @@ export default function ProductCard({ product, isInterest, onToggleInterest, onA
           )}
         </div>
 
+        {product.promotions?.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {product.promotions.map((promo, i) => (
+              <span
+                key={i}
+                className="self-start text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800"
+              >
+                {promo.label}
+              </span>
+            ))}
+          </div>
+        )}
+
         {/* Acciones */}
         <div className="flex gap-1.5 mt-1">
           <button

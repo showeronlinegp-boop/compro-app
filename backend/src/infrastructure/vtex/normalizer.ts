@@ -12,8 +12,8 @@
  * NOT yet wired into the running app — Slice 5 cutover.
  */
 
-import type { NormalizedCrawlItem, SuperConfig } from '../../shared/types.js';
-import type { IsSearchProduct } from './is-client.js';
+import type { NormalizedCrawlItem, Promotion, SuperConfig } from '../../shared/types.js';
+import type { IsSearchProduct, IsTeaser } from './is-client.js';
 
 /**
  * The maximum discount percentage we trust from VTEX IS data.
@@ -27,6 +27,27 @@ export const DISCOUNT_CAP = 80;
 function num(v: unknown): number | null {
   if (v == null || Number.isNaN(Number(v))) return null;
   return Number(v);
+}
+
+/**
+ * Map VTEX teasers (conditional / cart-level promos) to Promotion[].
+ *
+ * These promos — "2do al 80%", "2x1" — keep Price === PriceWithoutDiscount, so
+ * the unit-discount path above never sees them. We surface them here without
+ * touching raw_price/offer_price, since the real price depends on quantity.
+ */
+function extractPromotions(teasers: IsTeaser[] | undefined): Promotion[] {
+  if (!teasers?.length) return [];
+  return teasers.map((t) => {
+    const pctRaw = t.effects?.parameters?.find((p) => p.name === 'PercentualDiscount')?.value;
+    const minQty = t.conditions?.minimumQuantity ?? null;
+    return {
+      label: t.name,
+      type: minQty != null ? 'nth_unit' : 'other',
+      min_qty: minQty,
+      discount_pct: pctRaw != null && pctRaw !== '' ? Number(pctRaw) : null,
+    };
+  });
 }
 
 /**
@@ -48,16 +69,29 @@ export function buildNormalizer(
 
     // PriceWithoutDiscount = real base price (pre catalog-discount).
     // Price = current sale price (may be lower due to catalog discount).
-    // ListPrice = stale pre-inflation price — IGNORED per vtex-crawler.js comment.
-    const basePrice = num(offer?.PriceWithoutDiscount) ?? num(offer?.Price);
+    // ListPrice = strike-through price; trustworthy for some supers (dia/masonline/
+    // carrefour), stale garbage for others (vea) — gated by cfg.trustListPrice.
     const salePrice = num(offer?.Price);
 
-    // Discount guard: cap at 80% to reject stale PriceWithoutDiscount values
-    // from previous inflationary periods (vtex-crawler.js: rawDiscount <= 80).
-    const rawDiscount =
-      basePrice != null && salePrice != null && salePrice < basePrice
-        ? Math.round(((basePrice - salePrice) / basePrice) * 100)
+    // Primary signal: PriceWithoutDiscount vs Price.
+    let baseForDiscount = num(offer?.PriceWithoutDiscount) ?? salePrice;
+    let rawDiscount =
+      baseForDiscount != null && salePrice != null && salePrice < baseForDiscount
+        ? Math.round(((baseForDiscount - salePrice) / baseForDiscount) * 100)
         : 0;
+
+    // Fallback: some supers keep Price === PriceWithoutDiscount and encode the
+    // discount in ListPrice. Only trusted when cfg.trustListPrice is set.
+    if (rawDiscount === 0 && cfg.trustListPrice) {
+      const listPrice = num(offer?.ListPrice);
+      if (listPrice != null && salePrice != null && salePrice < listPrice) {
+        baseForDiscount = listPrice;
+        rawDiscount = Math.round(((listPrice - salePrice) / listPrice) * 100);
+      }
+    }
+
+    // Discount guard: cap at 80% to reject stale base/ListPrice values
+    // from previous inflationary periods (vtex-crawler.js: rawDiscount <= 80).
     const hasDiscount = rawDiscount > 0 && rawDiscount <= DISCOUNT_CAP;
 
     const categoryPaths = (p.categories ?? [])
@@ -71,11 +105,12 @@ export function buildNormalizer(
       barcode: item?.ean ?? null,
       image_url: item?.images?.[0]?.imageUrl ?? null,
       product_url: p.link ?? `${cfg.baseUrl}/${p.linkText}/p`,
-      raw_price: hasDiscount ? basePrice : salePrice,
+      raw_price: hasDiscount ? baseForDiscount : salePrice,
       offer_price: hasDiscount ? salePrice : null,
       discount_pct: hasDiscount ? rawDiscount : 0,
       available: true, // guaranteed by hideUnavailableItems=true (+ AvailableQuantity check above)
       category_paths: categoryPaths,
+      promotions: extractPromotions(offer?.teasers),
     };
   };
 }

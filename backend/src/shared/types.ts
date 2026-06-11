@@ -32,6 +32,37 @@ export interface SuperConfig {
    * When unset, the strategy is derived: promoSeller present → 'promotions', else → 'jsonld'.
    */
   enrichStrategy?: 'promotions' | 'jsonld' | 'none';
+  /**
+   * When true, the normalizer falls back to ListPrice to detect a discount when
+   * PriceWithoutDiscount === Price (i.e. the super encodes its strike-through in
+   * ListPrice — confirmed for dia / masonline / carrefour).
+   *
+   * Leave unset/false for supers whose ListPrice is stale garbage (vea: e.g.
+   * ListPrice 528017 vs Price 6389). VEA's real discounts arrive via the
+   * search-promotions enricher, not the crawl. The DISCOUNT_CAP still applies
+   * as a second safety net regardless of this flag.
+   */
+  trustListPrice?: boolean;
+}
+
+// ─── Promotions ─────────────────────────────────────────────────────────────
+
+/**
+ * A conditional / cart-level promotion captured from VTEX teasers.
+ *
+ * These promos (e.g. "2do al 80%", "2x1") never lower the unit price, so they
+ * are NOT representable as discount_pct on raw_price. We keep them as a separate
+ * list so the unit price stays honest and the badge stays informative.
+ */
+export interface Promotion {
+  /** Display label exactly as the super shows it, e.g. "2do al 80%". */
+  label: string;
+  /** Coarse kind, inferred from the teaser conditions. */
+  type: 'nth_unit' | 'other';
+  /** Minimum units required to trigger the promo (null if unconditional). */
+  min_qty: number | null;
+  /** Percentual discount applied by the promo's effect (null if not a % effect). */
+  discount_pct: number | null;
 }
 
 // ─── DB row types ─────────────────────────────────────────────────────────────
@@ -51,6 +82,7 @@ export interface ProductRow {
   discount_pct: number;
   available: number; // 0 or 1
   categories: string | null; // JSON-encoded string[]
+  promotions: string | null; // JSON-encoded Promotion[]
   synced_at: string;
 }
 
@@ -71,6 +103,7 @@ export interface Product {
   discount_pct: number;
   available: boolean;
   categories: string[];
+  promotions: Promotion[];
   synced_at: string;
 }
 
@@ -87,6 +120,7 @@ export interface NormalizedCrawlItem {
   discount_pct: number;
   available: boolean;
   category_paths: string[];
+  promotions: Promotion[];
 }
 
 /** Crawler partition plan entry */

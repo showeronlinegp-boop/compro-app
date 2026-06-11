@@ -1,5 +1,5 @@
 import type Database from 'better-sqlite3';
-import type { Interest, ProductRow } from '../../../shared/types.js';
+import type { Interest, ProductRow, Promotion } from '../../../shared/types.js';
 
 // ─── Row types from the JOIN query ───────────────────────────────────────────
 
@@ -10,9 +10,9 @@ interface InterestRow extends ProductRow {
 
 // ─── Row parser (mirrors interests.js parseRow) ───────────────────────────────
 
-function tryParse(v: string | null): string[] {
+function tryParse<T>(v: string | null): T[] {
   try {
-    return JSON.parse(v ?? '[]') as string[];
+    return JSON.parse(v ?? '[]') as T[];
   } catch {
     return [];
   }
@@ -24,7 +24,8 @@ function parseRow(p: InterestRow): Interest {
     interest_id,
     added_at,
     ...rest,
-    categories: tryParse(rest.categories),
+    categories: tryParse<string>(rest.categories),
+    promotions: tryParse<Promotion>(rest.promotions),
     available: Boolean(rest.available),
   };
 }
