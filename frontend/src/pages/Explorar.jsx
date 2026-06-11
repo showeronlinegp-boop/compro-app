@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../api.js';
-import { SUPER_KEYS, superCfg } from '../supers.js';
 import GroupedCard from '../components/GroupedCard.jsx';
 import FreqModal from '../components/FreqModal.jsx';
 
@@ -13,7 +12,6 @@ export default function Explorar({ interests, onToggleInterest, onAddToShopping,
 
   const [categories, setCategories] = useState([]);
   const [q, setQ]               = useState('');
-  const [sup, setSup]           = useState('');
   const [category, setCategory] = useState('');
   const [discount, setDiscount] = useState(false);
 
@@ -36,7 +34,6 @@ export default function Explorar({ interests, onToggleInterest, onAddToShopping,
         ...(q        && { q }),
         ...(category && { category }),
         ...(discount && { discount: '1' }),
-        ...(sup      && { super: sup }),
         page: p,
         limit: 24,
       };
@@ -52,7 +49,7 @@ export default function Explorar({ interests, onToggleInterest, onAddToShopping,
     } finally {
       setLoading(false);
     }
-  }, [q, sup, category, discount]);
+  }, [q, category, discount]);
 
   useEffect(() => { load(1); }, [load]);
 
@@ -185,30 +182,6 @@ export default function Explorar({ interests, onToggleInterest, onAddToShopping,
 
       {/* Filtros */}
       <div className="flex flex-wrap gap-2 mb-6">
-        <button
-          onClick={() => setSup('')}
-          className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
-            !sup ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-          }`}
-        >
-          Todos
-        </button>
-        {SUPER_KEYS.map(key => {
-          const cfg = superCfg(key);
-          const active = sup === key;
-          return (
-            <button
-              key={key}
-              onClick={() => setSup(active ? '' : key)}
-              className={`text-xs font-bold px-3 py-1.5 rounded-full border transition-colors ${
-                active ? `${cfg.bg} ${cfg.text} border-transparent` : `bg-white ${cfg.text.replace('text-white', 'text-gray-600')} border-gray-200 hover:bg-gray-50`
-              }`}
-            >
-              {cfg.label}
-            </button>
-          );
-        })}
-        <div className="w-px bg-gray-200 mx-1" />
         <button
           onClick={() => setDiscount(d => !d)}
           className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
