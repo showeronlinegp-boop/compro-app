@@ -46,16 +46,25 @@ export function makeCatalogRouter(db: Database.Database, taxonomy: TaxonomyEntry
   router.get(
     '/groups',
     asyncHandler(async (req, res) => {
-      const { q, category, discount, page, limit } = req.query as {
+      const { q, category, discount, super: superKey, page, limit } = req.query as {
         q?: string;
         category?: string;
         discount?: string;
+        super?: string;
         page?: string;
         limit?: string;
       };
 
       const vtexStrings = category ? getVtexStrings(category) : [];
-      const result = repo.getGroups({ q, category, discount, page, limit, vtexStrings });
+      const result = repo.getGroups({
+        q,
+        category,
+        discount,
+        super: superKey,
+        page,
+        limit,
+        vtexStrings,
+      });
       res.json(result);
     }),
   );

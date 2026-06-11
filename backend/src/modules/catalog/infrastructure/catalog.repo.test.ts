@@ -172,17 +172,28 @@ describe('makeCatalogRepo', () => {
     });
   });
 
-  describe('getGroups', () => {
-    it('returns empty when no barcoded products', () => {
-      seedProduct(db, { name: 'NoBarcodeProduct' });
+  describe('getGroups (unified — comparison always on, singletons included)', () => {
+    it('returns empty when no products', () => {
       const repo = makeCatalogRepo(db);
       const result = repo.getGroups({});
       expect(result.data).toEqual([]);
       expect(result.total).toBe(0);
     });
 
-    it('deduplicates by barcode across supers', () => {
-      // Same barcode in 2 different supers
+    it('includes a barcode-less product as its own singleton group', () => {
+      const id = seedProduct(db, { name: 'NoBarcodeProduct', barcode: null });
+      const repo = makeCatalogRepo(db);
+      const result = repo.getGroups({});
+      expect(result.total).toBe(1);
+      expect(result.data).toHaveLength(1);
+      const group = result.data[0];
+      expect(group?.key).toBe(`id:${id}`);
+      expect(group?.barcode).toBeNull();
+      expect(group?.super_count).toBe(1);
+      expect(group?.variants).toHaveLength(1);
+    });
+
+    it('deduplicates by barcode across supers, cheapest first', () => {
       seedProduct(db, {
         super_key: 'vea',
         product_id: 'v1',
@@ -202,17 +213,16 @@ describe('makeCatalogRepo', () => {
       const repo = makeCatalogRepo(db);
       const result = repo.getGroups({});
       expect(result.total).toBe(1);
-      expect(result.data).toHaveLength(1);
       const group = result.data[0];
+      expect(group?.key).toBe('BC123');
       expect(group?.barcode).toBe('BC123');
       expect(group?.super_count).toBe(2);
       expect(group?.variants).toHaveLength(2);
-      // Variants should be sorted by raw_price ASC
       expect(group?.variants[0]?.raw_price).toBe(90);
       expect(group?.variants[1]?.raw_price).toBe(100);
     });
 
-    it('excludes barcodes present in only one super', () => {
+    it('INCLUDES barcodes present in only one super (as singletons)', () => {
       seedProduct(db, {
         super_key: 'vea',
         product_id: 'only1',
@@ -222,12 +232,12 @@ describe('makeCatalogRepo', () => {
       });
       const repo = makeCatalogRepo(db);
       const result = repo.getGroups({});
-      expect(result.data).toHaveLength(0);
+      expect(result.total).toBe(1);
+      expect(result.data[0]?.super_count).toBe(1);
+      expect(result.data[0]?.variants).toHaveLength(1);
     });
 
-    it('excludes unavailable products', () => {
-      // One available, one unavailable — same barcode, same super would be 1 super count
-      // To test exclusion: two supers but one is unavailable
+    it('excludes unavailable rows from grouping but keeps the available singleton', () => {
       seedProduct(db, {
         super_key: 'vea',
         product_id: 'va',
@@ -242,27 +252,52 @@ describe('makeCatalogRepo', () => {
       });
       const repo = makeCatalogRepo(db);
       const result = repo.getGroups({});
-      // Only 1 available super → not eligible (needs 2+)
-      expect(result.data).toHaveLength(0);
+      // The unavailable carrefour row drops out → group is a 1-super singleton.
+      expect(result.total).toBe(1);
+      expect(result.data[0]?.super_count).toBe(1);
+      expect(result.data[0]?.variants).toHaveLength(1);
+      expect(result.data[0]?.variants[0]?.super).toBe('vea');
+    });
+
+    it('comparable groups sort before singletons (super_count DESC)', () => {
+      seedProduct(db, { super_key: 'vea', product_id: 's1', name: 'Zzz Single', barcode: 'BCS' });
+      seedProduct(db, { super_key: 'vea', product_id: 'm1', name: 'Aaa Multi', barcode: 'BCM' });
+      seedProduct(db, { super_key: 'dia', product_id: 'm2', name: 'Aaa Multi', barcode: 'BCM' });
+      const repo = makeCatalogRepo(db);
+      const result = repo.getGroups({});
+      expect(result.data[0]?.super_count).toBe(2);
+      expect(result.data[1]?.super_count).toBe(1);
+    });
+
+    describe('super filter = "include super, still compare"', () => {
+      beforeEach(() => {
+        // BCX: dia + vea ; BCY: only carrefour
+        seedProduct(db, { super_key: 'dia', product_id: 'd1', name: 'P', barcode: 'BCX', raw_price: 50 });
+        seedProduct(db, { super_key: 'vea', product_id: 'v1', name: 'P', barcode: 'BCX', raw_price: 60 });
+        seedProduct(db, { super_key: 'carrefour', product_id: 'c1', name: 'Q', barcode: 'BCY' });
+      });
+
+      it('keeps groups that contain the chosen super and shows ALL variants', () => {
+        const repo = makeCatalogRepo(db);
+        const result = repo.getGroups({ super: 'dia' });
+        expect(result.total).toBe(1); // only BCX includes dia
+        expect(result.data[0]?.barcode).toBe('BCX');
+        // comparison preserved: both dia and vea variants present
+        expect(result.data[0]?.variants).toHaveLength(2);
+      });
+
+      it('drops groups that do not contain the chosen super', () => {
+        const repo = makeCatalogRepo(db);
+        const result = repo.getGroups({ super: 'carrefour' });
+        expect(result.total).toBe(1);
+        expect(result.data[0]?.barcode).toBe('BCY');
+      });
     });
 
     it('paginates groups correctly', () => {
-      // Create 4 distinct barcodes each with 2 supers
       for (let i = 1; i <= 4; i++) {
-        seedProduct(db, {
-          super_key: 'vea',
-          product_id: `v${i}`,
-          name: `Product ${i}`,
-          barcode: `BC${i}`,
-          available: 1,
-        });
-        seedProduct(db, {
-          super_key: 'carrefour',
-          product_id: `c${i}`,
-          name: `Product ${i}`,
-          barcode: `BC${i}`,
-          available: 1,
-        });
+        seedProduct(db, { super_key: 'vea', product_id: `v${i}`, name: `Product ${i}`, barcode: `BC${i}` });
+        seedProduct(db, { super_key: 'carrefour', product_id: `c${i}`, name: `Product ${i}`, barcode: `BC${i}` });
       }
       const repo = makeCatalogRepo(db);
       const page1 = repo.getGroups({ limit: '2', page: '1' });

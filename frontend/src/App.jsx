@@ -65,20 +65,6 @@ export default function App() {
     setShopping(fresh);
   }
 
-  async function triggerEnrich(superKey) {
-    try {
-      if (superKey) {
-        await api.enrich.trigger(superKey);
-      } else {
-        await api.enrich.triggerAll();
-      }
-      const fresh = await api.enrich.status().catch(() => null);
-      if (fresh) setEnrichStatus(fresh);
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
   async function triggerSync(superKey) {
     setSyncing(superKey);
     try {
@@ -138,7 +124,6 @@ export default function App() {
                 onAddToShopping={addToShopping}
                 syncStatus={syncStatus}
                 enrichStatus={enrichStatus}
-                onEnrich={triggerEnrich}
               />
             }
           />

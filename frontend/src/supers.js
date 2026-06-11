@@ -23,5 +23,13 @@ export function freqLabel(days) {
 
 export function pesos(n) {
   if (n == null) return '—';
-  return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n);
+  // Exact value — show centavos only when the price actually has them (whole
+  // prices stay clean), and pad to 2 decimals when shown ($3.499,30 not $3.499,3).
+  const hasCents = !Number.isInteger(n);
+  return new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    minimumFractionDigits: hasCents ? 2 : 0,
+    maximumFractionDigits: 2,
+  }).format(n);
 }

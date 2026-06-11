@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../api.js';
 import { SUPER_KEYS, superCfg } from '../supers.js';
-import ProductCard from '../components/ProductCard.jsx';
 import GroupedCard from '../components/GroupedCard.jsx';
 import FreqModal from '../components/FreqModal.jsx';
 
-export default function Explorar({ interests, onToggleInterest, onAddToShopping, syncStatus = [], enrichStatus = {}, onEnrich }) {
+export default function Explorar({ interests, onToggleInterest, onAddToShopping, syncStatus = [], enrichStatus = {} }) {
   const [products, setProducts]     = useState([]);
   const [total, setTotal]           = useState(0);
   const [page, setPage]             = useState(1);
@@ -17,8 +16,6 @@ export default function Explorar({ interests, onToggleInterest, onAddToShopping,
   const [sup, setSup]           = useState('');
   const [category, setCategory] = useState('');
   const [discount, setDiscount] = useState(false);
-  const [available, setAvail]   = useState(false);
-  const [grouped, setGrouped]   = useState(false);
 
   const [freqTarget, setFreqTarget] = useState(null);
 
@@ -32,20 +29,19 @@ export default function Explorar({ interests, onToggleInterest, onAddToShopping,
     setLoading(true);
     setProducts([]);
     try {
+      // Vista unificada: la comparación entre supers es siempre el core.
+      // Cada producto aparece; si comparte barcode con otros supers, se compara.
+      // El filtro por super = "incluir este super" (la card sigue comparando todos).
       const params = {
         ...(q        && { q }),
         ...(category && { category }),
         ...(discount && { discount: '1' }),
+        ...(sup      && { super: sup }),
         page: p,
-        limit: grouped ? 24 : 48,
+        limit: 24,
       };
-      // filtro de super y available solo aplican a vista individual
-      if (!grouped && sup)       params.super     = sup;
-      if (!grouped && available) params.available = '1';
 
-      const res = grouped
-        ? await api.products.groups(params)
-        : await api.products.list({ ...params, ...(available && { available: '1' }) });
+      const res = await api.products.groups(params);
 
       setProducts(res.data);
       setTotal(res.total);
@@ -56,7 +52,7 @@ export default function Explorar({ interests, onToggleInterest, onAddToShopping,
     } finally {
       setLoading(false);
     }
-  }, [q, sup, category, discount, available, grouped]);
+  }, [q, sup, category, discount]);
 
   useEffect(() => { load(1); }, [load]);
 
@@ -221,36 +217,6 @@ export default function Explorar({ interests, onToggleInterest, onAddToShopping,
         >
           🔥 Con descuento
         </button>
-        <button
-          onClick={() => setAvail(a => !a)}
-          className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
-            available ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-          }`}
-        >
-          ✓ Disponibles
-        </button>
-        <div className="w-px bg-gray-200 mx-1" />
-        <button
-          onClick={() => { setGrouped(g => !g); setProducts([]); }}
-          className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
-            grouped ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-          }`}
-        >
-          ⚖️ Comparar supers
-        </button>
-        {onEnrich && (
-          <>
-            <div className="w-px bg-gray-200 mx-1" />
-            <button
-              onClick={() => onEnrich(sup || null)}
-              disabled={isEnriching || isSyncing}
-              title={isEnriching ? 'Enriquecimiento en curso…' : 'Buscar precios promocionales en las páginas de producto'}
-              className="text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors bg-white text-amber-600 border-amber-200 hover:bg-amber-50 disabled:opacity-40"
-            >
-              {isEnriching ? '✨ Enriqueciendo…' : '✨ Enriquecer precios'}
-            </button>
-          </>
-        )}
       </div>
 
       {/* Contador */}
@@ -262,7 +228,7 @@ export default function Explorar({ interests, onToggleInterest, onAddToShopping,
 
       {/* Grid */}
       {loading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           {Array.from({ length: 12 }).map((_, i) => (
             <div key={i} className="bg-white rounded-2xl h-64 animate-pulse border border-gray-100" />
           ))}
@@ -274,19 +240,16 @@ export default function Explorar({ interests, onToggleInterest, onAddToShopping,
           <p className="text-sm mt-1">Probá otros filtros o sincronizá los precios primero</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-          {grouped
-            ? products.map(g => <GroupedCard key={g.barcode} group={g} />)
-            : products.map(p => (
-                <ProductCard
-                  key={`${p.super}-${p.product_id}`}
-                  product={p}
-                  isInterest={interestIds.has(p.id)}
-                  onToggleInterest={onToggleInterest}
-                  onAddToShopping={handleAddToShopping}
-                />
-              ))
-          }
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+          {products.map(g => (
+            <GroupedCard
+              key={g.key}
+              group={g}
+              interestIds={interestIds}
+              onToggleInterest={onToggleInterest}
+              onAddToShopping={handleAddToShopping}
+            />
+          ))}
         </div>
       )}
 
