@@ -3,6 +3,7 @@ import { buildNameSearch } from '../../../shared/text.js';
 import type { Product, ProductRow } from '../../../shared/types.js';
 import { parseRow } from '../domain/product.js';
 import { type ProductQueryParams, buildProductsQuery } from '../domain/query.js';
+import { groupOrderBy, parseSort } from '../domain/sort.js';
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 
@@ -18,6 +19,8 @@ export interface GroupSummaryRow {
   name: string;
   image_url: string | null;
   super_count: number;
+  max_discount: number;
+  min_price: number | null;
 }
 
 export interface ProductGroup {
@@ -44,6 +47,7 @@ export interface CatalogRepo {
     category?: string;
     discount?: string;
     super?: string;
+    sort?: string;
     page?: string;
     limit?: string;
     vtexStrings?: string[];
@@ -134,14 +138,20 @@ export function makeCatalogRepo(db: Database.Database): CatalogRepo {
         return { data: [], total: 0, page: pageNum, pages: 0 };
       }
 
+      // sort is whitelisted in parseSort → groupOrderBy returns a hardcoded clause.
+      // max_discount / min_price are aggregates the ORDER BY can reference by alias.
+      // min_price = lowest effective price (offer_price ?? raw_price) across supers.
+      const orderBy = groupOrderBy(parseSort(params.sort));
       const groupsSql = `
         SELECT ${GKEY} AS gkey, MIN(name) as name, MIN(image_url) as image_url,
-               COUNT(DISTINCT super) as super_count
+               COUNT(DISTINCT super) as super_count,
+               MAX(discount_pct) as max_discount,
+               MIN(COALESCE(offer_price, raw_price)) as min_price
         FROM products
         WHERE ${where}
         GROUP BY gkey
         ${having}
-        ORDER BY super_count DESC, name ASC
+        ORDER BY ${orderBy}
         LIMIT ${limitNum} OFFSET ${offset}
       `;
       const pageGroups = db

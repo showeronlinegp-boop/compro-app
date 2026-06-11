@@ -13,6 +13,7 @@
  */
 
 import { buildNameSearch } from '../../../shared/text.js';
+import { parseSort, rowOrderBy } from './sort.js';
 
 export interface ProductQueryParams {
   q?: string;
@@ -20,6 +21,8 @@ export interface ProductQueryParams {
   category?: string;
   discount?: string;
   available?: string;
+  /** relevance (default) | discount_desc | price_asc | price_desc */
+  sort?: string;
   page?: string;
   limit?: string;
   /** vtex strings for the given category slug — resolved by caller */
@@ -78,9 +81,12 @@ export function buildProductsQuery(params: ProductQueryParams): BuiltQuery {
 
   const where = conds.join(' AND ');
 
+  // sort is whitelisted in parseSort → rowOrderBy returns a hardcoded clause.
+  const orderBy = rowOrderBy(parseSort(params.sort));
+
   // LIMIT/OFFSET are int-validated and inlined — NOT bound params.
   // This matches the legacy products.js behavior exactly.
-  const sql = `SELECT * FROM products WHERE ${where} ORDER BY discount_pct DESC, name ASC LIMIT ${limitNum} OFFSET ${offset}`;
+  const sql = `SELECT * FROM products WHERE ${where} ORDER BY ${orderBy} LIMIT ${limitNum} OFFSET ${offset}`;
   const countSql = `SELECT COUNT(*) as total FROM products WHERE ${where}`;
 
   return { sql, bindings, countSql, page: pageNum, limit: limitNum };

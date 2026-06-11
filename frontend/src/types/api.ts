@@ -11,6 +11,11 @@
 
 export type SuperKey = 'vea' | 'masonline' | 'carrefour' | 'dia';
 
+// ─── Sort ───────────────────────────────────────────────────────────────────
+
+/** Catalog ordering options. Mirrors backend SortKey (catalog/domain/sort.ts). */
+export type SortKey = 'relevance' | 'discount_desc' | 'price_asc' | 'price_desc';
+
 // ─── Promotions ───────────────────────────────────────────────────────────────
 
 /**

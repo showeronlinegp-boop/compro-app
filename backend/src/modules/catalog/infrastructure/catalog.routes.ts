@@ -14,6 +14,7 @@ import { makeCatalogRepo } from './catalog.repo.js';
  *     ?category=       → taxonomy slug filter
  *     ?discount=1      → only discounted items
  *     ?available=1     → only available items
+ *     ?sort=           → relevance (default) | discount_desc | price_asc | price_desc
  *     ?page=&limit=    → pagination (default: page=1, limit=48, max limit=100)
  *   GET /groups        → products grouped by barcode across supers (2+ supers only)
  *   GET /categories    → taxonomy list [{slug, label, icon}]
@@ -31,6 +32,7 @@ export function makeCatalogRouter(db: Database.Database, taxonomy: TaxonomyEntry
         category?: string;
         discount?: string;
         available?: string;
+        sort?: string;
         page?: string;
         limit?: string;
       };
@@ -46,11 +48,12 @@ export function makeCatalogRouter(db: Database.Database, taxonomy: TaxonomyEntry
   router.get(
     '/groups',
     asyncHandler(async (req, res) => {
-      const { q, category, discount, super: superKey, page, limit } = req.query as {
+      const { q, category, discount, super: superKey, sort, page, limit } = req.query as {
         q?: string;
         category?: string;
         discount?: string;
         super?: string;
+        sort?: string;
         page?: string;
         limit?: string;
       };
@@ -61,6 +64,7 @@ export function makeCatalogRouter(db: Database.Database, taxonomy: TaxonomyEntry
         category,
         discount,
         super: superKey,
+        sort,
         page,
         limit,
         vtexStrings,

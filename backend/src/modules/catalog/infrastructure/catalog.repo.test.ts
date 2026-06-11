@@ -350,6 +350,62 @@ describe('makeCatalogRepo', () => {
       });
     });
 
+    describe('sorting', () => {
+      // BCA: cheapest 50 (offer), no discount | BCB: 80, discount 30 | BCC: 120, no discount
+      beforeEach(() => {
+        seedProduct(db, {
+          super_key: 'vea',
+          product_id: 'a1',
+          name: 'Aaa Cheap',
+          barcode: 'BCA',
+          raw_price: 70,
+          offer_price: 50,
+          discount_pct: 0,
+        });
+        seedProduct(db, {
+          super_key: 'vea',
+          product_id: 'b1',
+          name: 'Bbb Discounted',
+          barcode: 'BCB',
+          raw_price: 80,
+          discount_pct: 30,
+        });
+        seedProduct(db, {
+          super_key: 'vea',
+          product_id: 'c1',
+          name: 'Ccc Mid',
+          barcode: 'BCC',
+          raw_price: 120,
+          discount_pct: 0,
+        });
+      });
+
+      it('price_asc orders by lowest effective price (offer_price wins via COALESCE)', () => {
+        const repo = makeCatalogRepo(db);
+        const result = repo.getGroups({ sort: 'price_asc' });
+        expect(result.data.map((g) => g.barcode)).toEqual(['BCA', 'BCB', 'BCC']);
+      });
+
+      it('price_desc reverses the price order', () => {
+        const repo = makeCatalogRepo(db);
+        const result = repo.getGroups({ sort: 'price_desc' });
+        expect(result.data.map((g) => g.barcode)).toEqual(['BCC', 'BCB', 'BCA']);
+      });
+
+      it('relevance and discount_desc float the discounted group to the top', () => {
+        const repo = makeCatalogRepo(db);
+        expect(repo.getGroups({ sort: 'relevance' }).data[0]?.barcode).toBe('BCB');
+        expect(repo.getGroups({ sort: 'discount_desc' }).data[0]?.barcode).toBe('BCB');
+      });
+
+      it('invalid sort falls back to relevance (no SQL injection / crash)', () => {
+        const repo = makeCatalogRepo(db);
+        const result = repo.getGroups({ sort: 'name; DROP TABLE products' });
+        expect(result.total).toBe(3);
+        expect(result.data[0]?.barcode).toBe('BCB');
+      });
+    });
+
     it('paginates groups correctly', () => {
       for (let i = 1; i <= 4; i++) {
         seedProduct(db, {

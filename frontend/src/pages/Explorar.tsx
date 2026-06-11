@@ -7,11 +7,19 @@ import type {
   GroupsResult,
   Interest,
   Product,
+  SortKey,
   SyncLog,
   TaxonomyEntry,
 } from '../types/api';
 
 const SKELETON_KEYS = Array.from({ length: 12 }, (_, i) => `sk-${i}`) as string[];
+
+const SORT_OPTIONS: ReadonlyArray<{ value: SortKey; label: string }> = [
+  { value: 'relevance', label: 'Relevancia' },
+  { value: 'price_asc', label: 'Precio: menor a mayor' },
+  { value: 'price_desc', label: 'Precio: mayor a menor' },
+  { value: 'discount_desc', label: 'Mayor descuento' },
+];
 
 export interface ExplorarProps {
   interests: Interest[];
@@ -38,6 +46,7 @@ export default function Explorar({
   const [q, setQ] = useState('');
   const [category, setCategory] = useState('');
   const [discount, setDiscount] = useState(false);
+  const [sort, setSort] = useState<SortKey>('relevance');
 
   const [freqTarget, setFreqTarget] = useState<Product | null>(null);
 
@@ -61,6 +70,7 @@ export default function Explorar({
         if (q) params.q = q;
         if (category) params.category = category;
         if (discount) params.discount = '1';
+        if (sort !== 'relevance') params.sort = sort;
 
         const res = await api.products.groups(params);
 
@@ -74,7 +84,7 @@ export default function Explorar({
         setLoading(false);
       }
     },
-    [q, category, discount],
+    [q, category, discount, sort],
   );
 
   useEffect(() => {
@@ -232,7 +242,7 @@ export default function Explorar({
       )}
 
       {/* Filtros */}
-      <div className="flex flex-wrap gap-2 mb-6">
+      <div className="flex flex-wrap items-center gap-2 mb-6">
         <button
           type="button"
           onClick={() => setDiscount((d) => !d)}
@@ -244,6 +254,21 @@ export default function Explorar({
         >
           🔥 Con descuento
         </button>
+
+        <label className="ml-auto flex items-center gap-1.5 text-xs text-gray-500">
+          <span className="hidden sm:inline">Ordenar:</span>
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as SortKey)}
+            className="text-xs font-semibold text-gray-700 px-3 py-1.5 rounded-full border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 cursor-pointer"
+          >
+            {SORT_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       {/* Contador */}
