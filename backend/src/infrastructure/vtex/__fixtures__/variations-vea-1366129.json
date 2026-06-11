@@ -1,0 +1,42 @@
+{
+  "productId": 1366129,
+  "name": "Galletitas Surtido Bagley 400 Gr",
+  "salesChannel": "34",
+  "available": true,
+  "displayMode": "especificacao",
+  "dimensions": [],
+  "dimensionsInputType": {},
+  "dimensionsMap": {},
+  "skus": [
+    {
+      "sku": 1364915,
+      "skuname": "Galletitas Surtido Bagley 400 Gr",
+      "dimensions": {},
+      "available": true,
+      "availablequantity": 99999,
+      "cacheVersionUsedToCallCheckout": "_",
+      "listPriceFormated": "$ 288.264,00",
+      "listPrice": 28826400,
+      "taxFormated": "$ 0,00",
+      "taxAsInt": 0,
+      "bestPriceFormated": "$ 3.488,00",
+      "bestPrice": 348800,
+      "spotPrice": 348800,
+      "installments": 30,
+      "installmentsValue": 11626,
+      "installmentsInsterestRate": null,
+      "image": "https://jumboargentina.vteximg.com.br/arquivos/ids/846372-750-750/Galletitas-Surtido-Bagley-400-Gr-1-1023523.jpg?v=638676597703270000",
+      "sellerId": "1",
+      "seller": "Vea Argentina",
+      "measures": {
+        "cubicweight": 266.4,
+        "height": 222,
+        "length": 125,
+        "weight": 405,
+        "width": 48
+      },
+      "unitMultiplier": 1,
+      "rewardValue": 0
+    }
+  ]
+}

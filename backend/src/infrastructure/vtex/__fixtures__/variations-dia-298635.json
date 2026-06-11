@@ -1,0 +1,42 @@
+{
+  "productId": 298635,
+  "name": "Arroz Largo Fino Molinos Ala 500 Gr.",
+  "salesChannel": "1",
+  "available": true,
+  "displayMode": "especificacao",
+  "dimensions": [],
+  "dimensionsInputType": {},
+  "dimensionsMap": {},
+  "skus": [
+    {
+      "sku": 298635,
+      "skuname": "Arroz Largo Fino Molinos Ala 500 Gr.",
+      "dimensions": {},
+      "available": true,
+      "availablequantity": 99999,
+      "cacheVersionUsedToCallCheckout": "_",
+      "listPriceFormated": "$ 1.150,00",
+      "listPrice": 115000,
+      "taxFormated": "$ 0,00",
+      "taxAsInt": 0,
+      "bestPriceFormated": "$ 895,00",
+      "bestPrice": 89500,
+      "spotPrice": 89500,
+      "installments": 3,
+      "installmentsValue": 29833,
+      "installmentsInsterestRate": 0,
+      "image": "https://ardiaprod.vteximg.com.br/arquivos/ids/371096-500-500/Arroz-Largo-Fino-Molinos-Ala-500-Gr-_1.jpg?v=639149539620230000",
+      "sellerId": "1",
+      "seller": "Supermercados DIA",
+      "measures": {
+        "cubicweight": 1,
+        "height": 1,
+        "length": 1,
+        "weight": 1,
+        "width": 1
+      },
+      "unitMultiplier": 1,
+      "rewardValue": 0
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`TS enricher — Strategy A (search-promotions) characterization > applies effectiveDiscount from promotions fixture — snapshot all results 1`] = `
+[
+  {
+    "discount_pct": 37,
+    "offer_price": 6300,
+    "sku_id": "336191",
+  },
+  {
+    "discount_pct": 35,
+    "offer_price": 6500,
+    "sku_id": "387757",
+  },
+  {
+    "discount_pct": 35,
+    "offer_price": 6500,
+    "sku_id": "395243",
+  },
+  {
+    "discount_pct": 38,
+    "offer_price": 6200,
+    "sku_id": "403667",
+  },
+  {
+    "discount_pct": 38,
+    "offer_price": 6200,
+    "sku_id": "403669",
+  },
+  {
+    "discount_pct": 25,
+    "offer_price": 7500,
+    "sku_id": "412694",
+  },
+  {
+    "discount_pct": 25,
+    "offer_price": 7500,
+    "sku_id": "1364915",
+  },
+]
+`;
+
+exports[`TS enricher — Strategy A (search-promotions) characterization > real fixture sku 336191 — effectiveDiscount=0.37 → discount_pct=37 (snapshot) 1`] = `
+{
+  "discount_pct": 37,
+  "offer_price": 6300,
+  "sku_id": "336191",
+}
+`;
+
+exports[`TS enricher — Strategy B (JSON-LD scraping) characterization > applyStrategyBDiscount: uses listPrice as basePrice when listPrice > promoPrice 1`] = `
+{
+  "discount_pct": 50,
+  "offer_price": 3000,
+}
+`;
+
+exports[`TS enricher — Strategy B (JSON-LD scraping) characterization > applyStrategyBDiscount: uses rawPrice as basePrice when listPrice is null 1`] = `
+{
+  "discount_pct": 20,
+  "offer_price": 4000,
+}
+`;
+
+exports[`TS enricher — Strategy B (JSON-LD scraping) characterization > applyStrategyBDiscount: uses rawPrice when listPrice < promoPrice 1`] = `
+{
+  "discount_pct": 40,
+  "offer_price": 3000,
+}
+`;
+
+exports[`TS enricher — Strategy B (JSON-LD scraping) characterization > dia fixture: parses lowPrice from AggregateOffer (snapshot) 1`] = `
+{
+  "listPrice": null,
+  "promoPrice": 1575,
+}
+`;

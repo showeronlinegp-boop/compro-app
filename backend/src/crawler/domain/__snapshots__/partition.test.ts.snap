@@ -1,0 +1,143 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`TS planPartitions — characterization (must match LEGACY snapshots) > returns a non-empty partition list for vea (snapshot) 1`] = `
+[
+  {
+    "name": "Almacén",
+    "path": "category-1/Almacén",
+    "total": 2223,
+  },
+  {
+    "name": "Bebidas",
+    "path": "category-1/Bebidas",
+    "total": 2223,
+  },
+  {
+    "name": "Frutas y Verduras",
+    "path": "category-1/Frutas y Verduras",
+    "total": 2223,
+  },
+  {
+    "name": "Carnes",
+    "path": "category-1/Carnes",
+    "total": 2223,
+  },
+  {
+    "name": "Pescados y Mariscos",
+    "path": "category-1/Pescados y Mariscos",
+    "total": 2223,
+  },
+  {
+    "name": "Quesos y Fiambres",
+    "path": "category-1/Quesos y Fiambres",
+    "total": 2223,
+  },
+  {
+    "name": "Lácteos",
+    "path": "category-1/Lácteos",
+    "total": 2223,
+  },
+  {
+    "name": "Congelados",
+    "path": "category-1/Congelados",
+    "total": 2223,
+  },
+  {
+    "name": "Panaderia y Pasteleria",
+    "path": "category-1/Panaderia y Pasteleria",
+    "total": 2223,
+  },
+  {
+    "name": "Rotiseria",
+    "path": "category-1/Rotiseria",
+    "total": 2223,
+  },
+  {
+    "name": "Perfumería",
+    "path": "category-1/Perfumería",
+    "total": 2223,
+  },
+  {
+    "name": "Limpieza",
+    "path": "category-1/Limpieza",
+    "total": 2223,
+  },
+  {
+    "name": "Mascotas",
+    "path": "category-1/Mascotas",
+    "total": 2223,
+  },
+  {
+    "name": "Electro",
+    "path": "category-1/Electro",
+    "total": 2223,
+  },
+  {
+    "name": "Hogar y textil",
+    "path": "category-1/Hogar y textil",
+    "total": 2223,
+  },
+  {
+    "name": "Mundo Bebe",
+    "path": "category-1/Mundo Bebe",
+    "total": 2223,
+  },
+  {
+    "name": "Tiempo Libre",
+    "path": "category-1/Tiempo Libre",
+    "total": 2223,
+  },
+  {
+    "name": "Sin Categoría",
+    "path": "category-1/Sin Categoría",
+    "total": 2223,
+  },
+  {
+    "name": "Felices Fiestas",
+    "path": "category-1/Felices Fiestas",
+    "total": 2223,
+  },
+  {
+    "name": "Panadería",
+    "path": "category-1/Panadería",
+    "total": 2223,
+  },
+  {
+    "name": "Huevos de pascua",
+    "path": "category-1/Huevos de pascua",
+    "total": 2223,
+  },
+  {
+    "name": "apositos DONCELLA - PAQ-10-un. - Post parto",
+    "path": "category-1/apositos DONCELLA - PAQ-10-un. - Post parto",
+    "total": 2223,
+  },
+  {
+    "name": "Pastas Frescas",
+    "path": "category-1/Pastas Frescas",
+    "total": 2223,
+  },
+  {
+    "name": "Luces c/toma",
+    "path": "category-1/Luces c/toma",
+    "total": 2223,
+  },
+]
+`;
+
+exports[`TS planPartitions — characterization (must match LEGACY snapshots) > subdivides into cat-2 when department > IS_SAFE_MAX and has children (snapshot) 1`] = `
+[
+  {
+    "name": "LargeDept > SubA",
+    "path": "category-1/LargeDept/category-2/SubA",
+    "total": 400,
+    "truncated": false,
+  },
+  {
+    "name": "LargeDept > SubB",
+    "path": "category-1/LargeDept/category-2/SubB",
+    "total": 400,
+    "truncated": false,
+  },
+]
+`;
