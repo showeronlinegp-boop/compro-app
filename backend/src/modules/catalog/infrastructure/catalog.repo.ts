@@ -13,14 +13,16 @@ export interface ProductListResult {
 }
 
 export interface GroupSummaryRow {
-  barcode: string;
+  gkey: string;
   name: string;
   image_url: string | null;
   super_count: number;
 }
 
 export interface ProductGroup {
-  barcode: string;
+  /** Stable grouping key: barcode when present, else "id:<rowid>" for barcode-less singletons. */
+  key: string;
+  barcode: string | null;
   name: string;
   image_url: string | null;
   super_count: number;
@@ -40,6 +42,7 @@ export interface CatalogRepo {
     q?: string;
     category?: string;
     discount?: string;
+    super?: string;
     page?: string;
     limit?: string;
     vtexStrings?: string[];
@@ -73,7 +76,13 @@ export function makeCatalogRepo(db: Database.Database): CatalogRepo {
       const limitNum = Math.min(100, Number.parseInt(params.limit ?? '24') || 24);
       const offset = (pageNum - 1) * limitNum;
 
-      const conds: string[] = ["barcode IS NOT NULL AND barcode != ''", 'available = 1'];
+      // group_key: barcode when present, else a unique per-row key so barcode-less
+      // products surface as their own singleton group (instead of all collapsing
+      // into a single NULL group under GROUP BY). The "id:" prefix can never
+      // collide with a real (numeric) barcode.
+      const GKEY = "COALESCE(NULLIF(barcode, ''), 'id:' || id)";
+
+      const conds: string[] = ['available = 1'];
       const bindings: unknown[] = [];
 
       if (params.q) {
@@ -95,48 +104,74 @@ export function makeCatalogRepo(db: Database.Database): CatalogRepo {
 
       const where = conds.join(' AND ');
 
-      // Get all barcodes that appear in 2+ distinct supers
-      const groupsSql = `
-        SELECT barcode, MIN(name) as name, MIN(image_url) as image_url, COUNT(DISTINCT super) as super_count
-        FROM products
-        WHERE ${where}
-        GROUP BY barcode
-        HAVING COUNT(DISTINCT super) > 1
-        ORDER BY name ASC
+      // "Include super": keep groups that contain at least one row from the chosen
+      // super, WITHOUT filtering rows by super — so the card still shows every
+      // super's price for comparison.
+      const havingParts: string[] = [];
+      const havingBindings: unknown[] = [];
+      if (params.super) {
+        havingParts.push('SUM(CASE WHEN super = ? THEN 1 ELSE 0 END) > 0');
+        havingBindings.push(params.super);
+      }
+      const having = havingParts.length ? `HAVING ${havingParts.join(' AND ')}` : '';
+
+      // Total distinct groups (NOT rows) — paginate on groups, in SQL.
+      const countSql = `
+        SELECT COUNT(*) as total FROM (
+          SELECT 1 FROM products WHERE ${where} GROUP BY ${GKEY} ${having}
+        )
       `;
+      const countRow = db
+        .prepare<unknown[], { total: number }>(countSql)
+        .get(...bindings, ...havingBindings);
+      const total = Number(countRow?.total ?? 0);
 
-      const allGroups = db.prepare<unknown[], GroupSummaryRow>(groupsSql).all(...bindings);
-      const total = allGroups.length;
-      const pageGroups = allGroups.slice(offset, offset + limitNum);
-
-      if (!pageGroups.length) {
+      if (total === 0) {
         return { data: [], total: 0, page: pageNum, pages: 0 };
       }
 
-      // Fetch all variants for the page's barcodes in one query
-      const barcodes = pageGroups.map((g) => g.barcode);
-      const placeholders = barcodes.map(() => '?').join(',');
+      const groupsSql = `
+        SELECT ${GKEY} AS gkey, MIN(name) as name, MIN(image_url) as image_url,
+               COUNT(DISTINCT super) as super_count
+        FROM products
+        WHERE ${where}
+        GROUP BY gkey
+        ${having}
+        ORDER BY super_count DESC, name ASC
+        LIMIT ${limitNum} OFFSET ${offset}
+      `;
+      const pageGroups = db
+        .prepare<unknown[], GroupSummaryRow>(groupsSql)
+        .all(...bindings, ...havingBindings);
+
+      // Fetch all variants (every super) for the page's group keys in one query.
+      const keys = pageGroups.map((g) => g.gkey);
+      const placeholders = keys.map(() => '?').join(',');
       const rows = db
         .prepare<unknown[], ProductRow>(
-          `SELECT * FROM products WHERE barcode IN (${placeholders}) AND available = 1 ORDER BY barcode, raw_price ASC`,
+          `SELECT * FROM products WHERE ${GKEY} IN (${placeholders}) AND available = 1 ORDER BY raw_price ASC`,
         )
-        .all(...barcodes);
+        .all(...keys);
 
-      // Group rows by barcode
-      const byBarcode = new Map<string, Product[]>();
+      // Group rows by the SAME group_key expression, computed in JS to match SQL.
+      const byKey = new Map<string, Product[]>();
       for (const row of rows) {
-        const key = row.barcode as string;
-        if (!byBarcode.has(key)) byBarcode.set(key, []);
-        byBarcode.get(key)?.push(parseRow(row));
+        const k = row.barcode && row.barcode !== '' ? row.barcode : `id:${row.id}`;
+        if (!byKey.has(k)) byKey.set(k, []);
+        byKey.get(k)?.push(parseRow(row));
       }
 
-      const data: ProductGroup[] = pageGroups.map((g) => ({
-        barcode: g.barcode,
-        name: byBarcode.get(g.barcode)?.[0]?.name ?? g.name,
-        image_url: byBarcode.get(g.barcode)?.[0]?.image_url ?? g.image_url,
-        super_count: g.super_count,
-        variants: byBarcode.get(g.barcode) ?? [],
-      }));
+      const data: ProductGroup[] = pageGroups.map((g) => {
+        const variants = byKey.get(g.gkey) ?? [];
+        return {
+          key: g.gkey,
+          barcode: variants[0]?.barcode ?? null,
+          name: variants[0]?.name ?? g.name,
+          image_url: variants[0]?.image_url ?? g.image_url,
+          super_count: g.super_count,
+          variants,
+        };
+      });
 
       return { data, total, page: pageNum, pages: Math.ceil(total / limitNum) };
     },
