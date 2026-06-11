@@ -28,8 +28,8 @@ import type { IsSearchProduct } from './is-client.js';
 import { buildNormalizer } from './normalizer.js';
 
 const veaCfg = { baseUrl: 'https://www.vea.com.ar', promoSeller: 'jumboargentinav700cordoba700' };
-const carrefourCfg = { baseUrl: 'https://www.carrefour.com.ar' };
-const diaCfg = { baseUrl: 'https://diaonline.supermercadosdia.com.ar' };
+const carrefourCfg = { baseUrl: 'https://www.carrefour.com.ar', trustListPrice: true };
+const diaCfg = { baseUrl: 'https://diaonline.supermercadosdia.com.ar', trustListPrice: true };
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -100,6 +100,158 @@ describe('TS buildNormalizer — characterization (must match LEGACY snapshots)'
       expect(result?.offer_price).toBe(4079.4);
       expect(result?.discount_pct).toBe(40);
       expect(result).toMatchSnapshot();
+    });
+
+    it('captures conditional teasers ("2do al 80%") into promotions without touching unit price', () => {
+      const normalize = buildNormalizer(diaCfg);
+      // Real DIA teaser shape: Price === PriceWithoutDiscount, so the unit-discount
+      // path stays silent — the promo only lives in commertialOffer.teasers.
+      const product = {
+        productId: '308933',
+        productName: 'Yogur Griego Natural Sin Endulzar Yogurísimo 300 Gr.',
+        productReference: null,
+        linkText: 'yogur-griego-natural-308933',
+        link: '/yogur-griego-natural-308933/p',
+        categories: ['/Frescos/Lácteos/'],
+        items: [
+          {
+            itemId: '308933',
+            ean: '7790040000000',
+            images: [{ imageUrl: 'https://example.com/308933.jpg' }],
+            sellers: [
+              {
+                commertialOffer: {
+                  Price: 4635,
+                  ListPrice: 4635,
+                  PriceWithoutDiscount: 4635,
+                  AvailableQuantity: 100,
+                  teasers: [
+                    {
+                      name: '2do al 80%',
+                      conditions: { minimumQuantity: 2 },
+                      effects: { parameters: [{ name: 'PercentualDiscount', value: '80' }] },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      } as IsSearchProduct;
+
+      const result = normalize(product);
+      expect(result).not.toBeNull();
+      // Unit price stays honest — no fake discount.
+      expect(result?.raw_price).toBe(4635);
+      expect(result?.offer_price).toBeNull();
+      expect(result?.discount_pct).toBe(0);
+      // The conditional promo is surfaced separately.
+      expect(result?.promotions).toEqual([
+        { label: '2do al 80%', type: 'nth_unit', min_qty: 2, discount_pct: 80 },
+      ]);
+    });
+
+    it('trustListPrice: detects discount from ListPrice when PWD === Price', () => {
+      const normalize = buildNormalizer(diaCfg);
+      const product = {
+        productId: '1',
+        productName: 'Arroz Largo Fino Test',
+        productReference: null,
+        linkText: 'arroz-1',
+        link: '/arroz-1/p',
+        categories: ['/Almacén/'],
+        items: [
+          {
+            itemId: '1',
+            ean: null,
+            images: [],
+            sellers: [
+              {
+                commertialOffer: {
+                  Price: 1575,
+                  ListPrice: 1970,
+                  PriceWithoutDiscount: 1575, // === Price → primary signal silent
+                  AvailableQuantity: 10,
+                },
+              },
+            ],
+          },
+        ],
+      } as IsSearchProduct;
+
+      const result = normalize(product);
+      expect(result?.discount_pct).toBe(20); // (1970-1575)/1970
+      expect(result?.raw_price).toBe(1970); // strike-through = ListPrice
+      expect(result?.offer_price).toBe(1575);
+    });
+  });
+
+  describe('trustListPrice guards', () => {
+    it("OFF (vea): ListPrice is ignored even when it implies a discount", () => {
+      const normalize = buildNormalizer(veaCfg); // no trustListPrice
+      const product = {
+        productId: '1',
+        productName: 'Aceite Test',
+        productReference: null,
+        linkText: 'aceite-1',
+        link: '/aceite-1/p',
+        categories: [],
+        items: [
+          {
+            itemId: '1',
+            ean: null,
+            images: [],
+            sellers: [
+              {
+                commertialOffer: {
+                  Price: 6389,
+                  ListPrice: 528017, // stale garbage
+                  PriceWithoutDiscount: 6389,
+                  AvailableQuantity: 10,
+                },
+              },
+            ],
+          },
+        ],
+      } as IsSearchProduct;
+
+      const result = normalize(product);
+      expect(result?.discount_pct).toBe(0);
+      expect(result?.raw_price).toBe(6389);
+      expect(result?.offer_price).toBeNull();
+    });
+
+    it('ON but DISCOUNT_CAP rejects a >80% ListPrice gap (safety net)', () => {
+      const normalize = buildNormalizer(diaCfg); // trustListPrice ON
+      const product = {
+        productId: '1',
+        productName: 'Garbage ListPrice Test',
+        productReference: null,
+        linkText: 'g-1',
+        link: '/g-1/p',
+        categories: [],
+        items: [
+          {
+            itemId: '1',
+            ean: null,
+            images: [],
+            sellers: [
+              {
+                commertialOffer: {
+                  Price: 6389,
+                  ListPrice: 528017, // 99% gap → above cap → rejected
+                  PriceWithoutDiscount: 6389,
+                  AvailableQuantity: 10,
+                },
+              },
+            ],
+          },
+        ],
+      } as IsSearchProduct;
+
+      const result = normalize(product);
+      expect(result?.discount_pct).toBe(0);
+      expect(result?.offer_price).toBeNull();
     });
   });
 

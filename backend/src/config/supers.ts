@@ -7,13 +7,16 @@ import {
 } from './env.js';
 
 export const SUPERS: Record<SuperKey, SuperConfig> = {
+  // VEA: ListPrice is stale garbage (e.g. 528017 vs Price 6389) → trustListPrice OFF.
+  // Real discounts come from the search-promotions enricher (promoSeller set).
   vea: { baseUrl: 'https://www.vea.com.ar', promoSeller: 'jumboargentinav700cordoba700' },
-  masonline: { baseUrl: 'https://www.masonline.com.ar' },
+  masonline: { baseUrl: 'https://www.masonline.com.ar', trustListPrice: true },
   // Carrefour renders JSON-LD client-side: data_found=0/18303 in production runs.
-  // Discounts come from the IS-API crawl (PriceWithoutDiscount vs Price → ~2659 products
-  // with discount_pct > 0). Scraping 18k pages for zero data is dead work — skip entirely.
-  carrefour: { baseUrl: 'https://www.carrefour.com.ar', enrichStrategy: 'none' },
-  dia: { baseUrl: 'https://diaonline.supermercadosdia.com.ar' },
+  // Discounts come from the IS-API crawl. PriceWithoutDiscount === Price for discounted
+  // items; the real strike-through lives in ListPrice → trustListPrice ON.
+  carrefour: { baseUrl: 'https://www.carrefour.com.ar', enrichStrategy: 'none', trustListPrice: true },
+  // DIA: discounts live in ListPrice (PWD === Price for discounted items) → trustListPrice ON.
+  dia: { baseUrl: 'https://diaonline.supermercadosdia.com.ar', trustListPrice: true },
 };
 
 /**

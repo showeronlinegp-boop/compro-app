@@ -46,12 +46,13 @@ export function makeSyncRepo(db: Database.Database): SyncRepo {
       number, // discount_pct
       number, // available (0/1)
       string, // categories (JSON)
+      string, // promotions (JSON)
     ]
   >(`
     INSERT INTO products
       (super, product_id, sku_id, name, barcode, image_url, product_url,
-       raw_price, offer_price, discount_pct, available, categories, synced_at)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,datetime('now'))
+       raw_price, offer_price, discount_pct, available, categories, promotions, synced_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now'))
     ON CONFLICT(super, product_id) DO UPDATE SET
       sku_id       = excluded.sku_id,
       name         = excluded.name,
@@ -60,6 +61,7 @@ export function makeSyncRepo(db: Database.Database): SyncRepo {
       discount_pct = excluded.discount_pct,
       available    = excluded.available,
       categories   = excluded.categories,
+      promotions   = excluded.promotions,
       synced_at    = excluded.synced_at
   `);
 
@@ -78,6 +80,7 @@ export function makeSyncRepo(db: Database.Database): SyncRepo {
         p.discount_pct,
         p.available ? 1 : 0,
         JSON.stringify(p.category_paths),
+        JSON.stringify(p.promotions),
       );
     }
   });

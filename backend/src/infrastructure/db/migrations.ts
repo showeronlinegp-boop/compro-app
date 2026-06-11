@@ -21,6 +21,7 @@ export function runMigrations(db: Database.Database): void {
       discount_pct INTEGER DEFAULT 0,
       available    INTEGER DEFAULT 1,
       categories   TEXT,
+      promotions   TEXT,
       synced_at    TEXT    DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(super, product_id)
     )
@@ -76,5 +77,8 @@ export function runMigrations(db: Database.Database): void {
   const prodCols = (db.pragma('table_info(products)') as ColInfo[]).map((r) => r.name);
   if (!prodCols.includes('sku_id')) {
     db.exec('ALTER TABLE products ADD COLUMN sku_id TEXT');
+  }
+  if (!prodCols.includes('promotions')) {
+    db.exec('ALTER TABLE products ADD COLUMN promotions TEXT');
   }
 }

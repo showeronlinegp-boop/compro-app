@@ -19,6 +19,23 @@ const IS_BASE = '/api/io/_v/api/intelligent-search';
 // IS API response types
 // ---------------------------------------------------------------------------
 
+/**
+ * A VTEX teaser = a conditional / cart-level promotion that does NOT lower the
+ * unit price (e.g. "2do al 80%", "2x1"). It only materializes once the cart
+ * meets `conditions.minimumQuantity`, so it never shows up as Price <
+ * PriceWithoutDiscount. We capture it separately from the unit discount.
+ */
+export interface IsTeaser {
+  name: string;
+  conditions?: {
+    minimumQuantity?: number;
+    parameters?: Array<{ name: string; value: string }>;
+  };
+  effects?: {
+    parameters?: Array<{ name: string; value: string }>;
+  };
+}
+
 export interface IsSearchItem {
   itemId: string;
   ean: string | null;
@@ -29,6 +46,7 @@ export interface IsSearchItem {
       ListPrice: number;
       PriceWithoutDiscount: number;
       AvailableQuantity: number;
+      teasers?: IsTeaser[];
     };
   }>;
 }

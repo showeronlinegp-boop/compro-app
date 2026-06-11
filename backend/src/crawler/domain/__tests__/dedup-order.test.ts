@@ -47,6 +47,7 @@ function makeItem(
     discount_pct: 0,
     available: true,
     category_paths: [...categoryPaths],
+    promotions: [],
   };
 }
 
