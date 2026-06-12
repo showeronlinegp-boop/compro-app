@@ -3,6 +3,7 @@ import type {
   GroupsResult,
   Interest,
   ProductListResult,
+  PromoOffer,
   ShoppingItem,
   SuperKey,
   SyncLog,
@@ -63,5 +64,9 @@ export const api = {
       req<{ ok: boolean; message: string }>(`/enrich/${s}`, { method: 'POST' }),
     triggerAll: () =>
       req<{ ok: boolean; message: string; supers: string[] }>('/enrich', { method: 'POST' }),
+  },
+  promos: {
+    list: () => req<PromoOffer[]>('/promos'),
+    capture: () => req<{ ok: boolean; message: string }>('/promos/capture', { method: 'POST' }),
   },
 };

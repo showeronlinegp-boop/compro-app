@@ -2,11 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../api';
 import FreqModal from '../components/FreqModal';
 import GroupedCard from '../components/GroupedCard';
+import PromoPanel from '../components/PromoPanel';
 import type {
   EnrichStatus,
   GroupsResult,
   Interest,
   Product,
+  PromoOffer,
   SortKey,
   SyncLog,
   TaxonomyEntry,
@@ -27,6 +29,7 @@ export interface ExplorarProps {
   onAddToShopping: (p: Product, days: number) => Promise<void>;
   syncStatus?: SyncLog[];
   enrichStatus?: Record<string, EnrichStatus>;
+  promos?: PromoOffer[];
 }
 
 export default function Explorar({
@@ -35,6 +38,7 @@ export default function Explorar({
   onAddToShopping,
   syncStatus = [],
   enrichStatus = {},
+  promos = [],
 }: ExplorarProps) {
   const [groups, setGroups] = useState<GroupsResult['data']>([]);
   const [total, setTotal] = useState(0);
@@ -197,6 +201,9 @@ export default function Explorar({
           }
           return null;
         })}
+
+      {/* Promo offers panel */}
+      <PromoPanel offers={promos} />
 
       {/* Buscador */}
       <div className="relative mb-4">

@@ -14,6 +14,8 @@ export interface AppDeps {
   crawlerRouter?: Router;
   /** TypeScript enrichment router (Slice 6+). When provided, mounted at /api/enrich. */
   enrichmentRouter?: Router;
+  /** Promo banners router. When provided, mounted at /api/promos. */
+  promosRouter?: Router;
 }
 
 /**
@@ -44,6 +46,10 @@ export function createApp(deps: AppDeps): Application {
 
   if (deps.enrichmentRouter) {
     app.use('/api/enrich', deps.enrichmentRouter);
+  }
+
+  if (deps.promosRouter) {
+    app.use('/api/promos', deps.promosRouter);
   }
 
   // ── Error handling ─────────────────────────────────────────────────────────

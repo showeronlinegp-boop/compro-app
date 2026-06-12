@@ -4,7 +4,15 @@ import { api } from './api';
 import Explorar from './pages/Explorar';
 import Intereses from './pages/Intereses';
 import Planner from './pages/Planner';
-import type { EnrichStatus, Interest, Product, ShoppingItem, SuperKey, SyncLog } from './types/api';
+import type {
+  EnrichStatus,
+  Interest,
+  Product,
+  PromoOffer,
+  ShoppingItem,
+  SuperKey,
+  SyncLog,
+} from './types/api';
 
 // ─── SyncPanel ────────────────────────────────────────────────────────────────
 
@@ -13,9 +21,18 @@ interface SyncPanelProps {
   syncing: string;
   onSync: (key: SuperKey) => Promise<void>;
   onSyncAll: () => Promise<void>;
+  capturingPromos: boolean;
+  onCapturePromos: () => Promise<void>;
 }
 
-function SyncPanel({ status, syncing, onSync, onSyncAll }: SyncPanelProps) {
+function SyncPanel({
+  status,
+  syncing,
+  onSync,
+  onSyncAll,
+  capturingPromos,
+  onCapturePromos,
+}: SyncPanelProps) {
   const [open, setOpen] = useState(false);
   const SYNC_KEYS: SuperKey[] = ['vea', 'carrefour', 'dia', 'masonline'];
   const anyRunning = status.some((s) => s.status === 'running') || !!syncing;
@@ -105,6 +122,19 @@ function SyncPanel({ status, syncing, onSync, onSyncAll }: SyncPanelProps) {
               </div>
             );
           })}
+
+          {/* Bank promos */}
+          <div className="mt-3 pt-3 border-t border-gray-100">
+            <p className="text-xs font-semibold text-gray-500 mb-2 px-1">Promos bancarias</p>
+            <button
+              type="button"
+              onClick={() => onCapturePromos()}
+              disabled={capturingPromos}
+              className="w-full text-xs font-medium px-3 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              {capturingPromos ? 'Recolectando promos…' : '🏦 Actualizar promos bancarias'}
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -119,6 +149,8 @@ export default function App() {
   const [syncStatus, setSyncStatus] = useState<SyncLog[]>([]);
   const [syncing, setSyncing] = useState('');
   const [enrichStatus, setEnrichStatus] = useState<Record<string, EnrichStatus>>({});
+  const [promos, setPromos] = useState<PromoOffer[]>([]);
+  const [capturingPromos, setCapturingPromos] = useState(false);
   useLocation(); // keep location subscription for future use
 
   useEffect(() => {
@@ -126,6 +158,7 @@ export default function App() {
     api.shopping.list().then(setShopping).catch(console.error);
     api.sync.status().then(setSyncStatus).catch(console.error);
     api.enrich.status().then(setEnrichStatus).catch(console.error);
+    api.promos.list().then(setPromos).catch(console.error);
   }, []);
 
   // Auto-poll while a sync is running.
@@ -195,6 +228,30 @@ export default function App() {
     }
   }
 
+  // Capture is fire-and-forget (Playwright renders 4 sites, ~30-60s) with no
+  // status endpoint, so we poll GET /promos for a bounded window and refresh
+  // the panel as offers land, then stop.
+  async function triggerCapturePromos() {
+    if (capturingPromos) return;
+    setCapturingPromos(true);
+    try {
+      await api.promos.capture();
+    } catch {
+      setCapturingPromos(false);
+      return;
+    }
+    let tries = 0;
+    const id = setInterval(async () => {
+      tries += 1;
+      const fresh = await api.promos.list().catch(() => null);
+      if (fresh) setPromos(fresh);
+      if (tries >= 20) {
+        clearInterval(id);
+        setCapturingPromos(false);
+      }
+    }, 4000);
+  }
+
   const shoppingIds = new Set(shopping.map((s) => s.id));
 
   return (
@@ -239,6 +296,8 @@ export default function App() {
             syncing={syncing}
             onSync={triggerSync}
             onSyncAll={triggerSyncAll}
+            capturingPromos={capturingPromos}
+            onCapturePromos={triggerCapturePromos}
           />
         </div>
       </nav>
@@ -255,6 +314,7 @@ export default function App() {
                 onAddToShopping={addToShopping}
                 syncStatus={syncStatus}
                 enrichStatus={enrichStatus}
+                promos={promos}
               />
             }
           />

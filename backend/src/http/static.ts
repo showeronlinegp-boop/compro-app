@@ -8,7 +8,7 @@ import express from 'express';
  * Resolves the path relative to dist/main.js (the compiled output location)
  * using import.meta.url so it works correctly after tsup bundling.
  *
- * Mirrors the static serving logic in server.js verbatim:
+ * Mirrors the static serving logic in server.js:
  *   1. Serve static files from frontend/dist
  *   2. SPA fallback: all unmatched GETs return index.html
  */
