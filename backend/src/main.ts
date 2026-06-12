@@ -1,14 +1,11 @@
 /**
- * main.ts — Pure TypeScript composition root (Slice 6 final cutover).
+ * main.ts — Pure TypeScript composition root.
  *
- * All legacy CJS interop (createRequire, enricher.js, db.js) has been removed.
- * Wires all 6 module factories:
+ * Wires all module factories:
  *   interests, shopping, catalog, taxonomy — via createApp
  *   crawler  — makeCrawlerService + makeCrawlerRouter
  *   enricher — makeEnricher + makeEnrichmentRouter
- *
- * scheduleDailySync cron delegates to TS crawlerService.
- * Crawler fire-and-forget enrich trigger now calls the TS enricher.
+ *   promos   — makePromosRepo + makePromoCaptureService + makePromosRouter
  */
 
 import cron from 'node-cron';
@@ -20,6 +17,9 @@ import { makeEnrichmentRouter } from './enrichment/infrastructure/enrichment.rou
 import { createApp } from './http/app.js';
 import { createDb } from './infrastructure/db/client.js';
 import { runMigrations } from './infrastructure/db/migrations.js';
+import { makePromoCaptureService } from './modules/promos/infrastructure/promo-capture.service.js';
+import { makePromosRepo } from './modules/promos/infrastructure/promos.repo.js';
+import { makePromosRouter } from './modules/promos/infrastructure/promos.routes.js';
 
 // ─── Boot sequence ────────────────────────────────────────────────────────────
 
@@ -33,13 +33,17 @@ const enrichmentRouter = makeEnrichmentRouter(enricher, db);
 // ── TypeScript crawler service ─────────────────────────────────────────────────
 const crawlerService = makeCrawlerService({
   db,
-  // Fire-and-forget enrich trigger — now calls the TS enricher (Slice 6 cutover)
   enrichSuper: (key) => enricher.enrichSuper(key),
 });
 const crawlerRouter = makeCrawlerRouter(crawlerService);
 
+// ── Promos ─────────────────────────────────────────────────────────────────────
+const promosRepo = makePromosRepo(db);
+const promoCaptureService = makePromoCaptureService({ db });
+const promosRouter = makePromosRouter({ repo: promosRepo, captureService: promoCaptureService });
+
 // ── TypeScript app ─────────────────────────────────────────────────────────────
-const app = createApp({ db, crawlerRouter, enrichmentRouter });
+const app = createApp({ db, crawlerRouter, enrichmentRouter, promosRouter });
 
 // ── Cron: daily sync at 3 AM ──────────────────────────────────────────────────
 cron.schedule('0 3 * * *', () => {
@@ -48,6 +52,15 @@ cron.schedule('0 3 * * *', () => {
     .syncAll()
     .then((r) => console.log('[cron] Sync complete:', r))
     .catch((err: Error) => console.error('[cron] Sync error:', err.message));
+});
+
+// ── Cron: weekly promo capture at 4 AM on Mondays ────────────────────────────
+cron.schedule('0 4 * * 1', () => {
+  console.log('[cron] Weekly promo capture starting...');
+  promoCaptureService
+    .captureAll()
+    .then((r) => console.log('[cron] Promo capture complete:', r))
+    .catch((err: Error) => console.error('[cron] Promo capture error:', err.message));
 });
 
 // ── Listen ────────────────────────────────────────────────────────────────────

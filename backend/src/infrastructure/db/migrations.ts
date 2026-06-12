@@ -60,6 +60,31 @@ export function runMigrations(db: Database.Database): void {
     )
   `);
 
+  // ── Promo offers ───────────────────────────────────────────────────────────
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS promo_offers (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      super         TEXT    NOT NULL,
+      bank          TEXT,
+      title         TEXT,
+      description   TEXT,
+      discount_pct  INTEGER,
+      installments  INTEGER,
+      interest_free INTEGER,
+      logo_url      TEXT,
+      image_url     TEXT,
+      validity      TEXT,
+      source_url    TEXT NOT NULL,
+      captured_at   INTEGER NOT NULL
+    )
+  `);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_promo_offers_super
+    ON promo_offers (super, captured_at)
+  `);
+
   // ── Idempotent column additions for existing DBs ───────────────────────────
 
   interface ColInfo {

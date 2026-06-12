@@ -127,6 +127,24 @@ export interface ProductListResult {
   pages: number;
 }
 
+// ─── Promo offers ─────────────────────────────────────────────────────────────
+
+export interface PromoOffer {
+  id: number;
+  super: SuperKey;
+  bank: string | null;
+  title: string | null;
+  description: string | null;
+  discountPct: number | null;
+  installments: number | null;
+  interestFree: boolean | null;
+  logoUrl: string | null;
+  imageUrl: string | null;
+  validity: string | null;
+  capturedAt: number;
+  sourceUrl: string;
+}
+
 // ─── Shopping result wrappers ─────────────────────────────────────────────────
 
 export interface WeeklyGroup {
