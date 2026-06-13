@@ -1,13 +1,16 @@
 /**
  * sync.ts — Standalone crawl/sync runner (no Express server).
  *
- * Wires the DB + crawler service directly so you can run a sync for one super
- * (or all) in the foreground and watch the [plan:*] / [sync:*] logs live —
- * useful for diagnosing a slow or blocked super (e.g. VEA rate-limiting).
+ * Wires a PrismaClient + crawler service directly so you can run a sync for
+ * one super (or all) in the foreground and watch the [plan:*] / [sync:*]
+ * logs live — useful for diagnosing a slow or blocked super (e.g. VEA
+ * rate-limiting).
  *
  * By default only the CRAWL runs. Pass --enrich to also run price enrichment
  * (search-promotions for vea, JSON-LD scraping for the others) after each crawl.
  * Pass --enrich-only to SKIP the crawl and just enrich what's already in the DB.
+ *
+ * DATABASE_URL env var is optional; defaults to the local dev Postgres.
  *
  * Usage:
  *   npx tsx scripts/sync.ts vea               # crawl one super
@@ -15,18 +18,13 @@
  *   npx tsx scripts/sync.ts vea --enrich-only # enrich only (no re-crawl)
  *   npx tsx scripts/sync.ts all --enrich      # crawl + enrich every super
  *   npm run sync -- vea --enrich-only         # via package.json script
- *
- * NOTE: stop the dev server first (or at least don't sync from the UI at the
- * same time) — better-sqlite3 allows only one writer, so concurrent syncs on
- * the same DB file will collide.
  */
 
-import { DB_PATH } from '../src/config/env.js';
+import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { SUPERS } from '../src/config/supers.js';
 import { makeCrawlerService } from '../src/crawler/infrastructure/crawler.service.js';
 import { makeEnricher } from '../src/enrichment/infrastructure/enricher.service.js';
-import { createDb } from '../src/infrastructure/db/client.js';
-import { runMigrations } from '../src/infrastructure/db/migrations.js';
 
 const VALID_KEYS = Object.keys(SUPERS);
 
@@ -51,11 +49,12 @@ async function main(): Promise<void> {
     usage();
   }
 
-  const db = createDb(DB_PATH);
-  runMigrations(db);
+  const databaseUrl = process.env.DATABASE_URL ?? 'postgresql://compro:compro@localhost:5433/compro';
+  const adapter = new PrismaPg({ connectionString: databaseUrl });
+  const prisma = new PrismaClient({ adapter });
 
-  const crawler = makeCrawlerService({ db });
-  const enricher = withEnrich ? makeEnricher(db) : null;
+  const crawler = makeCrawlerService({ prisma });
+  const enricher = withEnrich ? makeEnricher(prisma) : null;
 
   const keys = target === 'all' ? VALID_KEYS : [target];
 
@@ -88,7 +87,7 @@ async function main(): Promise<void> {
   } finally {
     const secs = ((Date.now() - startedAt) / 1000).toFixed(1);
     console.log(`Elapsed: ${secs}s`);
-    db.close();
+    await prisma.$disconnect();
   }
 }
 
