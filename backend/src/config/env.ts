@@ -99,11 +99,3 @@ export const ENV_ENRICH_SKU_CONC: number = numEnv('ENRICH_SKU_CONC', ENRICH_SKU_
 
 /** SKUs per search-promotions POST request (env: ENRICH_PROMO_BATCH). Hard endpoint limit = 20. */
 export const ENV_ENRICH_PROMO_BATCH: number = numEnv('ENRICH_PROMO_BATCH', ENRICH_PROMO_BATCH);
-
-// ---------------------------------------------------------------------------
-// TODO(Slice-B): Remove DB_PATH — kept only so main.ts compiles during Slice A.
-// Once the repos are migrated to Prisma (Slice B), delete this export and the
-// createDb / runMigrations calls in main.ts.
-// ---------------------------------------------------------------------------
-/** @deprecated Use DATABASE_URL instead. Will be removed in Slice B. */
-export const DB_PATH: string = process.env.DB_PATH ?? '../compro.db';

@@ -22,7 +22,7 @@
  *              sequentially in plan order after the pool resolves (output-identical).
  */
 
-import type Database from 'better-sqlite3';
+import type { PrismaClient } from '@prisma/client';
 import { SUPERS, resolveCrawlConfig } from '../../config/supers.js';
 import { CRAWLER_IS_SAFE_MAX, CRAWLER_PAGE_SIZE } from '../../config/throttles.js';
 import { getCatalogTree, searchPage } from '../../infrastructure/vtex/is-client.js';
@@ -49,7 +49,7 @@ export interface CrawlerService {
 }
 
 export interface CrawlerServiceDeps {
-  db: Database.Database;
+  prisma: PrismaClient;
   /** Optional: called after a successful syncSuper to trigger enrichment. */
   enrichSuper?: (superKey: string) => Promise<unknown>;
 }
@@ -264,7 +264,7 @@ async function crawlOnePartition(
 // ---------------------------------------------------------------------------
 
 export function makeCrawlerService(deps: CrawlerServiceDeps): CrawlerService {
-  const repo = makeSyncRepo(deps.db);
+  const repo = makeSyncRepo(deps.prisma);
 
   async function syncSuper(superKey: string): Promise<{ super: string; count: number }> {
     if (isRunning(superKey)) throw new Error(`Sync de ${superKey} ya en curso`);
@@ -277,7 +277,7 @@ export function makeCrawlerService(deps: CrawlerServiceDeps): CrawlerService {
 
     markRunning(superKey);
 
-    const logId = repo.insertSyncLog(superKey);
+    const logId = await repo.insertSyncLog(superKey);
 
     try {
       console.log(`[sync:${superKey}] Building partition plan (IS API)...`);
@@ -286,7 +286,7 @@ export function makeCrawlerService(deps: CrawlerServiceDeps): CrawlerService {
       const partitions = planPartitions(tree as TreeNode[], probeCounts);
 
       console.log(`[sync:${superKey}] ${partitions.length} partitions`);
-      repo.updateSyncProgress(0, partitions.length, 0, logId);
+      await repo.updateSyncProgress(0, partitions.length, 0, logId);
 
       const normalize = buildNormalizer(cfg);
       // Canonical seen map — accumulated sequentially in plan order during fold
@@ -348,9 +348,9 @@ export function makeCrawlerService(deps: CrawlerServiceDeps): CrawlerService {
         const touchedItems = [...touchedIds]
           .map((id) => seen.get(id))
           .filter((item): item is NormalizedCrawlItem => item !== undefined);
-        repo.upsertProducts(superKey, touchedItems);
+        await repo.upsertProducts(superKey, touchedItems);
 
-        repo.updateSyncProgress(i + 1, partitions.length, seen.size, logId);
+        await repo.updateSyncProgress(i + 1, partitions.length, seen.size, logId);
         console.log(
           `[sync:${superKey}] ${i + 1}/${partitions.length} "${partition.name}" — ${seen.size} products saved`,
         );
@@ -360,12 +360,12 @@ export function makeCrawlerService(deps: CrawlerServiceDeps): CrawlerService {
       }
 
       // Delete stale rows from previous syncs
-      const deleted = repo.deleteStaleForSuper(superKey, logId);
+      const deleted = await repo.deleteStaleForSuper(superKey, logId);
       if (deleted > 0) {
         console.log(`[sync:${superKey}] Deleted ${deleted} stale products from previous sync`);
       }
 
-      repo.finishSyncLog(seen.size, logId);
+      await repo.finishSyncLog(seen.size, logId);
       console.log(`[sync:${superKey}] Done. ${seen.size} products.`);
 
       // Fire-and-forget enrich trigger (Slice 6 swaps legacy enricher for TS enricher)
@@ -377,7 +377,7 @@ export function makeCrawlerService(deps: CrawlerServiceDeps): CrawlerService {
 
       return { super: superKey, count: seen.size };
     } catch (err) {
-      repo.failSyncLog((err as Error).message, logId);
+      await repo.failSyncLog((err as Error).message, logId);
       console.error(`[sync:${superKey}] Error:`, (err as Error).message);
       throw err;
     } finally {

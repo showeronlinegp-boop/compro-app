@@ -21,7 +21,7 @@ export function makePromosRouter({ repo, captureService }: PromosRouterDeps): Ro
   router.get(
     '/',
     asyncHandler(async (_req, res) => {
-      const rows = repo.listAll();
+      const rows = await repo.listAll();
       const response = rows.map((r) => ({
         id: r.id,
         super: r.super,

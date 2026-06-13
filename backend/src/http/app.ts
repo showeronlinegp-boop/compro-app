@@ -1,4 +1,4 @@
-import type Database from 'better-sqlite3';
+import type { PrismaClient } from '@prisma/client';
 import cors from 'cors';
 import express, { type Application, type Router } from 'express';
 import { makeCatalogRouter } from '../modules/catalog/infrastructure/catalog.routes.js';
@@ -9,10 +9,10 @@ import { errorMiddleware } from './error-middleware.js';
 import { mountStatic } from './static.js';
 
 export interface AppDeps {
-  db: Database.Database;
-  /** TypeScript crawler router (Slice 5+). When provided, mounted at /api/sync. */
+  prisma: PrismaClient;
+  /** TypeScript crawler router. When provided, mounted at /api/sync. */
   crawlerRouter?: Router;
-  /** TypeScript enrichment router (Slice 6+). When provided, mounted at /api/enrich. */
+  /** TypeScript enrichment router. When provided, mounted at /api/enrich. */
   enrichmentRouter?: Router;
   /** Promo banners router. When provided, mounted at /api/promos. */
   promosRouter?: Router;
@@ -21,11 +21,11 @@ export interface AppDeps {
 /**
  * Creates and wires the Express application.
  * - CORS + JSON body parsing
- * - /api/interests  (TypeScript router, Slice 1)
- * - /api/shopping   (TypeScript router, Slice 2)
- * - /api/products   (TypeScript router, Slice 3)
- * - /api/sync       (TypeScript crawler router, Slice 5+)
- * - /api/enrich     (TypeScript enrichment router, Slice 6+)
+ * - /api/interests  (TypeScript router)
+ * - /api/shopping   (TypeScript router)
+ * - /api/products   (TypeScript router)
+ * - /api/sync       (TypeScript crawler router)
+ * - /api/enrich     (TypeScript enrichment router)
  * - Error middleware
  * - Static frontend serving (last, with SPA fallback)
  */
@@ -36,9 +36,9 @@ export function createApp(deps: AppDeps): Application {
   app.use(express.json());
 
   // ── TypeScript routes ──────────────────────────────────────────────────────
-  app.use('/api/interests', makeInterestsRouter(deps.db));
-  app.use('/api/shopping', makeShoppingRouter(deps.db));
-  app.use('/api/products', makeCatalogRouter(deps.db, TAXONOMY));
+  app.use('/api/interests', makeInterestsRouter(deps.prisma));
+  app.use('/api/shopping', makeShoppingRouter(deps.prisma));
+  app.use('/api/products', makeCatalogRouter(deps.prisma, TAXONOMY));
 
   if (deps.crawlerRouter) {
     app.use('/api/sync', deps.crawlerRouter);

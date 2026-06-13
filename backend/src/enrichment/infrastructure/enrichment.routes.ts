@@ -6,15 +6,14 @@
  *   POST /api/enrich/:super    — fire-and-forget enrich for one super, 409 guard
  *   POST /api/enrich           — fire-and-forget enrich for all distinct supers in DB
  *
- * The POST /api/enrich route queries distinct supers from products table
- * (same as legacy server.js line 49: SELECT DISTINCT super FROM products).
+ * The POST /api/enrich route queries distinct supers from products table.
  */
 
-import type Database from 'better-sqlite3';
+import type { PrismaClient } from '@prisma/client';
 import { Router } from 'express';
 import type { EnrichService } from './enricher.service.js';
 
-export function makeEnrichmentRouter(enricher: EnrichService, db: Database.Database): Router {
+export function makeEnrichmentRouter(enricher: EnrichService, prisma: PrismaClient): Router {
   const router = Router();
 
   // GET /status — returns all super statuses
@@ -36,23 +35,27 @@ export function makeEnrichmentRouter(enricher: EnrichService, db: Database.Datab
 
   // POST / — enrich all distinct supers from products table (fire-and-forget)
   router.post('/', (_req, res) => {
-    const keys = (
-      db.prepare('SELECT DISTINCT super FROM products').all() as Array<{ super: string }>
-    ).map((r) => r.super);
-
-    res.json({
-      ok: true,
-      message: 'Enriquecimiento de todos los supers iniciado',
-      supers: keys,
-    });
-
-    for (const key of keys) {
-      if (!enricher.isRunning(key)) {
-        enricher
-          .enrichSuper(key)
-          .catch((err: Error) => console.error(`Enrich ${key} failed:`, err.message));
-      }
-    }
+    // Async: get distinct supers, then start enrichment
+    prisma.products
+      .findMany({ distinct: ['super'], select: { super: true } })
+      .then((rows) => {
+        const keys = rows.map((r) => r.super);
+        res.json({
+          ok: true,
+          message: 'Enriquecimiento de todos los supers iniciado',
+          supers: keys,
+        });
+        for (const key of keys) {
+          if (!enricher.isRunning(key)) {
+            enricher
+              .enrichSuper(key)
+              .catch((err: Error) => console.error(`Enrich ${key} failed:`, err.message));
+          }
+        }
+      })
+      .catch((err: Error) => {
+        res.status(500).json({ error: err.message });
+      });
   });
 
   return router;
