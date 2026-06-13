@@ -58,8 +58,8 @@ exports[`TS buildNormalizer — characterization (must match LEGACY snapshots) >
       {
         "discount_pct": 10,
         "label": "PROMO-Adicional 10% Off en 1 pago-Reg-1-0-AsElectro",
-        "min_qty": 0,
-        "type": "nth_unit",
+        "min_qty": null,
+        "type": "other",
       },
     ],
     "raw_price": 899000,
@@ -83,8 +83,8 @@ exports[`TS buildNormalizer — characterization (must match LEGACY snapshots) >
       {
         "discount_pct": 15,
         "label": "PROMO-Adicional 15% Off en 1 pago-Reg-1-0-AsElectro",
-        "min_qty": 0,
-        "type": "nth_unit",
+        "min_qty": null,
+        "type": "other",
       },
     ],
     "raw_price": 999000,

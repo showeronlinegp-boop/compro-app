@@ -66,11 +66,17 @@ function extractPromotions(teasers: IsTeaser[] | undefined): Promotion[] {
   return teasers.map((t) => {
     const pctRaw = t.effects?.parameters?.find((p) => p.name === 'PercentualDiscount')?.value;
     const pctFromField = pctRaw != null && pctRaw !== '' ? Number(pctRaw) : null;
-    const minQty = t.conditions?.minimumQuantity ?? null;
+    // An nth-unit promo ("2do al 50%") requires a real quantity threshold (>= 2).
+    // VTEX reports minimumQuantity 0 for unconditional/flat promos (e.g. a payment
+    // discount like "Tarjeta Carrefour 15%") — those are NOT nth-unit promos, so we
+    // surface them as informational 'other' badges with no quantity, instead of
+    // mislabeling them 'nth_unit' (which implies a per-Nth-unit price calculation).
+    const rawMinQty = t.conditions?.minimumQuantity ?? null;
+    const isNthUnit = rawMinQty != null && rawMinQty >= 2;
     return {
       label: t.name,
-      type: minQty != null ? 'nth_unit' : 'other',
-      min_qty: minQty,
+      type: isNthUnit ? 'nth_unit' : 'other',
+      min_qty: isNthUnit ? rawMinQty : null,
       discount_pct: parseLabelDiscountPct(t.name) ?? pctFromField,
     };
   });

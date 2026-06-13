@@ -242,6 +242,49 @@ describe('TS buildNormalizer — characterization (must match LEGACY snapshots)'
       ]);
     });
 
+    it('classifies an unconditional promo (minimumQuantity 0) as "other", not "nth_unit"', () => {
+      const normalize = buildNormalizer(diaCfg);
+      // Carrefour payment/card discount: applies per unit, no quantity threshold.
+      // It must NOT be tagged nth_unit (which implies a "buy N, Nth at X%" calc).
+      const product = {
+        productId: 'card',
+        productName: 'Producto con descuento de tarjeta',
+        productReference: null,
+        linkText: 'producto-card',
+        link: '/producto-card/p',
+        categories: ['/Bebidas/'],
+        items: [
+          {
+            itemId: 'card',
+            ean: '7790000000002',
+            images: [{ imageUrl: 'https://example.com/c.jpg' }],
+            sellers: [
+              {
+                commertialOffer: {
+                  Price: 1000,
+                  ListPrice: 1000,
+                  PriceWithoutDiscount: 1000,
+                  AvailableQuantity: 100,
+                  teasers: [
+                    {
+                      name: 'Tarjeta Carrefour 15%',
+                      conditions: { minimumQuantity: 0 },
+                      effects: { parameters: [{ name: 'PercentualDiscount', value: '15' }] },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      } as IsSearchProduct;
+
+      const result = normalize(product);
+      expect(result?.promotions).toEqual([
+        { label: 'Tarjeta Carrefour 15%', type: 'other', min_qty: null, discount_pct: 15 },
+      ]);
+    });
+
     it('trustListPrice: detects discount from ListPrice when PWD === Price', () => {
       const normalize = buildNormalizer(diaCfg);
       const product = {
