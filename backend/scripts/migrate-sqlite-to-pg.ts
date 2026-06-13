@@ -25,7 +25,7 @@
 import Database from 'better-sqlite3';
 import { PrismaClient, Prisma } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import path from 'path';
+import * as path from 'path';
 import { fileURLToPath } from 'url';
 
 // ---------------------------------------------------------------------------
@@ -322,8 +322,8 @@ async function loadProducts(prisma: PrismaClient, sqlite: Database.Database): Pr
       offer_price: r.offer_price ?? null,
       discount_pct: r.discount_pct ?? 0,
       available: r.available === 1,
-      categories: tryParseJson(r.categories) as Prisma.InputJsonValue | null,
-      promotions: tryParseJson(r.promotions) as Prisma.InputJsonValue | null,
+      categories: (tryParseJson(r.categories) ?? Prisma.JsonNull) as Prisma.InputJsonValue | typeof Prisma.JsonNull,
+      promotions: (tryParseJson(r.promotions) ?? Prisma.JsonNull) as Prisma.InputJsonValue | typeof Prisma.JsonNull,
       synced_at: parseDateTime(r.synced_at) ?? new Date(),
     }));
 
