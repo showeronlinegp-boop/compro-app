@@ -31,6 +31,37 @@ const veaCfg = { baseUrl: 'https://www.vea.com.ar', promoSeller: 'jumboargentina
 const carrefourCfg = { baseUrl: 'https://www.carrefour.com.ar', trustListPrice: true };
 const diaCfg = { baseUrl: 'https://diaonline.supermercadosdia.com.ar', trustListPrice: true };
 
+// Helper: build a minimal IS product carrying a single teaser. Price === PWD so the
+// unit-discount path stays silent and only the teaser-derived promotions are tested.
+function makeProductWithTeaser(id: string, teaser: unknown): IsSearchProduct {
+  return {
+    productId: id,
+    productName: `Producto ${id}`,
+    productReference: null,
+    linkText: `producto-${id}`,
+    link: `/producto-${id}/p`,
+    categories: ['/Bebidas/'],
+    items: [
+      {
+        itemId: id,
+        ean: `7790${id}`,
+        images: [{ imageUrl: 'https://example.com/x.jpg' }],
+        sellers: [
+          {
+            commertialOffer: {
+              Price: 1000,
+              ListPrice: 1000,
+              PriceWithoutDiscount: 1000,
+              AvailableQuantity: 100,
+              teasers: [teaser],
+            },
+          },
+        ],
+      },
+    ],
+  } as IsSearchProduct;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('TS buildNormalizer — characterization (must match LEGACY snapshots)', () => {
@@ -201,44 +232,51 @@ describe('TS buildNormalizer — characterization (must match LEGACY snapshots)'
       ]);
     });
 
-    it('falls back to PercentualDiscount when the label has no "al X%" pattern', () => {
+    it('parses an "NxM" promo ("3x2") to the equivalent (N-M)*100 per-unit discount, not the effective field value', () => {
       const normalize = buildNormalizer(diaCfg);
-      const product = {
-        productId: '2x1',
-        productName: 'Producto Test 2x1',
-        productReference: null,
-        linkText: 'producto-2x1',
-        link: '/producto-2x1/p',
-        categories: ['/Bebidas/'],
-        items: [
-          {
-            itemId: '2x1',
-            ean: '7790000000001',
-            images: [{ imageUrl: 'https://example.com/x.jpg' }],
-            sellers: [
-              {
-                commertialOffer: {
-                  Price: 1000,
-                  ListPrice: 1000,
-                  PriceWithoutDiscount: 1000,
-                  AvailableQuantity: 100,
-                  teasers: [
-                    {
-                      name: '2x1',
-                      conditions: { minimumQuantity: 2 },
-                      effects: { parameters: [{ name: 'PercentualDiscount', value: '50' }] },
-                    },
-                  ],
-                },
-              },
-            ],
-          },
-        ],
-      } as IsSearchProduct;
-
-      const result = normalize(product);
+      // Real carrefour teaser: label "3x2" but PercentualDiscount carries the averaged
+      // effective discount (33.33). The freed unit is 100% off ("Reg-3-100"), so the
+      // per-unit formula needs pct=100 (n=3) → base * 2/3. The trailing date "al 14/6"
+      // must NOT be picked up by the "al X%" branch.
+      const teaser = {
+        name: 'PROMO-Exclusivo online 3x2 Iguales-Reg-3-100-Mondelez8/6 al 14/6',
+        conditions: { minimumQuantity: 3 },
+        effects: { parameters: [{ name: 'PercentualDiscount', value: '33.33' }] },
+      };
+      const result = normalize(makeProductWithTeaser('3x2', teaser));
       expect(result?.promotions).toEqual([
-        { label: '2x1', type: 'nth_unit', min_qty: 2, discount_pct: 50 },
+        {
+          label: 'PROMO-Exclusivo online 3x2 Iguales-Reg-3-100-Mondelez8/6 al 14/6',
+          type: 'nth_unit',
+          min_qty: 3,
+          discount_pct: 100,
+        },
+      ]);
+    });
+
+    it('parses "2x1" to a 100% per-unit discount (one free unit), ignoring the field', () => {
+      const normalize = buildNormalizer(diaCfg);
+      const teaser = {
+        name: '2x1',
+        conditions: { minimumQuantity: 2 },
+        effects: { parameters: [{ name: 'PercentualDiscount', value: '50' }] },
+      };
+      const result = normalize(makeProductWithTeaser('2x1', teaser));
+      expect(result?.promotions).toEqual([
+        { label: '2x1', type: 'nth_unit', min_qty: 2, discount_pct: 100 },
+      ]);
+    });
+
+    it('falls back to PercentualDiscount when the label has neither "NxM" nor "al X%"', () => {
+      const normalize = buildNormalizer(diaCfg);
+      const teaser = {
+        name: 'Combo Mondelez especial',
+        conditions: { minimumQuantity: 2 },
+        effects: { parameters: [{ name: 'PercentualDiscount', value: '20' }] },
+      };
+      const result = normalize(makeProductWithTeaser('combo', teaser));
+      expect(result?.promotions).toEqual([
+        { label: 'Combo Mondelez especial', type: 'nth_unit', min_qty: 2, discount_pct: 20 },
       ]);
     });
 

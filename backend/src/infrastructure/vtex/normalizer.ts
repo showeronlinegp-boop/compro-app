@@ -30,24 +30,40 @@ function num(v: unknown): number | null {
 }
 
 /**
- * Extract the per-Nth-unit discount stated in a promo label, e.g. "2do al 50%" → 50.
+ * Derive the per-Nth-unit discount percentage stated in a promo label, for the
+ * downstream per-unit formula  base * (n - pct/100) / n.
  *
- * VTEX's teaser `PercentualDiscount` is NOT consistent across supers: some report
- * the per-Nth-unit discount (dia: "2do al 50%" → 50), others report the effective
- * averaged discount over the qualifying quantity (carrefour: "2do al 50%" → 25).
- * Stored raw, this makes identical promos render different per-unit prices, because
- * the downstream per-unit formula expects the per-Nth-unit discount.
+ * VTEX's teaser `PercentualDiscount` is NOT consistent across supers — it often
+ * carries the AVERAGED effective discount, which that formula misreads (e.g.
+ * carrefour stores 25 for "2do al 50%", and 33.33 for "3x2"). The human-readable
+ * label states the real promo, so we parse it. Two formats:
  *
- * The label consistently states the real per-Nth-unit percentage, so we parse it.
- * Anchored to the `%` sign so trailing noise without a percent sign (e.g. carrefour's
- * "...-Reg-2-50-AS9 AL 16.6") is ignored. Returns null when there is no "al X%" match.
+ *   - "NxM" buy-N-pay-M (e.g. "3x2", "2x1"): (N-M) units are free, so the equivalent
+ *     pct is (N - M) * 100 → 3x2 → 100 (one free unit), 2x1 → 100. With min_qty = N
+ *     the formula yields base * M / N (3x2 of $509 → $339,33).
+ *   - "...al X%" (e.g. "2do al 50%"): X is the per-Nth-unit discount directly.
+ *
+ * Guards against false positives: the "al X%" branch requires a `%` sign (so date
+ * ranges like "8/6 al 14/6" are ignored), and the NxM branch requires N > M (so
+ * size tokens like "2x500ml" are ignored). Returns null when neither matches.
  */
 function parseLabelDiscountPct(label: string | undefined): number | null {
   if (!label) return null;
-  const m = label.match(/\bal\s+(\d+(?:[.,]\d+)?)\s*%/i);
-  if (!m?.[1]) return null;
-  const pct = Number(m[1].replace(',', '.'));
-  return Number.isFinite(pct) ? pct : null;
+
+  const nxm = label.match(/\b(\d+)\s*[xX]\s*(\d+)\b/);
+  if (nxm) {
+    const n = Number(nxm[1]);
+    const m = Number(nxm[2]);
+    if (Number.isFinite(n) && Number.isFinite(m) && n > m && m > 0) return (n - m) * 100;
+  }
+
+  const alX = label.match(/\bal\s+(\d+(?:[.,]\d+)?)\s*%/i);
+  if (alX?.[1]) {
+    const pct = Number(alX[1].replace(',', '.'));
+    if (Number.isFinite(pct)) return pct;
+  }
+
+  return null;
 }
 
 /**
