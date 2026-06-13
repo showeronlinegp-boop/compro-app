@@ -151,6 +151,140 @@ describe('TS buildNormalizer — characterization (must match LEGACY snapshots)'
       ]);
     });
 
+    it('uses the per-Nth-unit discount from the label, not the inconsistent PercentualDiscount field (carrefour)', () => {
+      const normalize = buildNormalizer(diaCfg);
+      // Real carrefour teaser: label states "2do al 50%" but PercentualDiscount is the
+      // averaged effective discount (25). Stored raw (25), the per-unit price came out
+      // wrong (12.5% off instead of 25%). The label's "al 50%" is the truth — and the
+      // trailing "AL 16.6" (no % sign) must NOT be picked up.
+      const product = {
+        productId: 'cc-zero',
+        productName: 'Coca-cola Zero 2,25 Lt',
+        productReference: null,
+        linkText: 'coca-cola-zero',
+        link: '/coca-cola-zero/p',
+        categories: ['/Bebidas/Gaseosas/'],
+        items: [
+          {
+            itemId: 'cc-zero',
+            ean: '7790000000000',
+            images: [{ imageUrl: 'https://example.com/cc.jpg' }],
+            sellers: [
+              {
+                commertialOffer: {
+                  Price: 5650,
+                  ListPrice: 5650,
+                  PriceWithoutDiscount: 5650,
+                  AvailableQuantity: 100,
+                  teasers: [
+                    {
+                      name: 'PROMO-2do al 50% Max 48 unidades Combinable COCA COLA-Reg-2-50-AS9 AL 16.6',
+                      conditions: { minimumQuantity: 2 },
+                      effects: { parameters: [{ name: 'PercentualDiscount', value: '25' }] },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      } as IsSearchProduct;
+
+      const result = normalize(product);
+      expect(result?.promotions).toEqual([
+        {
+          label: 'PROMO-2do al 50% Max 48 unidades Combinable COCA COLA-Reg-2-50-AS9 AL 16.6',
+          type: 'nth_unit',
+          min_qty: 2,
+          discount_pct: 50,
+        },
+      ]);
+    });
+
+    it('falls back to PercentualDiscount when the label has no "al X%" pattern', () => {
+      const normalize = buildNormalizer(diaCfg);
+      const product = {
+        productId: '2x1',
+        productName: 'Producto Test 2x1',
+        productReference: null,
+        linkText: 'producto-2x1',
+        link: '/producto-2x1/p',
+        categories: ['/Bebidas/'],
+        items: [
+          {
+            itemId: '2x1',
+            ean: '7790000000001',
+            images: [{ imageUrl: 'https://example.com/x.jpg' }],
+            sellers: [
+              {
+                commertialOffer: {
+                  Price: 1000,
+                  ListPrice: 1000,
+                  PriceWithoutDiscount: 1000,
+                  AvailableQuantity: 100,
+                  teasers: [
+                    {
+                      name: '2x1',
+                      conditions: { minimumQuantity: 2 },
+                      effects: { parameters: [{ name: 'PercentualDiscount', value: '50' }] },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      } as IsSearchProduct;
+
+      const result = normalize(product);
+      expect(result?.promotions).toEqual([
+        { label: '2x1', type: 'nth_unit', min_qty: 2, discount_pct: 50 },
+      ]);
+    });
+
+    it('classifies an unconditional promo (minimumQuantity 0) as "other", not "nth_unit"', () => {
+      const normalize = buildNormalizer(diaCfg);
+      // Carrefour payment/card discount: applies per unit, no quantity threshold.
+      // It must NOT be tagged nth_unit (which implies a "buy N, Nth at X%" calc).
+      const product = {
+        productId: 'card',
+        productName: 'Producto con descuento de tarjeta',
+        productReference: null,
+        linkText: 'producto-card',
+        link: '/producto-card/p',
+        categories: ['/Bebidas/'],
+        items: [
+          {
+            itemId: 'card',
+            ean: '7790000000002',
+            images: [{ imageUrl: 'https://example.com/c.jpg' }],
+            sellers: [
+              {
+                commertialOffer: {
+                  Price: 1000,
+                  ListPrice: 1000,
+                  PriceWithoutDiscount: 1000,
+                  AvailableQuantity: 100,
+                  teasers: [
+                    {
+                      name: 'Tarjeta Carrefour 15%',
+                      conditions: { minimumQuantity: 0 },
+                      effects: { parameters: [{ name: 'PercentualDiscount', value: '15' }] },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      } as IsSearchProduct;
+
+      const result = normalize(product);
+      expect(result?.promotions).toEqual([
+        { label: 'Tarjeta Carrefour 15%', type: 'other', min_qty: null, discount_pct: 15 },
+      ]);
+    });
+
     it('trustListPrice: detects discount from ListPrice when PWD === Price', () => {
       const normalize = buildNormalizer(diaCfg);
       const product = {
