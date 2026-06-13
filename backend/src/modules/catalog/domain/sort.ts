@@ -55,12 +55,12 @@ export function rowOrderBy(sort: SortKey): string {
 export function groupOrderBy(sort: SortKey): string {
   switch (sort) {
     case 'price_asc':
-      return 'min_price IS NULL, min_price ASC, name ASC';
+      return 'MIN(COALESCE(offer_price, raw_price)) IS NULL, MIN(COALESCE(offer_price, raw_price)) ASC, MIN(name) ASC';
     case 'price_desc':
-      return 'min_price IS NULL, min_price DESC, name ASC';
+      return 'MIN(COALESCE(offer_price, raw_price)) IS NULL, MIN(COALESCE(offer_price, raw_price)) DESC, MIN(name) ASC';
     case 'discount_desc':
-      return 'max_discount DESC, name ASC';
+      return 'MAX(discount_pct) DESC, MIN(name) ASC';
     default:
-      return 'max_discount > 0 DESC, max_discount DESC, super_count DESC, name ASC';
+      return '(MAX(discount_pct) > 0) DESC, MAX(discount_pct) DESC, COUNT(DISTINCT super) DESC, MIN(name) ASC';
   }
 }

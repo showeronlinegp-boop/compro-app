@@ -1,9 +1,10 @@
-import type Database from 'better-sqlite3';
+import { Prisma } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import { buildNameSearch } from '../../../shared/text.js';
 import type { Product, ProductRow } from '../../../shared/types.js';
 import { parseRow } from '../domain/product.js';
-import { type ProductQueryParams, buildProductsQuery } from '../domain/query.js';
-import { groupOrderBy, parseSort } from '../domain/sort.js';
+import type { ProductQueryParams } from '../domain/query.js';
+import { groupOrderBy, parseSort, rowOrderBy } from '../domain/sort.js';
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 
@@ -18,7 +19,7 @@ export interface GroupSummaryRow {
   gkey: string;
   name: string;
   image_url: string | null;
-  super_count: number;
+  super_count: number | bigint;
   max_discount: number;
   min_price: number | null;
 }
@@ -41,7 +42,7 @@ export interface GroupsResult {
 }
 
 export interface CatalogRepo {
-  search(params: ProductQueryParams): ProductListResult;
+  search(params: ProductQueryParams): Promise<ProductListResult>;
   getGroups(params: {
     q?: string;
     category?: string;
@@ -51,126 +52,181 @@ export interface CatalogRepo {
     page?: string;
     limit?: string;
     vtexStrings?: string[];
-  }): GroupsResult;
+  }): Promise<GroupsResult>;
   getCategories(): Array<{ slug: string; label: string; icon: string }>;
+}
+
+// ─── GKEY expression ──────────────────────────────────────────────────────────
+
+// Compute GKEY in JS to match SQL: barcode when non-empty, else "id:<id>"
+function computeGkey(row: { barcode: string | null; id: number }): string {
+  return row.barcode && row.barcode !== '' ? row.barcode : `id:${row.id}`;
 }
 
 // ─── Repo factory ─────────────────────────────────────────────────────────────
 
-export function makeCatalogRepo(db: Database.Database): CatalogRepo {
+// Accept PrismaClient or TransactionClient (both expose model delegates + $queryRaw)
+type PrismaLike = Pick<
+  PrismaClient,
+  '$queryRaw' | '$executeRaw'
+>;
+
+export function makeCatalogRepo(prisma: PrismaLike): CatalogRepo {
   return {
-    search(params) {
-      const { sql, bindings, countSql, page, limit } = buildProductsQuery(params);
-
-      const countRow = db.prepare<unknown[], { total: number }>(countSql).get(...bindings);
-      const total = Number(countRow?.total ?? 0);
-
-      const rows = db.prepare<unknown[], ProductRow>(sql).all(...bindings);
-      const data = rows.map(parseRow);
-
-      return {
-        data,
-        total,
-        page,
-        pages: Math.ceil(total / limit),
-      };
-    },
-
-    getGroups(params) {
+    async search(params) {
       const pageNum = Math.max(1, Number.parseInt(params.page ?? '1') || 1);
-      const limitNum = Math.min(100, Number.parseInt(params.limit ?? '24') || 24);
+      const limitNum = Math.min(100, Number.parseInt(params.limit ?? '48') || 48);
       const offset = (pageNum - 1) * limitNum;
 
-      // group_key: barcode when present, else a unique per-row key so barcode-less
-      // products surface as their own singleton group (instead of all collapsing
-      // into a single NULL group under GROUP BY). The "id:" prefix can never
-      // collide with a real (numeric) barcode.
-      const GKEY = "COALESCE(NULLIF(barcode, ''), 'id:' || id)";
-
-      const conds: string[] = ['available = 1'];
-      const bindings: unknown[] = [];
+      const whereParts: Prisma.Sql[] = [];
 
       if (params.q) {
-        const nameSearch = buildNameSearch(params.q);
-        if (nameSearch) {
-          conds.push(`(${nameSearch.clause})`);
-          bindings.push(...nameSearch.bindings);
-        }
+        const nameFragment = buildNameSearch(params.q);
+        if (nameFragment) whereParts.push(nameFragment);
+      }
+
+      if (params.super) {
+        whereParts.push(Prisma.sql`super = ${params.super}`);
       }
 
       if (params.category) {
         const vtex = params.vtexStrings ?? [];
         if (vtex.length > 0) {
-          conds.push(`(${vtex.map(() => 'categories LIKE ?').join(' OR ')})`);
-          for (const s of vtex) bindings.push(`%${s}%`);
+          const orParts = vtex.map((s) => Prisma.sql`categories::text ILIKE ${'%' + s + '%'}`);
+          whereParts.push(Prisma.sql`(${Prisma.join(orParts, ' OR ')})`);
         }
       }
 
       if (params.discount === '1') {
-        conds.push('discount_pct > 0');
+        whereParts.push(Prisma.sql`discount_pct > 0`);
       }
 
-      const where = conds.join(' AND ');
+      if (params.available === '1') {
+        whereParts.push(Prisma.sql`available = true`);
+      }
 
-      // "Include super": keep groups that contain at least one row from the chosen
-      // super, WITHOUT filtering rows by super — so the card still shows every
-      // super's price for comparison.
-      const havingParts: string[] = [];
-      const havingBindings: unknown[] = [];
+      const where =
+        whereParts.length > 0
+          ? Prisma.sql`WHERE ${Prisma.join(whereParts, ' AND ')}`
+          : Prisma.sql``;
+
+      const orderBy = Prisma.raw(rowOrderBy(parseSort(params.sort)));
+
+      const [countResult, rows] = await Promise.all([
+        (prisma as PrismaClient).$queryRaw<Array<{ total: bigint }>>(
+          Prisma.sql`SELECT COUNT(*) as total FROM products ${where}`,
+        ),
+        (prisma as PrismaClient).$queryRaw<ProductRow[]>(
+          Prisma.sql`SELECT * FROM products ${where} ORDER BY ${orderBy} LIMIT ${limitNum} OFFSET ${offset}`,
+        ),
+      ]);
+
+      const total = Number((countResult[0] as { total: bigint })?.total ?? 0);
+      const data = rows.map(parseRow);
+
+      return {
+        data,
+        total,
+        page: pageNum,
+        pages: Math.ceil(total / limitNum),
+      };
+    },
+
+    async getGroups(params) {
+      const pageNum = Math.max(1, Number.parseInt(params.page ?? '1') || 1);
+      const limitNum = Math.min(100, Number.parseInt(params.limit ?? '24') || 24);
+      const offset = (pageNum - 1) * limitNum;
+
+      // GKEY: barcode when present and non-empty, else "id:" || id
+      const GKEY = Prisma.raw("COALESCE(NULLIF(barcode, ''), 'id:' || id)");
+
+      const whereParts: Prisma.Sql[] = [Prisma.sql`available = true`];
+
+      if (params.q) {
+        const nameFragment = buildNameSearch(params.q);
+        if (nameFragment) whereParts.push(nameFragment);
+      }
+
+      if (params.category) {
+        const vtex = params.vtexStrings ?? [];
+        if (vtex.length > 0) {
+          const orParts = vtex.map((s) => Prisma.sql`categories::text ILIKE ${'%' + s + '%'}`);
+          whereParts.push(Prisma.sql`(${Prisma.join(orParts, ' OR ')})`);
+        }
+      }
+
+      if (params.discount === '1') {
+        whereParts.push(Prisma.sql`discount_pct > 0`);
+      }
+
+      const where = Prisma.sql`WHERE ${Prisma.join(whereParts, ' AND ')}`;
+
+      // HAVING clause for super filter (groups containing the chosen super)
+      const havingParts: Prisma.Sql[] = [];
       if (params.super) {
-        havingParts.push('SUM(CASE WHEN super = ? THEN 1 ELSE 0 END) > 0');
-        havingBindings.push(params.super);
+        havingParts.push(
+          Prisma.sql`SUM(CASE WHEN super = ${params.super} THEN 1 ELSE 0 END) > 0`,
+        );
       }
-      const having = havingParts.length ? `HAVING ${havingParts.join(' AND ')}` : '';
+      const having =
+        havingParts.length > 0
+          ? Prisma.sql`HAVING ${Prisma.join(havingParts, ' AND ')}`
+          : Prisma.sql``;
 
-      // Total distinct groups (NOT rows) — paginate on groups, in SQL.
-      const countSql = `
-        SELECT COUNT(*) as total FROM (
-          SELECT 1 FROM products WHERE ${where} GROUP BY ${GKEY} ${having}
-        )
-      `;
-      const countRow = db
-        .prepare<unknown[], { total: number }>(countSql)
-        .get(...bindings, ...havingBindings);
-      const total = Number(countRow?.total ?? 0);
+      const orderBy = Prisma.raw(groupOrderBy(parseSort(params.sort)));
+
+      // Total distinct groups
+      const countResult = await (prisma as PrismaClient).$queryRaw<Array<{ total: bigint }>>(
+        Prisma.sql`
+          SELECT COUNT(*) as total FROM (
+            SELECT 1 FROM products ${where} GROUP BY ${GKEY} ${having}
+          ) _count
+        `,
+      );
+      const total = Number((countResult[0] as { total: bigint })?.total ?? 0);
 
       if (total === 0) {
         return { data: [], total: 0, page: pageNum, pages: 0 };
       }
 
-      // sort is whitelisted in parseSort → groupOrderBy returns a hardcoded clause.
-      // max_discount / min_price are aggregates the ORDER BY can reference by alias.
-      // min_price = lowest effective price (offer_price ?? raw_price) across supers.
-      const orderBy = groupOrderBy(parseSort(params.sort));
-      const groupsSql = `
-        SELECT ${GKEY} AS gkey, MIN(name) as name, MIN(image_url) as image_url,
-               COUNT(DISTINCT super) as super_count,
-               MAX(discount_pct) as max_discount,
-               MIN(COALESCE(offer_price, raw_price)) as min_price
-        FROM products
-        WHERE ${where}
-        GROUP BY gkey
-        ${having}
-        ORDER BY ${orderBy}
-        LIMIT ${limitNum} OFFSET ${offset}
-      `;
-      const pageGroups = db
-        .prepare<unknown[], GroupSummaryRow>(groupsSql)
-        .all(...bindings, ...havingBindings);
+      // Page groups summary
+      const pageGroups = await (prisma as PrismaClient).$queryRaw<GroupSummaryRow[]>(
+        Prisma.sql`
+          SELECT ${GKEY} AS gkey,
+                 MIN(name) as name,
+                 MIN(image_url) as image_url,
+                 COUNT(DISTINCT super) as super_count,
+                 MAX(discount_pct) as max_discount,
+                 MIN(COALESCE(offer_price, raw_price)) as min_price
+          FROM products
+          ${where}
+          GROUP BY ${GKEY}
+          ${having}
+          ORDER BY ${orderBy}
+          LIMIT ${limitNum} OFFSET ${offset}
+        `,
+      );
 
-      // Fetch all variants (every super) for the page's group keys in one query.
+      if (pageGroups.length === 0) {
+        return { data: [], total, page: pageNum, pages: Math.ceil(total / limitNum) };
+      }
+
+      // Fetch all variants for the page's group keys in one query
       const keys = pageGroups.map((g) => g.gkey);
-      const placeholders = keys.map(() => '?').join(',');
-      const rows = db
-        .prepare<unknown[], ProductRow>(
-          `SELECT * FROM products WHERE ${GKEY} IN (${placeholders}) AND available = 1 ORDER BY raw_price ASC`,
-        )
-        .all(...keys);
+      const keyList = Prisma.join(keys.map((k) => Prisma.sql`${k}`));
+      const rows = await (prisma as PrismaClient).$queryRaw<ProductRow[]>(
+        Prisma.sql`
+          SELECT * FROM products
+          WHERE ${GKEY} IN (${keyList})
+            AND available = true
+          ORDER BY raw_price ASC
+        `,
+      );
 
-      // Group rows by the SAME group_key expression, computed in JS to match SQL.
+      // Group rows by GKEY (computed in JS to match SQL)
       const byKey = new Map<string, Product[]>();
       for (const row of rows) {
-        const k = row.barcode && row.barcode !== '' ? row.barcode : `id:${row.id}`;
+        const k = computeGkey(row as { barcode: string | null; id: number });
         if (!byKey.has(k)) byKey.set(k, []);
         byKey.get(k)?.push(parseRow(row));
       }
@@ -182,7 +238,7 @@ export function makeCatalogRepo(db: Database.Database): CatalogRepo {
           barcode: variants[0]?.barcode ?? null,
           name: variants[0]?.name ?? g.name,
           image_url: variants[0]?.image_url ?? g.image_url,
-          super_count: g.super_count,
+          super_count: Number(g.super_count),
           variants,
         };
       });
@@ -190,11 +246,8 @@ export function makeCatalogRepo(db: Database.Database): CatalogRepo {
       return { data, total, page: pageNum, pages: Math.ceil(total / limitNum) };
     },
 
-    // getCategories is a pure taxonomy read — taxonomy passed in from the route layer
     getCategories() {
-      // This method exists for structural completeness but the taxonomy is injected
-      // at the route level (catalog.routes.ts receives taxonomy as a dep).
-      // Returning empty here; caller should use the taxonomy dep directly.
+      // Taxonomy injected at route layer — not repo responsibility
       return [];
     },
   };

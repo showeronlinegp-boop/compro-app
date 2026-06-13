@@ -1,4 +1,4 @@
-import type Database from 'better-sqlite3';
+import type { PrismaClient } from '@prisma/client';
 import { Router } from 'express';
 import { asyncHandler } from '../../../shared/http.js';
 import type { TaxonomyEntry } from '../../../shared/types.js';
@@ -7,20 +7,20 @@ import { makeCatalogRepo } from './catalog.repo.js';
 
 /**
  * Creates the catalog router.
- * HTTP contract is identical to backend/routes/products.js:
+ * HTTP contract is identical to the legacy products.js:
  *   GET /              → paginated product search
- *     ?q=              → name LIKE
+ *     ?q=              → name LIKE (accent/punctuation-insensitive via unaccent)
  *     ?super=          → exact super match
  *     ?category=       → taxonomy slug filter
  *     ?discount=1      → only discounted items
  *     ?available=1     → only available items
  *     ?sort=           → relevance (default) | discount_desc | price_asc | price_desc
  *     ?page=&limit=    → pagination (default: page=1, limit=48, max limit=100)
- *   GET /groups        → products grouped by barcode across supers (2+ supers only)
+ *   GET /groups        → products grouped by barcode across supers
  *   GET /categories    → taxonomy list [{slug, label, icon}]
  */
-export function makeCatalogRouter(db: Database.Database, taxonomy: TaxonomyEntry[]): Router {
-  const repo = makeCatalogRepo(db);
+export function makeCatalogRouter(prisma: PrismaClient, taxonomy: TaxonomyEntry[]): Router {
+  const repo = makeCatalogRepo(prisma);
   const router = Router();
 
   router.get(
@@ -38,13 +38,11 @@ export function makeCatalogRouter(db: Database.Database, taxonomy: TaxonomyEntry
       };
 
       const vtexStrings = params.category ? getVtexStrings(params.category) : [];
-      const result = repo.search({ ...params, vtexStrings });
+      const result = await repo.search({ ...params, vtexStrings });
       res.json(result);
     }),
   );
 
-  // NOTE: /groups and /categories MUST be registered before /:id routes
-  // if any are added in the future.
   router.get(
     '/groups',
     asyncHandler(async (req, res) => {
@@ -59,7 +57,7 @@ export function makeCatalogRouter(db: Database.Database, taxonomy: TaxonomyEntry
       };
 
       const vtexStrings = category ? getVtexStrings(category) : [];
-      const result = repo.getGroups({
+      const result = await repo.getGroups({
         q,
         category,
         discount,
