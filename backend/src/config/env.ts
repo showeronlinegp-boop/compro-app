@@ -1,5 +1,3 @@
-import * as nodePath from 'node:path';
-import { fileURLToPath } from 'node:url';
 import {
   CRAWLER_PAGE_CONC,
   CRAWLER_PARTITION_CONC,
@@ -15,19 +13,20 @@ import {
   ENRICH_SKU_CONC,
 } from './throttles.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = nodePath.dirname(__filename);
-
 export const PORT: number = Number(process.env.PORT ?? 3001);
 
-// DB_PATH is required — fail fast if absent
-const rawDbPath = process.env.DB_PATH;
-if (!rawDbPath) {
-  // In development, default to a local file; in production, this env var must be set.
-  // We set a default here to keep dev ergonomics intact, but log a warning.
-  console.warn('[env] DB_PATH not set — using default path ../compro.db (dev only)');
+// DATABASE_URL is required in production; in development a localhost default is used.
+const rawDatabaseUrl = process.env.DATABASE_URL;
+if (!rawDatabaseUrl) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('[env] DATABASE_URL env var is required in production');
+  }
+  console.warn(
+    '[env] DATABASE_URL not set — using default postgresql://compro:compro@localhost:5433/compro (dev only)',
+  );
 }
-export const DB_PATH: string = rawDbPath ?? nodePath.join(__dirname, '..', '..', '..', 'compro.db');
+export const DATABASE_URL: string =
+  rawDatabaseUrl ?? 'postgresql://compro:compro@localhost:5433/compro';
 
 export const NODE_ENV: string = process.env.NODE_ENV ?? 'development';
 
@@ -100,3 +99,11 @@ export const ENV_ENRICH_SKU_CONC: number = numEnv('ENRICH_SKU_CONC', ENRICH_SKU_
 
 /** SKUs per search-promotions POST request (env: ENRICH_PROMO_BATCH). Hard endpoint limit = 20. */
 export const ENV_ENRICH_PROMO_BATCH: number = numEnv('ENRICH_PROMO_BATCH', ENRICH_PROMO_BATCH);
+
+// ---------------------------------------------------------------------------
+// TODO(Slice-B): Remove DB_PATH — kept only so main.ts compiles during Slice A.
+// Once the repos are migrated to Prisma (Slice B), delete this export and the
+// createDb / runMigrations calls in main.ts.
+// ---------------------------------------------------------------------------
+/** @deprecated Use DATABASE_URL instead. Will be removed in Slice B. */
+export const DB_PATH: string = process.env.DB_PATH ?? '../compro.db';
