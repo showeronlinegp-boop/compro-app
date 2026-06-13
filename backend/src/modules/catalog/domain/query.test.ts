@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { buildProductsQuery } from './query.js';
 
+const NORM_EXPR = "lower(regexp_replace(immutable_unaccent(name), '[^a-z0-9]+', ' ', 'g'))";
+
 describe('buildProductsQuery', () => {
   describe('default / empty params', () => {
     it('produces 1=1 WHERE with no bindings', () => {
@@ -24,16 +26,16 @@ describe('buildProductsQuery', () => {
   });
 
   describe('q filter', () => {
-    it('adds a single tokenized norm(name) LIKE binding', () => {
+    it('adds a single tokenized NORM_EXPR LIKE binding', () => {
       const { sql, bindings } = buildProductsQuery({ q: 'leche' });
       expect(bindings).toEqual(['%leche%']);
-      expect(sql).toContain('norm(name) LIKE ?');
+      expect(sql).toContain(`${NORM_EXPR} LIKE ?`);
     });
 
     it('splits q into one AND-ed token per word', () => {
       const { sql, bindings } = buildProductsQuery({ q: 'leche entera' });
       expect(bindings).toEqual(['%leche%', '%entera%']);
-      expect(sql).toContain('norm(name) LIKE ? AND norm(name) LIKE ?');
+      expect(sql).toContain(`${NORM_EXPR} LIKE ? AND ${NORM_EXPR} LIKE ?`);
     });
 
     it('normalizes tokens (accent/punctuation insensitive)', () => {
@@ -44,7 +46,7 @@ describe('buildProductsQuery', () => {
     it('adds no name condition when q has no usable tokens', () => {
       const { sql, bindings } = buildProductsQuery({ q: '-' });
       expect(bindings).toEqual([]);
-      expect(sql).not.toContain('norm(name)');
+      expect(sql).not.toContain('immutable_unaccent');
     });
   });
 
@@ -57,14 +59,14 @@ describe('buildProductsQuery', () => {
   });
 
   describe('category filter', () => {
-    it('adds one OR clause per vtex string', () => {
+    it('adds one OR clause per vtex string using ILIKE', () => {
       const vtexStrings = ['Lácteos', 'Frescos'];
       const { sql, bindings } = buildProductsQuery({
         category: 'lacteos',
         vtexStrings,
       });
       expect(bindings).toEqual(['%Lácteos%', '%Frescos%']);
-      expect(sql).toContain('categories LIKE ?');
+      expect(sql).toContain('categories::text ILIKE ?');
       expect(sql).toContain(' OR ');
     });
 
@@ -74,13 +76,13 @@ describe('buildProductsQuery', () => {
         vtexStrings: [],
       });
       expect(bindings).toHaveLength(0);
-      expect(sql).not.toContain('categories LIKE');
+      expect(sql).not.toContain('categories');
     });
 
     it('adds no category clause when vtexStrings is undefined', () => {
       const { sql, bindings } = buildProductsQuery({ category: 'lacteos' });
       expect(bindings).toHaveLength(0);
-      expect(sql).not.toContain('categories LIKE');
+      expect(sql).not.toContain('categories');
     });
   });
 
@@ -98,15 +100,15 @@ describe('buildProductsQuery', () => {
   });
 
   describe('available filter', () => {
-    it('adds available = 1 when available=1', () => {
+    it('adds available = true when available=1', () => {
       const { sql, bindings } = buildProductsQuery({ available: '1' });
-      expect(sql).toContain('available = 1');
+      expect(sql).toContain('available = true');
       expect(bindings).toHaveLength(0);
     });
 
     it('does NOT add available clause when available is not "1"', () => {
       const { sql } = buildProductsQuery({ available: '0' });
-      expect(sql).not.toContain('available = 1');
+      expect(sql).not.toContain('available = true');
     });
   });
 
@@ -154,7 +156,7 @@ describe('buildProductsQuery', () => {
         discount: '1',
       });
       expect(bindings).toEqual(['%arroz%', 'carrefour']);
-      expect(sql).toContain('norm(name) LIKE ?');
+      expect(sql).toContain('immutable_unaccent');
       expect(sql).toContain('super = ?');
       expect(sql).toContain('discount_pct > 0');
     });
@@ -168,7 +170,7 @@ describe('buildProductsQuery', () => {
         limit: '24',
       });
       expect(bindings).toEqual(['%Bebidas%', '%Gaseosas%']);
-      expect(sql).toContain('available = 1');
+      expect(sql).toContain('available = true');
       expect(sql).toContain('LIMIT 24 OFFSET 24');
     });
 

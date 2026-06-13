@@ -1,151 +1,161 @@
 /**
- * sync.repo.ts — Database operations for the crawler sync workflow.
+ * sync.repo.ts — Database operations for the crawler sync workflow (Prisma/Postgres).
  *
- * Port of the DB interactions from backend/crawler-service.js.
- * Uses better-sqlite3 spread params (positional, not array form).
- * SQL and sync_log columns match legacy EXACTLY.
+ * Replaces the better-sqlite3 sync.repo. Key changes:
+ *   - All methods are async (Prisma is async-only).
+ *   - upsertProducts uses chunked interactive $transaction (~500/chunk) to bound
+ *     transaction duration and avoid the 5s default Prisma timeout on large batches.
+ *   - deleteStaleForSuper uses $executeRaw (cross-table correlated delete).
+ *   - All sync_log operations use Prisma model delegates.
  */
 
-import type Database from 'better-sqlite3';
+import type { PrismaClient } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import type { NormalizedCrawlItem, SyncLog } from '../../shared/types.js';
 
+const UPSERT_CHUNK_SIZE = 500;
+
 export interface SyncRepo {
-  /** Upsert a batch of products for a given superKey (wrapped in a transaction). */
-  upsertProducts: (superKey: string, items: NormalizedCrawlItem[]) => void;
+  /** Upsert a batch of products for a given superKey (chunked transactions). */
+  upsertProducts: (superKey: string, items: NormalizedCrawlItem[]) => Promise<void>;
   /** Delete rows for superKey that were last synced before the given sync started_at. */
-  deleteStaleForSuper: (superKey: string, logId: number) => number;
-  /** Insert a new sync_log row and return its rowid. */
-  insertSyncLog: (superKey: string) => number;
+  deleteStaleForSuper: (superKey: string, logId: number) => Promise<number>;
+  /** Insert a new sync_log row and return its id. */
+  insertSyncLog: (superKey: string) => Promise<number>;
   /** Update progress fields on an existing sync_log row. */
   updateSyncProgress: (
     progressLeaf: number,
     totalLeaves: number,
     productCount: number,
     logId: number,
-  ) => void;
+  ) => Promise<void>;
   /** Mark a sync_log row as completed (ok). */
-  finishSyncLog: (productCount: number, logId: number) => void;
+  finishSyncLog: (productCount: number, logId: number) => Promise<void>;
   /** Mark a sync_log row as failed (error). */
-  failSyncLog: (errorMessage: string, logId: number) => void;
+  failSyncLog: (errorMessage: string, logId: number) => Promise<void>;
   /** Return the latest sync_log row per super, ordered by super. */
-  getSyncStatus: () => SyncLog[];
+  getSyncStatus: () => Promise<SyncLog[]>;
 }
 
-export function makeSyncRepo(db: Database.Database): SyncRepo {
-  const upsertStmt = db.prepare<
-    [
-      string, // super
-      string, // product_id
-      string | null, // sku_id
-      string, // name
-      string | null, // barcode
-      string | null, // image_url
-      string, // product_url
-      number | null, // raw_price
-      number | null, // offer_price
-      number, // discount_pct
-      number, // available (0/1)
-      string, // categories (JSON)
-      string, // promotions (JSON)
-    ]
-  >(`
-    INSERT INTO products
-      (super, product_id, sku_id, name, barcode, image_url, product_url,
-       raw_price, offer_price, discount_pct, available, categories, promotions, synced_at)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now'))
-    ON CONFLICT(super, product_id) DO UPDATE SET
-      sku_id       = excluded.sku_id,
-      name         = excluded.name,
-      raw_price    = excluded.raw_price,
-      offer_price  = excluded.offer_price,
-      discount_pct = excluded.discount_pct,
-      available    = excluded.available,
-      categories   = excluded.categories,
-      promotions   = excluded.promotions,
-      synced_at    = excluded.synced_at
-  `);
-
-  const upsertTx = db.transaction((superKey: string, items: NormalizedCrawlItem[]) => {
-    for (const p of items) {
-      upsertStmt.run(
-        superKey,
-        p.product_id,
-        p.sku_id ?? null,
-        p.name,
-        p.barcode ?? null,
-        p.image_url ?? null,
-        p.product_url,
-        p.raw_price ?? null,
-        p.offer_price ?? null,
-        p.discount_pct,
-        p.available ? 1 : 0,
-        JSON.stringify(p.category_paths),
-        JSON.stringify(p.promotions),
-      );
-    }
-  });
-
-  const deleteStaleStmt = db.prepare<[string, number]>(`
-    DELETE FROM products
-    WHERE super = ? AND synced_at < (SELECT started_at FROM sync_log WHERE id = ?)
-  `);
-
-  const insertLogStmt = db.prepare<[string]>(`
-    INSERT INTO sync_log (super, started_at, status, progress_leaf, total_leaves)
-    VALUES (?, datetime('now'), 'running', 0, 0)
-  `);
-
-  const updateProgressStmt = db.prepare<[number, number, number, number]>(`
-    UPDATE sync_log SET progress_leaf=?, total_leaves=?, product_count=? WHERE id=?
-  `);
-
-  const finishLogStmt = db.prepare<[number, number]>(`
-    UPDATE sync_log
-    SET finished_at=datetime('now'), product_count=?, status='ok', progress_leaf=total_leaves
-    WHERE id=?
-  `);
-
-  const failLogStmt = db.prepare<[string, number]>(`
-    UPDATE sync_log SET finished_at=datetime('now'), status='error', error=? WHERE id=?
-  `);
-
-  const statusStmt = db.prepare<[]>(`
-    SELECT super, started_at, finished_at, product_count, status, error,
-           progress_leaf, total_leaves
-    FROM sync_log
-    WHERE id IN (SELECT MAX(id) FROM sync_log GROUP BY super)
-    ORDER BY super
-  `);
-
+export function makeSyncRepo(prisma: PrismaClient): SyncRepo {
   return {
-    upsertProducts(superKey, items) {
-      upsertTx(superKey, items);
+    async upsertProducts(superKey, items) {
+      // Chunk into batches to bound transaction duration
+      for (let start = 0; start < items.length; start += UPSERT_CHUNK_SIZE) {
+        const chunk = items.slice(start, start + UPSERT_CHUNK_SIZE);
+
+        await prisma.$transaction(
+          async (tx) => {
+            for (const p of chunk) {
+              await tx.products.upsert({
+                where: { super_product_id: { super: superKey, product_id: p.product_id } },
+                create: {
+                  super: superKey,
+                  product_id: p.product_id,
+                  sku_id: p.sku_id ?? null,
+                  name: p.name,
+                  barcode: p.barcode ?? null,
+                  image_url: p.image_url ?? null,
+                  product_url: p.product_url,
+                  raw_price: p.raw_price ?? null,
+                  offer_price: p.offer_price ?? null,
+                  discount_pct: p.discount_pct,
+                  available: p.available,
+                  categories: p.category_paths,
+                  promotions: p.promotions as object[],
+                },
+                update: {
+                  sku_id: p.sku_id ?? null,
+                  name: p.name,
+                  raw_price: p.raw_price ?? null,
+                  offer_price: p.offer_price ?? null,
+                  discount_pct: p.discount_pct,
+                  available: p.available,
+                  categories: p.category_paths,
+                  promotions: p.promotions as object[],
+                  synced_at: new Date(),
+                },
+              });
+            }
+          },
+          { timeout: 60_000, maxWait: 10_000 },
+        );
+      }
     },
 
-    deleteStaleForSuper(superKey, logId) {
-      const result = deleteStaleStmt.run(superKey, logId);
-      return result.changes;
+    async deleteStaleForSuper(superKey, logId) {
+      const result = await prisma.$executeRaw(Prisma.sql`
+        DELETE FROM products
+        WHERE super = ${superKey}
+          AND synced_at < (SELECT started_at FROM sync_log WHERE id = ${logId})
+      `);
+      return result;
     },
 
-    insertSyncLog(superKey) {
-      const result = insertLogStmt.run(superKey);
-      return Number(result.lastInsertRowid);
+    async insertSyncLog(superKey) {
+      const log = await prisma.sync_log.create({
+        data: {
+          super: superKey,
+          started_at: new Date(),
+          status: 'running',
+          progress_leaf: 0,
+          total_leaves: 0,
+        },
+      });
+      return log.id;
     },
 
-    updateSyncProgress(progressLeaf, totalLeaves, productCount, logId) {
-      updateProgressStmt.run(progressLeaf, totalLeaves, productCount, logId);
+    async updateSyncProgress(progressLeaf, totalLeaves, productCount, logId) {
+      await prisma.sync_log.update({
+        where: { id: logId },
+        data: { progress_leaf: progressLeaf, total_leaves: totalLeaves, product_count: productCount },
+      });
     },
 
-    finishSyncLog(productCount, logId) {
-      finishLogStmt.run(productCount, logId);
+    async finishSyncLog(productCount, logId) {
+      await prisma.sync_log.update({
+        where: { id: logId },
+        data: {
+          finished_at: new Date(),
+          product_count: productCount,
+          status: 'ok',
+          progress_leaf: undefined, // keep existing
+        },
+      });
     },
 
-    failSyncLog(errorMessage, logId) {
-      failLogStmt.run(errorMessage, logId);
+    async failSyncLog(errorMessage, logId) {
+      await prisma.sync_log.update({
+        where: { id: logId },
+        data: { finished_at: new Date(), status: 'error', error: errorMessage },
+      });
     },
 
-    getSyncStatus() {
-      return statusStmt.all() as SyncLog[];
+    async getSyncStatus() {
+      const rows = await prisma.$queryRaw<
+        Array<{
+          super: string;
+          started_at: Date | null;
+          finished_at: Date | null;
+          product_count: number | null;
+          status: string;
+          error: string | null;
+          progress_leaf: number;
+          total_leaves: number;
+        }>
+      >(Prisma.sql`
+        SELECT super, started_at, finished_at, product_count, status, error,
+               progress_leaf, total_leaves
+        FROM sync_log
+        WHERE id IN (SELECT MAX(id) FROM sync_log GROUP BY super)
+        ORDER BY super
+      `);
+
+      return rows.map((r) => ({
+        ...r,
+        started_at: r.started_at ? r.started_at.toISOString() : null,
+        finished_at: r.finished_at ? r.finished_at.toISOString() : null,
+      })) as SyncLog[];
     },
   };
 }

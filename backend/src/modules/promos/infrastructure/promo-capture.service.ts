@@ -5,7 +5,7 @@
  * parses it with domain functions, and persists via PromosRepo.
  */
 
-import type Database from 'better-sqlite3';
+import type { PrismaClient } from '@prisma/client';
 import { chromium } from 'playwright';
 import {
   bankFromLogo,
@@ -29,7 +29,7 @@ export interface PromoCaptureService {
 }
 
 export interface PromoCaptureDeps {
-  db: Database.Database;
+  prisma: PrismaClient;
 }
 
 // ---------------------------------------------------------------------------
@@ -276,7 +276,7 @@ function mapRawToInput(raw: RawPromoItem, kind: 'valtech' | 'vea' | 'dia'): Prom
 // ---------------------------------------------------------------------------
 
 export function makePromoCaptureService(deps: PromoCaptureDeps): PromoCaptureService {
-  const repo = makePromosRepo(deps.db);
+  const repo = makePromosRepo(deps.prisma);
 
   async function captureOne(
     superKey: string,
@@ -313,7 +313,7 @@ export function makePromoCaptureService(deps: PromoCaptureDeps): PromoCaptureSer
       }
 
       const inputs: PromoOfferInput[] = rawItems.map((raw) => mapRawToInput(raw, target.kind));
-      repo.replaceForSuper(superKey, inputs, target.url);
+      await repo.replaceForSuper(superKey, inputs, target.url);
 
       console.log(`[promo:${superKey}] ${inputs.length} offers captured`);
       return { super: superKey, count: inputs.length };

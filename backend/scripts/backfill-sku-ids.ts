@@ -10,18 +10,18 @@
  *   npx tsx backend/scripts/backfill-sku-ids.ts vea      → migrates only vea
  */
 
+import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { SUPERS } from '../src/config/supers.js';
 import { MIGRATE_CONCURRENCY, MIGRATE_THROTTLE_MS } from '../src/config/throttles.js';
-import { createDb } from '../src/infrastructure/db/client.js';
-import { runMigrations } from '../src/infrastructure/db/migrations.js';
 import { fetchSkuId } from '../src/infrastructure/vtex/catalog-client.js';
 import type { SuperKey } from '../src/shared/types.js';
 
 // ─── DB setup ─────────────────────────────────────────────────────────────────
 
-const DB_PATH = process.env.DB_PATH ?? '../compro.db';
-const db = createDb(DB_PATH);
-runMigrations(db);
+const databaseUrl = process.env.DATABASE_URL ?? 'postgresql://compro:compro@localhost:5433/compro';
+const adapter = new PrismaPg({ connectionString: databaseUrl });
+const prisma = new PrismaClient({ adapter });
 
 // ─── Migration logic ──────────────────────────────────────────────────────────
 
@@ -39,11 +39,14 @@ async function migrateSuper(superKey: string): Promise<void> {
     return;
   }
 
-  const products = db
-    .prepare(
-      `SELECT id, product_id FROM products WHERE super = ? AND (sku_id IS NULL OR sku_id = '') ORDER BY id`,
-    )
-    .all(superKey) as ProductRow[];
+  const products = await prisma.products.findMany({
+    where: {
+      super: superKey,
+      OR: [{ sku_id: null }, { sku_id: '' }],
+    },
+    select: { id: true, product_id: true },
+    orderBy: { id: 'asc' },
+  });
 
   if (!products.length) {
     console.log(`[${superKey}] All products already have sku_id.`);
@@ -52,13 +55,12 @@ async function migrateSuper(superKey: string): Promise<void> {
 
   console.log(`[${superKey}] ${products.length} products to migrate...`);
 
-  const updateStmt = db.prepare('UPDATE products SET sku_id = ? WHERE id = ?');
   let done = 0;
   let updated = 0;
   let failed = 0;
 
   for (let i = 0; i < products.length; i += MIGRATE_CONCURRENCY) {
-    const batch = products.slice(i, i + MIGRATE_CONCURRENCY);
+    const batch = (products as ProductRow[]).slice(i, i + MIGRATE_CONCURRENCY);
 
     const results = await Promise.all(
       batch.map((p) => fetchSkuId(cfg, p.product_id).then((skuId) => ({ p, skuId }))),
@@ -67,7 +69,10 @@ async function migrateSuper(superKey: string): Promise<void> {
     for (const { p, skuId } of results) {
       done++;
       if (skuId) {
-        updateStmt.run(skuId, p.id);
+        await prisma.products.update({
+          where: { id: p.id },
+          data: { sku_id: skuId },
+        });
         updated++;
       } else {
         failed++;
@@ -92,12 +97,14 @@ async function main(): Promise<void> {
   const arg = process.argv[2];
   const keys = arg ? [arg] : Object.keys(SUPERS);
 
-  for (const key of keys) {
-    await migrateSuper(key);
+  try {
+    for (const key of keys) {
+      await migrateSuper(key);
+    }
+    console.log('\nDone.');
+  } finally {
+    await prisma.$disconnect();
   }
-
-  console.log('\nDone.');
-  process.exit(0);
 }
 
 main().catch((e: Error) => {

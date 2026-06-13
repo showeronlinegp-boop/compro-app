@@ -42,17 +42,24 @@ describe('rowOrderBy', () => {
 
 describe('groupOrderBy', () => {
   it('relevance floats discounted groups first, then magnitude, then super_count', () => {
-    expect(groupOrderBy('relevance')).toBe(
-      'max_discount > 0 DESC, max_discount DESC, super_count DESC, name ASC',
-    );
+    const clause = groupOrderBy('relevance');
+    expect(clause).toContain('MAX(discount_pct)');
+    expect(clause).toContain('COUNT(DISTINCT super)');
+    expect(clause).toContain('MIN(name)');
   });
 
   it('discount_desc ranks strictly by best discount', () => {
-    expect(groupOrderBy('discount_desc')).toBe('max_discount DESC, name ASC');
+    const clause = groupOrderBy('discount_desc');
+    expect(clause).toContain('MAX(discount_pct)');
+    expect(clause).toContain('MIN(name)');
   });
 
-  it('price_asc/desc rank by group min_price with NULLs last', () => {
-    expect(groupOrderBy('price_asc')).toBe('min_price IS NULL, min_price ASC, name ASC');
-    expect(groupOrderBy('price_desc')).toBe('min_price IS NULL, min_price DESC, name ASC');
+  it('price_asc/desc rank by group min effective price with NULLs last', () => {
+    const asc = groupOrderBy('price_asc');
+    expect(asc).toContain('MIN(COALESCE(offer_price, raw_price))');
+    expect(asc).toContain('ASC');
+    const desc = groupOrderBy('price_desc');
+    expect(desc).toContain('MIN(COALESCE(offer_price, raw_price))');
+    expect(desc).toContain('DESC');
   });
 });

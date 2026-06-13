@@ -1,4 +1,5 @@
-import type Database from 'better-sqlite3';
+import type { PrismaClient } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import type { ProductRow, Promotion, ShoppingItem } from '../../../shared/types.js';
 
 // ─── Row type from the JOIN query ─────────────────────────────────────────────
@@ -6,16 +7,18 @@ import type { ProductRow, Promotion, ShoppingItem } from '../../../shared/types.
 interface ShoppingRow extends ProductRow {
   shopping_id: number;
   frequency_days: number;
-  last_bought: string | null;
+  last_bought: string | Date | null;
   notes: string | null;
-  shopping_created_at: string;
+  shopping_created_at: string | Date;
 }
 
-// ─── Row parser (mirrors shopping.js parseRow) ────────────────────────────────
+// ─── Row parser ───────────────────────────────────────────────────────────────
 
-function tryParse<T>(v: string | null): T[] {
+function tryParse<T>(v: unknown[] | string | null | undefined): T[] {
+  if (v === null || v === undefined) return [];
+  if (Array.isArray(v)) return v as T[];
   try {
-    return JSON.parse(v ?? '[]') as T[];
+    return JSON.parse(v as string) as T[];
   } catch {
     return [];
   }
@@ -23,27 +26,34 @@ function tryParse<T>(v: string | null): T[] {
 
 function parseRow(p: ShoppingRow): ShoppingItem {
   const { shopping_id, frequency_days, last_bought, notes, shopping_created_at, ...rest } = p;
+
+  // last_bought: keep as ISO string or null (API contract)
+  let last_bought_str: string | null = null;
+  if (last_bought instanceof Date) {
+    last_bought_str = last_bought.toISOString().slice(0, 10);
+  } else if (typeof last_bought === 'string') {
+    last_bought_str = last_bought;
+  }
+
   return {
-    shopping_id,
-    frequency_days,
-    last_bought,
+    shopping_id: Number(shopping_id),
+    frequency_days: Number(frequency_days),
+    last_bought: last_bought_str,
     notes,
-    shopping_created_at,
+    shopping_created_at:
+      shopping_created_at instanceof Date
+        ? shopping_created_at.toISOString()
+        : (shopping_created_at as string),
     ...rest,
-    categories: tryParse<string>(rest.categories),
-    promotions: tryParse<Promotion>(rest.promotions),
+    categories: tryParse<string>(rest.categories as unknown[] | string | null),
+    promotions: tryParse<Promotion>(rest.promotions as unknown[] | string | null),
     available: Boolean(rest.available),
+    synced_at:
+      rest.synced_at instanceof Date
+        ? rest.synced_at.toISOString()
+        : (rest.synced_at as string),
   };
 }
-
-// ─── SQL fragment shared by list and listWeekly ───────────────────────────────
-
-const WITH_PRODUCT = `
-  SELECT s.id as shopping_id, s.frequency_days, s.last_bought, s.notes, s.created_at as shopping_created_at,
-         p.*
-  FROM shopping s
-  JOIN products p ON s.product_id = p.id
-`;
 
 // ─── Repo interface ───────────────────────────────────────────────────────────
 
@@ -54,58 +64,58 @@ export interface WeeklyGroup {
 }
 
 export interface ShoppingRepo {
-  list(): ShoppingItem[];
-  listWeekly(): WeeklyGroup[];
+  list(): Promise<ShoppingItem[]>;
+  listWeekly(): Promise<WeeklyGroup[]>;
   create(data: {
     product_id: number;
     frequency_days?: number;
     notes?: string;
-  }): { id: number; product_id: number; frequency_days: number; already?: boolean };
+  }): Promise<{ id: number; product_id: number; frequency_days: number; already?: boolean }>;
   update(
     id: number,
     data: { frequency_days?: number; last_bought?: string | null; notes?: string },
-  ): { ok: boolean };
-  remove(id: number): { ok: boolean };
+  ): Promise<{ ok: boolean }>;
+  remove(id: number): Promise<{ ok: boolean }>;
 }
 
-// ─── Repo factory ─────────────────────────────────────────────────────────────
+// Accept PrismaClient or TransactionClient
+type PrismaLike = Pick<PrismaClient, '$queryRaw' | '$executeRaw'> & {
+  shopping: PrismaClient['shopping'];
+  products: PrismaClient['products'];
+};
 
-export function makeShoppingRepo(db: Database.Database): ShoppingRepo {
-  const listStmt = db.prepare<[], ShoppingRow>(`${WITH_PRODUCT} ORDER BY p.name`);
-
-  const listWeeklyStmt = db.prepare<[], ShoppingRow>(`
-    ${WITH_PRODUCT}
-    WHERE s.last_bought IS NULL
-       OR (julianday('now') - julianday(s.last_bought)) >= s.frequency_days
-    ORDER BY p.super, p.name
-  `);
-
-  const getProductStmt = db.prepare<[number], { id: number }>(
-    'SELECT id FROM products WHERE id = ?',
-  );
-
-  const getExistingStmt = db.prepare<[number], { id: number }>(
-    'SELECT id FROM shopping WHERE product_id = ?',
-  );
-
-  const insertStmt = db.prepare<[number, number, string], { lastInsertRowid: bigint }>(
-    'INSERT INTO shopping (product_id, frequency_days, notes) VALUES (?,?,?)',
-  );
-
-  const getByIdStmt = db.prepare<[number], { id: number }>('SELECT id FROM shopping WHERE id = ?');
-
-  const deleteStmt = db.prepare<[number], unknown>('DELETE FROM shopping WHERE id = ?');
-
+export function makeShoppingRepo(prisma: PrismaLike): ShoppingRepo {
   return {
-    list() {
-      return listStmt.all().map(parseRow);
+    async list() {
+      const rows = await (prisma as PrismaClient).$queryRaw<ShoppingRow[]>(Prisma.sql`
+        SELECT s.id as shopping_id, s.frequency_days, s.last_bought, s.notes,
+               s.created_at as shopping_created_at,
+               p.*
+        FROM shopping s
+        JOIN products p ON s.product_id = p.id
+        ORDER BY p.name
+      `);
+      return rows.map(parseRow);
     },
 
-    listWeekly() {
-      const rows = listWeeklyStmt.all().map(parseRow);
+    async listWeekly() {
+      // Postgres interval date math replaces SQLite julianday arithmetic.
+      // NULL last_bought is treated as overdue (always returned).
+      const rows = await (prisma as PrismaClient).$queryRaw<ShoppingRow[]>(Prisma.sql`
+        SELECT s.id as shopping_id, s.frequency_days, s.last_bought, s.notes,
+               s.created_at as shopping_created_at,
+               p.*
+        FROM shopping s
+        JOIN products p ON s.product_id = p.id
+        WHERE s.last_bought IS NULL
+           OR (NOW() - s.last_bought) >= (s.frequency_days * INTERVAL '1 day')
+        ORDER BY p.super, p.name
+      `);
+
+      const itemList = rows.map(parseRow);
       const bySuper = new Map<string, WeeklyGroup>();
 
-      for (const item of rows) {
+      for (const item of itemList) {
         const superKey = item.super;
         if (!bySuper.has(superKey)) {
           bySuper.set(superKey, { super: superKey, items: [], total: 0 });
@@ -121,56 +131,61 @@ export function makeShoppingRepo(db: Database.Database): ShoppingRepo {
       return Array.from(bySuper.values());
     },
 
-    create({ product_id, frequency_days = 7, notes = '' }) {
-      const product = getProductStmt.get(product_id);
+    async create({ product_id, frequency_days = 7, notes = '' }) {
+      const product = await prisma.products.findUnique({ where: { id: product_id } });
       if (!product) {
         throw Object.assign(new Error('Producto no encontrado'), { statusCode: 404 });
       }
 
-      const existing = getExistingStmt.get(product_id);
+      const existing = await prisma.shopping.findFirst({ where: { product_id } });
       if (existing) {
         return { id: existing.id, product_id, frequency_days, already: true };
       }
 
-      const result = insertStmt.run(product_id, frequency_days, notes);
-      return { id: Number(result.lastInsertRowid), product_id, frequency_days };
+      const created = await prisma.shopping.create({
+        data: { product_id, frequency_days, notes },
+      });
+      return { id: created.id, product_id, frequency_days };
     },
 
-    update(id, data) {
-      const item = getByIdStmt.get(id);
+    async update(id, data) {
+      const item = await prisma.shopping.findUnique({ where: { id } });
       if (!item) {
         throw Object.assign(new Error('No encontrado'), { statusCode: 404 });
       }
 
-      const sets: string[] = [];
-      const params: unknown[] = [];
+      const updateData: {
+        frequency_days?: number;
+        last_bought?: Date | null;
+        notes?: string;
+      } = {};
 
       if (data.frequency_days != null) {
-        sets.push('frequency_days = ?');
-        params.push(data.frequency_days);
+        updateData.frequency_days = data.frequency_days;
       }
       if (data.last_bought !== undefined) {
-        sets.push('last_bought = ?');
-        params.push(data.last_bought);
+        // Accept ISO date string (YYYY-MM-DD) or null
+        updateData.last_bought =
+          data.last_bought !== null ? new Date(data.last_bought) : null;
       }
       if (data.notes !== undefined) {
-        sets.push('notes = ?');
-        params.push(data.notes);
+        updateData.notes = data.notes;
       }
 
-      if (!sets.length) {
+      if (Object.keys(updateData).length === 0) {
         throw Object.assign(new Error('Nada que actualizar'), { statusCode: 400 });
       }
 
-      db.prepare(`UPDATE shopping SET ${sets.join(', ')} WHERE id = ?`).run(...params, id);
+      await prisma.shopping.update({ where: { id }, data: updateData });
       return { ok: true };
     },
 
-    remove(id) {
-      const result = deleteStmt.run(id) as { changes: number };
-      if (!result.changes) {
+    async remove(id) {
+      const item = await prisma.shopping.findUnique({ where: { id } });
+      if (!item) {
         throw Object.assign(new Error('No encontrado'), { statusCode: 404 });
       }
+      await prisma.shopping.delete({ where: { id } });
       return { ok: true };
     },
   };

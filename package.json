@@ -5,8 +5,10 @@
   "scripts": {
     "backend": "cd backend && npm start",
     "backend:dev": "cd backend && npm run dev",
+    "backend:dev:only": "cd backend && npm run dev:only",
     "frontend": "cd frontend && npm run dev",
     "dev": "concurrently \"npm run backend:dev\" \"npm run frontend\"",
+    "dev:db": "cd backend && npm run dev",
     "build": "cd backend && npm run build && cd ../frontend && npm run build",
     "start": "cd backend && npm start",
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install"

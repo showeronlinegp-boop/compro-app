@@ -1,18 +1,21 @@
-import type Database from 'better-sqlite3';
+import type { PrismaClient } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import type { Interest, ProductRow, Promotion } from '../../../shared/types.js';
 
-// ─── Row types from the JOIN query ───────────────────────────────────────────
+// ─── Row type from the JOIN query ─────────────────────────────────────────────
 
 interface InterestRow extends ProductRow {
   interest_id: number;
-  added_at: string;
+  added_at: string | Date;
 }
 
 // ─── Row parser (mirrors interests.js parseRow) ───────────────────────────────
 
-function tryParse<T>(v: string | null): T[] {
+function tryParse<T>(v: unknown[] | string | null | undefined): T[] {
+  if (v === null || v === undefined) return [];
+  if (Array.isArray(v)) return v as T[];
   try {
-    return JSON.parse(v ?? '[]') as T[];
+    return JSON.parse(v as string) as T[];
   } catch {
     return [];
   }
@@ -21,70 +24,68 @@ function tryParse<T>(v: string | null): T[] {
 function parseRow(p: InterestRow): Interest {
   const { interest_id, added_at, ...rest } = p;
   return {
-    interest_id,
-    added_at,
+    interest_id: Number(interest_id),
+    added_at: added_at instanceof Date ? added_at.toISOString() : (added_at as string),
     ...rest,
-    categories: tryParse<string>(rest.categories),
-    promotions: tryParse<Promotion>(rest.promotions),
+    categories: tryParse<string>(rest.categories as unknown[] | string | null),
+    promotions: tryParse<Promotion>(rest.promotions as unknown[] | string | null),
     available: Boolean(rest.available),
+    synced_at:
+      rest.synced_at instanceof Date
+        ? rest.synced_at.toISOString()
+        : (rest.synced_at as string),
   };
 }
 
-// ─── Repo factory ─────────────────────────────────────────────────────────────
+// ─── Repo interface ───────────────────────────────────────────────────────────
 
 export interface InterestsRepo {
-  list(): Interest[];
-  create(product_id: number): { id: number; product_id: number; already?: boolean };
-  remove(id: number): { ok: boolean };
+  list(): Promise<Interest[]>;
+  create(product_id: number): Promise<{ id: number; product_id: number; already?: boolean }>;
+  remove(id: number): Promise<{ ok: boolean }>;
 }
 
-export function makeInterestsRepo(db: Database.Database): InterestsRepo {
-  const listStmt = db.prepare<[], InterestRow>(`
-    SELECT i.id as interest_id, i.added_at, p.*
-    FROM interests i
-    JOIN products p ON i.product_id = p.id
-    ORDER BY i.added_at DESC
-  `);
+// Accept PrismaClient or TransactionClient
+type PrismaLike = Pick<PrismaClient, '$queryRaw'> & {
+  interests: PrismaClient['interests'];
+  products: PrismaClient['products'];
+};
 
-  const getProductStmt = db.prepare<[number], { id: number }>(
-    'SELECT id FROM products WHERE id = ?',
-  );
-
-  const getExistingStmt = db.prepare<[number], { id: number }>(
-    'SELECT id FROM interests WHERE product_id = ?',
-  );
-
-  const insertStmt = db.prepare<[number], { lastInsertRowid: bigint }>(
-    'INSERT INTO interests (product_id) VALUES (?)',
-  );
-
-  const deleteStmt = db.prepare<[number], unknown>('DELETE FROM interests WHERE id = ?');
-
+export function makeInterestsRepo(prisma: PrismaLike): InterestsRepo {
   return {
-    list() {
-      return listStmt.all().map(parseRow);
+    async list() {
+      const rows = await (prisma as PrismaClient).$queryRaw<InterestRow[]>(Prisma.sql`
+        SELECT i.id as interest_id, i.added_at, p.*
+        FROM interests i
+        JOIN products p ON i.product_id = p.id
+        ORDER BY i.added_at DESC
+      `);
+      return rows.map(parseRow);
     },
 
-    create(product_id) {
-      const product = getProductStmt.get(product_id);
+    async create(product_id) {
+      // Check product exists
+      const product = await prisma.products.findUnique({ where: { id: product_id } });
       if (!product) {
         throw Object.assign(new Error('Producto no encontrado'), { statusCode: 404 });
       }
 
-      const existing = getExistingStmt.get(product_id);
+      // Check for existing interest
+      const existing = await prisma.interests.findFirst({ where: { product_id } });
       if (existing) {
         return { id: existing.id, product_id, already: true };
       }
 
-      const result = insertStmt.run(product_id);
-      return { id: Number(result.lastInsertRowid), product_id };
+      const created = await prisma.interests.create({ data: { product_id } });
+      return { id: created.id, product_id };
     },
 
-    remove(id) {
-      const result = deleteStmt.run(id) as { changes: number };
-      if (!result.changes) {
+    async remove(id) {
+      const existing = await prisma.interests.findUnique({ where: { id } });
+      if (!existing) {
         throw Object.assign(new Error('No encontrado'), { statusCode: 404 });
       }
+      await prisma.interests.delete({ where: { id } });
       return { ok: true };
     },
   };

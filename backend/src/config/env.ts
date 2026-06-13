@@ -1,5 +1,3 @@
-import * as nodePath from 'node:path';
-import { fileURLToPath } from 'node:url';
 import {
   CRAWLER_PAGE_CONC,
   CRAWLER_PARTITION_CONC,
@@ -15,19 +13,20 @@ import {
   ENRICH_SKU_CONC,
 } from './throttles.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = nodePath.dirname(__filename);
-
 export const PORT: number = Number(process.env.PORT ?? 3001);
 
-// DB_PATH is required — fail fast if absent
-const rawDbPath = process.env.DB_PATH;
-if (!rawDbPath) {
-  // In development, default to a local file; in production, this env var must be set.
-  // We set a default here to keep dev ergonomics intact, but log a warning.
-  console.warn('[env] DB_PATH not set — using default path ../compro.db (dev only)');
+// DATABASE_URL is required in production; in development a localhost default is used.
+const rawDatabaseUrl = process.env.DATABASE_URL;
+if (!rawDatabaseUrl) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('[env] DATABASE_URL env var is required in production');
+  }
+  console.warn(
+    '[env] DATABASE_URL not set — using default postgresql://compro:compro@localhost:5433/compro (dev only)',
+  );
 }
-export const DB_PATH: string = rawDbPath ?? nodePath.join(__dirname, '..', '..', '..', 'compro.db');
+export const DATABASE_URL: string =
+  rawDatabaseUrl ?? 'postgresql://compro:compro@localhost:5433/compro';
 
 export const NODE_ENV: string = process.env.NODE_ENV ?? 'development';
 

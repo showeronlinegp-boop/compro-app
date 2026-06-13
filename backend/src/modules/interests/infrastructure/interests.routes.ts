@@ -1,4 +1,4 @@
-import type Database from 'better-sqlite3';
+import type { PrismaClient } from '@prisma/client';
 import { Router } from 'express';
 import { asyncHandler } from '../../../shared/http.js';
 import { makeInterestsRepo } from './interests.repo.js';
@@ -10,14 +10,14 @@ import { makeInterestsRepo } from './interests.repo.js';
  *   POST   /        → add interest for product_id (400 if missing, 404 if product not found)
  *   DELETE /:id     → remove interest by id (404 if not found)
  */
-export function makeInterestsRouter(db: Database.Database): Router {
-  const repo = makeInterestsRepo(db);
+export function makeInterestsRouter(prisma: PrismaClient): Router {
+  const repo = makeInterestsRepo(prisma);
   const router = Router();
 
   router.get(
     '/',
     asyncHandler(async (_req, res) => {
-      res.json(repo.list());
+      res.json(await repo.list());
     }),
   );
 
@@ -30,7 +30,7 @@ export function makeInterestsRouter(db: Database.Database): Router {
       }
 
       try {
-        const result = repo.create(Number(product_id));
+        const result = await repo.create(Number(product_id));
         if (result.already) {
           return res.json(result);
         }
@@ -49,7 +49,7 @@ export function makeInterestsRouter(db: Database.Database): Router {
     '/:id',
     asyncHandler(async (req, res) => {
       try {
-        const result = repo.remove(Number(req.params.id));
+        const result = await repo.remove(Number(req.params.id));
         return res.json(result);
       } catch (err) {
         const e = err as Error & { statusCode?: number };

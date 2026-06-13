@@ -1,49 +1,48 @@
 /**
- * main.ts — Pure TypeScript composition root.
+ * main.ts — Pure TypeScript composition root (Postgres/Prisma).
  *
- * Wires all module factories:
+ * Wires all module factories using the PrismaClient singleton:
  *   interests, shopping, catalog, taxonomy — via createApp
  *   crawler  — makeCrawlerService + makeCrawlerRouter
  *   enricher — makeEnricher + makeEnrichmentRouter
  *   promos   — makePromosRepo + makePromoCaptureService + makePromosRouter
+ *
+ * SQLite bootstrap (createDb/runMigrations) has been removed.
+ * DB_PATH env var has been removed — Prisma reads DATABASE_URL directly.
  */
 
 import cron from 'node-cron';
-import { DB_PATH, PORT } from './config/env.js';
+import { PORT } from './config/env.js';
 import { makeCrawlerRouter } from './crawler/infrastructure/crawler.routes.js';
 import { makeCrawlerService } from './crawler/infrastructure/crawler.service.js';
 import { makeEnricher } from './enrichment/infrastructure/enricher.service.js';
 import { makeEnrichmentRouter } from './enrichment/infrastructure/enrichment.routes.js';
 import { createApp } from './http/app.js';
-import { createDb } from './infrastructure/db/client.js';
-import { runMigrations } from './infrastructure/db/migrations.js';
+import { prisma } from './infrastructure/db/index.js';
 import { makePromoCaptureService } from './modules/promos/infrastructure/promo-capture.service.js';
 import { makePromosRepo } from './modules/promos/infrastructure/promos.repo.js';
 import { makePromosRouter } from './modules/promos/infrastructure/promos.routes.js';
 
 // ─── Boot sequence ────────────────────────────────────────────────────────────
 
-const db = createDb(DB_PATH);
-runMigrations(db);
+// ── Enricher ───────────────────────────────────────────────────────────────────
+const enricher = makeEnricher(prisma);
+const enrichmentRouter = makeEnrichmentRouter(enricher, prisma);
 
-// ── TypeScript enricher ────────────────────────────────────────────────────────
-const enricher = makeEnricher(db);
-const enrichmentRouter = makeEnrichmentRouter(enricher, db);
-
-// ── TypeScript crawler service ─────────────────────────────────────────────────
+// ── Crawler service ────────────────────────────────────────────────────────────
 const crawlerService = makeCrawlerService({
-  db,
+  prisma,
   enrichSuper: (key) => enricher.enrichSuper(key),
 });
 const crawlerRouter = makeCrawlerRouter(crawlerService);
 
 // ── Promos ─────────────────────────────────────────────────────────────────────
-const promosRepo = makePromosRepo(db);
-const promoCaptureService = makePromoCaptureService({ db });
+const promosRepo = makePromosRepo(prisma);
+const promoCaptureService = makePromoCaptureService({ prisma });
 const promosRouter = makePromosRouter({ repo: promosRepo, captureService: promoCaptureService });
 
-// ── TypeScript app ─────────────────────────────────────────────────────────────
-const app = createApp({ db, crawlerRouter, enrichmentRouter, promosRouter });
+// ── Express app ────────────────────────────────────────────────────────────────
+const app = createApp({ prisma, crawlerRouter, enrichmentRouter, promosRouter });
 
 // ── Cron: daily sync at 3 AM ──────────────────────────────────────────────────
 cron.schedule('0 3 * * *', () => {
@@ -66,5 +65,5 @@ cron.schedule('0 4 * * 1', () => {
 // ── Listen ────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`COMPRO backend running on http://localhost:${PORT}`);
-  console.log('[main] Pure TypeScript mode: all legacy JS removed');
+  console.log('[main] PostgreSQL/Prisma mode: SQLite removed');
 });

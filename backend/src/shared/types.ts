@@ -67,7 +67,12 @@ export interface Promotion {
 
 // ─── DB row types ─────────────────────────────────────────────────────────────
 
-/** Raw row as stored in the products table (available is 0/1 int, categories is JSON string) */
+/**
+ * Raw row as returned by $queryRaw from the products table.
+ * PostgreSQL returns available as boolean and categories/promotions as parsed
+ * jsonb arrays (unknown[] | null). The synced_at column is Timestamptz and
+ * comes back as a Date object from Prisma — callers must .toISOString() it.
+ */
 export interface ProductRow {
   id: number;
   super: string;
@@ -80,10 +85,10 @@ export interface ProductRow {
   raw_price: number | null;
   offer_price: number | null;
   discount_pct: number;
-  available: number; // 0 or 1
-  categories: string | null; // JSON-encoded string[]
-  promotions: string | null; // JSON-encoded Promotion[]
-  synced_at: string;
+  available: boolean;
+  categories: unknown[] | null;
+  promotions: unknown[] | null;
+  synced_at: string | Date;
 }
 
 // ─── API / domain types ───────────────────────────────────────────────────────
