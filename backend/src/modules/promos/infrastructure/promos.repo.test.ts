@@ -1,51 +1,43 @@
-import * as fs from 'node:fs';
-import * as os from 'node:os';
-import * as path from 'node:path';
-import Database from 'better-sqlite3';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { runMigrations } from '../../../infrastructure/db/migrations.js';
+/**
+ * promos.repo.test.ts — Integration tests for makePromosRepo (Postgres + Prisma).
+ *
+ * Uses truncateAll() for isolation because replaceForSuper opens its own $transaction
+ * (Prisma does not support nested interactive transactions — Option B from design).
+ */
+
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { testPrisma } from '../../../test/helpers/test-client.js';
+import { truncateAll } from '../../../test/helpers/with-rollback.js';
 import { makePromosRepo } from './promos.repo.js';
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Setup / Teardown ─────────────────────────────────────────────────────────
 
-function createTempDb(): Database.Database {
-  const tmpFile = path.join(os.tmpdir(), `compro-promos-test-${Date.now()}-${Math.random()}.db`);
-  const db = new Database(tmpFile);
-  db.pragma('foreign_keys = ON');
-  runMigrations(db);
-  return db;
-}
+beforeAll(async () => {
+  await testPrisma.$queryRaw`SELECT 1`;
+});
+
+// Defensive: clean before AND after each test so concurrent fork test files
+// don't leave stale rows that corrupt our assertions.
+beforeEach(async () => {
+  await truncateAll();
+});
+
+afterEach(async () => {
+  await truncateAll();
+});
+
+afterAll(async () => {
+  await testPrisma.$disconnect();
+});
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('makePromosRepo', () => {
-  let db: Database.Database;
-
-  beforeEach(() => {
-    db = createTempDb();
-  });
-
-  afterEach(() => {
-    const filename = (db as Database.Database & { name?: string }).name;
-    try {
-      db.close();
-    } catch {
-      // ignore
-    }
-    if (filename) {
-      try {
-        fs.unlinkSync(filename);
-      } catch {
-        // ignore
-      }
-    }
-  });
-
   describe('replaceForSuper', () => {
-    it('inserts offers for a super', () => {
-      const repo = makePromosRepo(db);
+    it('inserts offers for a super', async () => {
+      const repo = makePromosRepo(testPrisma);
 
-      repo.replaceForSuper(
+      await repo.replaceForSuper(
         'carrefour',
         [
           {
@@ -74,15 +66,15 @@ describe('makePromosRepo', () => {
         'https://www.carrefour.com.ar/descuentos-bancarios',
       );
 
-      const rows = repo.listAll();
+      const rows = await repo.listAll();
       expect(rows).toHaveLength(2);
       expect(rows.every((r) => r.super === 'carrefour')).toBe(true);
     });
 
-    it('replaces existing offers for the same super', () => {
-      const repo = makePromosRepo(db);
+    it('replaces existing offers for the same super', async () => {
+      const repo = makePromosRepo(testPrisma);
 
-      repo.replaceForSuper(
+      await repo.replaceForSuper(
         'dia',
         [
           {
@@ -100,7 +92,7 @@ describe('makePromosRepo', () => {
         'https://diaonline.supermercadosdia.com.ar/medios-de-pago-y-promociones',
       );
 
-      repo.replaceForSuper(
+      await repo.replaceForSuper(
         'dia',
         [
           {
@@ -118,69 +110,33 @@ describe('makePromosRepo', () => {
         'https://diaonline.supermercadosdia.com.ar/medios-de-pago-y-promociones',
       );
 
-      const rows = repo.listAll();
+      const rows = await repo.listAll();
       expect(rows).toHaveLength(1);
       expect(rows[0]?.image_url).toBe('https://dia.com/new-promo.jpg');
     });
 
-    it('does not affect offers from other supers', () => {
-      const repo = makePromosRepo(db);
+    it('does not affect offers from other supers', async () => {
+      const repo = makePromosRepo(testPrisma);
 
-      repo.replaceForSuper(
+      await repo.replaceForSuper(
         'vea',
-        [
-          {
-            bank: 'Macro',
-            title: '15%',
-            description: null,
-            discountPct: 15,
-            installments: null,
-            interestFree: null,
-            logoUrl: null,
-            imageUrl: null,
-            validity: null,
-          },
-        ],
+        [{ bank: 'Macro', title: '15%', description: null, discountPct: 15, installments: null, interestFree: null, logoUrl: null, imageUrl: null, validity: null }],
         'https://www.vea.com.ar/descuentos-del-dia',
       );
-      repo.replaceForSuper(
+      await repo.replaceForSuper(
         'masonline',
-        [
-          {
-            bank: 'Galicia',
-            title: '10%',
-            description: null,
-            discountPct: 10,
-            installments: null,
-            interestFree: null,
-            logoUrl: null,
-            imageUrl: null,
-            validity: null,
-          },
-        ],
+        [{ bank: 'Galicia', title: '10%', description: null, discountPct: 10, installments: null, interestFree: null, logoUrl: null, imageUrl: null, validity: null }],
         'https://www.masonline.com.ar/promociones-bancarias',
       );
 
       // Replace only vea
-      repo.replaceForSuper(
+      await repo.replaceForSuper(
         'vea',
-        [
-          {
-            bank: 'Naranja X',
-            title: '25%',
-            description: null,
-            discountPct: 25,
-            installments: null,
-            interestFree: null,
-            logoUrl: null,
-            imageUrl: null,
-            validity: null,
-          },
-        ],
+        [{ bank: 'Naranja X', title: '25%', description: null, discountPct: 25, installments: null, interestFree: null, logoUrl: null, imageUrl: null, validity: null }],
         'https://www.vea.com.ar/descuentos-del-dia',
       );
 
-      const rows = repo.listAll();
+      const rows = await repo.listAll();
       const vea = rows.filter((r) => r.super === 'vea');
       const mas = rows.filter((r) => r.super === 'masonline');
 
@@ -190,83 +146,41 @@ describe('makePromosRepo', () => {
       expect(mas[0]?.bank).toBe('Galicia');
     });
 
-    it('replaceForSuper with empty array clears all offers for that super', () => {
-      const repo = makePromosRepo(db);
+    it('replaceForSuper with empty array clears all offers for that super', async () => {
+      const repo = makePromosRepo(testPrisma);
 
-      repo.replaceForSuper(
+      await repo.replaceForSuper(
         'masonline',
-        [
-          {
-            bank: 'Galicia',
-            title: '10%',
-            description: null,
-            discountPct: 10,
-            installments: null,
-            interestFree: null,
-            logoUrl: null,
-            imageUrl: null,
-            validity: null,
-          },
-        ],
+        [{ bank: 'Galicia', title: '10%', description: null, discountPct: 10, installments: null, interestFree: null, logoUrl: null, imageUrl: null, validity: null }],
         'https://www.masonline.com.ar/promociones-bancarias',
       );
-      repo.replaceForSuper('masonline', [], 'https://www.masonline.com.ar/promociones-bancarias');
+      await repo.replaceForSuper('masonline', [], 'https://www.masonline.com.ar/promociones-bancarias');
 
-      const rows = repo.listAll().filter((r) => r.super === 'masonline');
+      const rows = (await repo.listAll()).filter((r) => r.super === 'masonline');
       expect(rows).toHaveLength(0);
     });
 
-    it('correctly stores and retrieves interest_free boolean', () => {
-      const repo = makePromosRepo(db);
+    it('correctly stores and retrieves interest_free boolean', async () => {
+      const repo = makePromosRepo(testPrisma);
 
-      repo.replaceForSuper(
+      await repo.replaceForSuper(
         'carrefour',
         [
-          {
-            bank: 'Galicia',
-            title: '3 cuotas',
-            description: null,
-            discountPct: null,
-            installments: 3,
-            interestFree: true,
-            logoUrl: null,
-            imageUrl: null,
-            validity: null,
-          },
-          {
-            bank: 'Santander',
-            title: '6 cuotas',
-            description: null,
-            discountPct: null,
-            installments: 6,
-            interestFree: false,
-            logoUrl: null,
-            imageUrl: null,
-            validity: null,
-          },
-          {
-            bank: 'Macro',
-            title: '20%',
-            description: null,
-            discountPct: 20,
-            installments: null,
-            interestFree: null,
-            logoUrl: null,
-            imageUrl: null,
-            validity: null,
-          },
+          { bank: 'Galicia', title: '3 cuotas', description: null, discountPct: null, installments: 3, interestFree: true, logoUrl: null, imageUrl: null, validity: null },
+          { bank: 'Santander', title: '6 cuotas', description: null, discountPct: null, installments: 6, interestFree: false, logoUrl: null, imageUrl: null, validity: null },
+          { bank: 'Macro', title: '20%', description: null, discountPct: 20, installments: null, interestFree: null, logoUrl: null, imageUrl: null, validity: null },
         ],
         'https://www.carrefour.com.ar/descuentos-bancarios',
       );
 
-      const rows = repo.listAll();
+      const rows = await repo.listAll();
       expect(rows).toHaveLength(3);
 
       const galicia = rows.find((r) => r.bank === 'Galicia');
-      expect(galicia?.interest_free).toBe(1);
+      expect(galicia?.interest_free).toBe(1); // API contract: 1 for true
 
       const santander = rows.find((r) => r.bank === 'Santander');
-      expect(santander?.interest_free).toBe(0);
+      expect(santander?.interest_free).toBe(0); // API contract: 0 for false
 
       const macro = rows.find((r) => r.bank === 'Macro');
       expect(macro?.interest_free).toBeNull();
@@ -274,56 +188,24 @@ describe('makePromosRepo', () => {
   });
 
   describe('listAll ordering', () => {
-    it('orders by super ASC, discount_pct DESC NULLS LAST', () => {
-      const repo = makePromosRepo(db);
+    it('orders by super ASC, discount_pct DESC NULLS LAST', async () => {
+      const repo = makePromosRepo(testPrisma);
 
-      repo.replaceForSuper(
+      await repo.replaceForSuper(
         'vea',
         [
-          {
-            bank: 'Macro',
-            title: '10%',
-            description: null,
-            discountPct: 10,
-            installments: null,
-            interestFree: null,
-            logoUrl: null,
-            imageUrl: null,
-            validity: null,
-          },
-          {
-            bank: 'Galicia',
-            title: '30%',
-            description: null,
-            discountPct: 30,
-            installments: null,
-            interestFree: null,
-            logoUrl: null,
-            imageUrl: null,
-            validity: null,
-          },
+          { bank: 'Macro', title: '10%', description: null, discountPct: 10, installments: null, interestFree: null, logoUrl: null, imageUrl: null, validity: null },
+          { bank: 'Galicia', title: '30%', description: null, discountPct: 30, installments: null, interestFree: null, logoUrl: null, imageUrl: null, validity: null },
         ],
         'https://www.vea.com.ar/descuentos-del-dia',
       );
-      repo.replaceForSuper(
+      await repo.replaceForSuper(
         'carrefour',
-        [
-          {
-            bank: 'Santander',
-            title: '20%',
-            description: null,
-            discountPct: 20,
-            installments: null,
-            interestFree: null,
-            logoUrl: null,
-            imageUrl: null,
-            validity: null,
-          },
-        ],
+        [{ bank: 'Santander', title: '20%', description: null, discountPct: 20, installments: null, interestFree: null, logoUrl: null, imageUrl: null, validity: null }],
         'https://www.carrefour.com.ar/descuentos-bancarios',
       );
 
-      const rows = repo.listAll();
+      const rows = await repo.listAll();
 
       // carrefour < vea alphabetically
       expect(rows[0]?.super).toBe('carrefour');
@@ -333,10 +215,10 @@ describe('makePromosRepo', () => {
       expect(veaRows[1]?.discount_pct).toBe(10);
     });
 
-    it('returns all fields correctly', () => {
-      const repo = makePromosRepo(db);
+    it('returns all fields correctly', async () => {
+      const repo = makePromosRepo(testPrisma);
 
-      repo.replaceForSuper(
+      await repo.replaceForSuper(
         'dia',
         [
           {
@@ -354,7 +236,7 @@ describe('makePromosRepo', () => {
         'https://diaonline.supermercadosdia.com.ar/medios-de-pago-y-promociones',
       );
 
-      const rows = repo.listAll();
+      const rows = await repo.listAll();
       expect(rows).toHaveLength(1);
       const row = rows[0];
       expect(row).toBeDefined();

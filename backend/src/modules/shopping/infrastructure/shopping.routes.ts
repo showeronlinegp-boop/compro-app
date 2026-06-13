@@ -1,4 +1,4 @@
-import type Database from 'better-sqlite3';
+import type { PrismaClient } from '@prisma/client';
 import { Router } from 'express';
 import { asyncHandler } from '../../../shared/http.js';
 import { makeShoppingRepo } from './shopping.repo.js';
@@ -12,23 +12,21 @@ import { makeShoppingRepo } from './shopping.repo.js';
  *   PUT    /:id      → update frequency_days, last_bought, notes
  *   DELETE /:id      → remove shopping item by id
  */
-export function makeShoppingRouter(db: Database.Database): Router {
-  const repo = makeShoppingRepo(db);
+export function makeShoppingRouter(prisma: PrismaClient): Router {
+  const repo = makeShoppingRepo(prisma);
   const router = Router();
 
   router.get(
     '/',
     asyncHandler(async (_req, res) => {
-      res.json(repo.list());
+      res.json(await repo.list());
     }),
   );
 
-  // NOTE: /weekly MUST be registered before /:id so Express doesn't treat
-  // "weekly" as the :id parameter.
   router.get(
     '/weekly',
     asyncHandler(async (_req, res) => {
-      res.json(repo.listWeekly());
+      res.json(await repo.listWeekly());
     }),
   );
 
@@ -50,7 +48,7 @@ export function makeShoppingRouter(db: Database.Database): Router {
       }
 
       try {
-        const result = repo.create({
+        const result = await repo.create({
           product_id: Number(product_id),
           frequency_days: Number(frequency_days),
           notes: String(notes),
@@ -79,7 +77,7 @@ export function makeShoppingRouter(db: Database.Database): Router {
       };
 
       try {
-        const result = repo.update(Number(req.params.id), {
+        const result = await repo.update(Number(req.params.id), {
           frequency_days: frequency_days != null ? Number(frequency_days) : undefined,
           last_bought: last_bought !== undefined ? (last_bought as string | null) : undefined,
           notes: notes !== undefined ? String(notes) : undefined,
@@ -102,7 +100,7 @@ export function makeShoppingRouter(db: Database.Database): Router {
     '/:id',
     asyncHandler(async (req, res) => {
       try {
-        const result = repo.remove(Number(req.params.id));
+        const result = await repo.remove(Number(req.params.id));
         return res.json(result);
       } catch (err) {
         const e = err as Error & { statusCode?: number };
