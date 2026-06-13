@@ -21,22 +21,32 @@
     "format": "biome format --write ."
   },
   "dependencies": {
+    "@nestjs/common": "^11.1.26",
+    "@nestjs/core": "^11.1.26",
+    "@nestjs/platform-express": "^11.1.26",
+    "@nestjs/schedule": "^5.0.1",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "cors": "^2.8.5",
     "express": "^4.18.3",
     "node-cron": "^3.0.3",
-    "playwright": "^1.60.0"
+    "playwright": "^1.60.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@nestjs/testing": "^11.1.26",
+    "@swc/core": "^1.15.41",
     "@types/better-sqlite3": "^7.6.13",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^22.0.0",
     "@types/node-cron": "^3.0.11",
+    "@types/supertest": "^7.2.0",
     "better-sqlite3": "^9.6.0",
     "prisma": "^7.8.0",
+    "supertest": "^7.2.2",
     "tsup": "^8.4.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",

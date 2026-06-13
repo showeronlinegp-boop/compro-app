@@ -5,6 +5,8 @@
     "target": "ES2022",
     "strict": true,
     "noUncheckedIndexedAccess": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "verbatimModuleSyntax": true,
     "outDir": "dist",
     "rootDir": "src",

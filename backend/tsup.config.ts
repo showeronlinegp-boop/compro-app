@@ -10,7 +10,7 @@ export default defineConfig({
   format: ['esm'],
   target: 'node22',
   platform: 'node',
-  external: ['@prisma/client', '.prisma/client', '@prisma/engines'],
+  external: ['@prisma/client', '.prisma/client', '@prisma/engines', 'dotenv'],
   sourcemap: true,
   clean: true,
   outDir: 'dist',
