@@ -12,5 +12,24 @@ services:
       timeout: 5s
       retries: 3
 
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: compro
+      POSTGRES_PASSWORD: compro
+      POSTGRES_DB: compro
+      POSTGRES_HOST_AUTH_METHOD: md5
+      POSTGRES_INITDB_ARGS: "--auth-host=md5"
+    ports:
+      - "5433:5432"
+    volumes:
+      - compro-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U compro -d compro"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
 volumes:
   compro-data:
+  compro-pgdata:
