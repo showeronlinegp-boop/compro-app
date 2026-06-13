@@ -42,14 +42,7 @@ export function makePromosRepo(prisma: PrismaClient): PromosRepo {
     },
 
     async listAll() {
-      const rows = await prisma.promo_offers.findMany({
-        orderBy: [
-          { super: 'asc' },
-          // Prisma doesn't support NULLS LAST directly — use $queryRaw for correctness
-        ],
-      });
-
-      // Re-query with raw SQL to get NULLS LAST ordering (critical spec requirement)
+      // Use $queryRaw directly for NULLS LAST ordering (Prisma findMany does not support it).
       const rawRows = await prisma.$queryRaw<
         Array<{
           id: number;
