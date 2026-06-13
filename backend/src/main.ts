@@ -1,69 +1,38 @@
-/**
- * main.ts — Pure TypeScript composition root (Postgres/Prisma).
- *
- * Wires all module factories using the PrismaClient singleton:
- *   interests, shopping, catalog, taxonomy — via createApp
- *   crawler  — makeCrawlerService + makeCrawlerRouter
- *   enricher — makeEnricher + makeEnrichmentRouter
- *   promos   — makePromosRepo + makePromoCaptureService + makePromosRouter
- *
- * SQLite bootstrap (createDb/runMigrations) has been removed.
- * DB_PATH env var has been removed — Prisma reads DATABASE_URL directly.
- */
-
-import cron from 'node-cron';
+import 'reflect-metadata';
+import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
+import * as nodePath from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { AppModule } from './app.module.js';
+import { AllExceptionsFilter } from './common/all-exceptions.filter.js';
 import { PORT } from './config/env.js';
-import { makeCrawlerRouter } from './crawler/infrastructure/crawler.routes.js';
-import { makeCrawlerService } from './crawler/infrastructure/crawler.service.js';
-import { makeEnricher } from './enrichment/infrastructure/enricher.service.js';
-import { makeEnrichmentRouter } from './enrichment/infrastructure/enrichment.routes.js';
-import { createApp } from './http/app.js';
-import { prisma } from './infrastructure/db/index.js';
-import { makePromoCaptureService } from './modules/promos/infrastructure/promo-capture.service.js';
-import { makePromosRepo } from './modules/promos/infrastructure/promos.repo.js';
-import { makePromosRouter } from './modules/promos/infrastructure/promos.routes.js';
 
-// ─── Boot sequence ────────────────────────────────────────────────────────────
+async function bootstrap(): Promise<void> {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-// ── Enricher ───────────────────────────────────────────────────────────────────
-const enricher = makeEnricher(prisma);
-const enrichmentRouter = makeEnrichmentRouter(enricher, prisma);
+  app.enableCors();
+  app.useGlobalFilters(new AllExceptionsFilter());
+  app.enableShutdownHooks();
 
-// ── Crawler service ────────────────────────────────────────────────────────────
-const crawlerService = makeCrawlerService({
-  prisma,
-  enrichSuper: (key) => enricher.enrichSuper(key),
-});
-const crawlerRouter = makeCrawlerRouter(crawlerService);
+  // Resolve static path relative to this file — works in BOTH layouts:
+  //   tsx dev:  __dirname = backend/src  → ../../frontend/dist
+  //   dist:     __dirname = backend/dist → ../../frontend/dist
+  const __dirname = nodePath.dirname(fileURLToPath(import.meta.url));
+  const clientDir = nodePath.join(__dirname, '..', '..', 'frontend', 'dist');
 
-// ── Promos ─────────────────────────────────────────────────────────────────────
-const promosRepo = makePromosRepo(prisma);
-const promoCaptureService = makePromoCaptureService({ prisma });
-const promosRouter = makePromosRouter({ repo: promosRepo, captureService: promoCaptureService });
+  app.useStaticAssets(clientDir);
 
-// ── Express app ────────────────────────────────────────────────────────────────
-const app = createApp({ prisma, crawlerRouter, enrichmentRouter, promosRouter });
+  // SPA fallback: unmatched non-/api GETs return index.html for client-side routing
+  app
+    .getHttpAdapter()
+    .getInstance()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .get(/^(?!\/api).*/, (_req: any, res: any) => {
+      res.sendFile(nodePath.join(clientDir, 'index.html'));
+    });
 
-// ── Cron: daily sync at 3 AM ──────────────────────────────────────────────────
-cron.schedule('0 3 * * *', () => {
-  console.log('[cron] Daily sync starting...');
-  crawlerService
-    .syncAll()
-    .then((r) => console.log('[cron] Sync complete:', r))
-    .catch((err: Error) => console.error('[cron] Sync error:', err.message));
-});
-
-// ── Cron: weekly promo capture at 4 AM on Mondays ────────────────────────────
-cron.schedule('0 4 * * 1', () => {
-  console.log('[cron] Weekly promo capture starting...');
-  promoCaptureService
-    .captureAll()
-    .then((r) => console.log('[cron] Promo capture complete:', r))
-    .catch((err: Error) => console.error('[cron] Promo capture error:', err.message));
-});
-
-// ── Listen ────────────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
+  await app.listen(PORT);
   console.log(`COMPRO backend running on http://localhost:${PORT}`);
-  console.log('[main] PostgreSQL/Prisma mode: SQLite removed');
-});
+}
+
+bootstrap();
