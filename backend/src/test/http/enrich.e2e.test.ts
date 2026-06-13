@@ -36,26 +36,24 @@ afterAll(async () => {
 });
 
 describe('GET /api/enrich/status', () => {
-  it('returns 200 and a non-null response', async () => {
+  it('returns 200 and a plain object keyed by super (NOT an array)', async () => {
     const res = await request(app.getHttpServer()).get('/api/enrich/status');
     expect(res.status).toBe(200);
-    // getStatus() returns an in-memory object (empty {} when nothing has run)
-    expect(res.body).toBeDefined();
-    expect(res.body).not.toBeNull();
+    // getStatus() returns Record<string, EnrichStatus> — an object keyed by super, not an array
+    expect(typeof res.body === 'object' && res.body !== null && !Array.isArray(res.body)).toBe(true);
   });
 });
 
 describe('POST /api/enrich/:super', () => {
-  it('responds immediately with ok ack for a known super (fire-and-forget)', async () => {
+  it('responds immediately with 200 ack or 409 for a known super (fire-and-forget)', async () => {
     const start = Date.now();
     const res = await request(app.getHttpServer())
       .post('/api/enrich/vea')
       .set('Content-Type', 'application/json');
     const elapsed = Date.now() - start;
 
-    // NestJS platform-express sets status 201 as default for POST routes;
-    // fire-and-forget controllers call res.json() directly (inherits this default)
-    expect([200, 201, 202, 409]).toContain(res.status);
+    // Explicit 200 for ack (res.status(200).json(...)) or 409 if already running
+    expect([200, 409]).toContain(res.status);
     // Fire-and-forget — must not wait for the enrichment to complete
     expect(elapsed).toBeLessThan(5000);
   });
@@ -69,8 +67,8 @@ describe('POST /api/enrich/', () => {
       .set('Content-Type', 'application/json');
     const elapsed = Date.now() - start;
 
-    // 200/201 with {ok, message, supers} or 500 if DB query fails
-    expect([200, 201, 500]).toContain(res.status);
+    // Explicit 200 for ack (res.status(200).json(...)) or 500 if DB query fails
+    expect([200, 500]).toContain(res.status);
     if (res.status === 200) {
       expect(res.body).toHaveProperty('ok');
       expect(res.body).toHaveProperty('supers');

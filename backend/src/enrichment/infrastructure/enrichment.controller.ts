@@ -26,7 +26,7 @@ export class EnrichmentController {
       return;
     }
 
-    res.json({ ok: true, message: `Enriquecimiento de ${key} iniciado` });
+    res.status(200).json({ ok: true, message: `Enriquecimiento de ${key} iniciado` });
 
     this.enricher
       .enrichSuper(key)
@@ -40,7 +40,7 @@ export class EnrichmentController {
       .findMany({ distinct: ['super'], select: { super: true } })
       .then((rows) => {
         const keys = rows.map((r) => r.super);
-        res.json({
+        res.status(200).json({
           ok: true,
           message: 'Enriquecimiento de todos los supers iniciado',
           supers: keys,

@@ -59,16 +59,15 @@ describe('GET /api/sync/status — REGRESSION GUARD', () => {
 });
 
 describe('POST /api/sync/all', () => {
-  it('responds immediately with ok ack or 409 (fire-and-forget)', async () => {
+  it('responds immediately with 200 ack or 409 (fire-and-forget)', async () => {
     const start = Date.now();
     const res = await request(app.getHttpServer())
       .post('/api/sync/all')
       .set('Content-Type', 'application/json');
     const elapsed = Date.now() - start;
 
-    // NestJS platform-express sets status 201 as default for POST routes;
-    // fire-and-forget controllers call res.json() directly (inherits this default)
-    expect([200, 201, 202, 409]).toContain(res.status);
+    // Explicit 200 for ack (res.status(200).json(...)) or 409 if already running
+    expect([200, 409]).toContain(res.status);
     // Must respond quickly (fire-and-forget — not waiting for background crawl)
     expect(elapsed).toBeLessThan(5000);
   });
@@ -79,12 +78,12 @@ describe('POST /api/sync/all', () => {
       .post('/api/sync/all')
       .set('Content-Type', 'application/json');
 
-    if (first.status === 200 || first.status === 201 || first.status === 202) {
+    if (first.status === 200) {
       // Second call while first is still running → 409
       const second = await request(app.getHttpServer())
         .post('/api/sync/all')
         .set('Content-Type', 'application/json');
-      expect([409, 200, 201, 202]).toContain(second.status);
+      expect([409, 200]).toContain(second.status);
       // If it returned 409, verify the error shape
       if (second.status === 409) {
         expect(second.body).toHaveProperty('error');
@@ -97,14 +96,15 @@ describe('POST /api/sync/all', () => {
 });
 
 describe('POST /api/sync/:super', () => {
-  it('responds immediately with ok ack for a known super', async () => {
+  it('responds immediately with 200 ack or 409 for a known super', async () => {
     const start = Date.now();
     const res = await request(app.getHttpServer())
       .post('/api/sync/vea')
       .set('Content-Type', 'application/json');
     const elapsed = Date.now() - start;
 
-    expect([200, 201, 202, 409]).toContain(res.status);
+    // Explicit 200 for ack (res.status(200).json(...)) or 409 if already running
+    expect([200, 409]).toContain(res.status);
     expect(elapsed).toBeLessThan(5000);
   });
 });

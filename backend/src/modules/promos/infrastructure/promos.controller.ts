@@ -43,7 +43,7 @@ export class PromosController {
       return;
     }
 
-    res.json({ ok: true, message: 'Promo capture started for all supers' });
+    res.status(200).json({ ok: true, message: 'Promo capture started for all supers' });
 
     this.captureService
       .captureAll()
@@ -58,7 +58,7 @@ export class PromosController {
       return;
     }
 
-    res.json({ ok: true, message: `Promo capture started for ${key}` });
+    res.status(200).json({ ok: true, message: `Promo capture started for ${key}` });
 
     this.captureService
       .captureSuper(key)

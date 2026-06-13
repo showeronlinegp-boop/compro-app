@@ -24,7 +24,7 @@ export class CrawlerController {
       return;
     }
 
-    res.json({ ok: true, message: 'Sync de todos los supers iniciado' });
+    res.status(200).json({ ok: true, message: 'Sync de todos los supers iniciado' });
 
     this.service
       .syncAll()
@@ -39,7 +39,7 @@ export class CrawlerController {
       return;
     }
 
-    res.json({ ok: true, message: `Sync de ${key} iniciado` });
+    res.status(200).json({ ok: true, message: `Sync de ${key} iniciado` });
 
     this.service
       .syncSuper(key)

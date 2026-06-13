@@ -44,31 +44,30 @@ describe('GET /api/promos', () => {
 });
 
 describe('POST /api/promos/capture', () => {
-  it('responds immediately with 200 or 202 (fire-and-forget)', async () => {
+  it('responds immediately with 200 ack or 409 (fire-and-forget)', async () => {
     const start = Date.now();
     const res = await request(app.getHttpServer())
       .post('/api/promos/capture')
       .set('Content-Type', 'application/json');
     const elapsed = Date.now() - start;
 
-    // 200/201/202 immediate ack or 409 if already running
-    // NestJS platform-express sets status 201 as default for POST routes;
-    // fire-and-forget controllers call res.json() directly (inherits this default)
-    expect([200, 201, 202, 409]).toContain(res.status);
+    // Explicit 200 for ack (res.status(200).json(...)) or 409 if already running
+    expect([200, 409]).toContain(res.status);
     // Must respond quickly (fire-and-forget — not waiting for background capture)
     expect(elapsed).toBeLessThan(5000);
   });
 });
 
 describe('POST /api/promos/capture/:super', () => {
-  it('responds immediately with 200 or 202 for a known super', async () => {
+  it('responds immediately with 200 ack or 409 for a known super', async () => {
     const start = Date.now();
     const res = await request(app.getHttpServer())
       .post('/api/promos/capture/vea')
       .set('Content-Type', 'application/json');
     const elapsed = Date.now() - start;
 
-    expect([200, 201, 202, 409]).toContain(res.status);
+    // Explicit 200 for ack (res.status(200).json(...)) or 409 if already running
+    expect([200, 409]).toContain(res.status);
     expect(elapsed).toBeLessThan(5000);
   });
 });
