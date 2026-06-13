@@ -1,0 +1,13 @@
+-- Drop the redundant duplicate GIN index on products.
+--
+-- Context: The init migration (20260613020117_init) creates products_norm_name_trgm.
+-- The fix migration (20260613023739_fix_immutable_unaccent) drops and recreates
+-- products_name_norm_gin (which did not yet exist in init, so the DROP was a no-op
+-- on a fresh deploy). Result: both indexes survive a from-scratch deploy with
+-- identical expressions — wasting ~30 MB of index space and doubling write cost.
+--
+-- Resolution: keep products_name_norm_gin (the authoritative, correctly-named index
+-- from the fix migration) and drop products_norm_name_trgm (the stale init index).
+-- IF NOT EXISTS makes this safe to run on databases where the stale index was
+-- already removed manually.
+DROP INDEX IF EXISTS "products_norm_name_trgm";
