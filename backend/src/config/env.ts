@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import {
   CRAWLER_PAGE_CONC,
   CRAWLER_PARTITION_CONC,
@@ -15,18 +16,14 @@ import {
 
 export const PORT: number = Number(process.env.PORT ?? 3001);
 
-// DATABASE_URL is required in production; in development a localhost default is used.
+// DATABASE_URL is required in all environments — set it in backend/.env (see .env.example).
 const rawDatabaseUrl = process.env.DATABASE_URL;
 if (!rawDatabaseUrl) {
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('[env] DATABASE_URL env var is required in production');
-  }
-  console.warn(
-    '[env] DATABASE_URL not set — using default postgresql://compro:compro@localhost:5433/compro (dev only)',
+  throw new Error(
+    '[env] DATABASE_URL is required — set it in backend/.env (see .env.example)',
   );
 }
-export const DATABASE_URL: string =
-  rawDatabaseUrl ?? 'postgresql://compro:compro@localhost:5433/compro';
+export const DATABASE_URL: string = rawDatabaseUrl;
 
 export const NODE_ENV: string = process.env.NODE_ENV ?? 'development';
 

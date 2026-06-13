@@ -22,6 +22,7 @@
  *   - captured_at: INTEGER (Unix ms) → BigInt
  */
 
+import 'dotenv/config';
 import Database from 'better-sqlite3';
 import { PrismaClient, Prisma } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
@@ -37,9 +38,13 @@ const CHUNK_SIZE = 1000;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SQLITE_PATH = path.resolve(__dirname, '../../compro.db');
 
-const connectionString =
-  process.env.DATABASE_URL ??
-  'postgresql://compro:compro@localhost:5433/compro?connection_limit=25';
+const _rawConnectionString = process.env.DATABASE_URL;
+if (!_rawConnectionString) {
+  throw new Error(
+    '[migrate-sqlite-to-pg] DATABASE_URL is required — set it in backend/.env (see .env.example)',
+  );
+}
+const connectionString: string = _rawConnectionString;
 
 // ---------------------------------------------------------------------------
 // SQLite row types (raw, before coercion)

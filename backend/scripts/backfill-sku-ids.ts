@@ -10,6 +10,7 @@
  *   npx tsx backend/scripts/backfill-sku-ids.ts vea      → migrates only vea
  */
 
+import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { SUPERS } from '../src/config/supers.js';
@@ -19,7 +20,12 @@ import type { SuperKey } from '../src/shared/types.js';
 
 // ─── DB setup ─────────────────────────────────────────────────────────────────
 
-const databaseUrl = process.env.DATABASE_URL ?? 'postgresql://compro:compro@localhost:5433/compro';
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  throw new Error(
+    '[backfill-sku-ids] DATABASE_URL is required — set it in backend/.env (see .env.example)',
+  );
+}
 const adapter = new PrismaPg({ connectionString: databaseUrl });
 const prisma = new PrismaClient({ adapter });
 

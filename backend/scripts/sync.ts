@@ -20,6 +20,7 @@
  *   npm run sync -- vea --enrich-only         # via package.json script
  */
 
+import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { SUPERS } from '../src/config/supers.js';
@@ -49,7 +50,10 @@ async function main(): Promise<void> {
     usage();
   }
 
-  const databaseUrl = process.env.DATABASE_URL ?? 'postgresql://compro:compro@localhost:5433/compro';
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    throw new Error('[sync] DATABASE_URL is required — set it in backend/.env (see .env.example)');
+  }
   const adapter = new PrismaPg({ connectionString: databaseUrl });
   const prisma = new PrismaClient({ adapter });
 
