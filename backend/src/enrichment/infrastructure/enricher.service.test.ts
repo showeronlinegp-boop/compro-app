@@ -1,20 +1,10 @@
 /**
- * enricher.service.test.ts — Fixture-backed unit tests for the enricher service.
+ * enricher.service.test.ts — Unit tests for the enricher service (Prisma mock).
  *
- * Tests:
- *   - Strategy A dispatch for supers with promoSeller (vea)
- *   - Strategy B dispatch for supers without promoSeller (carrefour, dia)
- *   - EnrichStatus updates during a run (running → done)
- *   - Concurrency: only ENRICH_SKU_CONC, ENRICH_PROMO_CONC, ENRICH_CONCURRENCY
- *     concurrent fetches are issued at a time
- *   - DB UPDATE SQL is applied: offer_price / discount_pct written for matching promos
- *   - No update written when promo exceeds 80% cap or when null returned (carrefour)
- *
- * Uses vitest mocking — stubs fetchSkuId, fetchSearchPromotions, fetchPromoPrice
- * so no real network is needed.
+ * Uses vi.fn() mocks for the Prisma client and the VTEX API clients.
+ * No real database is required — prisma.products.findMany and .update are stubbed.
  */
 
-import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import promotionsVea from '../../infrastructure/vtex/__fixtures__/promotions-vea.json' with {
   type: 'json',
@@ -38,71 +28,72 @@ import {
   fetchSearchPromotions,
 } from '../../infrastructure/vtex/promotions-client.js';
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Prisma mock factory ───────────────────────────────────────────────────────
 
-function makeTempDb(): Database.Database {
-  const db = new Database(':memory:');
-  db.exec(`
-    CREATE TABLE products (
-      id INTEGER PRIMARY KEY,
-      super TEXT NOT NULL,
-      product_id TEXT NOT NULL,
-      sku_id TEXT,
-      raw_price REAL NOT NULL,
-      product_url TEXT,
-      offer_price REAL,
-      discount_pct INTEGER DEFAULT 0
-    )
-  `);
-  return db;
+interface MockProduct {
+  id: number;
+  super: string;
+  product_id: string;
+  sku_id: string | null;
+  raw_price: number;
+  product_url: string | null;
+  offer_price: number | null;
+  discount_pct: number;
 }
 
-function insertProduct(
-  db: Database.Database,
-  overrides: Partial<{
-    id: number;
-    super: string;
-    product_id: string;
-    sku_id: string | null;
-    raw_price: number;
-    product_url: string | null;
-  }> = {},
-): void {
-  const row = {
+function makeMockPrisma(initialRows: MockProduct[] = []) {
+  // mutable store so update() is reflected in later queries
+  const store: MockProduct[] = [...initialRows];
+
+  return {
+    products: {
+      findMany: vi.fn().mockImplementation(({ where }: { where?: { super?: string } } = {}) => {
+        const rows = where?.super ? store.filter((r) => r.super === where.super) : [...store];
+        return Promise.resolve(rows);
+      }),
+      update: vi.fn().mockImplementation(
+        ({
+          where,
+          data,
+        }: {
+          where: { id: number };
+          data: Partial<MockProduct>;
+        }) => {
+          const row = store.find((r) => r.id === where.id);
+          if (row) Object.assign(row, data);
+          return Promise.resolve(row ?? null);
+        },
+      ),
+    },
+  };
+}
+
+function makeRow(overrides: Partial<MockProduct> = {}): MockProduct {
+  return {
     id: overrides.id ?? 1,
     super: overrides.super ?? 'vea',
     product_id: overrides.product_id ?? 'prod-1',
-    // Use 'sku_id' in overrides to allow explicit null — don't use ?? which skips null
-    sku_id: Object.prototype.hasOwnProperty.call(overrides, 'sku_id') ? overrides.sku_id : '336191',
+    sku_id:
+      Object.prototype.hasOwnProperty.call(overrides, 'sku_id') ? overrides.sku_id! : '336191',
     raw_price: overrides.raw_price ?? 10000,
     product_url: overrides.product_url ?? 'https://example.com/p',
+    offer_price: overrides.offer_price ?? null,
+    discount_pct: overrides.discount_pct ?? 0,
   };
-  db.prepare(
-    `INSERT INTO products (id, super, product_id, sku_id, raw_price, product_url)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-  ).run(row.id, row.super, row.product_id, row.sku_id, row.raw_price, row.product_url);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('enricher.service — Strategy A (search-promotions / vea)', () => {
-  let db: Database.Database;
-
   beforeEach(() => {
-    db = makeTempDb();
     vi.clearAllMocks();
   });
 
-  afterEach(() => {
-    db.close();
-  });
-
   it('dispatches to fetchSearchPromotions (Strategy A) when promoSeller is set', async () => {
-    insertProduct(db, { super: 'vea', sku_id: '336191', raw_price: 10000 });
-
+    const prisma = makeMockPrisma([makeRow({ super: 'vea', sku_id: '336191' })]);
     (fetchSearchPromotions as ReturnType<typeof vi.fn>).mockResolvedValue(promotionsVea);
 
-    const enricher = makeEnricher(db);
+    const enricher = makeEnricher(prisma as never);
     await enricher.enrichSuper('vea');
 
     expect(fetchSearchPromotions).toHaveBeenCalledWith(
@@ -114,31 +105,27 @@ describe('enricher.service — Strategy A (search-promotions / vea)', () => {
   });
 
   it('writes offer_price and discount_pct from Strategy A promo result', async () => {
-    insertProduct(db, { super: 'vea', sku_id: '336191', raw_price: 10000 });
-
+    const row = makeRow({ super: 'vea', sku_id: '336191', raw_price: 10000 });
+    const prisma = makeMockPrisma([row]);
     (fetchSearchPromotions as ReturnType<typeof vi.fn>).mockResolvedValue(promotionsVea);
 
-    const enricher = makeEnricher(db);
+    const enricher = makeEnricher(prisma as never);
     await enricher.enrichSuper('vea');
-
-    const row = db.prepare('SELECT offer_price, discount_pct FROM products WHERE id = 1').get() as
-      | { offer_price: number; discount_pct: number }
-      | undefined;
 
     // SKU 336191 has effectiveDiscount=0.37 in fixture
     // offer_price = round(10000 * (1 - 0.37) * 100) / 100 = 6300
     // discount_pct = round(0.37 * 100) = 37
-    expect(row?.offer_price).toBe(6300);
-    expect(row?.discount_pct).toBe(37);
+    expect(row.offer_price).toBe(6300);
+    expect(row.discount_pct).toBe(37);
   });
 
   it('fetches missing sku_ids before calling search-promotions', async () => {
-    insertProduct(db, { super: 'vea', sku_id: null, raw_price: 10000 });
-
+    const row = makeRow({ super: 'vea', sku_id: null });
+    const prisma = makeMockPrisma([row]);
     (fetchSkuId as ReturnType<typeof vi.fn>).mockResolvedValue('336191');
     (fetchSearchPromotions as ReturnType<typeof vi.fn>).mockResolvedValue(promotionsVea);
 
-    const enricher = makeEnricher(db);
+    const enricher = makeEnricher(prisma as never);
     await enricher.enrichSuper('vea');
 
     expect(fetchSkuId).toHaveBeenCalledWith({ baseUrl: 'https://www.vea.com.ar' }, 'prod-1');
@@ -146,15 +133,15 @@ describe('enricher.service — Strategy A (search-promotions / vea)', () => {
   });
 
   it('EnrichStatus: running=true during run, running=false after', async () => {
-    insertProduct(db, { super: 'vea', sku_id: '336191', raw_price: 10000 });
-
+    const prisma = makeMockPrisma([makeRow({ super: 'vea', sku_id: '336191' })]);
     let wasRunningDuringFetch = false;
+
     (fetchSearchPromotions as ReturnType<typeof vi.fn>).mockImplementation(async () => {
       wasRunningDuringFetch = isRunning('vea');
       return promotionsVea;
     });
 
-    const enricher = makeEnricher(db);
+    const enricher = makeEnricher(prisma as never);
     await enricher.enrichSuper('vea');
 
     expect(wasRunningDuringFetch).toBe(true);
@@ -167,8 +154,7 @@ describe('enricher.service — Strategy A (search-promotions / vea)', () => {
   });
 
   it('throws 409-style error and stays not-running when already running', async () => {
-    // simulate already running
-    insertProduct(db);
+    const prisma = makeMockPrisma([makeRow({ super: 'vea', sku_id: '336191' })]);
     let resolvePromo!: (v: unknown) => void;
     const pendingPromo = new Promise((res) => {
       resolvePromo = res;
@@ -176,8 +162,12 @@ describe('enricher.service — Strategy A (search-promotions / vea)', () => {
 
     (fetchSearchPromotions as ReturnType<typeof vi.fn>).mockReturnValue(pendingPromo);
 
-    const enricher = makeEnricher(db);
+    const enricher = makeEnricher(prisma as never);
     const first = enricher.enrichSuper('vea');
+
+    // Flush microtasks so the first call's findMany resolves and setStatus(running=true) runs
+    // before we make the second call. Without this, the second call sees running=false.
+    await Promise.resolve();
 
     // second call while first is in flight
     await expect(enricher.enrichSuper('vea')).rejects.toThrow(/ya en curso/);
@@ -190,33 +180,22 @@ describe('enricher.service — Strategy A (search-promotions / vea)', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('enricher.service — Strategy B (JSON-LD HTML / dia)', () => {
-  let db: Database.Database;
-
   beforeEach(() => {
-    db = makeTempDb();
     vi.clearAllMocks();
   });
 
-  afterEach(() => {
-    db.close();
-  });
-
   it('dispatches to fetchPromoPrice (Strategy B) when no promoSeller', async () => {
-    insertProduct(db, {
-      super: 'dia',
-      product_url: 'https://diaonline.supermercadosdia.com.ar/p',
-      raw_price: 2000,
-    });
-
+    const prisma = makeMockPrisma([
+      makeRow({ super: 'dia', product_url: 'https://diaonline.supermercadosdia.com.ar/p', raw_price: 2000 }),
+    ]);
     (fetchPromoPrice as ReturnType<typeof vi.fn>).mockResolvedValue({
       kind: 'found',
       result: { promoPrice: 1575, listPrice: null },
     });
 
-    const enricher = makeEnricher(db);
+    const enricher = makeEnricher(prisma as never);
     await enricher.enrichSuper('dia');
 
-    // fetchPromoPrice now receives (productUrl, baseUrl) — baseUrl is the super's baseUrl
     expect(fetchPromoPrice).toHaveBeenCalledWith(
       'https://diaonline.supermercadosdia.com.ar/p',
       'https://diaonline.supermercadosdia.com.ar',
@@ -225,78 +204,66 @@ describe('enricher.service — Strategy B (JSON-LD HTML / dia)', () => {
   });
 
   it('writes offer_price and discount_pct from Strategy B result (dia)', async () => {
-    insertProduct(db, {
+    const row = makeRow({
       super: 'dia',
       product_url: 'https://diaonline.supermercadosdia.com.ar/p',
       raw_price: 2000,
     });
-
+    const prisma = makeMockPrisma([row]);
     (fetchPromoPrice as ReturnType<typeof vi.fn>).mockResolvedValue({
       kind: 'found',
       result: { promoPrice: 1575, listPrice: null },
     });
 
-    const enricher = makeEnricher(db);
+    const enricher = makeEnricher(prisma as never);
     await enricher.enrichSuper('dia');
-
-    const row = db.prepare('SELECT offer_price, discount_pct FROM products WHERE id = 1').get() as
-      | { offer_price: number; discount_pct: number }
-      | undefined;
 
     // basePrice = rawPrice=2000 (listPrice null)
     // pct = round((2000 - 1575) / 2000 * 100) = round(21.25) = 21
-    expect(row?.offer_price).toBe(1575);
-    expect(row?.discount_pct).toBe(21);
+    expect(row.offer_price).toBe(1575);
+    expect(row.discount_pct).toBe(21);
   });
 
   it('carrefour: writes nothing when fetchPromoPrice returns no_data', async () => {
-    insertProduct(db, {
+    const row = makeRow({
       super: 'carrefour',
       product_url: 'https://www.carrefour.com.ar/p',
       raw_price: 5000,
     });
-
-    // carrefour renders JSON-LD client-side → no_data (was: null)
+    const prisma = makeMockPrisma([row]);
     (fetchPromoPrice as ReturnType<typeof vi.fn>).mockResolvedValue({ kind: 'no_data' });
 
-    const enricher = makeEnricher(db);
+    const enricher = makeEnricher(prisma as never);
     await enricher.enrichSuper('carrefour');
 
-    const row = db.prepare('SELECT offer_price, discount_pct FROM products WHERE id = 1').get() as
-      | { offer_price: number | null; discount_pct: number }
-      | undefined;
-
-    expect(row?.offer_price).toBeNull();
-    expect(row?.discount_pct).toBe(0);
+    expect(row.offer_price).toBeNull();
+    expect(row.discount_pct).toBe(0);
   });
 
   it('carrefour: writes nothing when fetchPromoPrice returns fetch_error', async () => {
-    insertProduct(db, {
+    const row = makeRow({
       super: 'carrefour',
       product_url: 'https://www.carrefour.com.ar/p',
       raw_price: 5000,
     });
-
+    const prisma = makeMockPrisma([row]);
     (fetchPromoPrice as ReturnType<typeof vi.fn>).mockResolvedValue({ kind: 'fetch_error' });
 
-    const enricher = makeEnricher(db);
+    const enricher = makeEnricher(prisma as never);
     await enricher.enrichSuper('carrefour');
 
-    const row = db.prepare('SELECT offer_price, discount_pct FROM products WHERE id = 1').get() as
-      | { offer_price: number | null; discount_pct: number }
-      | undefined;
-
-    expect(row?.offer_price).toBeNull();
-    expect(row?.discount_pct).toBe(0);
+    expect(row.offer_price).toBeNull();
+    expect(row.discount_pct).toBe(0);
   });
 
   it('EnrichStatus: done count matches total after run', async () => {
-    insertProduct(db, { super: 'dia', id: 1 });
-    insertProduct(db, { super: 'dia', id: 2, product_id: 'prod-2' });
-
+    const prisma = makeMockPrisma([
+      makeRow({ super: 'dia', id: 1, product_url: 'https://diaonline.supermercadosdia.com.ar/p1' }),
+      makeRow({ super: 'dia', id: 2, product_id: 'prod-2', product_url: 'https://diaonline.supermercadosdia.com.ar/p2' }),
+    ]);
     (fetchPromoPrice as ReturnType<typeof vi.fn>).mockResolvedValue({ kind: 'no_data' });
 
-    const enricher = makeEnricher(db);
+    const enricher = makeEnricher(prisma as never);
     await enricher.enrichSuper('dia');
 
     const st = enricher.getStatus();
@@ -309,72 +276,58 @@ describe('enricher.service — Strategy B (JSON-LD HTML / dia)', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe("enricher.service — Strategy 'none' (carrefour)", () => {
-  let db: Database.Database;
-
   beforeEach(() => {
-    db = makeTempDb();
     vi.clearAllMocks();
   });
 
-  afterEach(() => {
-    db.close();
-  });
-
   it("performs NO fetches when enrichStrategy='none' (carrefour)", async () => {
-    insertProduct(db, {
-      super: 'carrefour',
-      id: 1,
-      product_url: 'https://www.carrefour.com.ar/p',
-      raw_price: 5000,
-    });
-    insertProduct(db, {
-      super: 'carrefour',
-      id: 2,
-      product_id: 'prod-2',
-      product_url: 'https://www.carrefour.com.ar/p2',
-      raw_price: 3000,
-    });
+    const prisma = makeMockPrisma([
+      makeRow({ super: 'carrefour', id: 1, product_url: 'https://www.carrefour.com.ar/p', raw_price: 5000 }),
+      makeRow({ super: 'carrefour', id: 2, product_id: 'prod-2', product_url: 'https://www.carrefour.com.ar/p2', raw_price: 3000 }),
+    ]);
 
-    const enricher = makeEnricher(db);
+    const enricher = makeEnricher(prisma as never);
     await enricher.enrichSuper('carrefour');
 
-    // Neither fetch function should have been called at all
     expect(fetchPromoPrice).not.toHaveBeenCalled();
     expect(fetchSearchPromotions).not.toHaveBeenCalled();
     expect(fetchSkuId).not.toHaveBeenCalled();
   });
 
   it("sets updated=0 and done=total when enrichStrategy='none'", async () => {
-    insertProduct(db, { super: 'carrefour', id: 1, raw_price: 5000 });
-    insertProduct(db, { super: 'carrefour', id: 2, product_id: 'prod-2', raw_price: 3000 });
+    const prisma = makeMockPrisma([
+      makeRow({ super: 'carrefour', id: 1, raw_price: 5000 }),
+      makeRow({ super: 'carrefour', id: 2, product_id: 'prod-2', raw_price: 3000 }),
+    ]);
 
-    const enricher = makeEnricher(db);
+    const enricher = makeEnricher(prisma as never);
     await enricher.enrichSuper('carrefour');
 
     const st = enricher.getStatus();
     expect(st.carrefour?.updated).toBe(0);
-    expect(st.carrefour?.done).toBe(2); // equals total
+    expect(st.carrefour?.done).toBe(2);
     expect(st.carrefour?.total).toBe(2);
     expect(st.carrefour?.running).toBe(false);
     expect(st.carrefour?.error).toBeNull();
   });
 
-  it("leaves existing crawl discounts untouched in DB when enrichStrategy='none'", async () => {
-    // Simulate a product that already has a crawl-sourced discount
-    db.prepare(
-      `INSERT INTO products (id, super, product_id, sku_id, raw_price, product_url, offer_price, discount_pct)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    ).run(1, 'carrefour', 'prod-1', null, 5000, 'https://www.carrefour.com.ar/p', 4000, 20);
+  it("leaves existing crawl discounts untouched when enrichStrategy='none'", async () => {
+    const row = makeRow({
+      super: 'carrefour',
+      id: 1,
+      product_url: 'https://www.carrefour.com.ar/p',
+      raw_price: 5000,
+      offer_price: 4000,
+      discount_pct: 20,
+    });
+    const prisma = makeMockPrisma([row]);
 
-    const enricher = makeEnricher(db);
+    const enricher = makeEnricher(prisma as never);
     await enricher.enrichSuper('carrefour');
 
-    // DB values must remain exactly as set by the crawl
-    const row = db.prepare('SELECT offer_price, discount_pct FROM products WHERE id = 1').get() as
-      | { offer_price: number | null; discount_pct: number }
-      | undefined;
-
-    expect(row?.offer_price).toBe(4000);
-    expect(row?.discount_pct).toBe(20);
+    // The mock store values must remain unchanged (update was never called)
+    expect(row.offer_price).toBe(4000);
+    expect(row.discount_pct).toBe(20);
+    expect(prisma.products.update).not.toHaveBeenCalled();
   });
 });
