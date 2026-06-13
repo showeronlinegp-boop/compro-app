@@ -15,8 +15,12 @@ import type { CrawlerService } from './crawler.service.js';
 export function makeCrawlerRouter(service: CrawlerService): Router {
   const router = Router();
 
-  router.get('/status', (_req, res) => {
-    res.json(service.getSyncStatus());
+  router.get('/status', async (_req, res) => {
+    try {
+      res.json(await service.getSyncStatus());
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message });
+    }
   });
 
   // Registered before /:super so the literal path wins over the param route.

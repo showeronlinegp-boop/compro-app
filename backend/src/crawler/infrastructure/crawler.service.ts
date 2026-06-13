@@ -34,6 +34,7 @@ import type {
   NormalizedCrawlItem,
   Partition,
   SuperKey,
+  SyncLog,
 } from '../../shared/types.js';
 import { mergeItems } from '../domain/dedup.js';
 import { planPartitions } from '../domain/partition.js';
@@ -44,7 +45,7 @@ import { makeSyncRepo } from './sync.repo.js';
 export interface CrawlerService {
   syncSuper: (superKey: string) => Promise<{ super: string; count: number }>;
   syncAll: () => Promise<Array<{ super: string; count?: number; error?: string }>>;
-  getSyncStatus: () => unknown;
+  getSyncStatus: () => Promise<SyncLog[]>;
   isRunning: (superKey: string) => boolean;
 }
 
