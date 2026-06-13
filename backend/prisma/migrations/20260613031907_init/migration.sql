@@ -1,29 +1,25 @@
--- Enable unaccent extension for accent-insensitive search
--- MUST appear before table DDL that depends on it (spec scenario: first migration contains unaccent extension)
+-- Enable unaccent extension for accent-insensitive search.
+-- Must appear before the immutable_unaccent function and any table DDL that depends on it.
 CREATE EXTENSION IF NOT EXISTS "unaccent";
 
--- Enable pg_trgm for GIN trigram index (accelerates substring ILIKE searches)
+-- Enable pg_trgm for GIN trigram index (accelerates substring ILIKE searches).
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 
 -- Create an IMMUTABLE wrapper around unaccent().
--- unaccent() itself is STABLE (not IMMUTABLE), which blocks its use in an index expression.
--- This wrapper uses the explicit 'unaccent' dictionary and is declared IMMUTABLE so
--- PostgreSQL accepts it in functional indexes and allows query planner to use the GIN index.
--- CRITICAL: The query fragment in buildNameSearch MUST use immutable_unaccent() identically.
+-- unaccent() itself is STABLE, which blocks its use in an index expression.
+-- This wrapper is declared IMMUTABLE so PostgreSQL accepts it in functional indexes
+-- and allows the query planner to use the GIN index.
+-- Body uses the standard single-argument form: SELECT unaccent($1).
+-- CRITICAL: the query fragment in buildNameSearch() MUST use immutable_unaccent() identically.
 CREATE OR REPLACE FUNCTION immutable_unaccent(text)
 RETURNS text
 LANGUAGE sql
 IMMUTABLE
 PARALLEL SAFE
 AS $$
-  SELECT unaccent('unaccent', $1)
+  SELECT unaccent($1)
 $$;
 
--- GIN trigram index on the normalized product name expression.
--- Accelerates ILIKE '%token%' searches (leading-wildcard) which btree indexes cannot help with.
--- Expression mirrors the JS normalizeSearchText() logic: lowercase → unaccent → collapse non-alphanum to space.
--- Index created AFTER extensions and function are defined, and BEFORE table data is inserted.
--- (Index is created on empty table here; it will be populated as rows are inserted.)
 -- CreateTable
 CREATE TABLE "products" (
     "id" SERIAL NOT NULL,
@@ -109,13 +105,6 @@ CREATE INDEX "products_discount_pct_idx" ON "products"("discount_pct");
 -- CreateIndex
 CREATE UNIQUE INDEX "products_super_product_id_key" ON "products"("super", "product_id");
 
--- GIN trigram index for accent-insensitive substring search on normalized product names.
--- Correct order: unaccent → lower → strip non-alphanum.
--- lower() MUST precede regexp_replace so [^a-z0-9] does not strip uppercase letters.
--- The query fragment in buildNameSearch() MUST use the identical expression.
-CREATE INDEX "products_norm_name_trgm" ON "products"
-  USING gin (regexp_replace(lower(immutable_unaccent(name)), '[^a-z0-9]+', ' ', 'g') gin_trgm_ops);
-
 -- CreateIndex
 CREATE INDEX "interests_product_id_idx" ON "interests"("product_id");
 
@@ -130,3 +119,13 @@ ALTER TABLE "interests" ADD CONSTRAINT "interests_product_id_fkey" FOREIGN KEY (
 
 -- AddForeignKey
 ALTER TABLE "shopping" ADD CONSTRAINT "shopping_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- GIN trigram index on the normalized product name expression.
+-- Accelerates ILIKE '%token%' searches (leading-wildcard) which btree indexes cannot help with.
+-- Expression order: unaccent → lower → strip non-alphanum.
+-- lower() MUST precede regexp_replace so [^a-z0-9] does not strip uppercase letters before lowercasing.
+-- This is the ONLY trgm/GIN index on products — products_norm_name_trgm is NOT created.
+-- The query fragment in buildNameSearch() MUST use the identical expression.
+CREATE INDEX "products_name_norm_gin"
+  ON "products"
+  USING gin (regexp_replace(lower(immutable_unaccent(name)), '[^a-z0-9]+', ' ', 'g') gin_trgm_ops);
