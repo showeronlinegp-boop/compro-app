@@ -110,11 +110,11 @@ CREATE INDEX "products_discount_pct_idx" ON "products"("discount_pct");
 CREATE UNIQUE INDEX "products_super_product_id_key" ON "products"("super", "product_id");
 
 -- GIN trigram index for accent-insensitive substring search on normalized product names.
--- Mirrors normalizeSearchText(): lowercase → immutable_unaccent → collapse non-alphanum to space.
--- Only a GIN trgm index can accelerate ILIKE '%token%' (leading-wildcard); a btree cannot.
+-- Correct order: unaccent → lower → strip non-alphanum.
+-- lower() MUST precede regexp_replace so [^a-z0-9] does not strip uppercase letters.
 -- The query fragment in buildNameSearch() MUST use the identical expression.
 CREATE INDEX "products_norm_name_trgm" ON "products"
-  USING gin (lower(regexp_replace(immutable_unaccent(name), '[^a-z0-9]+', ' ', 'g')) gin_trgm_ops);
+  USING gin (regexp_replace(lower(immutable_unaccent(name)), '[^a-z0-9]+', ' ', 'g') gin_trgm_ops);
 
 -- CreateIndex
 CREATE INDEX "interests_product_id_idx" ON "interests"("product_id");
