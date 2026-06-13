@@ -1,16 +1,25 @@
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
-import { PrismaModule } from './prisma/prisma.module.js';
+import { CrawlerModule } from './crawler/infrastructure/crawler.module.js';
+import { EnrichmentModule } from './enrichment/infrastructure/enrichment.module.js';
 import { CatalogModule } from './modules/catalog/infrastructure/catalog.module.js';
+import { InterestsModule } from './modules/interests/infrastructure/interests.module.js';
+import { PromosModule } from './modules/promos/infrastructure/promos.module.js';
+import { ShoppingModule } from './modules/shopping/infrastructure/shopping.module.js';
+import { PrismaModule } from './prisma/prisma.module.js';
+import { SchedulerModule } from './scheduler/scheduler.module.js';
 
 @Module({
   imports: [
     PrismaModule,
     ScheduleModule.forRoot(),
     CatalogModule,
-    // Remaining feature modules wired in Slice 2:
-    // InterestsModule, ShoppingModule, PromosModule,
-    // EnrichmentModule, CrawlerModule, SchedulerModule
+    InterestsModule,
+    ShoppingModule,
+    PromosModule,
+    EnrichmentModule,
+    CrawlerModule,
+    SchedulerModule,
   ],
 })
 export class AppModule {}
