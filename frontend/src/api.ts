@@ -1,4 +1,5 @@
 import type {
+  CartResult,
   CompareResult,
   EnrichStatus,
   GroupsResult,
@@ -82,6 +83,10 @@ export const api = {
       req<{ ok: boolean; message: string }>(`/enrich/${s}`, { method: 'POST' }),
     triggerAll: () =>
       req<{ ok: boolean; message: string; supers: string[] }>('/enrich', { method: 'POST' }),
+  },
+  cart: {
+    build: (superKey: SuperKey) =>
+      req<CartResult>(`/cart/build?super=${superKey}`, { method: 'POST' }),
   },
   promos: {
     list: () => req<PromoOffer[]>('/promos'),

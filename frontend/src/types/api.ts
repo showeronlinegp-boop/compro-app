@@ -11,6 +11,15 @@
 
 export type SuperKey = 'vea' | 'masonline' | 'carrefour' | 'dia';
 
+// ─── Cart ─────────────────────────────────────────────────────────────────────
+
+export interface CartResult {
+  url: string;
+  items_added: number;
+  items_missing: number;
+  missing_names: string[];
+}
+
 // ─── Sort ───────────────────────────────────────────────────────────────────
 
 /** Catalog ordering options. Mirrors backend SortKey (catalog/domain/sort.ts). */

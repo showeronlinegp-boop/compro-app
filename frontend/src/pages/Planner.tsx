@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../api';
 import RecommendationBanner from '../components/RecommendationBanner';
 import { FREQ_OPTIONS, pesos, superCfg } from '../supers';
-import type { Product, ShoppingItem, WeeklyGroup } from '../types/api';
+import type { Product, ShoppingItem, SuperKey, WeeklyGroup } from '../types/api';
 
 // ─── Category metadata ────────────────────────────────────────────────────────
 
@@ -422,6 +422,27 @@ export default function Planner() {
 
   const totalWeekly = weekly.reduce((acc, g) => acc + (g.total ?? 0), 0);
 
+  const [cartLoading, setCartLoading] = useState<SuperKey | null>(null);
+  const [cartError, setCartError] = useState<string | null>(null);
+
+  async function sendToCart(superKey: SuperKey) {
+    setCartLoading(superKey);
+    setCartError(null);
+    try {
+      const result = await api.cart.build(superKey);
+      window.open(result.url, '_blank', 'noopener,noreferrer');
+      if (result.items_missing > 0) {
+        setCartError(
+          `${result.items_added} productos agregados al carrito. No se encontraron ${result.items_missing} en ${superKey}: ${result.missing_names.slice(0, 3).join(', ')}${result.missing_names.length > 3 ? '…' : ''}.`,
+        );
+      }
+    } catch {
+      setCartError('No se pudo generar el carrito. Intentá de nuevo.');
+    } finally {
+      setCartLoading(null);
+    }
+  }
+
   if (loading) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-12 text-center text-gray-400 text-sm">
@@ -459,13 +480,36 @@ export default function Planner() {
           ))}
         </div>
 
-        <Link
-          to="/compare"
-          className="ml-auto text-xs font-semibold px-3 py-2 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 transition-colors"
-        >
-          📊 Comparar supers
-        </Link>
+        <div className="ml-auto flex items-center gap-2 flex-wrap">
+          {(['carrefour', 'vea', 'dia', 'masonline'] as SuperKey[]).map((s) => {
+            const cfg = superCfg(s);
+            const isLoading = cartLoading === s;
+            return (
+              <button
+                key={s}
+                type="button"
+                disabled={!!cartLoading || list.length === 0}
+                onClick={() => sendToCart(s)}
+                className={`text-xs font-bold px-3 py-2 rounded-xl transition-colors disabled:opacity-50 ${cfg.bg} ${cfg.text}`}
+              >
+                {isLoading ? '⏳' : '🛒'} {cfg.label}
+              </button>
+            );
+          })}
+          <Link
+            to="/compare"
+            className="text-xs font-semibold px-3 py-2 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 transition-colors"
+          >
+            📊 Comparar
+          </Link>
+        </div>
       </div>
+
+      {cartError && (
+        <div className="mb-4 px-4 py-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+          {cartError}
+        </div>
+      )}
 
       {tab === 'list' && (
         <ListTab
