@@ -1,13 +1,17 @@
 import type {
+  CompareResult,
   EnrichStatus,
   GroupsResult,
   Interest,
+  OnboardingAnswers,
   ProductListResult,
   PromoOffer,
   ShoppingItem,
+  ShoppingRecommendation,
   SuperKey,
   SyncLog,
   TaxonomyEntry,
+  UserProfile,
   WeeklyGroup,
 } from './types/api';
 
@@ -43,14 +47,28 @@ export const api = {
   shopping: {
     list: () => req<ShoppingItem[]>('/shopping'),
     weekly: () => req<WeeklyGroup[]>('/shopping/weekly'),
+    recommendations: () => req<ShoppingRecommendation[]>('/shopping/recommendations'),
+    compare: () => req<CompareResult>('/shopping/compare'),
     add: (data: { product_id: number; frequency_days: number }) =>
       req<{ id: number; product_id: number; already?: boolean }>('/shopping', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
-    update: (id: number, data: { last_bought?: string | null; frequency_days?: number }) =>
+    update: (id: number, data: { last_bought?: string | null; frequency_days?: number; product_id?: number }) =>
       req<{ ok: boolean }>(`/shopping/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     remove: (id: number) => req<{ ok: boolean }>(`/shopping/${id}`, { method: 'DELETE' }),
+  },
+  profile: {
+    get: () =>
+      fetch('/api/profile', { headers: { 'Content-Type': 'application/json' } })
+        .then((r) => (r.status === 404 || r.status === 204 ? null : (r.json() as Promise<UserProfile | null>)))
+        .catch(() => null),
+    onboarding: (answers: OnboardingAnswers) =>
+      req<{ profile: UserProfile; generated: number }>('/profile/onboarding', {
+        method: 'POST',
+        body: JSON.stringify(answers),
+      }),
+    clear: () => req<{ ok: boolean }>('/profile', { method: 'DELETE' }),
   },
   sync: {
     status: () => req<SyncLog[]>('/sync/status'),

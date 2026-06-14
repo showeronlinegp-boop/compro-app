@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
-import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
+import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { api } from './api';
+import Compare from './pages/Compare';
 import Explorar from './pages/Explorar';
 import Intereses from './pages/Intereses';
+import Onboarding from './pages/Onboarding';
 import Planner from './pages/Planner';
 import type {
   EnrichStatus,
@@ -12,6 +14,7 @@ import type {
   ShoppingItem,
   SuperKey,
   SyncLog,
+  UserProfile,
 } from './types/api';
 
 // ─── SyncPanel ────────────────────────────────────────────────────────────────
@@ -144,6 +147,8 @@ function SyncPanel({
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 export default function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [interests, setInterests] = useState<Interest[]>([]);
   const [shopping, setShopping] = useState<ShoppingItem[]>([]);
   const [syncStatus, setSyncStatus] = useState<SyncLog[]>([]);
@@ -151,7 +156,7 @@ export default function App() {
   const [enrichStatus, setEnrichStatus] = useState<Record<string, EnrichStatus>>({});
   const [promos, setPromos] = useState<PromoOffer[]>([]);
   const [capturingPromos, setCapturingPromos] = useState(false);
-  useLocation(); // keep location subscription for future use
+  const [profile, setProfile] = useState<UserProfile | null | undefined>(undefined);
 
   useEffect(() => {
     api.interests.list().then(setInterests).catch(console.error);
@@ -159,6 +164,13 @@ export default function App() {
     api.sync.status().then(setSyncStatus).catch(console.error);
     api.enrich.status().then(setEnrichStatus).catch(console.error);
     api.promos.list().then(setPromos).catch(console.error);
+    api.profile.get().then((p) => {
+      setProfile(p);
+      if (!p?.onboarding_done && location.pathname !== '/onboarding') {
+        navigate('/onboarding', { replace: true });
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Auto-poll while a sync is running.
@@ -272,7 +284,11 @@ export default function App() {
                 to: '/planner',
                 label: `Planner ${shopping.length ? `(${shopping.length})` : ''}`,
               },
-            ].map(({ to, label }) => (
+            ].concat(
+              profile?.onboarding_done
+                ? [{ to: '/compare', label: '📊 Comparar' }]
+                : [],
+            ).map(({ to, label }) => (
               <NavLink
                 key={to}
                 to={to}
@@ -330,6 +346,18 @@ export default function App() {
             }
           />
           <Route path="/planner" element={<Planner />} />
+          <Route path="/compare" element={<Compare />} />
+          <Route
+            path="/onboarding"
+            element={
+              <Onboarding
+                onComplete={(p) => {
+                  setProfile(p);
+                  navigate('/planner', { replace: true });
+                }}
+              />
+            }
+          />
         </Routes>
       </main>
     </div>

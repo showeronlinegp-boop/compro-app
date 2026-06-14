@@ -97,6 +97,10 @@ export function makeCatalogRepo(prisma: PrismaLike): CatalogRepo {
         }
       }
 
+      if (params.category_key) {
+        whereParts.push(Prisma.sql`category_key = ${params.category_key}`);
+      }
+
       if (params.discount === '1') {
         whereParts.push(Prisma.sql`discount_pct > 0`);
       }

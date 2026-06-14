@@ -3,8 +3,12 @@ services:
     image: compro:latest
     ports:
       - "3001:3001"
-    volumes:
-      - compro-data:/app/data
+    environment:
+      DATABASE_URL: postgresql://compro:compro@postgres:5432/compro
+      PORT: 3001
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/api/sync/status', r => process.exit(r.statusCode === 200 ? 0 : 1))"]

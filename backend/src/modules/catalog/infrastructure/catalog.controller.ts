@@ -7,6 +7,7 @@ interface CatalogQueryParams {
   q?: string;
   super?: string;
   category?: string;
+  category_key?: string;
   discount?: string;
   available?: string;
   sort?: string;

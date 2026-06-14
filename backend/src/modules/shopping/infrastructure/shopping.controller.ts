@@ -17,6 +17,11 @@ export class ShoppingController {
     return this.repo.listWeekly();
   }
 
+  @Get('recommendations')
+  listRecommendations() {
+    return this.repo.listRecommendations();
+  }
+
   @Post()
   async create(
     @Body()
@@ -59,16 +64,17 @@ export class ShoppingController {
   @Put(':id')
   async update(
     @Param('id') id: string,
-    @Body() body: { frequency_days?: unknown; last_bought?: unknown; notes?: unknown },
+    @Body() body: { frequency_days?: unknown; last_bought?: unknown; notes?: unknown; product_id?: unknown },
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { frequency_days, last_bought, notes } = body;
+    const { frequency_days, last_bought, notes, product_id } = body;
 
     try {
       return await this.repo.update(Number(id), {
         frequency_days: frequency_days != null ? Number(frequency_days) : undefined,
         last_bought: last_bought !== undefined ? (last_bought as string | null) : undefined,
         notes: notes !== undefined ? String(notes) : undefined,
+        product_id: product_id != null ? Number(product_id) : undefined,
       });
     } catch (err) {
       const e = err as Error & { statusCode?: number };

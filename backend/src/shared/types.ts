@@ -89,6 +89,8 @@ export interface ProductRow {
   categories: unknown[] | null;
   promotions: unknown[] | null;
   synced_at: string | Date;
+  category_key?: string | null;
+  brand_tier?: number | null;
 }
 
 // ─── API / domain types ───────────────────────────────────────────────────────
@@ -180,4 +182,89 @@ export interface TaxonomyEntry {
   label: string;
   icon: string;
   vtex: string[];
+}
+
+// ─── Profile / Onboarding ────────────────────────────────────────────────────
+
+export type PerfilHogar = 'joven_solo' | 'pareja' | 'familia_con_ninos' | 'adultos_mayores';
+
+export type TierValue = 1 | 2 | 3;
+
+export type TierMap = Record<string, TierValue | null>;
+
+export interface UserProfile {
+  id: number;
+  nombre: string;
+  edad: number | null;
+  genero: string | null;
+  hogar_tamano: number;
+  hogar_chicos: string[] | null;
+  hogar_adultos_mayores: boolean;
+  hogar_mascotas: string[] | null;
+  tier_por_categoria: TierMap;
+  price_driven: string[] | null;
+  perfil_hogar: PerfilHogar;
+  nse_proxy: string | null;
+  onboarding_done: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OnboardingAnswers {
+  nombre: string;
+  edad?: number;
+  genero?: string;
+  hogar_tamano: number;
+  hogar_chicos: string[];
+  hogar_adultos_mayores: boolean;
+  hogar_mascotas: string[];
+  pref_almacen_1: TierValue | 'price_driven';
+  pref_lacteos: TierValue | 'price_driven';
+  pref_almacen_2: TierValue | 'price_driven';
+  pref_bebidas: TierValue | 'price_driven';
+  pref_limpieza: TierValue | 'price_driven';
+  pref_personal: TierValue | 'price_driven';
+}
+
+// ─── Recommendations ─────────────────────────────────────────────────────────
+
+export interface ShoppingRecommendation extends ShoppingItem {
+  days_until_due: number;
+  reason: 'advance_buy';
+}
+
+// ─── Compare multi-super ─────────────────────────────────────────────────────
+
+export interface SuperMatch {
+  super: string;
+  product_id: number;
+  name: string;
+  price: number;
+  matched_by: 'barcode' | 'name_similarity';
+}
+
+export interface CompareItem {
+  shopping_id: number;
+  name: string;
+  home_super: string;
+  home_price: number;
+  matches: SuperMatch[];
+}
+
+export interface SuperSummary {
+  super: string;
+  total: number;
+  coverage: number;
+  missing_items: number;
+}
+
+export interface CompareResult {
+  items: CompareItem[];
+  option_a: SuperSummary[];
+  option_b: {
+    total: number;
+    by_super: SuperSummary[];
+    breakdown: Array<{ shopping_id: number; best_super: string; price: number }>;
+    savings_vs_option_a: number;
+  };
 }

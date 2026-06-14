@@ -1,8 +1,8 @@
 import type { PrismaClient } from '@prisma/client';
 import { Prisma } from '@prisma/client';
-import type { ProductRow, Promotion, ShoppingItem } from '../../../shared/types.js';
+import type { ProductRow, Promotion, ShoppingItem, ShoppingRecommendation } from '../../../shared/types.js';
 
-// ─── Row type from the JOIN query ─────────────────────────────────────────────
+// ─── Row types from JOIN queries ──────────────────────────────────────────────
 
 interface ShoppingRow extends ProductRow {
   shopping_id: number;
@@ -10,6 +10,10 @@ interface ShoppingRow extends ProductRow {
   last_bought: string | Date | null;
   notes: string | null;
   shopping_created_at: string | Date;
+}
+
+interface RecommendationRow extends ShoppingRow {
+  days_until_due: number | bigint;
 }
 
 // ─── Row parser ───────────────────────────────────────────────────────────────
@@ -66,6 +70,7 @@ export interface WeeklyGroup {
 export interface ShoppingRepo {
   list(): Promise<ShoppingItem[]>;
   listWeekly(): Promise<WeeklyGroup[]>;
+  listRecommendations(): Promise<ShoppingRecommendation[]>;
   create(data: {
     product_id: number;
     frequency_days?: number;
@@ -73,7 +78,7 @@ export interface ShoppingRepo {
   }): Promise<{ id: number; product_id: number; frequency_days: number; already?: boolean }>;
   update(
     id: number,
-    data: { frequency_days?: number; last_bought?: string | null; notes?: string },
+    data: { frequency_days?: number; last_bought?: string | null; notes?: string; product_id?: number },
   ): Promise<{ ok: boolean }>;
   remove(id: number): Promise<{ ok: boolean }>;
 }
@@ -131,6 +136,30 @@ export function makeShoppingRepo(prisma: PrismaLike): ShoppingRepo {
       return Array.from(bySuper.values());
     },
 
+    async listRecommendations() {
+      const rows = await (prisma as PrismaClient).$queryRaw<RecommendationRow[]>(Prisma.sql`
+        SELECT s.id as shopping_id, s.frequency_days, s.last_bought, s.notes,
+               s.created_at as shopping_created_at,
+               p.*,
+               EXTRACT(epoch FROM (
+                 (s.last_bought + (s.frequency_days * INTERVAL '1 day')) - NOW()
+               )) / 86400.0 AS days_until_due
+        FROM shopping s
+        JOIN products p ON s.product_id = p.id
+        WHERE s.last_bought IS NOT NULL
+          AND (s.last_bought + (s.frequency_days * INTERVAL '1 day')) - NOW() <= INTERVAL '5 days'
+          AND (s.last_bought + (s.frequency_days * INTERVAL '1 day')) > NOW()
+          AND p.discount_pct > 0
+        ORDER BY days_until_due ASC
+      `);
+
+      return rows.map((r): ShoppingRecommendation => ({
+        ...parseRow(r),
+        days_until_due: Number(r.days_until_due),
+        reason: 'advance_buy',
+      }));
+    },
+
     async create({ product_id, frequency_days = 7, notes = '' }) {
       const product = await prisma.products.findUnique({ where: { id: product_id } });
       if (!product) {
@@ -158,6 +187,7 @@ export function makeShoppingRepo(prisma: PrismaLike): ShoppingRepo {
         frequency_days?: number;
         last_bought?: Date | null;
         notes?: string;
+        product_id?: number;
       } = {};
 
       if (data.frequency_days != null) {
@@ -170,6 +200,13 @@ export function makeShoppingRepo(prisma: PrismaLike): ShoppingRepo {
       }
       if (data.notes !== undefined) {
         updateData.notes = data.notes;
+      }
+      if (data.product_id != null) {
+        const product = await prisma.products.findUnique({ where: { id: data.product_id } });
+        if (!product) {
+          throw Object.assign(new Error('Producto no encontrado'), { statusCode: 404 });
+        }
+        updateData.product_id = data.product_id;
       }
 
       if (Object.keys(updateData).length === 0) {

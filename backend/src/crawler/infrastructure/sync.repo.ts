@@ -12,8 +12,75 @@
 import type { PrismaClient } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import type { NormalizedCrawlItem, SyncLog } from '../../shared/types.js';
+import { TAXONOMY } from '../../modules/taxonomy/domain/taxonomy.js';
 
 const UPSERT_CHUNK_SIZE = 500;
+
+// ─── Brand classification helpers ────────────────────────────────────────────
+
+interface BrandRule {
+  pattern: string;
+  tier: number;
+  priority: number;
+}
+
+function normalizeText(text: string): string {
+  // NFD decomposes accented chars into base + combining mark; then we strip the marks
+  return text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+function matchesPattern(normalizedName: string, rawPattern: string): boolean {
+  const parts = normalizeText(rawPattern).split('%').filter(Boolean);
+  if (parts.length === 0) return true;
+  let idx = 0;
+  for (const part of parts) {
+    const found = normalizedName.indexOf(part, idx);
+    if (found === -1) return false;
+    idx = found + part.length;
+  }
+  return true;
+}
+
+export function resolveInternalCategory(categoryPaths: string[]): string | null {
+  const lowerPaths = categoryPaths.map((p) => normalizeText(p));
+  for (const entry of TAXONOMY) {
+    for (const vtexStr of entry.vtex) {
+      const lowerVtex = normalizeText(vtexStr);
+      if (lowerPaths.some((p) => p.includes(lowerVtex))) {
+        return entry.slug;
+      }
+    }
+  }
+  return null;
+}
+
+export function resolveBrandTier(
+  name: string,
+  categoryKey: string | null,
+  rules: Map<string, BrandRule[]>,
+): number | null {
+  if (!categoryKey) return null;
+  const categoryRules = rules.get(categoryKey);
+  if (!categoryRules || categoryRules.length === 0) return null;
+  const normalizedName = normalizeText(name);
+  for (const rule of categoryRules) {
+    if (matchesPattern(normalizedName, rule.pattern)) return rule.tier;
+  }
+  return null;
+}
+
+async function loadBrandRulesFromPrisma(prisma: PrismaClient): Promise<Map<string, BrandRule[]>> {
+  const rows = await prisma.brand_rules.findMany({
+    orderBy: [{ category_key: 'asc' }, { priority: 'desc' }],
+  });
+  const map = new Map<string, BrandRule[]>();
+  for (const r of rows) {
+    const list = map.get(r.category_key) ?? [];
+    list.push({ pattern: r.pattern, tier: r.tier, priority: r.priority });
+    map.set(r.category_key, list);
+  }
+  return map;
+}
 
 export interface SyncRepo {
   /** Upsert a batch of products for a given superKey (chunked transactions). */
@@ -40,6 +107,8 @@ export interface SyncRepo {
 export function makeSyncRepo(prisma: PrismaClient): SyncRepo {
   return {
     async upsertProducts(superKey, items) {
+      const brandRules = await loadBrandRulesFromPrisma(prisma);
+
       // Chunk into batches to bound transaction duration
       for (let start = 0; start < items.length; start += UPSERT_CHUNK_SIZE) {
         const chunk = items.slice(start, start + UPSERT_CHUNK_SIZE);
@@ -47,6 +116,9 @@ export function makeSyncRepo(prisma: PrismaClient): SyncRepo {
         await prisma.$transaction(
           async (tx) => {
             for (const p of chunk) {
+              const categoryKey = resolveInternalCategory(p.category_paths);
+              const brandTier = resolveBrandTier(p.name, categoryKey, brandRules);
+
               await tx.products.upsert({
                 where: { super_product_id: { super: superKey, product_id: p.product_id } },
                 create: {
@@ -63,6 +135,8 @@ export function makeSyncRepo(prisma: PrismaClient): SyncRepo {
                   available: p.available,
                   categories: p.category_paths,
                   promotions: p.promotions as object[],
+                  category_key: categoryKey,
+                  brand_tier: brandTier,
                 },
                 update: {
                   sku_id: p.sku_id ?? null,
@@ -74,6 +148,8 @@ export function makeSyncRepo(prisma: PrismaClient): SyncRepo {
                   categories: p.category_paths,
                   promotions: p.promotions as object[],
                   synced_at: new Date(),
+                  category_key: categoryKey,
+                  brand_tier: brandTier,
                 },
               });
             }
@@ -119,7 +195,7 @@ export function makeSyncRepo(prisma: PrismaClient): SyncRepo {
           finished_at: new Date(),
           product_count: productCount,
           status: 'ok',
-          progress_leaf: undefined, // keep existing
+          progress_leaf: undefined,
         },
       });
     },

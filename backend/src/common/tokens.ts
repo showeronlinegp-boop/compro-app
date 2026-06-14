@@ -9,3 +9,6 @@ export const PROMOS_REPO = 'PROMOS_REPO' as const;
 export const CRAWLER_SERVICE = 'CRAWLER_SERVICE' as const;
 export const ENRICH_SERVICE = 'ENRICH_SERVICE' as const;
 export const PROMO_CAPTURE_SERVICE = 'PROMO_CAPTURE_SERVICE' as const;
+export const PROFILE_REPO = 'PROFILE_REPO' as const;
+export const LIST_GEN_SERVICE = 'LIST_GEN_SERVICE' as const;
+export const COMPARE_REPO = 'COMPARE_REPO' as const;
