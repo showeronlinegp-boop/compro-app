@@ -486,7 +486,7 @@ export default function Planner() {
         </div>
 
         <div className="ml-auto flex items-center gap-2 flex-wrap">
-          {(['carrefour', 'vea', 'dia', 'masonline'] as SuperKey[]).map((s) => {
+          {(['carrefour', 'dia', 'masonline'] as SuperKey[]).map((s) => {
             const cfg = superCfg(s);
             const isLoading = cartLoading === s;
             return (
@@ -501,6 +501,12 @@ export default function Planner() {
               </button>
             );
           })}
+          <span
+            title="VEA maneja inventario por sucursal y no es compatible con el carrito automático"
+            className="text-xs font-bold px-3 py-2 rounded-xl bg-gray-200 text-gray-400 cursor-not-allowed select-none"
+          >
+            🛒 VEA
+          </span>
           <Link
             to="/compare"
             className="text-xs font-semibold px-3 py-2 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 transition-colors"
