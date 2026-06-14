@@ -1,7 +1,7 @@
 import { BadRequestException, Controller, Inject, Post, Query } from '@nestjs/common';
 import { SUPERS } from '../../../config/supers.js';
 import { CART_REPO } from '../../../common/tokens.js';
-import { buildVtexCart } from '../domain/cart.js';
+import { buildCartAddUrl } from '../domain/cart.js';
 import type { CartRepo } from './cart.repo.js';
 import type { SuperKey } from '../../../shared/types.js';
 
@@ -22,8 +22,7 @@ export class CartController {
       throw new BadRequestException('No se encontraron productos para este supermercado');
     }
 
-    const orderFormId = await buildVtexCart(cfg.baseUrl, found);
-    const url = `${cfg.baseUrl}/checkout/#/orderForm/${orderFormId}`;
+    const url = buildCartAddUrl(cfg.baseUrl, found);
 
     return {
       url,
