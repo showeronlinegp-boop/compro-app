@@ -431,13 +431,18 @@ export default function Planner() {
     try {
       const result = await api.cart.build(superKey);
       window.open(result.url, '_blank', 'noopener,noreferrer');
-      if (result.items_missing > 0) {
-        setCartError(
-          `${result.items_added} productos agregados al carrito. No se encontraron ${result.items_missing} en ${superKey}: ${result.missing_names.slice(0, 3).join(', ')}${result.missing_names.length > 3 ? '…' : ''}.`,
-        );
+      const parts: string[] = [
+        `${result.items_added} ítems donde ${superKey.toUpperCase()} es el más barato.`,
+      ];
+      if (result.warning) parts.push(result.warning);
+      setCartError(parts.join(' '));
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '';
+      if (msg.includes('precio más bajo')) {
+        setCartError(`${superKey.toUpperCase()} no tiene el precio más bajo en ningún ítem de tu lista.`);
+      } else {
+        setCartError('No se pudo generar el carrito. Intentá de nuevo.');
       }
-    } catch {
-      setCartError('No se pudo generar el carrito. Intentá de nuevo.');
     } finally {
       setCartLoading(null);
     }
@@ -506,7 +511,7 @@ export default function Planner() {
       </div>
 
       {cartError && (
-        <div className="mb-4 px-4 py-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+        <div className="mb-4 px-4 py-2.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-sm">
           {cartError}
         </div>
       )}

@@ -18,6 +18,7 @@ export interface CartResult {
   items_added: number;
   items_missing: number;
   missing_names: string[];
+  warning: string | null;
 }
 
 // ─── Sort ───────────────────────────────────────────────────────────────────
