@@ -30,12 +30,17 @@ model products {
   promotions  Json?     @db.JsonB
   synced_at   DateTime  @default(now()) @db.Timestamptz(6)
 
+  category_key String?   @db.Text
+  brand_tier   Int?      @db.SmallInt
+
   interests   interests[]
   shopping    shopping[]
 
   @@unique([super, product_id])
   @@index([super])
   @@index([discount_pct])
+  @@index([category_key])
+  @@index([brand_tier])
   @@map("products")
 }
 
@@ -85,6 +90,66 @@ model sync_log {
   total_leaves  Int       @default(0)
 
   @@map("sync_log")
+}
+
+// ---------------------------------------------------------------------------
+// brand_rules
+// ---------------------------------------------------------------------------
+model brand_rules {
+  id           Int    @id @default(autoincrement())
+  category_key String @db.Text
+  pattern      String @db.Text
+  tier         Int    @db.SmallInt
+  priority     Int    @default(0) @db.SmallInt
+
+  @@index([category_key])
+  @@map("brand_rules")
+}
+
+// ---------------------------------------------------------------------------
+// list_templates
+// ---------------------------------------------------------------------------
+model list_templates {
+  id               Int     @id @default(autoincrement())
+  perfil_hogar     String  @db.Text
+  category_key     String  @db.Text
+  item_name        String  @db.Text
+  qty_base         Int     @default(1) @db.SmallInt
+  scale_per_person Float   @default(0) @db.Real
+  frequency_days   Int     @default(7) @db.SmallInt
+  requires_module  String? @db.Text
+  search_keyword   String? @db.Text
+  size_hint        String? @db.Text
+  incluye          Json?   @db.JsonB
+  requiere_alguno  Json?   @db.JsonB
+  excluye          Json?   @db.JsonB
+  veta             Json?   @db.JsonB
+
+  @@index([perfil_hogar])
+  @@map("list_templates")
+}
+
+// ---------------------------------------------------------------------------
+// user_profiles
+// ---------------------------------------------------------------------------
+model user_profiles {
+  id                    Int      @id @default(autoincrement())
+  nombre                String   @db.Text
+  edad                  Int?     @db.SmallInt
+  genero                String?  @db.Text
+  hogar_tamano          Int      @default(1) @db.SmallInt
+  hogar_chicos          Json?    @db.JsonB
+  hogar_adultos_mayores Boolean  @default(false)
+  hogar_mascotas        Json?    @db.JsonB
+  tier_por_categoria    Json     @db.JsonB
+  price_driven          Json?    @db.JsonB
+  perfil_hogar          String   @db.Text
+  nse_proxy             String?  @db.Text
+  onboarding_done       Boolean  @default(false)
+  created_at            DateTime @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("user_profiles")
 }
 
 // ---------------------------------------------------------------------------
