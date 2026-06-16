@@ -1,10 +1,10 @@
-import { Body, Controller, Delete, Get, Inject, Post, Put, Res } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Inject, Post, Put, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { LIST_GEN_SERVICE, PROFILE_REPO } from '../../../common/tokens.js';
 import { deriveProfile } from '../domain/profile.js';
 import type { OnboardingAnswers } from '../../../shared/types.js';
 import type { ProfileRepo } from './profile.repo.js';
-import type { ListGeneratorService } from '../../list-generator/infrastructure/list-generator.service.js';
+import type { ListGeneratorService } from '../../list-generator/infrastructure/list-generator.module.js';
 
 @Controller('api/profile')
 export class ProfileController {
@@ -22,7 +22,7 @@ export class ProfileController {
   async update(@Body() body: unknown) {
     const data = body as Parameters<ProfileRepo['upsert']>[0];
     if (!data?.nombre || !data?.hogar_tamano || !data?.tier_por_categoria || !data?.perfil_hogar) {
-      throw Object.assign(new Error('Campos requeridos: nombre, hogar_tamano, tier_por_categoria, perfil_hogar'), { statusCode: 400 });
+      throw new BadRequestException('Campos requeridos: nombre, hogar_tamano, tier_por_categoria, perfil_hogar');
     }
     return this.repo.upsert(data);
   }

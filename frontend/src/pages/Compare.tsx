@@ -5,7 +5,11 @@ import type { CompareItem, CompareResult, SuperSummary } from '../types/api';
 
 // ─── Option A — Tabla por super ───────────────────────────────────────────────
 
-function OptionATable({ summaries }: { summaries: SuperSummary[] }) {
+interface OptionATableProps {
+  summaries: SuperSummary[];
+}
+
+function OptionATable({ summaries }: OptionATableProps) {
   if (summaries.length === 0) return null;
   const [best] = summaries;
 
@@ -38,8 +42,8 @@ function OptionATable({ summaries }: { summaries: SuperSummary[] }) {
               <p className={`text-lg font-bold ${isBest ? 'text-indigo-700' : 'text-gray-800'}`}>
                 {pesos(s.total)}
               </p>
-              {isBest && best && s !== best && (
-                <p className="text-xs text-indigo-500">ahorrás {pesos(s.total - best.total)}</p>
+              {!isBest && best && (
+                <p className="text-xs text-indigo-500">+{pesos(s.total - best.total)}</p>
               )}
             </div>
           </div>
@@ -51,13 +55,12 @@ function OptionATable({ summaries }: { summaries: SuperSummary[] }) {
 
 // ─── Option B — Breakdown por ítem ────────────────────────────────────────────
 
-function OptionBBreakdown({
-  result,
-  items,
-}: {
+interface OptionBBreakdownProps {
   result: CompareResult['option_b'];
   items: CompareItem[];
-}) {
+}
+
+function OptionBBreakdown({ result, items }: OptionBBreakdownProps) {
   const itemMap = new Map(items.map((i) => [i.shopping_id, i]));
 
   return (
@@ -109,7 +112,11 @@ function OptionBBreakdown({
 
 // ─── Tabla de matches por ítem ────────────────────────────────────────────────
 
-function ItemMatchTable({ items }: { items: CompareItem[] }) {
+interface ItemMatchTableProps {
+  items: CompareItem[];
+}
+
+function ItemMatchTable({ items }: ItemMatchTableProps) {
   const allSupers = [...new Set(items.flatMap((i) => i.matches.map((m) => m.super)))].sort();
 
   if (items.length === 0) return null;
@@ -135,14 +142,15 @@ function ItemMatchTable({ items }: { items: CompareItem[] }) {
         <tbody>
           {items.map((item) => {
             const matchBySuperMap = new Map(item.matches.map((m) => [m.super, m]));
-            const bestPrice = Math.min(...item.matches.map((m) => m.price));
+            const prices = item.matches.map((m) => m.price);
+            const bestPrice = prices.length ? Math.min(...prices) : null;
 
             return (
               <tr key={item.shopping_id} className="border-b border-gray-50 hover:bg-gray-50">
                 <td className="py-2 pr-3 text-gray-700 font-medium truncate max-w-40">{item.name}</td>
                 {allSupers.map((s) => {
                   const match = matchBySuperMap.get(s);
-                  const isBest = match?.price === bestPrice;
+                  const isBest = bestPrice !== null && match?.price === bestPrice;
                   return (
                     <td key={s} className="text-center py-2 px-2">
                       {match ? (

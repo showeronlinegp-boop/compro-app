@@ -27,6 +27,18 @@ async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+// Like req<T> but returns null on 404/204 (resource not found / no content).
+// Throws on any other non-ok status so callers get real errors surfaced.
+async function reqOptional<T>(path: string, opts: RequestInit = {}): Promise<T | null> {
+  const res = await fetch(BASE + path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts,
+  });
+  if (res.status === 404 || res.status === 204) return null;
+  if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+  return res.json() as Promise<T>;
+}
+
 export const api = {
   products: {
     list: (params: Record<string, string>) =>
@@ -48,7 +60,7 @@ export const api = {
     list: () => req<ShoppingItem[]>('/shopping'),
     weekly: () => req<WeeklyGroup[]>('/shopping/weekly'),
     recommendations: () => req<ShoppingRecommendation[]>('/shopping/recommendations'),
-    compare: () => req<CompareResult>('/shopping/compare'),
+    compare: () => req<CompareResult>('/compare'),
     add: (data: { product_id: number; frequency_days: number }) =>
       req<{ id: number; product_id: number; already?: boolean }>('/shopping', {
         method: 'POST',
@@ -59,10 +71,7 @@ export const api = {
     remove: (id: number) => req<{ ok: boolean }>(`/shopping/${id}`, { method: 'DELETE' }),
   },
   profile: {
-    get: () =>
-      fetch('/api/profile', { headers: { 'Content-Type': 'application/json' } })
-        .then((r) => (r.status === 404 || r.status === 204 ? null : (r.json() as Promise<UserProfile | null>)))
-        .catch(() => null),
+    get: () => reqOptional<UserProfile>('/profile').catch(() => null),
     onboarding: (answers: OnboardingAnswers) =>
       req<{ profile: UserProfile; generated: number }>('/profile/onboarding', {
         method: 'POST',

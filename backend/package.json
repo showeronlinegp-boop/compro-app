@@ -8,7 +8,7 @@
     "db:wait": "tsx scripts/wait-for-postgres.ts",
     "db:migrate": "prisma migrate deploy",
     "db:test:setup": "tsx scripts/db-test-setup.ts",
-    "dev": "npm run db:up && npm run db:wait && npm run db:migrate && tsx watch src/main.ts",
+    "dev": "npm run db:up && npm run db:wait && npm run db:migrate && prisma generate && tsx watch src/main.ts",
     "dev:only": "tsx watch src/main.ts",
     "migrate:etl": "tsx scripts/migrate-sqlite-to-pg.ts",
     "sync": "tsx scripts/sync.ts",

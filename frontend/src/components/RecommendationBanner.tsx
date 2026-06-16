@@ -41,9 +41,11 @@ export default function RecommendationBanner() {
                   <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}>
                     {cfg.label}
                   </span>
-                  <span className="text-xs text-green-700 font-semibold bg-green-50 px-1.5 py-0.5 rounded-full">
-                    -{rec.discount_pct}%
-                  </span>
+                  {rec.discount_pct > 0 && (
+                    <span className="text-xs text-green-700 font-semibold bg-green-50 px-1.5 py-0.5 rounded-full">
+                      -{rec.discount_pct}%
+                    </span>
+                  )}
                 </div>
                 <p className="text-sm font-medium text-gray-800 truncate">{rec.name}</p>
                 <p className="text-xs text-amber-600 mt-0.5">

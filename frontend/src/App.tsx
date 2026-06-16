@@ -170,6 +170,9 @@ export default function App() {
         navigate('/onboarding', { replace: true });
       }
     });
+    // Intentionally empty deps: this effect runs once on mount to check the
+    // profile and redirect to onboarding if needed. Adding location/navigate
+    // would re-run it on every navigation, causing an infinite redirect loop.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

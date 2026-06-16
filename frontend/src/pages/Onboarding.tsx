@@ -1,35 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
-import type { OnboardingAnswers, TierValue, UserProfile } from '../types/api';
+import type { OnboardingAnswers, UserProfile } from '../types/api';
+import { Chip, BrandCard, PrefQuestion } from '../components/onboarding';
+import type { FormState, TierOrPriceDriven } from '../components/onboarding';
+import type { PrefQuestionProps } from '../components/onboarding';
 
 interface OnboardingProps {
   onComplete: (profile: UserProfile) => void;
 }
 
 // ─── Tipos internos ───────────────────────────────────────────────────────────
-
-type TierOrPriceDriven = TierValue | 'price_driven';
-
-interface FormState {
-  // Step 1
-  nombre: string;
-  edad: string;
-  genero: string;
-  // Step 2
-  hogar_tamano: number;
-  tiene_chicos: boolean;
-  tipo_chicos: string[];
-  hogar_adultos_mayores: boolean;
-  mascotas: string[];
-  // Step 3
-  pref_almacen_1: TierOrPriceDriven | '';
-  pref_lacteos: TierOrPriceDriven | '';
-  pref_almacen_2: TierOrPriceDriven | '';
-  pref_bebidas: TierOrPriceDriven | '';
-  pref_limpieza: TierOrPriceDriven | '';
-  pref_personal: TierOrPriceDriven | '';
-}
 
 const INITIAL: FormState = {
   nombre: '',
@@ -48,105 +29,16 @@ const INITIAL: FormState = {
   pref_personal: '',
 };
 
-// ─── Chip de selección ────────────────────────────────────────────────────────
-
-function Chip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
-        active
-          ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-          : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600'
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
-// ─── Tarjeta de preferencia de marca ─────────────────────────────────────────
-
-interface BrandCardProps {
-  label: string;
-  sublabel: string;
-  value: TierOrPriceDriven;
-  selected: boolean;
-  onSelect: () => void;
-}
-
-function BrandCard({ label, sublabel, value, selected, onSelect }: BrandCardProps) {
-  const isPriceDriven = value === 'price_driven';
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={`flex-1 text-center p-3 rounded-2xl border-2 transition-all ${
-        selected
-          ? isPriceDriven
-            ? 'border-emerald-500 bg-emerald-50'
-            : 'border-indigo-500 bg-indigo-50'
-          : 'border-gray-100 bg-white hover:border-gray-300'
-      }`}
-    >
-      <p className={`text-base font-bold mb-0.5 ${selected ? (isPriceDriven ? 'text-emerald-700' : 'text-indigo-700') : 'text-gray-800'}`}>
-        {label}
-      </p>
-      <p className="text-xs text-gray-500">{sublabel}</p>
-    </button>
-  );
-}
-
-// ─── Pregunta de preferencia ──────────────────────────────────────────────────
-
-interface PrefQuestionProps {
-  question: string;
-  field: keyof Pick<
-    FormState,
-    | 'pref_almacen_1'
-    | 'pref_lacteos'
-    | 'pref_almacen_2'
-    | 'pref_bebidas'
-    | 'pref_limpieza'
-    | 'pref_personal'
-  >;
-  options: Array<{ value: TierOrPriceDriven; label: string; sublabel: string }>;
-  form: FormState;
-  onChange: (field: keyof FormState, value: TierOrPriceDriven) => void;
-}
-
-function PrefQuestion({ question, field, options, form, onChange }: PrefQuestionProps) {
-  return (
-    <div className="mb-6">
-      <p className="text-sm font-semibold text-gray-800 mb-2">{question}</p>
-      <div className="flex gap-2">
-        {options.map((opt) => (
-          <BrandCard
-            key={opt.value}
-            label={opt.label}
-            sublabel={opt.sublabel}
-            value={opt.value}
-            selected={form[field] === opt.value}
-            onSelect={() => onChange(field, opt.value)}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // ─── Steps ────────────────────────────────────────────────────────────────────
 
-function Step1({ form, onChange }: { form: FormState; onChange: (f: keyof FormState, v: string | number) => void }) {
+type Step1Field = 'nombre' | 'edad' | 'genero';
+
+interface Step1Props {
+  form: FormState;
+  onChange: (f: Step1Field, v: string) => void;
+}
+
+function Step1({ form, onChange }: Step1Props) {
   return (
     <div className="space-y-4">
       <div>
@@ -190,15 +82,16 @@ function Step1({ form, onChange }: { form: FormState; onChange: (f: keyof FormSt
   );
 }
 
-function Step2({ form, setForm }: { form: FormState; setForm: React.Dispatch<React.SetStateAction<FormState>> }) {
+function Step2({
+  form,
+  onChange,
+}: {
+  form: FormState;
+  onChange: (field: keyof FormState, value: FormState[keyof FormState]) => void;
+}) {
   function toggleArray(field: 'tipo_chicos' | 'mascotas', val: string) {
-    setForm((prev) => {
-      const arr = prev[field];
-      return {
-        ...prev,
-        [field]: arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val],
-      };
-    });
+    const arr = form[field] as string[];
+    onChange(field, arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
   }
 
   return (
@@ -210,7 +103,7 @@ function Step2({ form, setForm }: { form: FormState; setForm: React.Dispatch<Rea
             <Chip
               key={n}
               active={form.hogar_tamano === n}
-              onClick={() => setForm((p) => ({ ...p, hogar_tamano: n }))}
+              onClick={() => onChange('hogar_tamano', n)}
             >
               {n === 5 ? '5+' : String(n)}
             </Chip>
@@ -223,13 +116,16 @@ function Step2({ form, setForm }: { form: FormState; setForm: React.Dispatch<Rea
         <div className="flex gap-2 flex-wrap">
           <Chip
             active={!form.tiene_chicos}
-            onClick={() => setForm((p) => ({ ...p, tiene_chicos: false, tipo_chicos: [] }))}
+            onClick={() => {
+              onChange('tiene_chicos', false);
+              onChange('tipo_chicos', []);
+            }}
           >
             No
           </Chip>
           <Chip
             active={form.tiene_chicos}
-            onClick={() => setForm((p) => ({ ...p, tiene_chicos: true }))}
+            onClick={() => onChange('tiene_chicos', true)}
           >
             Sí
           </Chip>
@@ -257,13 +153,13 @@ function Step2({ form, setForm }: { form: FormState; setForm: React.Dispatch<Rea
         <div className="flex gap-2">
           <Chip
             active={!form.hogar_adultos_mayores}
-            onClick={() => setForm((p) => ({ ...p, hogar_adultos_mayores: false }))}
+            onClick={() => onChange('hogar_adultos_mayores', false)}
           >
             No
           </Chip>
           <Chip
             active={form.hogar_adultos_mayores}
-            onClick={() => setForm((p) => ({ ...p, hogar_adultos_mayores: true }))}
+            onClick={() => onChange('hogar_adultos_mayores', true)}
           >
             Sí
           </Chip>
@@ -275,7 +171,7 @@ function Step2({ form, setForm }: { form: FormState; setForm: React.Dispatch<Rea
         <div className="flex gap-2 flex-wrap">
           <Chip
             active={form.mascotas.length === 0}
-            onClick={() => setForm((p) => ({ ...p, mascotas: [] }))}
+            onClick={() => onChange('mascotas', [])}
           >
             No
           </Chip>
@@ -297,10 +193,13 @@ function Step2({ form, setForm }: { form: FormState; setForm: React.Dispatch<Rea
   );
 }
 
-function Step3({ form, setForm }: { form: FormState; setForm: React.Dispatch<React.SetStateAction<FormState>> }) {
-  function onChange(field: keyof FormState, value: TierOrPriceDriven) {
-    setForm((p) => ({ ...p, [field]: value }));
-  }
+function Step3({
+  form,
+  onChange,
+}: {
+  form: FormState;
+  onChange: (field: keyof FormState, value: TierOrPriceDriven) => void;
+}) {
 
   const questions: PrefQuestionProps[] = [
     {
@@ -439,6 +338,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const [error, setError] = useState('');
   const [generated, setGenerated] = useState(0);
   const [done, setDone] = useState(false);
+  const [completedProfile, setCompletedProfile] = useState<UserProfile | null>(null);
 
   const STEPS = [
     { title: 'Tus datos', emoji: '👤' },
@@ -490,9 +390,9 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       };
       const { profile, generated: gen } = await api.profile.onboarding(answers);
       setGenerated(gen);
+      setCompletedProfile(profile);
       setDone(true);
       setStep(3);
-      onComplete(profile);
     } catch (e) {
       setError('Ocurrió un error al guardar el perfil. Intentá de nuevo.');
       console.error(e);
@@ -502,7 +402,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   }
 
   function handleFinish() {
-    navigate('/planner');
+    if (completedProfile) onComplete(completedProfile);
+    navigate('/planner', { replace: true });
   }
 
   return (
@@ -543,8 +444,18 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               onChange={(f, v) => setForm((p) => ({ ...p, [f]: v }))}
             />
           )}
-          {step === 1 && <Step2 form={form} setForm={setForm} />}
-          {step === 2 && <Step3 form={form} setForm={setForm} />}
+          {step === 1 && (
+            <Step2
+              form={form}
+              onChange={(f, v) => setForm((p) => ({ ...p, [f]: v }))}
+            />
+          )}
+          {step === 2 && (
+            <Step3
+              form={form}
+              onChange={(f, v) => setForm((p) => ({ ...p, [f]: v as TierOrPriceDriven }))}
+            />
+          )}
           {step === 3 && done && <Step4 form={form} generated={generated} />}
         </div>
 
