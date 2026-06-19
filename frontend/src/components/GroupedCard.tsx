@@ -1,5 +1,6 @@
 import { pesos, superCfg } from '../supers';
 import type { Product, ProductGroup, Promotion } from '../types/api';
+import ProductImage from './ProductImage';
 
 export interface GroupedCardProps {
   group: ProductGroup;
@@ -84,11 +85,11 @@ export default function GroupedCard({
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-md transition-shadow duration-200">
       {/* Imagen */}
       <div className="relative bg-gray-50 h-36 flex items-center justify-center p-3">
-        {image_url ? (
-          <img src={image_url} alt={name} className="h-full object-contain" />
-        ) : (
-          <span className="text-5xl text-gray-200">🛒</span>
-        )}
+        <ProductImage
+          sources={[image_url, ...sorted.map((v) => v.image_url)]}
+          alt={name}
+          className="h-full object-contain"
+        />
       </div>
 
       {/* Nombre */}

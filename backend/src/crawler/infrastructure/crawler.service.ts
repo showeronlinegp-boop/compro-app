@@ -58,6 +58,76 @@ export interface CrawlerServiceDeps {
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
 // ---------------------------------------------------------------------------
+// Empty-page retry (silent-drop guard)
+// ---------------------------------------------------------------------------
+
+/** Result of one IS page fetch, with a flag marking a likely silent drop. */
+export interface PageFetchResult {
+  products: unknown[];
+  total: number;
+  /** True when the page should have had products but stayed empty/errored. */
+  dropped: boolean;
+}
+
+/**
+ * Fetch one IS page, retrying when the API returns HTTP 200 with an EMPTY
+ * product list even though its own `recordsFiltered` (total) says products
+ * exist. Carrefour's IS-API intermittently returns 200-empty under crawl load;
+ * `fetchWithRetry` only retries thrown errors, so without this a throttled page
+ * silently drops ~PAGE_SIZE products — and `deleteStaleForSuper` then removes
+ * them (observed: a product present for other supers vanished from carrefour
+ * while its same-category siblings survived the same run).
+ *
+ * A page is `dropped` only on a genuine inconsistency (empty body with total>0,
+ * or errors that outlast the retries). A facet that truly has zero products
+ * (total===0) is NOT a drop, so legitimate stale-deletion still works.
+ *
+ * `fetchPage` is injected for testability; the caller wraps it with
+ * `fetchWithRetry` so thrown/5xx errors are already retried inside one attempt.
+ */
+export async function fetchPageWithEmptyRetry(
+  fetchPage: (pageNum: number) => Promise<{ products: unknown[]; total: number }>,
+  partitionName: string,
+  pageNum: number,
+  opts: { maxEmptyRetries?: number; emptyRetryDelayMs?: number } = {},
+): Promise<PageFetchResult> {
+  const maxEmptyRetries = opts.maxEmptyRetries ?? 3;
+  const delayMs = opts.emptyRetryDelayMs ?? 600;
+
+  for (let attempt = 0; ; attempt++) {
+    let result: { products: unknown[]; total: number };
+    try {
+      result = await fetchPage(pageNum);
+    } catch (err) {
+      if (attempt >= maxEmptyRetries) {
+        console.error(
+          `  ⚠  ${partitionName} page ${pageNum} (error after retries):`,
+          (err as Error).message,
+        );
+        return { products: [], total: 0, dropped: true };
+      }
+      await sleep(delayMs * (attempt + 1));
+      continue;
+    }
+
+    // Got products, or the facet genuinely has zero products → accept as-is.
+    if (result.products.length > 0 || result.total === 0) {
+      return { products: result.products, total: result.total, dropped: false };
+    }
+
+    // 200-empty but total > 0 → throttled / inconsistent. Retry, then give up.
+    if (attempt >= maxEmptyRetries) {
+      console.warn(
+        `  ⚠  ${partitionName} page ${pageNum}: empty body with total=${result.total} ` +
+          `after ${maxEmptyRetries} retries — counted as a dropped page`,
+      );
+      return { products: [], total: result.total, dropped: true };
+    }
+    await sleep(delayMs * (attempt + 1));
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Slice 2 — buildProbeCounts (parallel probes via runPool)
 // ---------------------------------------------------------------------------
 
@@ -164,28 +234,33 @@ async function crawlPartitionPages(
   partition: Partition,
   normalize: (p: unknown) => NormalizedCrawlItem | null,
   crawlCfg: CrawlConcurrency,
-): Promise<{ normalizedPages: NormalizedCrawlItem[][]; fetched: number }> {
+): Promise<{ normalizedPages: NormalizedCrawlItem[][]; fetched: number; incomplete: boolean }> {
   const pages = Math.ceil(Math.min(partition.total, CRAWLER_IS_SAFE_MAX) / CRAWLER_PAGE_SIZE);
   let fetched = 0;
+  let incomplete = false;
 
   console.log(`  -> crawl: "${partition.name}" (~${partition.total} prods, ${pages} pages)`);
 
+  const fetchPage = (pageNum: number) =>
+    fetchWithRetry(() => searchPage(cfg, partition.path, pageNum));
+
   // Fetch page 1 first (learn total, short-circuit if empty)
-  let page1Result: { products: unknown[]; total: number };
-  try {
-    page1Result = await fetchWithRetry(() => searchPage(cfg, partition.path, 1));
-  } catch (err) {
-    console.error(`  ⚠  ${partition.name} page 1:`, (err as Error).message);
-    return { normalizedPages: [], fetched: 0 };
+  const page1 = await fetchPageWithEmptyRetry(fetchPage, partition.name, 1);
+
+  if (page1.dropped) {
+    // Couldn't confirm page 1 (throttled-empty or persistent error). Treat the
+    // whole partition as incomplete so its existing rows are NOT stale-deleted.
+    return { normalizedPages: [], fetched: 0, incomplete: true };
   }
 
-  if (!page1Result.products.length) {
-    return { normalizedPages: [], fetched: 0 };
+  if (!page1.products.length) {
+    // Facet genuinely has no products (total===0) — nothing to crawl, not a drop.
+    return { normalizedPages: [], fetched: 0, incomplete: false };
   }
 
   // Normalize page 1 items
   const page1Items: NormalizedCrawlItem[] = [];
-  for (const p of page1Result.products) {
+  for (const p of page1.products) {
     fetched++;
     const norm = normalize(p);
     if (norm) page1Items.push(norm);
@@ -200,32 +275,28 @@ async function crawlPartitionPages(
     const remainingPages = await runPool(
       pageNumbers,
       crawlCfg.pageConc,
-      async (pageNum): Promise<NormalizedCrawlItem[]> => {
-        let result: { products: unknown[]; total: number };
-        try {
-          result = await fetchWithRetry(() => searchPage(cfg, partition.path, pageNum));
-        } catch (err) {
-          console.error(`  ⚠  ${partition.name} page ${pageNum}:`, (err as Error).message);
-          return []; // empty page — skip, don't abort partition
-        }
-
-        if (!result.products.length) return [];
+      async (pageNum): Promise<{ items: NormalizedCrawlItem[]; dropped: boolean }> => {
+        const res = await fetchPageWithEmptyRetry(fetchPage, partition.name, pageNum);
+        if (res.dropped) return { items: [], dropped: true };
 
         const items: NormalizedCrawlItem[] = [];
-        for (const p of result.products) {
+        for (const p of res.products) {
           fetched++;
           const norm = normalize(p);
           if (norm) items.push(norm);
         }
-        return items;
+        return { items, dropped: false };
       },
     );
 
     // Pages are already in ascending order (runPool index-aligns results)
-    normalizedPages.push(...remainingPages);
+    for (const r of remainingPages) {
+      normalizedPages.push(r.items);
+      if (r.dropped) incomplete = true;
+    }
   }
 
-  return { normalizedPages, fetched };
+  return { normalizedPages, fetched, incomplete };
 }
 
 // ---------------------------------------------------------------------------
@@ -243,11 +314,20 @@ async function crawlOnePartition(
   partition: Partition,
   normalize: (p: unknown) => NormalizedCrawlItem | null,
   crawlCfg: CrawlConcurrency,
-): Promise<{ localSeen: Map<string, NormalizedCrawlItem>; touchedIds: Set<string> }> {
+): Promise<{
+  localSeen: Map<string, NormalizedCrawlItem>;
+  touchedIds: Set<string>;
+  incomplete: boolean;
+}> {
   const localSeen = new Map<string, NormalizedCrawlItem>();
   const touchedIds = new Set<string>();
 
-  const { normalizedPages } = await crawlPartitionPages(cfg, partition, normalize, crawlCfg);
+  const { normalizedPages, incomplete } = await crawlPartitionPages(
+    cfg,
+    partition,
+    normalize,
+    crawlCfg,
+  );
 
   // Merge in ascending page order (page 1 first, then 2..N by index)
   // This preserves the exact sequential merge sequence for dedup determinism.
@@ -257,7 +337,7 @@ async function crawlOnePartition(
     }
   }
 
-  return { localSeen, touchedIds };
+  return { localSeen, touchedIds, incomplete };
 }
 
 // ---------------------------------------------------------------------------
@@ -302,7 +382,11 @@ export function makeCrawlerService(deps: CrawlerServiceDeps): CrawlerService {
         crawlCfg.partitionConc,
         async (
           partition,
-        ): Promise<{ localSeen: Map<string, NormalizedCrawlItem>; touchedIds: Set<string> }> => {
+        ): Promise<{
+          localSeen: Map<string, NormalizedCrawlItem>;
+          touchedIds: Set<string>;
+          incomplete: boolean;
+        }> => {
           try {
             return await crawlOnePartition(
               cfg,
@@ -311,12 +395,14 @@ export function makeCrawlerService(deps: CrawlerServiceDeps): CrawlerService {
               crawlCfg,
             );
           } catch (err) {
-            // Error tolerance: log context, return empty maps — does NOT abort sync
+            // Error tolerance: log context, return empty maps — does NOT abort sync.
+            // Marked incomplete so stale-delete is skipped (this partition's rows
+            // would otherwise be wrongly deleted as stale).
             console.error(
               `[sync:${superKey}] partition "${partition.name}" failed — skipping:`,
               (err as Error).message,
             );
-            return { localSeen: new Map(), touchedIds: new Set() };
+            return { localSeen: new Map(), touchedIds: new Set(), incomplete: true };
           }
         },
       );
@@ -329,9 +415,11 @@ export function makeCrawlerService(deps: CrawlerServiceDeps): CrawlerService {
       // NOTE: DB flushes happen after the parallel fetch wave rather than
       // interleaved with fetches — timing change only, no contract change.
       // -----------------------------------------------------------------------
-      for (const [i, { localSeen, touchedIds }] of partitionResults.entries()) {
+      let crawlComplete = true;
+      for (const [i, { localSeen, touchedIds, incomplete }] of partitionResults.entries()) {
         // biome-ignore lint/style/noNonNullAssertion: index i is always valid (partitionResults.length === partitions.length)
         const partition = partitions[i]!;
+        if (incomplete) crawlComplete = false;
 
         // Merge local seen into canonical seen (same mergeItems semantics, plan order)
         for (const [productId, item] of localSeen) {
@@ -360,10 +448,19 @@ export function makeCrawlerService(deps: CrawlerServiceDeps): CrawlerService {
         await sleep(crawlCfg.throttleMs);
       }
 
-      // Delete stale rows from previous syncs
-      const deleted = await repo.deleteStaleForSuper(superKey, logId);
-      if (deleted > 0) {
-        console.log(`[sync:${superKey}] Deleted ${deleted} stale products from previous sync`);
+      // Delete stale rows from previous syncs — ONLY when the crawl was complete.
+      // If any page was dropped (throttled-empty) or a partition failed, skipping
+      // the delete keeps valid-but-unseen products instead of wrongly purging them;
+      // they get pruned on the next clean run.
+      if (crawlComplete) {
+        const deleted = await repo.deleteStaleForSuper(superKey, logId);
+        if (deleted > 0) {
+          console.log(`[sync:${superKey}] Deleted ${deleted} stale products from previous sync`);
+        }
+      } else {
+        console.warn(
+          `[sync:${superKey}] Crawl incomplete (dropped pages or failed partitions) — SKIPPING stale-delete to avoid purging valid products`,
+        );
       }
 
       await repo.finishSyncLog(seen.size, logId);
