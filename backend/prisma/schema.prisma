@@ -67,6 +67,7 @@ model shopping {
   frequency_days Int       @default(7)
   last_bought    DateTime? @db.Timestamptz(6)
   notes          String?   @db.Text
+  generated      Boolean   @default(false)
   created_at     DateTime  @default(now()) @db.Timestamptz(6)
 
   product        products  @relation(fields: [product_id], references: [id], onDelete: Cascade)

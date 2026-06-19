@@ -45,6 +45,15 @@ function parseProfile(row: {
   };
 }
 
+/**
+ * Single-user assumption: user_profiles holds exactly one row.
+ * upsert is implemented as findFirst + create/update (not a native Prisma upsert)
+ * because there is no unique business key to upsert on beyond the auto-increment id.
+ * A race between two concurrent upsert calls could create a second row, but this
+ * app has a single user with no concurrent writes to the profile, so the risk is
+ * accepted. If multi-user support is ever added, add a unique constraint and
+ * migrate to prisma.user_profiles.upsert().
+ */
 export function makeProfileRepo(prisma: PrismaLike): ProfileRepo {
   return {
     async get() {

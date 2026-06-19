@@ -1,4 +1,5 @@
 import type { UserProfile } from '../../../shared/types.js';
+import { stripDiacritics } from '../../../shared/normalize.js';
 
 export interface ListTemplateItem {
   id: number;
@@ -31,28 +32,24 @@ export interface ProductCandidate {
   price: number;
 }
 
-function normalizeWord(txt: string): string {
-  return (txt || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-}
-
 function parsearMedida(name: string): { valor: number; base: 'kg' | 'l' | 'u' } {
-  const t = normalizeWord(name).replace(',', '.');
+  const t = stripDiacritics(name).replace(',', '.');
   let m: RegExpMatchArray | null;
 
   m = t.match(/(\d+(?:\.\d+)?)\s*(?:l|lt|lts|litro|litros)\b/);
-  if (m) return { valor: parseFloat(m[1]), base: 'l' };
+  if (m?.[1]) return { valor: parseFloat(m[1]), base: 'l' };
 
   m = t.match(/(\d+(?:\.\d+)?)\s*(?:ml|cc)\b/);
-  if (m) return { valor: parseFloat(m[1]) / 1000, base: 'l' };
+  if (m?.[1]) return { valor: parseFloat(m[1]) / 1000, base: 'l' };
 
   m = t.match(/(\d+(?:\.\d+)?)\s*(?:kg|kilo|kilos)\b/);
-  if (m) return { valor: parseFloat(m[1]), base: 'kg' };
+  if (m?.[1]) return { valor: parseFloat(m[1]), base: 'kg' };
 
   m = t.match(/(\d+(?:\.\d+)?)\s*(?:g|gr|grs|gramos)\b/);
-  if (m) return { valor: parseFloat(m[1]) / 1000, base: 'kg' };
+  if (m?.[1]) return { valor: parseFloat(m[1]) / 1000, base: 'kg' };
 
   m = t.match(/x\s*(\d+)\s*(?:u|uni|unidades|rollos)?/);
-  if (m) return { valor: parseFloat(m[1]), base: 'u' };
+  if (m?.[1]) return { valor: parseFloat(m[1]), base: 'u' };
 
   return { valor: 1, base: 'u' };
 }
@@ -61,7 +58,7 @@ function mediana(nums: number[]): number {
   if (!nums.length) return 0;
   const s = [...nums].sort((a, b) => a - b);
   const mid = Math.floor(s.length / 2);
-  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+  return s.length % 2 ? (s[mid] ?? 0) : ((s[mid - 1] ?? 0) + (s[mid] ?? 0)) / 2;
 }
 
 function scoreTier(brandTier: number | null, requestedTier: number): number {
@@ -74,12 +71,12 @@ function scoreTier(brandTier: number | null, requestedTier: number): number {
 // requiere_alguno es HARD solo cuando incluye está vacío (es el único discriminador de tipo).
 // Cuando incluye ya identifica el ítem, requiere_alguno es SUAVE: bono de scoring, no filtro.
 export function matchesRules(name: string, rules: MatchRules, tier = 2): boolean {
-  const n = normalizeWord(name);
-  if (rules.incluye.length > 0 && !rules.incluye.every(k => n.includes(normalizeWord(k)))) return false;
+  const n = stripDiacritics(name);
+  if (rules.incluye.length > 0 && !rules.incluye.every(k => n.includes(stripDiacritics(k)))) return false;
   const requiereEsHard = rules.incluye.length === 0;
-  if (requiereEsHard && rules.requiere_alguno.length > 0 && !rules.requiere_alguno.some(k => n.includes(normalizeWord(k)))) return false;
-  if (rules.excluye.some(k => n.includes(normalizeWord(k)))) return false;
-  if (tier !== 1 && rules.veta.some(k => n.includes(normalizeWord(k)))) return false;
+  if (requiereEsHard && rules.requiere_alguno.length > 0 && !rules.requiere_alguno.some(k => n.includes(stripDiacritics(k)))) return false;
+  if (rules.excluye.some(k => n.includes(stripDiacritics(k)))) return false;
+  if (tier !== 1 && rules.veta.some(k => n.includes(stripDiacritics(k)))) return false;
   return true;
 }
 
@@ -119,8 +116,8 @@ export function selectBestProduct(
   const requiereEsHard = rules.incluye.length === 0;
   function scoreReq(name: string): number {
     if (requiereEsHard || !rules.requiere_alguno.length) return 0;
-    const n = normalizeWord(name);
-    return rules.requiere_alguno.some(k => n.includes(normalizeWord(k))) ? 1 : 0;
+    const n = stripDiacritics(name);
+    return rules.requiere_alguno.some(k => n.includes(stripDiacritics(k))) ? 1 : 0;
   }
 
   filtered.sort((a, b) => {

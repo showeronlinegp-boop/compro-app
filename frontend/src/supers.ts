@@ -57,6 +57,22 @@ export function freqLabel(days: number): string {
   return FREQ_OPTIONS.find((f) => f.days === days)?.label ?? `Cada ${days} días`;
 }
 
+export const CATEGORY_LABEL: Record<string, { label: string; icon: string }> = {
+  lacteos:           { label: 'Lácteos',          icon: '🥛' },
+  almacen:           { label: 'Almacén',           icon: '🛒' },
+  bebidas:           { label: 'Bebidas',           icon: '🥤' },
+  limpieza:          { label: 'Limpieza',          icon: '🧹' },
+  personal:          { label: 'Cuidado personal',  icon: '🪥' },
+  desayuno:          { label: 'Desayuno',          icon: '☕' },
+  mascotas:          { label: 'Mascotas',          icon: '🐾' },
+  bebes:             { label: 'Bebés',             icon: '👶' },
+  farmacia:          { label: 'Farmacia',          icon: '💊' },
+  fiambres:          { label: 'Fiambres',          icon: '🧀' },
+  congelados:        { label: 'Congelados',        icon: '❄️' },
+  panaderia:         { label: 'Panadería',         icon: '🍞' },
+  'frutas-verduras': { label: 'Frutas y Verduras', icon: '🥦' },
+};
+
 export function pesos(n: number | null | undefined): string {
   if (n == null) return '—';
   // Show cents only when the price has them (whole prices stay clean).

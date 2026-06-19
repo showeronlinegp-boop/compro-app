@@ -2,26 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
 import RecommendationBanner from '../components/RecommendationBanner';
-import { FREQ_OPTIONS, pesos, superCfg } from '../supers';
+import { CATEGORY_LABEL, FREQ_OPTIONS, pesos, superCfg } from '../supers';
 import type { Product, ShoppingItem, WeeklyGroup } from '../types/api';
 
 // ─── Category metadata ────────────────────────────────────────────────────────
-
-const CATEGORY_LABEL: Record<string, { label: string; icon: string }> = {
-  lacteos:         { label: 'Lácteos',          icon: '🥛' },
-  almacen:         { label: 'Almacén',           icon: '🛒' },
-  bebidas:         { label: 'Bebidas',           icon: '🥤' },
-  limpieza:        { label: 'Limpieza',          icon: '🧹' },
-  personal:        { label: 'Cuidado personal',  icon: '🪥' },
-  desayuno:        { label: 'Desayuno',          icon: '☕' },
-  mascotas:        { label: 'Mascotas',          icon: '🐾' },
-  bebes:           { label: 'Bebés',             icon: '👶' },
-  farmacia:        { label: 'Farmacia',          icon: '💊' },
-  fiambres:        { label: 'Fiambres',          icon: '🧀' },
-  congelados:      { label: 'Congelados',        icon: '❄️' },
-  panaderia:       { label: 'Panadería',         icon: '🍞' },
-  'frutas-verduras':{ label: 'Frutas y Verduras',icon: '🥦' },
-};
 
 function catMeta(key: string | null) {
   if (!key) return { label: 'Otros', icon: '📦' };
@@ -53,6 +37,8 @@ function SwapModal({ item, onSwap, onClose }: SwapModalProps) {
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
+        // available=1 filters to products with a known price (i.e. raw_price IS NOT NULL).
+        // category_key narrows results to the same taxonomy category as the item being swapped.
         const params: Record<string, string> = { limit: '20', available: '1' };
         if (item.category_key) params.category_key = item.category_key;
         if (q.trim()) params.q = q.trim();
@@ -245,8 +231,13 @@ function ListTab({ list, onMarkBought, onChangeFreq, onRemove, onSwap }: ListTab
                         <div className="flex items-center gap-3 mt-0.5">
                           <span className="text-xs text-gray-500">{pesos(price)}</span>
                           <span className="text-xs text-gray-400">
-                            {item.notes ? item.notes : ''}
+                            {item.last_bought
+                              ? `Último: ${item.last_bought}`
+                              : 'Nunca comprado'}
                           </span>
+                          {item.notes && (
+                            <span className="text-xs text-gray-400">{item.notes}</span>
+                          )}
                         </div>
                       </div>
 

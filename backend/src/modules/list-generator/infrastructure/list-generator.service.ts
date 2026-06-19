@@ -18,7 +18,7 @@ export function makeListGeneratorService(repo: ListGeneratorRepo): ListGenerator
       for (const item of eligible) {
         const tier = (profile.tier_por_categoria[item.category_key] as number) ?? 2;
         const priceDriven = profile.price_driven?.includes(item.category_key) ?? false;
-        const nameHint = item.search_keyword ?? item.item_name.split(' ')[0];
+        const nameHint = item.search_keyword ?? (item.item_name.split(' ')[0] ?? item.item_name);
 
         const productId = await repo.findBestProductId({
           categoryKey: item.category_key,

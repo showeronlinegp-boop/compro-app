@@ -4,6 +4,8 @@ import { PrismaService } from '../../../prisma/prisma.service.js';
 import { makeListGeneratorRepo } from './list-generator.repo.js';
 import { makeListGeneratorService } from './list-generator.service.js';
 
+export type { ListGeneratorService } from './list-generator.service.js';
+
 @Module({
   providers: [
     {
