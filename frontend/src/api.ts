@@ -8,6 +8,7 @@ import type {
   PromoOffer,
   ShoppingItem,
   ShoppingRecommendation,
+  StoresResolveResult,
   SuperKey,
   SyncLog,
   TaxonomyEntry,
@@ -66,8 +67,10 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
-    update: (id: number, data: { last_bought?: string | null; frequency_days?: number; product_id?: number }) =>
-      req<{ ok: boolean }>(`/shopping/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    update: (
+      id: number,
+      data: { last_bought?: string | null; frequency_days?: number; product_id?: number },
+    ) => req<{ ok: boolean }>(`/shopping/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     remove: (id: number) => req<{ ok: boolean }>(`/shopping/${id}`, { method: 'DELETE' }),
   },
   profile: {
@@ -76,6 +79,15 @@ export const api = {
       req<{ profile: UserProfile; generated: number }>('/profile/onboarding', {
         method: 'POST',
         body: JSON.stringify(answers),
+      }),
+    resolveStores: (postal_code: string) =>
+      req<StoresResolveResult>(
+        `/profile/location/stores?postal_code=${encodeURIComponent(postal_code)}`,
+      ),
+    setLocation: (postal_code: string) =>
+      req<UserProfile>('/profile/location', {
+        method: 'PUT',
+        body: JSON.stringify({ postal_code }),
       }),
     clear: () => req<{ ok: boolean }>('/profile', { method: 'DELETE' }),
   },

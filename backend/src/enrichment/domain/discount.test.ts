@@ -24,7 +24,7 @@ import promotionsVea from '../../infrastructure/vtex/__fixtures__/promotions-vea
 
 import { parseJsonLdFromHtml } from '../../infrastructure/vtex/promotions-client.js';
 import type { PromoPriceResult } from '../../infrastructure/vtex/promotions-client.js';
-import { effectiveDiscount, offerPrice } from './discount.js';
+import { conditionalPromo, effectiveDiscount, offerPrice } from './discount.js';
 
 const FIXTURES_DIR = nodePath.resolve(__dirname, '../../infrastructure/vtex/__fixtures__');
 
@@ -163,5 +163,38 @@ describe('TS enricher — Strategy B (JSON-LD scraping) characterization', () =>
     const result = parseJsonLdFromHtml(html);
     // First block is malformed, should skip to second block
     expect(result?.promoPrice).toBe(500);
+  });
+});
+
+describe('conditionalPromo — VEA search-promotions name → nth_unit promo', () => {
+  it('parses a 2nd-unit percentage promo into nth_unit (min_qty 2, discount_pct 50)', () => {
+    expect(conditionalPromo('2do al 50% COCACOLA | Ofertas Trafico')).toEqual({
+      label: '2do al 50%',
+      type: 'nth_unit',
+      min_qty: 2,
+      discount_pct: 50,
+    });
+  });
+
+  it('parses a buy-N-pay-M promo (3x2 → min_qty 3, discount_pct 100)', () => {
+    expect(conditionalPromo('3x2 GASEOSAS | Ofertas Trafico')).toEqual({
+      label: '3x2',
+      type: 'nth_unit',
+      min_qty: 3,
+      discount_pct: 100,
+    });
+  });
+
+  it('returns null for a flat percentage discount (covered by the strike-through)', () => {
+    expect(conditionalPromo('35% MULTIMAX | Ofertas Trafico')).toBeNull();
+  });
+
+  it('ignores a size token like 2x500ml (N not > M)', () => {
+    expect(conditionalPromo('Pack 2x500ml')).toBeNull();
+  });
+
+  it('returns null for an empty or missing name', () => {
+    expect(conditionalPromo('')).toBeNull();
+    expect(conditionalPromo(undefined)).toBeNull();
   });
 });

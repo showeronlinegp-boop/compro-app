@@ -28,8 +28,8 @@ import {
   fetchSearchPromotions,
 } from '../../infrastructure/vtex/promotions-client.js';
 import { runPool } from '../../shared/pool.js';
-import type { EnrichStatus, SuperKey } from '../../shared/types.js';
-import { effectiveDiscount, offerPrice } from '../domain/discount.js';
+import type { EnrichStatus, StoreMap, SuperKey } from '../../shared/types.js';
+import { conditionalPromo, effectiveDiscount, offerPrice } from '../domain/discount.js';
 import { getStatus, isRunning, setStatus } from './enrich-state.js';
 
 export interface EnrichService {
@@ -50,7 +50,8 @@ interface ProductEnrichRow {
 
 async function enrichViaPromos(
   superKey: string,
-  cfg: { baseUrl: string; promoSeller: string },
+  cfg: { baseUrl: string },
+  seller: string,
   products: ProductEnrichRow[],
   st: EnrichStatus,
   prisma: PrismaClient,
@@ -94,7 +95,7 @@ async function enrichViaPromos(
   let lastLogged = 0;
   await runPool(batches, promoConc, async (batch) => {
     const skus = batch.map((p) => p.sku_id as string);
-    const r = await fetchSearchPromotions(cfg.baseUrl, cfg.promoSeller, skus);
+    const r = await fetchSearchPromotions(cfg.baseUrl, seller, skus);
     const generic = r?.promotions?.generic?.promotions ?? {};
 
     for (const p of batch) {
@@ -104,10 +105,16 @@ async function enrichViaPromos(
       const result = effectiveDiscount(p.sku_id, p.raw_price, generic);
       if (!result) continue;
 
-      await prisma.products.update({
-        where: { id: p.id },
-        data: { offer_price: result.offer_price, discount_pct: result.discount_pct },
-      });
+      // Conditional promos ("2do al 50%", "3x2") are stored as nth_unit so the
+      // frontend computes the per-unit price and renders the same "$X c/u" badge
+      // as DIA/Carrefour — the shelf price stays at the regular value. Flat promos
+      // ("35%") keep the discounted offer_price (shown as a strike-through) and no badge.
+      const promo = conditionalPromo(result.name);
+      const data = promo
+        ? { offer_price: null, discount_pct: 0, promotions: [promo] as object[] }
+        : { offer_price: result.offer_price, discount_pct: result.discount_pct, promotions: [] };
+
+      await prisma.products.update({ where: { id: p.id }, data });
       st.updated++;
     }
 
@@ -218,13 +225,19 @@ export function makeEnricher(prisma: PrismaClient): EnrichService {
         st.done = st.total;
         console.log(`[enrich:${superKey}] skipped — strategy=none (discounts come from the crawl)`);
       } else if (strategy === 'promotions') {
-        await enrichViaPromos(
-          superKey,
-          cfg as { baseUrl: string; promoSeller: string },
-          enrichable,
-          st,
-          prisma,
-        );
+        // Prefer the zone's resolved seller (from the saved location) over the
+        // hardcoded config promoSeller, so promos come from the user's sucursal,
+        // not a default store. Falls back to promoSeller when no zone is saved.
+        let seller = (cfg as { promoSeller: string }).promoSeller;
+        try {
+          const profile = await prisma.user_profiles.findFirst({ orderBy: { id: 'asc' } });
+          const stores = profile?.stores as StoreMap | null;
+          const zoneSeller = stores?.[superKey as SuperKey]?.[0]?.sellerId;
+          if (zoneSeller) seller = zoneSeller;
+        } catch {
+          // no profile / stores → keep the config promoSeller fallback
+        }
+        await enrichViaPromos(superKey, cfg as { baseUrl: string }, seller, enrichable, st, prisma);
       } else {
         // strategy === 'jsonld'
         const baseUrl = cfg?.baseUrl ?? '';

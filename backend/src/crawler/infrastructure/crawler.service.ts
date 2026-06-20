@@ -43,8 +43,13 @@ import { isRunning, markDone, markRunning } from './sync-state.js';
 import { makeSyncRepo } from './sync.repo.js';
 
 export interface CrawlerService {
-  syncSuper: (superKey: string) => Promise<{ super: string; count: number }>;
-  syncAll: () => Promise<Array<{ super: string; count?: number; error?: string }>>;
+  syncSuper: (
+    superKey: string,
+    regionId?: string | null,
+  ) => Promise<{ super: string; count: number }>;
+  syncAll: (
+    regionIds?: Record<string, string | null>,
+  ) => Promise<Array<{ super: string; count?: number; error?: string }>>;
   getSyncStatus: () => Promise<SyncLog[]>;
   isRunning: (superKey: string) => boolean;
 }
@@ -145,6 +150,7 @@ async function buildProbeCounts(
   cfg: { baseUrl: string; promoSeller?: string },
   tree: TreeNode[],
   crawlCfg: CrawlConcurrency,
+  regionId?: string | null,
 ): Promise<Map<string, number>> {
   const counts = new Map<string, number>();
   let probes = 0;
@@ -164,7 +170,7 @@ async function buildProbeCounts(
       const path1 = `category-1/${dept.name}`;
       let total1 = 0;
       try {
-        const result = await fetchWithRetry(() => searchPage(cfg, path1, 1), {
+        const result = await fetchWithRetry(() => searchPage(cfg, path1, 1, regionId), {
           maxRetries: 4,
         });
         total1 = result.total;
@@ -186,7 +192,7 @@ async function buildProbeCounts(
             const path2 = `category-1/${dept.name}/category-2/${sub.name}`;
             let total2 = 0;
             try {
-              const result = await fetchWithRetry(() => searchPage(cfg, path2, 1));
+              const result = await fetchWithRetry(() => searchPage(cfg, path2, 1, regionId));
               total2 = result.total;
             } catch (err) {
               errors++;
@@ -234,6 +240,7 @@ async function crawlPartitionPages(
   partition: Partition,
   normalize: (p: unknown) => NormalizedCrawlItem | null,
   crawlCfg: CrawlConcurrency,
+  regionId?: string | null,
 ): Promise<{ normalizedPages: NormalizedCrawlItem[][]; fetched: number; incomplete: boolean }> {
   const pages = Math.ceil(Math.min(partition.total, CRAWLER_IS_SAFE_MAX) / CRAWLER_PAGE_SIZE);
   let fetched = 0;
@@ -242,7 +249,7 @@ async function crawlPartitionPages(
   console.log(`  -> crawl: "${partition.name}" (~${partition.total} prods, ${pages} pages)`);
 
   const fetchPage = (pageNum: number) =>
-    fetchWithRetry(() => searchPage(cfg, partition.path, pageNum));
+    fetchWithRetry(() => searchPage(cfg, partition.path, pageNum, regionId));
 
   // Fetch page 1 first (learn total, short-circuit if empty)
   const page1 = await fetchPageWithEmptyRetry(fetchPage, partition.name, 1);
@@ -314,6 +321,7 @@ async function crawlOnePartition(
   partition: Partition,
   normalize: (p: unknown) => NormalizedCrawlItem | null,
   crawlCfg: CrawlConcurrency,
+  regionId?: string | null,
 ): Promise<{
   localSeen: Map<string, NormalizedCrawlItem>;
   touchedIds: Set<string>;
@@ -327,6 +335,7 @@ async function crawlOnePartition(
     partition,
     normalize,
     crawlCfg,
+    regionId,
   );
 
   // Merge in ascending page order (page 1 first, then 2..N by index)
@@ -347,7 +356,10 @@ async function crawlOnePartition(
 export function makeCrawlerService(deps: CrawlerServiceDeps): CrawlerService {
   const repo = makeSyncRepo(deps.prisma);
 
-  async function syncSuper(superKey: string): Promise<{ super: string; count: number }> {
+  async function syncSuper(
+    superKey: string,
+    regionId?: string | null,
+  ): Promise<{ super: string; count: number }> {
     if (isRunning(superKey)) throw new Error(`Sync de ${superKey} ya en curso`);
 
     const cfg = SUPERS[superKey as SuperKey];
@@ -361,9 +373,17 @@ export function makeCrawlerService(deps: CrawlerServiceDeps): CrawlerService {
     const logId = await repo.insertSyncLog(superKey);
 
     try {
-      console.log(`[sync:${superKey}] Building partition plan (IS API)...`);
+      console.log(
+        `[sync:${superKey}] Building partition plan (IS API)${regionId ? ' [region set]' : ''}...`,
+      );
       const tree = await fetchWithRetry(() => getCatalogTree(cfg, 2));
-      const probeCounts = await buildProbeCounts(superKey, cfg, tree as TreeNode[], crawlCfg);
+      const probeCounts = await buildProbeCounts(
+        superKey,
+        cfg,
+        tree as TreeNode[],
+        crawlCfg,
+        regionId,
+      );
       const partitions = planPartitions(tree as TreeNode[], probeCounts);
 
       console.log(`[sync:${superKey}] ${partitions.length} partitions`);
@@ -393,6 +413,7 @@ export function makeCrawlerService(deps: CrawlerServiceDeps): CrawlerService {
               partition,
               normalize as (p: unknown) => NormalizedCrawlItem | null,
               crawlCfg,
+              regionId,
             );
           } catch (err) {
             // Error tolerance: log context, return empty maps — does NOT abort sync.
@@ -483,11 +504,11 @@ export function makeCrawlerService(deps: CrawlerServiceDeps): CrawlerService {
     }
   }
 
-  async function syncAll() {
+  async function syncAll(regionIds?: Record<string, string | null>) {
     const results: Array<{ super: string; count?: number; error?: string }> = [];
     for (const key of Object.keys(SUPERS)) {
       try {
-        results.push(await syncSuper(key));
+        results.push(await syncSuper(key, regionIds?.[key] ?? null));
       } catch (err) {
         results.push({ super: key, error: (err as Error).message });
       }

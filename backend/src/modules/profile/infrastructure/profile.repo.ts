@@ -1,9 +1,19 @@
 import type { PrismaClient } from '@prisma/client';
+import type { RegionIds, StoreMap } from '../../../shared/types.js';
 import type { UserProfile, UserProfileInput } from '../domain/profile.js';
 
 export interface ProfileRepo {
   get(): Promise<UserProfile | null>;
   upsert(data: UserProfileInput): Promise<UserProfile>;
+  /**
+   * Persist the user's location: postal code, selected store per super, and the
+   * derived per-super regionIds. Requires an existing profile row.
+   */
+  setLocation(
+    postalCode: string,
+    regionIds: RegionIds,
+    stores: StoreMap,
+  ): Promise<UserProfile | null>;
   clear(): Promise<void>;
 }
 
@@ -23,6 +33,9 @@ function parseProfile(row: {
   perfil_hogar: string;
   nse_proxy: string | null;
   onboarding_done: boolean;
+  postal_code: string | null;
+  region_ids: unknown;
+  stores: unknown;
   created_at: Date;
   updated_at: Date;
 }): UserProfile {
@@ -40,6 +53,9 @@ function parseProfile(row: {
     perfil_hogar: row.perfil_hogar as UserProfile['perfil_hogar'],
     nse_proxy: row.nse_proxy,
     onboarding_done: row.onboarding_done,
+    postal_code: row.postal_code,
+    region_ids: (row.region_ids as UserProfile['region_ids']) ?? null,
+    stores: (row.stores as UserProfile['stores']) ?? null,
     created_at: row.created_at.toISOString(),
     updated_at: row.updated_at.toISOString(),
   };
@@ -84,6 +100,21 @@ export function makeProfileRepo(prisma: PrismaLike): ProfileRepo {
         ? await prisma.user_profiles.update({ where: { id: existing.id }, data: payload })
         : await prisma.user_profiles.create({ data: payload });
 
+      return parseProfile(row);
+    },
+
+    async setLocation(postalCode, regionIds, stores) {
+      const existing = await prisma.user_profiles.findFirst({ orderBy: { id: 'asc' } });
+      if (!existing) return null;
+      const row = await prisma.user_profiles.update({
+        where: { id: existing.id },
+        data: {
+          postal_code: postalCode,
+          region_ids: regionIds as object,
+          stores: stores as object,
+          updated_at: new Date(),
+        },
+      });
       return parseProfile(row);
     },
 

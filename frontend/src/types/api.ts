@@ -160,6 +160,35 @@ export type PerfilHogar = 'joven_solo' | 'pareja' | 'familia_con_ninos' | 'adult
 export type TierValue = 1 | 2 | 3;
 export type TierMap = Record<string, TierValue | null>;
 
+/** Resolved VTEX regionId per super. null = could not resolve (e.g. VEA/Cencosud). */
+export type RegionIds = Partial<Record<SuperKey, string | null>>;
+
+/** A physical store candidate returned when resolving a postal code. */
+export interface Store {
+  sellerId: string;
+  storeId: string;
+  name: string;
+  city: string | null;
+  state: string | null;
+  distance: number;
+}
+
+/** A store serving the user's zone (persisted on the profile, for display). */
+export interface StoreLocation {
+  sellerId: string;
+  name: string;
+  city: string | null;
+  state: string | null;
+}
+
+export type StoreMap = Partial<Record<SuperKey, StoreLocation[]>>;
+
+export interface StoresResolveResult {
+  postal_code: string;
+  geo: { lat: number; lng: number };
+  supers: Partial<Record<SuperKey, Store[]>>;
+}
+
 export interface UserProfile {
   id: number;
   nombre: string;
@@ -174,6 +203,9 @@ export interface UserProfile {
   perfil_hogar: PerfilHogar;
   nse_proxy: string | null;
   onboarding_done: boolean;
+  postal_code: string | null;
+  region_ids: RegionIds | null;
+  stores: StoreMap | null;
   created_at: string;
   updated_at: string;
 }

@@ -4,36 +4,43 @@ exports[`TS enricher — Strategy A (search-promotions) characterization > appli
 [
   {
     "discount_pct": 37,
+    "name": "OFERTA CUISINE | Ofertas Trafico",
     "offer_price": 6300,
     "sku_id": "336191",
   },
   {
     "discount_pct": 35,
+    "name": "2do al 70% Galletitas dulce | Ecommerce",
     "offer_price": 6500,
     "sku_id": "387757",
   },
   {
     "discount_pct": 35,
+    "name": "2do al 70% Galletitas dulce | Ecommerce",
     "offer_price": 6500,
     "sku_id": "395243",
   },
   {
     "discount_pct": 38,
+    "name": "OFERTA LUCHETTI | Ofertas Trafico",
     "offer_price": 6200,
     "sku_id": "403667",
   },
   {
     "discount_pct": 38,
+    "name": "OFERTA LUCHETTI | Ofertas Trafico",
     "offer_price": 6200,
     "sku_id": "403669",
   },
   {
     "discount_pct": 25,
+    "name": "2do al 50% CHOCOLINAS | Ofertas Internas",
     "offer_price": 7500,
     "sku_id": "412694",
   },
   {
     "discount_pct": 25,
+    "name": "2do al 50% SURTIDO | Ofertas Internas",
     "offer_price": 7500,
     "sku_id": "1364915",
   },
@@ -43,6 +50,7 @@ exports[`TS enricher — Strategy A (search-promotions) characterization > appli
 exports[`TS enricher — Strategy A (search-promotions) characterization > real fixture sku 336191 — effectiveDiscount=0.37 → discount_pct=37 (snapshot) 1`] = `
 {
   "discount_pct": 37,
+  "name": "OFERTA CUISINE | Ofertas Trafico",
   "offer_price": 6300,
   "sku_id": "336191",
 }
