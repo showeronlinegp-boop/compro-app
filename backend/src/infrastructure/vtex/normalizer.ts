@@ -192,6 +192,8 @@ export function buildNormalizer(
       discount_pct: hasDiscount ? rawDiscount : 0,
       available: true, // guaranteed by hideUnavailableItems=true (+ AvailableQuantity check above)
       category_paths: categoryPaths,
+      // Teasers carry conditional promos for supers that expose them (dia/carrefour).
+      // VEA has none here — its promo comes from the search-promotions enricher.
       promotions: extractPromotions(offer?.teasers),
     };
   };

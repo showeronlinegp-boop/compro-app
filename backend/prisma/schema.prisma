@@ -14,27 +14,27 @@ datasource db {
 // products
 // ---------------------------------------------------------------------------
 model products {
-  id          Int       @id @default(autoincrement())
-  super       String    @db.Text
-  product_id  String    @db.Text
-  sku_id      String?   @db.Text
-  name        String    @db.Text
-  barcode     String?   @db.Text
-  image_url   String?   @db.Text
-  product_url String?   @db.Text
-  raw_price   Float?    @db.DoublePrecision
-  offer_price Float?    @db.DoublePrecision
+  id           Int      @id @default(autoincrement())
+  super        String   @db.Text
+  product_id   String   @db.Text
+  sku_id       String?  @db.Text
+  name         String   @db.Text
+  barcode      String?  @db.Text
+  image_url    String?  @db.Text
+  product_url  String?  @db.Text
+  raw_price    Float?   @db.DoublePrecision
+  offer_price  Float?   @db.DoublePrecision
   discount_pct Int      @default(0)
-  available   Boolean   @default(true)
-  categories  Json?     @db.JsonB
-  promotions  Json?     @db.JsonB
-  synced_at   DateTime  @default(now()) @db.Timestamptz(6)
+  available    Boolean  @default(true)
+  categories   Json?    @db.JsonB
+  promotions   Json?    @db.JsonB
+  synced_at    DateTime @default(now()) @db.Timestamptz(6)
 
-  category_key String?   @db.Text
-  brand_tier   Int?      @db.SmallInt
+  category_key String? @db.Text
+  brand_tier   Int?    @db.SmallInt
 
-  interests   interests[]
-  shopping    shopping[]
+  interests interests[]
+  shopping  shopping[]
 
   @@unique([super, product_id])
   @@index([super])
@@ -52,7 +52,7 @@ model interests {
   product_id Int
   added_at   DateTime @default(now()) @db.Timestamptz(6)
 
-  product    products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  product products @relation(fields: [product_id], references: [id], onDelete: Cascade)
 
   @@index([product_id])
   @@map("interests")
@@ -70,7 +70,7 @@ model shopping {
   generated      Boolean   @default(false)
   created_at     DateTime  @default(now()) @db.Timestamptz(6)
 
-  product        products  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  product products @relation(fields: [product_id], references: [id], onDelete: Cascade)
 
   @@index([product_id])
   @@map("shopping")
@@ -147,6 +147,9 @@ model user_profiles {
   perfil_hogar          String   @db.Text
   nse_proxy             String?  @db.Text
   onboarding_done       Boolean  @default(false)
+  postal_code           String?  @db.Text
+  region_ids            Json?    @db.JsonB
+  stores                Json?    @db.JsonB
   created_at            DateTime @default(now()) @db.Timestamptz(6)
   updated_at            DateTime @default(now()) @db.Timestamptz(6)
 
@@ -157,18 +160,18 @@ model user_profiles {
 // promo_offers
 // ---------------------------------------------------------------------------
 model promo_offers {
-  id            Int     @id @default(autoincrement())
-  super         String  @db.Text
-  bank          String? @db.Text
-  title         String? @db.Text
-  description   String? @db.Text
+  id            Int      @id @default(autoincrement())
+  super         String   @db.Text
+  bank          String?  @db.Text
+  title         String?  @db.Text
+  description   String?  @db.Text
   discount_pct  Int?
   installments  Int?
   interest_free Boolean?
-  logo_url      String? @db.Text
-  image_url     String? @db.Text
-  validity      String? @db.Text
-  source_url    String  @db.Text
+  logo_url      String?  @db.Text
+  image_url     String?  @db.Text
+  validity      String?  @db.Text
+  source_url    String   @db.Text
   captured_at   BigInt
 
   @@index([super, captured_at])

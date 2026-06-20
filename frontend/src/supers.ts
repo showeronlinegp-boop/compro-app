@@ -5,6 +5,8 @@ export interface SuperConfig {
   bg: string;
   text: string;
   light: string;
+  /** Optional per-super disclaimer shown on the price card. */
+  note?: string;
 }
 
 export const SUPERS: Record<SuperKey, SuperConfig> = {
@@ -13,6 +15,7 @@ export const SUPERS: Record<SuperKey, SuperConfig> = {
     bg: 'bg-red-600',
     text: 'text-white',
     light: 'bg-red-50 text-red-700 border-red-200',
+    note: 'Precio y promos de VEA pueden variar según tu sucursal.',
   },
   carrefour: {
     label: 'CARREFOUR',
