@@ -120,17 +120,47 @@ export function buildNormalizer(
     // ListPrice = strike-through price; trustworthy for some supers (dia/masonline/
     // carrefour), stale garbage for others (vea) — gated by cfg.trustListPrice.
     const salePrice = num(offer?.Price);
+    const priceWithoutDiscount = num(offer?.PriceWithoutDiscount);
 
-    // Primary signal: PriceWithoutDiscount vs Price.
-    let baseForDiscount = num(offer?.PriceWithoutDiscount) ?? salePrice;
+    // VTEX bakes UNCONDITIONAL teaser discounts — payment-method promos like
+    // "Tarjeta Carrefour 15%" / "Cuenta Digital Carrefour 15%" (minimumQuantity 0) —
+    // straight into commertialOffer.Price. That makes Price < PriceWithoutDiscount
+    // even though the real shelf price everyone pays is PriceWithoutDiscount. These
+    // are NOT catalog markdowns (they only apply if you pay a certain way), so the
+    // Price/PWD gap must not become an offer_price: doing so showed a phantom
+    // discount AND let the nth-unit promo calc compound on an already-discounted
+    // base (e.g. Lays 77g: shelf 3844.62 mis-stored as offer 2691.23, then
+    // "2do al 70%" applied on top → 1749.30 instead of the real 2499 c/u).
+    // nth-unit teasers (minimumQuantity >= 2) never lower the single-unit Price,
+    // so they do not contaminate it and are left to the promotions[] path.
+    const hasUnconditionalTeaserDiscount = (offer?.teasers ?? []).some(
+      (t) => (t.conditions?.minimumQuantity ?? 0) === 0,
+    );
+    // Contamination only manifests as Price < PriceWithoutDiscount: that gap is the
+    // payment-method discount baked in. When Price === PWD the teaser is NOT
+    // lowering Price, so a ListPrice markdown below remains a legitimate catalog
+    // discount and must be preserved.
+    const priceContaminated =
+      hasUnconditionalTeaserDiscount &&
+      salePrice != null &&
+      priceWithoutDiscount != null &&
+      salePrice < priceWithoutDiscount;
+
+    // Primary signal: PriceWithoutDiscount vs Price. Suppressed when Price is
+    // contaminated by an unconditional teaser (see above).
+    let baseForDiscount = priceWithoutDiscount ?? salePrice;
     let rawDiscount =
-      baseForDiscount != null && salePrice != null && salePrice < baseForDiscount
+      !priceContaminated &&
+      baseForDiscount != null &&
+      salePrice != null &&
+      salePrice < baseForDiscount
         ? Math.round(((baseForDiscount - salePrice) / baseForDiscount) * 100)
         : 0;
 
     // Fallback: some supers keep Price === PriceWithoutDiscount and encode the
-    // discount in ListPrice. Only trusted when cfg.trustListPrice is set.
-    if (rawDiscount === 0 && cfg.trustListPrice) {
+    // discount in ListPrice. Only trusted when cfg.trustListPrice is set, and
+    // never when Price is contaminated by an unconditional teaser.
+    if (rawDiscount === 0 && !priceContaminated && cfg.trustListPrice) {
       const listPrice = num(offer?.ListPrice);
       if (listPrice != null && salePrice != null && salePrice < listPrice) {
         baseForDiscount = listPrice;
@@ -141,6 +171,10 @@ export function buildNormalizer(
     // Discount guard: cap at 80% to reject stale base/ListPrice values
     // from previous inflationary periods (vtex-crawler.js: rawDiscount <= 80).
     const hasDiscount = rawDiscount > 0 && rawDiscount <= DISCOUNT_CAP;
+
+    // True single-unit shelf price. When Price is contaminated by an unconditional
+    // teaser, fall back to PriceWithoutDiscount instead of the discounted Price.
+    const shelfPrice = priceContaminated ? (priceWithoutDiscount ?? salePrice) : salePrice;
 
     const categoryPaths = (p.categories ?? [])
       .map((c) => c.replace(/^\/|\/$/g, '').replace(/\//g, ' > '))
@@ -153,11 +187,13 @@ export function buildNormalizer(
       barcode: item?.ean ?? null,
       image_url: item?.images?.[0]?.imageUrl ?? null,
       product_url: p.link ?? `${cfg.baseUrl}/${p.linkText}/p`,
-      raw_price: hasDiscount ? baseForDiscount : salePrice,
+      raw_price: hasDiscount ? baseForDiscount : shelfPrice,
       offer_price: hasDiscount ? salePrice : null,
       discount_pct: hasDiscount ? rawDiscount : 0,
       available: true, // guaranteed by hideUnavailableItems=true (+ AvailableQuantity check above)
       category_paths: categoryPaths,
+      // Teasers carry conditional promos for supers that expose them (dia/carrefour).
+      // VEA has none here — its promo comes from the search-promotions enricher.
       promotions: extractPromotions(offer?.teasers),
     };
   };

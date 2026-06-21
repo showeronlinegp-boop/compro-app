@@ -29,6 +29,8 @@ export interface ExplorarProps {
   onAddToShopping: (p: Product, days: number) => Promise<void>;
   syncStatus?: SyncLog[];
   enrichStatus?: Record<string, EnrichStatus>;
+  /** Supers whose enrichment completed during THIS session — drives the transient success banner. */
+  enrichDoneKeys?: string[];
   promos?: PromoOffer[];
 }
 
@@ -38,6 +40,7 @@ export default function Explorar({
   onAddToShopping,
   syncStatus = [],
   enrichStatus = {},
+  enrichDoneKeys = [],
   promos = [],
 }: ExplorarProps) {
   const [groups, setGroups] = useState<GroupsResult['data']>([]);
@@ -62,8 +65,11 @@ export default function Explorar({
   const isEnriching = Object.values(enrichStatus).some((s) => s.running);
   const enrichEntries = Object.entries(enrichStatus);
 
+  const reqIdRef = useRef(0);
+
   const load = useCallback(
     async (p = 1) => {
+      const reqId = ++reqIdRef.current;
       setLoading(true);
       setGroups([]);
       try {
@@ -77,6 +83,7 @@ export default function Explorar({
         if (sort !== 'relevance') params.sort = sort;
 
         const res = await api.products.groups(params);
+        if (reqId !== reqIdRef.current) return;
 
         setGroups(res.data);
         setTotal(res.total);
@@ -157,7 +164,7 @@ export default function Explorar({
 
       {/* Banner enriquecimiento en vivo */}
       {enrichEntries
-        .filter(([, s]) => s.running || s.updated > 0)
+        .filter(([key, s]) => s.running || enrichDoneKeys.includes(key))
         .map(([key, s]) => {
           const pct = s.total > 0 ? Math.round((s.done / s.total) * 100) : 0;
           if (s.running) {
@@ -185,7 +192,7 @@ export default function Explorar({
               </div>
             );
           }
-          if (s.updated > 0 && !s.running) {
+          if (enrichDoneKeys.includes(key)) {
             return (
               <div
                 key={key}

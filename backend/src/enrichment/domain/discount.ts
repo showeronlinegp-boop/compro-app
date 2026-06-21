@@ -11,11 +11,14 @@
 
 import type { PromoEntry } from '../../infrastructure/vtex/promotions-client.js';
 import type { PromoPriceResult } from '../../infrastructure/vtex/promotions-client.js';
+import type { Promotion } from '../../shared/types.js';
 
 export interface StrategyAResult {
   sku_id: string;
   offer_price: number;
   discount_pct: number;
+  /** The promo's display name from search-promotions (e.g. "2do al 50% COCACOLA | Ofertas Trafico"). */
+  name: string;
 }
 
 export interface StrategyBResult {
@@ -49,7 +52,43 @@ export function effectiveDiscount(
   // verbatim from enricher.js line 114:
   if (offerPrice >= rawPrice) return null;
 
-  return { sku_id: skuId, offer_price: offerPrice, discount_pct: pct };
+  return { sku_id: skuId, offer_price: offerPrice, discount_pct: pct, name: promo.name };
+}
+
+/**
+ * Parse a CONDITIONAL promo from a search-promotions name into a structured
+ * nth-unit Promotion, or null when the promo is a flat discount.
+ *
+ * Conditional promos ("2do al 50% COCACOLA", "3x2 ...") become nth_unit promos
+ * with min_qty + the per-Nth-unit discount_pct, so the frontend computes the
+ * per-unit price and renders the same "$X c/u" badge as DIA/Carrefour. Flat
+ * discounts ("35% MULTIMAX") return null — they are conveyed by the strike-through
+ * price and need no badge. Mirrors the teaser-label math in the crawl normalizer:
+ *   - NxM (N > M): min_qty = N, discount_pct = (N - M) * 100
+ *   - "Ndo ... al X%": min_qty = N, discount_pct = X
+ */
+export function conditionalPromo(name: string | undefined): Promotion | null {
+  if (!name) return null;
+
+  const nxm = name.match(/(\d+)\s*x\s*(\d+)/i);
+  if (nxm && Number(nxm[1]) > Number(nxm[2])) {
+    const n = Number(nxm[1]);
+    const m = Number(nxm[2]);
+    return { label: `${n}x${m}`, type: 'nth_unit', min_qty: n, discount_pct: (n - m) * 100 };
+  }
+
+  // The ordinal suffix is REQUIRED so a bare flat "N al X%" never reads as nth_unit.
+  const nth = name.match(/(\d+)\s*(?:do|da|er|ero|°|º)\s*(?:unidad\s+)?al\s*(\d+)\s*%/i);
+  if (nth) {
+    return {
+      label: nth[0].replace(/\s+/g, ' ').trim(),
+      type: 'nth_unit',
+      min_qty: Number(nth[1]),
+      discount_pct: Number(nth[2]),
+    };
+  }
+
+  return null;
 }
 
 /**

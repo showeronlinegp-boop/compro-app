@@ -12,6 +12,7 @@
 import type { PrismaClient } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import type { NormalizedCrawlItem, SyncLog } from '../../shared/types.js';
+import { stripDiacritics } from '../../shared/normalize.js';
 import { TAXONOMY } from '../../modules/taxonomy/domain/taxonomy.js';
 
 const UPSERT_CHUNK_SIZE = 500;
@@ -24,13 +25,8 @@ interface BrandRule {
   priority: number;
 }
 
-function normalizeText(text: string): string {
-  // NFD decomposes accented chars into base + combining mark; then we strip the marks
-  return text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-}
-
 function matchesPattern(normalizedName: string, rawPattern: string): boolean {
-  const parts = normalizeText(rawPattern).split('%').filter(Boolean);
+  const parts = stripDiacritics(rawPattern).split('%').filter(Boolean);
   if (parts.length === 0) return true;
   let idx = 0;
   for (const part of parts) {
@@ -42,10 +38,10 @@ function matchesPattern(normalizedName: string, rawPattern: string): boolean {
 }
 
 export function resolveInternalCategory(categoryPaths: string[]): string | null {
-  const lowerPaths = categoryPaths.map((p) => normalizeText(p));
+  const lowerPaths = categoryPaths.map((p) => stripDiacritics(p));
   for (const entry of TAXONOMY) {
     for (const vtexStr of entry.vtex) {
-      const lowerVtex = normalizeText(vtexStr);
+      const lowerVtex = stripDiacritics(vtexStr);
       if (lowerPaths.some((p) => p.includes(lowerVtex))) {
         return entry.slug;
       }
@@ -62,7 +58,7 @@ export function resolveBrandTier(
   if (!categoryKey) return null;
   const categoryRules = rules.get(categoryKey);
   if (!categoryRules || categoryRules.length === 0) return null;
-  const normalizedName = normalizeText(name);
+  const normalizedName = stripDiacritics(name);
   for (const rule of categoryRules) {
     if (matchesPattern(normalizedName, rule.pattern)) return rule.tier;
   }

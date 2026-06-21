@@ -84,17 +84,23 @@ export { CRAWLER_IS_SAFE_MAX, CRAWLER_PAGE_SIZE, CRAWLER_THROTTLE_MS };
 /**
  * Fetch one page of IS product_search results for a facetPath.
  * Port of searchPage() in vtex-crawler.js.
+ *
+ * When `regionId` is provided, the IS API returns prices and availability for
+ * that region (seller-set), so the same product can differ by zone. Without it,
+ * the store's default region is used.
  */
 export async function searchPage(
   cfg: SuperConfig,
   facetPath: string,
   page: number,
+  regionId?: string | null,
 ): Promise<{ products: IsSearchProduct[]; total: number }> {
   const encodedPath = facetPath.split('/').map(encodeURIComponent).join('/');
+  const regionParam = regionId ? `&regionId=${encodeURIComponent(regionId)}` : '';
 
   const url =
     `${cfg.baseUrl}${IS_BASE}/product_search/${encodedPath}` +
-    `?query=&page=${page}&count=${CRAWLER_PAGE_SIZE}&hideUnavailableItems=true&simulationBehavior=default`;
+    `?query=&page=${page}&count=${CRAWLER_PAGE_SIZE}&hideUnavailableItems=true&simulationBehavior=default${regionParam}`;
 
   const data = await fetchJson<IsSearchResponse>(url);
 

@@ -1,5 +1,6 @@
 import { pesos, superCfg } from '../supers';
 import type { Product } from '../types/api';
+import ProductImage from './ProductImage';
 
 export interface ProductCardProps {
   product: Product;
@@ -21,11 +22,11 @@ export default function ProductCard({
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-md transition-shadow duration-200">
       {/* Imagen */}
       <div className="relative bg-gray-50 h-40 flex items-center justify-center p-3">
-        {product.image_url ? (
-          <img src={product.image_url} alt={product.name} className="h-full object-contain" />
-        ) : (
-          <span className="text-5xl text-gray-200">🛒</span>
-        )}
+        <ProductImage
+          sources={[product.image_url]}
+          alt={product.name}
+          className="h-full object-contain"
+        />
         {product.discount_pct > 0 && (
           <span className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
             -{product.discount_pct}%

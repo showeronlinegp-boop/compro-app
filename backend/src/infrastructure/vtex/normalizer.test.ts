@@ -323,6 +323,70 @@ describe('TS buildNormalizer — characterization (must match LEGACY snapshots)'
       ]);
     });
 
+    it('does NOT store a phantom catalog discount when Price is contaminated by unconditional payment teasers', () => {
+      const normalize = buildNormalizer(carrefourCfg);
+      // Real carrefour Lays 77g: VTEX bakes the two minQty=0 card discounts
+      // (15% + 15% = 30%) into Price (2691.23 = 3844.62 * 0.70). The real shelf
+      // price is PriceWithoutDiscount (3844.62). The "2do al 70%" nth-unit promo
+      // must travel as a badge, computed later on the honest shelf base.
+      const product = {
+        productId: '721956',
+        productName: 'Papas fritas sabor a jamón serrano Lays 77 g.',
+        productReference: null,
+        linkText: 'papas-fritas-sabor-a-jamon-serrano-lays-77-g-721956',
+        link: '/papas-fritas-sabor-a-jamon-serrano-lays-77-g-721956/p',
+        categories: ['/Almacén/'],
+        items: [
+          {
+            itemId: '721956',
+            ean: '7790310985434',
+            images: [{ imageUrl: 'https://example.com/lays.jpg' }],
+            sellers: [
+              {
+                commertialOffer: {
+                  Price: 2691.23,
+                  ListPrice: 3844.62,
+                  PriceWithoutDiscount: 3844.62,
+                  AvailableQuantity: 100,
+                  teasers: [
+                    {
+                      name: 'Tarjeta Carrefour 15%',
+                      conditions: { minimumQuantity: 0 },
+                      effects: { parameters: [{ name: 'PercentualDiscount', value: '15' }] },
+                    },
+                    {
+                      name: 'Cuenta Digital Carrefour 15% Off Viernes',
+                      conditions: { minimumQuantity: 0 },
+                      effects: { parameters: [{ name: 'PercentualDiscount', value: '15' }] },
+                    },
+                    {
+                      name: 'PROMO-2do al 70% Max 8 unidades Combinable LAYS-Reg-2-70-As17 al 22.6',
+                      conditions: { minimumQuantity: 2 },
+                      effects: { parameters: [{ name: 'PercentualDiscount', value: '35' }] },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      } as IsSearchProduct;
+
+      const result = normalize(product);
+      expect(result).not.toBeNull();
+      // Honest shelf price — no phantom 30% discount.
+      expect(result?.raw_price).toBe(3844.62);
+      expect(result?.offer_price).toBeNull();
+      expect(result?.discount_pct).toBe(0);
+      // The nth-unit promo survives for the downstream per-unit calc (label-derived 70%).
+      expect(result?.promotions).toContainEqual({
+        label: 'PROMO-2do al 70% Max 8 unidades Combinable LAYS-Reg-2-70-As17 al 22.6',
+        type: 'nth_unit',
+        min_qty: 2,
+        discount_pct: 70,
+      });
+    });
+
     it('trustListPrice: detects discount from ListPrice when PWD === Price', () => {
       const normalize = buildNormalizer(diaCfg);
       const product = {
@@ -359,7 +423,7 @@ describe('TS buildNormalizer — characterization (must match LEGACY snapshots)'
   });
 
   describe('trustListPrice guards', () => {
-    it("OFF (vea): ListPrice is ignored even when it implies a discount", () => {
+    it('OFF (vea): ListPrice is ignored even when it implies a discount', () => {
       const normalize = buildNormalizer(veaCfg); // no trustListPrice
       const product = {
         productId: '1',

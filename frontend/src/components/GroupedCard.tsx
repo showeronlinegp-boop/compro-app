@@ -1,5 +1,6 @@
 import { pesos, superCfg } from '../supers';
 import type { Product, ProductGroup, Promotion } from '../types/api';
+import ProductImage from './ProductImage';
 
 export interface GroupedCardProps {
   group: ProductGroup;
@@ -84,11 +85,11 @@ export default function GroupedCard({
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-md transition-shadow duration-200">
       {/* Imagen */}
       <div className="relative bg-gray-50 h-36 flex items-center justify-center p-3">
-        {image_url ? (
-          <img src={image_url} alt={name} className="h-full object-contain" />
-        ) : (
-          <span className="text-5xl text-gray-200">🛒</span>
-        )}
+        <ProductImage
+          sources={[image_url, ...sorted.map((v) => v.image_url)]}
+          alt={name}
+          className="h-full object-contain"
+        />
       </div>
 
       {/* Nombre */}
@@ -102,6 +103,9 @@ export default function GroupedCard({
           const cfg = superCfg(v.super);
           const price = v.offer_price ?? v.raw_price;
           const promo = promoUnitPrice(v);
+          // Label-only promos (e.g. VEA's "2do al 50%" from marketing collections):
+          // shown as informational badges, never as a computed per-unit price.
+          const infoPromos = (v.promotions ?? []).filter((pr) => pr.type === 'other');
           const isBest = isComparison && comparePrice(v) === bestPrice;
 
           return (
@@ -153,6 +157,26 @@ export default function GroupedCard({
                     {isBest && <span className="text-green-600 font-bold">✓</span>}
                   </div>
                 </div>
+              )}
+
+              {/* Promos informativas (sin precio calculado) — p. ej. "2do al 50%" de VEA */}
+              {infoPromos.length > 0 && (
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {infoPromos.map((pr) => (
+                    <span
+                      key={pr.label}
+                      title={pr.label}
+                      className="max-w-full truncate rounded-md border border-violet-200 bg-violet-50 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700"
+                    >
+                      🎉 {pr.label}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Disclaimer por super (p. ej. variación de precio por zona en VEA) */}
+              {cfg.note && (
+                <p className="mt-1 text-[9px] leading-tight text-gray-400">{cfg.note}</p>
               )}
             </div>
           );

@@ -3,6 +3,8 @@ import { Prisma } from '@prisma/client';
 import type { ListTemplateItem, MatchRules, ProductCandidate } from '../domain/generator.js';
 import { selectBestProduct } from '../domain/generator.js';
 
+type JsonArray = Prisma.JsonValue[];
+
 export interface FindBestParams {
   categoryKey: string;
   tier: number;
@@ -19,12 +21,18 @@ export interface ListGeneratorRepo {
   clearGeneratedItems(): Promise<number>;
 }
 
-type PrismaLike = Pick<PrismaClient, '$queryRaw' | 'list_templates' | 'shopping' | 'products'>;
+type PrismaLike = Pick<PrismaClient, '$queryRaw' | '$transaction' | 'list_templates' | 'shopping' | 'products'>;
 
 function toStringArray(value: unknown): string[] {
   return Array.isArray(value) ? (value as string[]) : [];
 }
 
+// INVARIANT: this char mapping must stay identical to the SQL filter
+//   translate(lower(name), 'áéíóúüñàèìòù', 'aeiouunaeiou')
+// used in findBestProductId. Do NOT replace it with the NFD-based
+// stripDiacritics() helper — NFD strips marks the SQL translate() does not,
+// so the JS keyword would stop matching the DB-side expression and the ILIKE
+// would silently miss rows.
 function normalizeKeyword(txt: string): string {
   return txt.toLowerCase()
     .replace(/[áà]/g, 'a').replace(/[éè]/g, 'e').replace(/[íì]/g, 'i')
@@ -46,18 +54,18 @@ export function makeListGeneratorRepo(prisma: PrismaLike): ListGeneratorRepo {
         scale_per_person: r.scale_per_person,
         frequency_days: r.frequency_days,
         requires_module: r.requires_module,
-        search_keyword: (r as { search_keyword?: string | null }).search_keyword ?? null,
-        size_hint: (r as { size_hint?: string | null }).size_hint ?? null,
-        incluye: toStringArray((r as any).incluye),
-        requiere_alguno: toStringArray((r as any).requiere_alguno),
-        excluye: toStringArray((r as any).excluye),
-        veta: toStringArray((r as any).veta),
+        search_keyword: r.search_keyword ?? null,
+        size_hint: r.size_hint ?? null,
+        incluye: toStringArray(r.incluye as JsonArray | null),
+        requiere_alguno: toStringArray(r.requiere_alguno as JsonArray | null),
+        excluye: toStringArray(r.excluye as JsonArray | null),
+        veta: toStringArray(r.veta as JsonArray | null),
       }));
     },
 
     async findBestProductId({ categoryKey, tier, priceDriven, nameHint, sizeHint, rules }) {
       // Primary SQL filter: first incluye term (specific) or nameHint (search_keyword)
-      const primaryTerm = rules.incluye.length > 0 ? rules.incluye[0] : nameHint;
+      const primaryTerm = rules.incluye.length > 0 ? (rules.incluye[0] ?? nameHint) : nameHint;
       const keyword = `%${normalizeKeyword(primaryTerm)}%`;
       const sizeFilter = sizeHint ? Prisma.sql`AND name ILIKE ${`%${sizeHint}%`}` : Prisma.sql``;
 
@@ -99,37 +107,40 @@ export function makeListGeneratorRepo(prisma: PrismaLike): ListGeneratorRepo {
         ORDER BY ${orderClause}
         LIMIT 1
       `);
-      return lastResort.length > 0 ? lastResort[0].id : null;
+      return lastResort.length > 0 ? (lastResort[0]?.id ?? null) : null;
     },
 
     async clearGeneratedItems() {
-      // Elimina ítems auto-generados: tienen notes con patrón "Nombre x{qty}"
-      const result = await (prisma as PrismaClient).$queryRaw<Array<{ count: string }>>(Prisma.sql`
-        WITH deleted AS (
-          DELETE FROM shopping
-          WHERE notes ~ ' x[0-9]+$'
-          RETURNING id
-        )
-        SELECT COUNT(*)::text AS count FROM deleted
-      `);
-      return parseInt(result[0]?.count ?? '0', 10);
+      const result = await prisma.shopping.deleteMany({ where: { generated: true } });
+      return result.count;
     },
 
     async bulkAddToShopping(items) {
-      let added = 0;
-      for (const item of items) {
-        const existing = await prisma.shopping.findFirst({ where: { product_id: item.product_id } });
-        if (existing) continue;
-        await prisma.shopping.create({
-          data: {
-            product_id: item.product_id,
-            frequency_days: item.frequency_days,
-            notes: item.notes,
-          },
-        });
-        added++;
-      }
-      return added;
+      if (items.length === 0) return 0;
+
+      const existingRows = await prisma.shopping.findMany({
+        where: { product_id: { in: items.map((i) => i.product_id) } },
+        select: { product_id: true },
+      });
+      const existingIds = new Set(existingRows.map((r) => r.product_id));
+      const toInsert = items.filter((i) => !existingIds.has(i.product_id));
+
+      if (toInsert.length === 0) return 0;
+
+      await (prisma as PrismaClient).$transaction(
+        toInsert.map((item) =>
+          prisma.shopping.create({
+            data: {
+              product_id: item.product_id,
+              frequency_days: item.frequency_days,
+              notes: item.notes,
+              generated: true,
+            },
+          }),
+        ),
+      );
+
+      return toInsert.length;
     },
   };
 }

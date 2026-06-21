@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { api } from './api';
+import LocationSelector from './components/LocationSelector';
 import Compare from './pages/Compare';
 import Explorar from './pages/Explorar';
 import Intereses from './pages/Intereses';
@@ -26,6 +27,7 @@ interface SyncPanelProps {
   onSyncAll: () => Promise<void>;
   capturingPromos: boolean;
   onCapturePromos: () => Promise<void>;
+  locationSet: boolean;
 }
 
 function SyncPanel({
@@ -35,10 +37,14 @@ function SyncPanel({
   onSyncAll,
   capturingPromos,
   onCapturePromos,
+  locationSet,
 }: SyncPanelProps) {
   const [open, setOpen] = useState(false);
   const SYNC_KEYS: SuperKey[] = ['vea', 'carrefour', 'dia', 'masonline'];
   const anyRunning = status.some((s) => s.status === 'running') || !!syncing;
+  // Sync is a test-only manual trigger; require a location so it crawls the
+  // user's region instead of pulling every region's prices.
+  const blocked = anyRunning || !locationSet;
 
   return (
     <div className="relative">
@@ -58,13 +64,19 @@ function SyncPanel({
         <div className="absolute right-0 top-full mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 p-3 w-72 z-50">
           <p className="text-xs font-semibold text-gray-500 mb-3 px-1">Sincronizar precios</p>
 
+          {!locationSet && (
+            <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-2.5 py-1.5 mb-3 leading-snug">
+              📍 Cargá tu ubicación antes de sincronizar — el sync trae precios de tu zona.
+            </p>
+          )}
+
           <button
             type="button"
             onClick={() => {
               onSyncAll();
               setOpen(false);
             }}
-            disabled={anyRunning}
+            disabled={blocked}
             className="w-full mb-3 text-xs font-medium px-3 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {anyRunning ? 'Sincronizando…' : '⚡ Sincronizar todos'}
@@ -86,7 +98,7 @@ function SyncPanel({
                       onSync(key);
                       setOpen(false);
                     }}
-                    disabled={anyRunning}
+                    disabled={blocked}
                     className="text-xs px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 disabled:opacity-40 font-medium"
                   >
                     {isRunning ? 'Corriendo' : 'Sync'}
@@ -154,15 +166,37 @@ export default function App() {
   const [syncStatus, setSyncStatus] = useState<SyncLog[]>([]);
   const [syncing, setSyncing] = useState('');
   const [enrichStatus, setEnrichStatus] = useState<Record<string, EnrichStatus>>({});
+  // Supers seen running this session, and those that completed this session.
+  // The success banner is transient: it shows only on an observed running→done
+  // transition (never from stale backend status on a fresh load) and auto-hides.
+  const enrichSeenRunning = useRef<Set<string>>(new Set());
+  const [enrichDone, setEnrichDone] = useState<string[]>([]);
+
+  const applyEnrichStatus = useCallback((fresh: Record<string, EnrichStatus>) => {
+    setEnrichStatus(fresh);
+    for (const [key, s] of Object.entries(fresh)) {
+      if (s.running) {
+        enrichSeenRunning.current.add(key);
+      } else if (enrichSeenRunning.current.has(key) && s.updated > 0) {
+        enrichSeenRunning.current.delete(key);
+        setEnrichDone((d) => (d.includes(key) ? d : [...d, key]));
+        setTimeout(() => setEnrichDone((d) => d.filter((k) => k !== key)), 8000);
+      }
+    }
+  }, []);
   const [promos, setPromos] = useState<PromoOffer[]>([]);
   const [capturingPromos, setCapturingPromos] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null | undefined>(undefined);
 
+  // Runs once on mount to load data and redirect to onboarding if needed.
+  // Deps are intentionally empty: adding location.pathname/navigate would re-run
+  // this on every navigation, causing an infinite redirect loop.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional once-on-mount effect (see above)
   useEffect(() => {
     api.interests.list().then(setInterests).catch(console.error);
     api.shopping.list().then(setShopping).catch(console.error);
     api.sync.status().then(setSyncStatus).catch(console.error);
-    api.enrich.status().then(setEnrichStatus).catch(console.error);
+    api.enrich.status().then(applyEnrichStatus).catch(console.error);
     api.promos.list().then(setPromos).catch(console.error);
     api.profile.get().then((p) => {
       setProfile(p);
@@ -170,7 +204,6 @@ export default function App() {
         navigate('/onboarding', { replace: true });
       }
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Auto-poll while a sync is running.
@@ -194,10 +227,10 @@ export default function App() {
     if (!anyEnriching) return;
     const id = setInterval(async () => {
       const fresh = await api.enrich.status().catch(() => null);
-      if (fresh) setEnrichStatus(fresh);
+      if (fresh) applyEnrichStatus(fresh);
     }, 3000);
     return () => clearInterval(id);
-  }, [enrichStatus]);
+  }, [enrichStatus, applyEnrichStatus]);
 
   async function toggleInterest(product: Product) {
     const existing = interests.find((i) => i.id === product.id);
@@ -284,27 +317,31 @@ export default function App() {
                 to: '/planner',
                 label: `Planner ${shopping.length ? `(${shopping.length})` : ''}`,
               },
-            ].concat(
-              profile?.onboarding_done
-                ? [{ to: '/compare', label: '📊 Comparar' }]
-                : [],
-            ).map(({ to, label }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={to === '/'}
-                className={({ isActive }) =>
-                  `text-sm font-medium px-3 py-1.5 rounded-xl transition-colors ${
-                    isActive
-                      ? 'bg-indigo-50 text-indigo-700'
-                      : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'
-                  }`
-                }
-              >
-                {label}
-              </NavLink>
-            ))}
+            ]
+              .concat(profile?.onboarding_done ? [{ to: '/compare', label: '📊 Comparar' }] : [])
+              .map(({ to, label }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  end={to === '/'}
+                  className={({ isActive }) =>
+                    `text-sm font-medium px-3 py-1.5 rounded-xl transition-colors ${
+                      isActive
+                        ? 'bg-indigo-50 text-indigo-700'
+                        : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'
+                    }`
+                  }
+                >
+                  {label}
+                </NavLink>
+              ))}
           </div>
+
+          {/* Location selector */}
+          <LocationSelector
+            postalCode={profile?.postal_code ?? null}
+            onSaved={(p) => setProfile(p)}
+          />
 
           {/* Sync panel */}
           <SyncPanel
@@ -314,6 +351,7 @@ export default function App() {
             onSyncAll={triggerSyncAll}
             capturingPromos={capturingPromos}
             onCapturePromos={triggerCapturePromos}
+            locationSet={!!profile?.postal_code}
           />
         </div>
       </nav>
@@ -330,6 +368,7 @@ export default function App() {
                 onAddToShopping={addToShopping}
                 syncStatus={syncStatus}
                 enrichStatus={enrichStatus}
+                enrichDoneKeys={enrichDone}
                 promos={promos}
               />
             }

@@ -1,4 +1,7 @@
--- Idempotent migration: safe to re-run if partially applied
+-- NOTE: ALTER TABLE/CREATE TABLE/INDEX statements below use IF NOT EXISTS and are
+-- safe to re-run. The TRUNCATE statements at the end of this file are NOT idempotent
+-- — they wipe brand_rules and list_templates on every re-run. This was intentional
+-- at the time of initial seeding but means replaying this migration destroys data.
 ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "category_key" TEXT;
 ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "brand_tier" SMALLINT;
 
@@ -52,7 +55,8 @@ CREATE TABLE IF NOT EXISTS "user_profiles" (
     CONSTRAINT "user_profiles_pkey" PRIMARY KEY ("id")
 );
 
--- Seed: truncate first so re-runs always produce a clean state
+-- Seed: truncate to start from a clean state on first apply.
+-- WARNING: replaying this migration will destroy existing data in these tables.
 TRUNCATE TABLE "brand_rules";
 TRUNCATE TABLE "list_templates";
 

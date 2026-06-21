@@ -192,6 +192,20 @@ export type TierValue = 1 | 2 | 3;
 
 export type TierMap = Record<string, TierValue | null>;
 
+/** Resolved VTEX regionId per super. null = could not resolve (e.g. VEA/Cencosud). */
+export type RegionIds = Partial<Record<SuperKey, string | null>>;
+
+/** A physical store near the user (its seller drives region-accurate prices). */
+export interface StoreLocation {
+  sellerId: string;
+  name: string;
+  city: string | null;
+  state: string | null;
+}
+
+/** Stores per super that serve the user's zone. [] = none (e.g. VEA) → default region. */
+export type StoreMap = Partial<Record<SuperKey, StoreLocation[]>>;
+
 export interface UserProfile {
   id: number;
   nombre: string;
@@ -206,6 +220,9 @@ export interface UserProfile {
   perfil_hogar: PerfilHogar;
   nse_proxy: string | null;
   onboarding_done: boolean;
+  postal_code: string | null;
+  region_ids: RegionIds | null;
+  stores: StoreMap | null;
   created_at: string;
   updated_at: string;
 }
