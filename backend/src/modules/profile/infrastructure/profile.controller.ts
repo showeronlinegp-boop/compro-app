@@ -2,7 +2,7 @@ import { BadRequestException, Body, Controller, Delete, Get, Inject, NotFoundExc
 import type { Response } from 'express';
 import { LIST_GEN_SERVICE, PROFILE_REPO } from '../../../common/tokens.js';
 import { SUPERS } from '../../../config/supers.js';
-import { geocodePostalCode } from '../../../infrastructure/geocode.js';
+import { geocodeAddress, geocodePostalCode, reverseGeocode } from '../../../infrastructure/geocode.js';
 import { getStoresNear, regionIdForSellers } from '../../../infrastructure/vtex/stores-client.js';
 import { resolveVeaRegion } from '../../../infrastructure/vtex/vea-region-client.js';
 import type {
@@ -36,19 +36,47 @@ export class ProfileController {
     return this.repo.upsert(data);
   }
 
-  // Resolve a postal code to nearby physical stores per super (does NOT persist).
+  @Get('location/search')
+  async searchLocations(@Query('q') q?: string) {
+    if (!q || q.trim().length < 2) {
+      throw new BadRequestException('Query muy corta (mínimo 2 caracteres)');
+    }
+    return geocodeAddress(q.trim());
+  }
+
+  // Resolve coordinates or postal code to nearby physical stores per super (does NOT persist).
   // The frontend shows these so the user can confirm/change before saving.
   // Carrefour/DIA/MAS return stores; VEA returns [] (Cencosud exposes none).
   @Get('location/stores')
-  async resolveStores(@Query('postal_code') postalCode?: string) {
-    const digits = String(postalCode ?? '').replace(/\D/g, '');
-    if (digits.length < 4) {
-      throw new BadRequestException('Código postal inválido (mínimo 4 dígitos)');
-    }
-    const cp = digits.slice(0, 4);
-    const geo = await geocodePostalCode(cp);
-    if (!geo) {
-      throw new BadRequestException(`No pudimos ubicar el código postal ${cp}`);
+  async resolveStores(
+    @Query('postal_code') postalCode?: string,
+    @Query('lat') latStr?: string,
+    @Query('lng') lngStr?: string,
+  ) {
+    let geo: { lat: number; lng: number };
+    let location_name: string;
+
+    const lat = Number(latStr);
+    const lng = Number(lngStr);
+
+    if (latStr !== undefined && lngStr !== undefined && Number.isFinite(lat) && Number.isFinite(lng)) {
+      geo = { lat, lng };
+      const name = await reverseGeocode(geo).catch(() => null);
+      location_name = name ?? `${lat.toFixed(4)},${lng.toFixed(4)}`;
+    } else if (postalCode) {
+      const digits = String(postalCode).replace(/\D/g, '');
+      if (digits.length < 4) {
+        throw new BadRequestException('Código postal inválido (mínimo 4 dígitos)');
+      }
+      const cp = digits.slice(0, 4);
+      const resolved = await geocodePostalCode(cp);
+      if (!resolved) {
+        throw new BadRequestException(`No pudimos ubicar el código postal ${cp}`);
+      }
+      geo = resolved;
+      location_name = cp;
+    } else {
+      throw new BadRequestException('Se requiere lat+lng o postal_code');
     }
 
     const keys = Object.keys(SUPERS) as SuperKey[];
@@ -58,23 +86,43 @@ export class ProfileController {
       supers[key] = lists[i];
     });
 
-    return { postal_code: cp, geo, supers };
+    return { location_name, geo, supers };
   }
 
-  // Persist the user's postal code. Resolves the zone's stores per super and
+  // Persist the user's location. Resolves the zone's stores per super and
   // derives the regionId (base64("SW#"+all nearby store sellers)) the crawler
   // uses for region-accurate prices/stock. Pricing is zone-based (the set of
   // stores serving the area), so there is no single store to pick.
   @Put('location')
   async setLocation(@Body() body: unknown) {
-    const digits = String((body as { postal_code?: unknown })?.postal_code ?? '').replace(/\D/g, '');
-    if (digits.length < 4) {
-      throw new BadRequestException('Código postal inválido (mínimo 4 dígitos)');
-    }
-    const postalCode = digits.slice(0, 4);
-    const geo = await geocodePostalCode(postalCode);
-    if (!geo) {
-      throw new BadRequestException(`No pudimos ubicar el código postal ${postalCode}`);
+    const b = body as { lat?: unknown; lng?: unknown; location_name?: unknown; postal_code?: unknown };
+
+    let geo: { lat: number; lng: number };
+    let locationName: string;
+
+    const lat = Number(b?.lat);
+    const lng = Number(b?.lng);
+
+    if (b?.lat !== undefined && b?.lng !== undefined && Number.isFinite(lat) && Number.isFinite(lng)) {
+      geo = { lat, lng };
+      const name = typeof b.location_name === 'string' && b.location_name.trim()
+        ? b.location_name.trim()
+        : await reverseGeocode(geo).catch(() => null);
+      locationName = name ?? `${lat.toFixed(4)},${lng.toFixed(4)}`;
+    } else if (b?.postal_code) {
+      const digits = String(b.postal_code).replace(/\D/g, '');
+      if (digits.length < 4) {
+        throw new BadRequestException('Código postal inválido (mínimo 4 dígitos)');
+      }
+      const postalCode = digits.slice(0, 4);
+      const resolved = await geocodePostalCode(postalCode);
+      if (!resolved) {
+        throw new BadRequestException(`No pudimos ubicar el código postal ${postalCode}`);
+      }
+      geo = resolved;
+      locationName = postalCode;
+    } else {
+      throw new BadRequestException('Se requiere lat+lng o postal_code');
     }
 
     const keys = Object.keys(SUPERS) as SuperKey[];
@@ -97,14 +145,14 @@ export class ProfileController {
     // the default region. Resolve its zone seller via SEPA (nearest store) + the
     // /regions seller list so VEA crawls region-accurate like the other supers.
     if (!regionIds.vea) {
-      const vea = await resolveVeaRegion(SUPERS.vea.baseUrl, geo, postalCode);
+      const vea = await resolveVeaRegion(SUPERS.vea.baseUrl, geo);
       if (vea) {
         regionIds.vea = vea.regionId;
         stores.vea = [vea.store];
       }
     }
 
-    const profile = await this.repo.setLocation(postalCode, regionIds, stores);
+    const profile = await this.repo.setLocation(locationName, regionIds, stores);
     if (!profile) {
       throw new NotFoundException('No hay perfil configurado. Completá el onboarding primero.');
     }

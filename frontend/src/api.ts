@@ -1,6 +1,7 @@
 import type {
   CompareResult,
   EnrichStatus,
+  GeoSuggestion,
   GroupsResult,
   Interest,
   OnboardingAnswers,
@@ -80,15 +81,15 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(answers),
       }),
-    resolveStores: (postal_code: string) =>
-      req<StoresResolveResult>(
-        `/profile/location/stores?postal_code=${encodeURIComponent(postal_code)}`,
-      ),
-    setLocation: (postal_code: string) =>
+    resolveStores: (lat: number, lng: number) =>
+      req<StoresResolveResult>(`/profile/location/stores?lat=${lat}&lng=${lng}`),
+    setLocation: (lat: number, lng: number, location_name?: string) =>
       req<UserProfile>('/profile/location', {
         method: 'PUT',
-        body: JSON.stringify({ postal_code }),
+        body: JSON.stringify({ lat, lng, location_name }),
       }),
+    searchLocations: (q: string) =>
+      req<GeoSuggestion[]>(`/profile/location/search?q=${encodeURIComponent(q)}`),
     clear: () => req<{ ok: boolean }>('/profile', { method: 'DELETE' }),
   },
   sync: {

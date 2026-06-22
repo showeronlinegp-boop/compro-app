@@ -10,7 +10,7 @@ export interface ProfileRepo {
    * derived per-super regionIds. Requires an existing profile row.
    */
   setLocation(
-    postalCode: string,
+    locationName: string | null,
     regionIds: RegionIds,
     stores: StoreMap,
   ): Promise<UserProfile | null>;
@@ -103,13 +103,13 @@ export function makeProfileRepo(prisma: PrismaLike): ProfileRepo {
       return parseProfile(row);
     },
 
-    async setLocation(postalCode, regionIds, stores) {
+    async setLocation(locationName, regionIds, stores) {
       const existing = await prisma.user_profiles.findFirst({ orderBy: { id: 'asc' } });
       if (!existing) return null;
       const row = await prisma.user_profiles.update({
         where: { id: existing.id },
         data: {
-          postal_code: postalCode,
+          postal_code: locationName,
           region_ids: regionIds as object,
           stores: stores as object,
           updated_at: new Date(),

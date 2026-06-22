@@ -183,8 +183,14 @@ export interface StoreLocation {
 
 export type StoreMap = Partial<Record<SuperKey, StoreLocation[]>>;
 
+export interface GeoSuggestion {
+  display_name: string;
+  lat: number;
+  lng: number;
+}
+
 export interface StoresResolveResult {
-  postal_code: string;
+  location_name: string;
   geo: { lat: number; lng: number };
   supers: Partial<Record<SuperKey, Store[]>>;
 }

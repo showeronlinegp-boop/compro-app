@@ -36,13 +36,13 @@ let cachedSellerMap: Map<number, string> | null = null;
  */
 export async function getVeaSellerMap(
   baseUrl: string,
-  postalCode: string,
+  postalCode = '1000',
 ): Promise<Map<number, string>> {
   if (cachedSellerMap) return cachedSellerMap;
 
   const map = new Map<number, string>();
   try {
-    // postalCode is required by the endpoint but does not filter the result.
+    // postalCode defaults to '1000' — endpoint ignores it
     const url = `${baseUrl}/api/checkout/pub/regions?country=ARG&postalCode=${encodeURIComponent(postalCode)}&sc=${VEA_SALES_CHANNEL}`;
     const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
     if (!res.ok) return map;
@@ -69,7 +69,7 @@ export async function getVeaSellerMap(
 export async function resolveVeaRegion(
   baseUrl: string,
   geo: GeoPoint,
-  postalCode: string,
+  postalCode = '1000',
 ): Promise<{ regionId: string; store: StoreLocation } | null> {
   const sucursal = await getVeaSucursalNear(geo);
   if (!sucursal) return null;

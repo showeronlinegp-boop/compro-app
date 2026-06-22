@@ -51,3 +51,65 @@ export async function geocodePostalCode(postalCode: string): Promise<GeoPoint | 
   cache.set(cp, point);
   return point;
 }
+
+export interface GeoSuggestion {
+  display_name: string;
+  lat: number;
+  lng: number;
+}
+
+const addressCache = new Map<string, GeoSuggestion[]>();
+
+/** Forward-geocode a free-text address/city/neighborhood in Argentina. Returns up to 5 suggestions. */
+export async function geocodeAddress(q: string): Promise<GeoSuggestion[]> {
+  const key = q.trim().toLowerCase();
+  if (!key) return [];
+  const cached = addressCache.get(key);
+  if (cached !== undefined) return cached;
+
+  const url = `${NOMINATIM}?q=${encodeURIComponent(q)}&countrycodes=ar&format=json&limit=5&addressdetails=0`;
+  let results: GeoSuggestion[] = [];
+  try {
+    const res = await fetch(url, { headers: { 'User-Agent': UA } });
+    if (res.ok) {
+      const data = (await res.json()) as Array<{ display_name: string; lat: string; lon: string }>;
+      results = data
+        .map((r) => ({ display_name: r.display_name, lat: Number(r.lat), lng: Number(r.lon) }))
+        .filter((r) => Number.isFinite(r.lat) && Number.isFinite(r.lng));
+    }
+  } catch {
+    results = [];
+  }
+
+  addressCache.set(key, results);
+  return results;
+}
+
+const reverseCache = new Map<string, string | null>();
+
+/** Reverse-geocode coordinates to a human-readable location name. */
+export async function reverseGeocode(geo: GeoPoint): Promise<string | null> {
+  const key = `${geo.lat.toFixed(4)},${geo.lng.toFixed(4)}`;
+  const cached = reverseCache.get(key);
+  if (cached !== undefined) return cached;
+
+  const url = `https://nominatim.openstreetmap.org/reverse?lat=${geo.lat}&lon=${geo.lng}&format=json&addressdetails=1`;
+  let result: string | null = null;
+  try {
+    const res = await fetch(url, { headers: { 'User-Agent': UA } });
+    if (res.ok) {
+      const data = (await res.json()) as {
+        display_name?: string;
+        address?: { city?: string; town?: string; village?: string; state?: string };
+      };
+      const addr = data.address;
+      const city = addr?.city ?? addr?.town ?? addr?.village;
+      result = city && addr?.state ? `${city}, ${addr.state}` : (data.display_name ?? null);
+    }
+  } catch {
+    result = null;
+  }
+
+  reverseCache.set(key, result);
+  return result;
+}

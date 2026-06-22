@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { api } from './api';
-import LocationSelector from './components/LocationSelector';
+import { LocationSelector } from './components/LocationSelector';
 import Compare from './pages/Compare';
 import Explorar from './pages/Explorar';
 import Intereses from './pages/Intereses';
@@ -339,7 +339,7 @@ export default function App() {
 
           {/* Location selector */}
           <LocationSelector
-            postalCode={profile?.postal_code ?? null}
+            location={profile?.postal_code ?? null}
             onSaved={(p) => setProfile(p)}
           />
 
