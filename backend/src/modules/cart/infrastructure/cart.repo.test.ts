@@ -6,8 +6,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { testPrisma } from '../../../test/helpers/test-client.js';
 import { withRollback } from '../../../test/helpers/with-rollback.js';
-import { makeCartRepo } from './cart.repo.js';
 import type { CompareRepo } from '../../compare/infrastructure/compare.repo.js';
+import { makeCartRepo } from './cart.repo.js';
 
 // Minimal stub — existing tests don't exercise compareCart
 const stubCompareRepo: CompareRepo = {
@@ -294,6 +294,33 @@ describe('makeCartRepo', () => {
         expect(item.name).toBe('Leche Entera');
         expect(item.available).toBe(true);
         expect(Array.isArray(item.categories)).toBe(true);
+      });
+    });
+  });
+
+  describe('compareCart', () => {
+    it('empty cart → empty CompareResult (items=[], option_b.total=0)', async () => {
+      await withRollback(async (tx) => {
+        const prismaLike = tx as unknown as Parameters<typeof makeCartRepo>[0];
+        const { makeCompareRepo } = await import('../../compare/infrastructure/compare.repo.js');
+
+        // Use a real compare repo so the full path is exercised
+        const compareRepo = makeCompareRepo(
+          prismaLike as unknown as Parameters<typeof makeCompareRepo>[0],
+        );
+        const repo = makeCartRepo(prismaLike, compareRepo);
+
+        // Ensure cart exists but has no items
+        await repo.getOrCreate();
+
+        const result = await repo.compareCart();
+
+        expect(result.items).toEqual([]);
+        expect(result.option_a).toEqual([]);
+        expect(result.option_b.total).toBe(0);
+        expect(result.option_b.by_super).toEqual([]);
+        expect(result.option_b.breakdown).toEqual([]);
+        expect(result.option_b.savings_vs_option_a).toBe(0);
       });
     });
   });
