@@ -1,5 +1,6 @@
 import { pesos, superCfg } from '../supers';
 import type { Product } from '../types/api';
+import AddToCartButton from './AddToCartButton';
 import ProductImage from './ProductImage';
 
 export interface ProductCardProps {
@@ -93,6 +94,8 @@ export default function ProductCard({
               + Lista
             </button>
           )}
+
+          <AddToCartButton productId={product.id} />
         </div>
       </div>
     </div>

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CrawlerModule } from './crawler/infrastructure/crawler.module.js';
 import { EnrichmentModule } from './enrichment/infrastructure/enrichment.module.js';
+import { CartModule } from './modules/cart/infrastructure/cart.module.js';
 import { CatalogModule } from './modules/catalog/infrastructure/catalog.module.js';
 import { CompareModule } from './modules/compare/infrastructure/compare.module.js';
 import { InterestsModule } from './modules/interests/infrastructure/interests.module.js';
@@ -18,6 +19,7 @@ import { SchedulerModule } from './scheduler/scheduler.module.js';
     CatalogModule,
     InterestsModule,
     ShoppingModule,
+    CartModule,
     PromosModule,
     ProfileModule,
     CompareModule,

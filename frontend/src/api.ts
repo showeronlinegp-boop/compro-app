@@ -1,4 +1,5 @@
 import type {
+  CartResult,
   CompareResult,
   EnrichStatus,
   GeoSuggestion,
@@ -108,5 +109,21 @@ export const api = {
   promos: {
     list: () => req<PromoOffer[]>('/promos'),
     capture: () => req<{ ok: boolean; message: string }>('/promos/capture', { method: 'POST' }),
+  },
+  cart: {
+    get: () => req<CartResult>('/cart'),
+    addItem: (product_id: number, quantity = 1) =>
+      req<CartResult>('/cart/items', {
+        method: 'POST',
+        body: JSON.stringify({ product_id, quantity }),
+      }),
+    updateQty: (cart_item_id: number, quantity: number) =>
+      req<CartResult>(`/cart/items/${cart_item_id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ quantity }),
+      }),
+    removeItem: (cart_item_id: number) =>
+      req<CartResult>(`/cart/items/${cart_item_id}`, { method: 'DELETE' }),
+    clear: () => req<CartResult>('/cart', { method: 'DELETE' }),
   },
 };

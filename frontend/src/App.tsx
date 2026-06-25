@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { api } from './api';
 import { LocationSelector } from './components/LocationSelector';
+import { CartProvider, useCart } from './contexts/CartContext';
+import Cart from './pages/Cart';
 import Compare from './pages/Compare';
 import Explorar from './pages/Explorar';
 import Intereses from './pages/Intereses';
@@ -156,11 +158,12 @@ function SyncPanel({
   );
 }
 
-// ─── App ──────────────────────────────────────────────────────────────────────
+// ─── AppShell — rendered inside CartProvider so useCart() is available ────────
 
-export default function App() {
+function AppShell() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { itemCount } = useCart();
   const [interests, setInterests] = useState<Interest[]>([]);
   const [shopping, setShopping] = useState<ShoppingItem[]>([]);
   const [syncStatus, setSyncStatus] = useState<SyncLog[]>([]);
@@ -299,6 +302,8 @@ export default function App() {
 
   const shoppingIds = new Set(shopping.map((s) => s.id));
 
+  const cartLabel = itemCount > 0 ? `Carrito (${itemCount})` : 'Carrito';
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Navbar */}
@@ -317,6 +322,7 @@ export default function App() {
                 to: '/planner',
                 label: `Planner ${shopping.length ? `(${shopping.length})` : ''}`,
               },
+              { to: '/cart', label: cartLabel },
             ]
               .concat(profile?.onboarding_done ? [{ to: '/compare', label: '📊 Comparar' }] : [])
               .map(({ to, label }) => (
@@ -385,6 +391,7 @@ export default function App() {
             }
           />
           <Route path="/planner" element={<Planner />} />
+          <Route path="/cart" element={<Cart />} />
           <Route path="/compare" element={<Compare />} />
           <Route
             path="/onboarding"
@@ -400,5 +407,15 @@ export default function App() {
         </Routes>
       </main>
     </div>
+  );
+}
+
+// ─── App — provides CartContext, then renders AppShell inside it ──────────────
+
+export default function App() {
+  return (
+    <CartProvider>
+      <AppShell />
+    </CartProvider>
   );
 }

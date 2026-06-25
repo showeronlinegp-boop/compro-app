@@ -250,6 +250,20 @@ export interface ShoppingRecommendation extends ShoppingItem {
   reason: 'advance_buy';
 }
 
+// ─── Cart ─────────────────────────────────────────────────────────────────────
+
+export interface CartItemEntry extends Product {
+  cart_item_id: number;
+  quantity: number;
+  added_at: string;
+}
+
+export interface CartResult {
+  cart_id: number;
+  items: CartItemEntry[];
+  item_count: number;
+}
+
 // ─── Compare multi-super ─────────────────────────────────────────────────────
 
 export interface SuperMatch {

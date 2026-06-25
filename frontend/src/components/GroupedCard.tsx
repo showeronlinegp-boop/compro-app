@@ -1,5 +1,6 @@
 import { pesos, superCfg } from '../supers';
 import type { Product, ProductGroup, Promotion } from '../types/api';
+import AddToCartButton from './AddToCartButton';
 import ProductImage from './ProductImage';
 
 export interface GroupedCardProps {
@@ -208,6 +209,8 @@ export default function GroupedCard({
             + Lista
           </button>
         )}
+
+        <AddToCartButton productId={target.id} />
       </div>
     </div>
   );

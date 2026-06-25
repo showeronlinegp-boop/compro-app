@@ -33,8 +33,9 @@ model products {
   category_key String? @db.Text
   brand_tier   Int?    @db.SmallInt
 
-  interests interests[]
-  shopping  shopping[]
+  interests  interests[]
+  shopping   shopping[]
+  cart_items cart_items[]
 
   @@unique([super, product_id])
   @@index([super])
@@ -74,6 +75,37 @@ model shopping {
 
   @@index([product_id])
   @@map("shopping")
+}
+
+// ---------------------------------------------------------------------------
+// cart
+// ---------------------------------------------------------------------------
+model cart {
+  id         Int          @id @default(autoincrement())
+  created_at DateTime     @default(now()) @db.Timestamptz(6)
+  updated_at DateTime     @updatedAt @db.Timestamptz(6)
+  items      cart_items[]
+
+  @@map("cart")
+}
+
+// ---------------------------------------------------------------------------
+// cart_items
+// ---------------------------------------------------------------------------
+model cart_items {
+  id         Int      @id @default(autoincrement())
+  cart_id    Int
+  product_id Int
+  quantity   Int      @default(1) @db.SmallInt
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  cart    cart     @relation(fields: [cart_id], references: [id], onDelete: Cascade)
+  product products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+
+  @@unique([cart_id, product_id])
+  @@index([cart_id])
+  @@index([product_id])
+  @@map("cart_items")
 }
 
 // ---------------------------------------------------------------------------
