@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { api } from './api';
 import { LocationSelector } from './components/LocationSelector';
+import { CartProvider } from './contexts/CartContext';
 import Compare from './pages/Compare';
 import Explorar from './pages/Explorar';
 import Intereses from './pages/Intereses';
@@ -300,6 +301,7 @@ export default function App() {
   const shoppingIds = new Set(shopping.map((s) => s.id));
 
   return (
+    <CartProvider>
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Navbar */}
       <nav className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-40">
@@ -400,5 +402,6 @@ export default function App() {
         </Routes>
       </main>
     </div>
+    </CartProvider>
   );
 }
