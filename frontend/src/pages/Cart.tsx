@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api } from '../api';
 import { ItemMatchTable, OptionATable, OptionBBreakdown } from '../components/compare';
 import { useCart } from '../contexts/CartContext';
@@ -15,15 +15,17 @@ export default function Cart() {
   const [compareResult, setCompareResult] = useState<CompareResult | null>(null);
   const [compareLoading, setCompareLoading] = useState(false);
   const [compareError, setCompareError] = useState('');
-  const [loadedSig, setLoadedSig] = useState<string | null>(null);
+  // useRef so mutating it never triggers a re-render / extra effect tick
+  const loadedSigRef = useRef<string | null>(null);
 
   // Stale signature: one entry per cart item, cart_item_id:quantity
   const sig = items.map((i) => `${i.cart_item_id}:${i.quantity}`).join(',');
 
-  // Lazy-fetch compare on Comparar activation; refetch when sig changed
+  // Guard: skip if already loaded for this cart snapshot (sig).
+  // Refetch when the snapshot changed (new sig) or on first Comparar activation.
   useEffect(() => {
     if (tab !== 'compare') return;
-    if (compareResult !== null && loadedSig === sig) return;
+    if (loadedSigRef.current === sig) return;
 
     setCompareLoading(true);
     setCompareError('');
@@ -31,14 +33,14 @@ export default function Cart() {
       .compare()
       .then((res) => {
         setCompareResult(res);
-        setLoadedSig(sig);
+        loadedSigRef.current = sig;
       })
       .catch((e) => {
         console.error(e);
         setCompareError('No se pudo cargar la comparación.');
       })
       .finally(() => setCompareLoading(false));
-  }, [tab, sig, compareResult, loadedSig]);
+  }, [tab, sig]);
 
   // ─── Empty cart ─────────────────────────────────────────────────────────────
   if (items.length === 0) {
@@ -61,7 +63,8 @@ export default function Cart() {
       : `${items.length} productos · ${itemCount} unidades`;
 
   // ─── Compare transparency line ───────────────────────────────────────────────
-  const matched = compareResult
+  // Only counts items with at least one match from a super other than their home super.
+  const crossSuperMatchedCount = compareResult
     ? compareResult.items.filter((i) => i.matches.some((m) => m.super !== i.home_super)).length
     : 0;
 
@@ -208,9 +211,9 @@ export default function Cart() {
             ) : (
               <div className="space-y-6">
                 {/* Transparency line */}
-                {matched < items.length && (
+                {crossSuperMatchedCount < items.length && (
                   <p className="text-xs text-gray-500 text-center">
-                    Comparamos {matched} de {items.length} productos
+                    Comparamos {crossSuperMatchedCount} de {items.length} productos
                   </p>
                 )}
 

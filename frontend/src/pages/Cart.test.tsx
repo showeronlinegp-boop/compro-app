@@ -212,7 +212,7 @@ describe('Cart compare tab behavior', () => {
   it('stale guard: changed signature triggers a second fetch on re-activation', async () => {
     mockCompare.mockResolvedValue(makeCompareResult());
 
-    renderCart();
+    const { rerender } = renderCart();
 
     // First activation → fetch #1
     act(() => {
@@ -225,14 +225,41 @@ describe('Cart compare tab behavior', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
     });
 
-    // Simulate cart change by mutating mockItems (different quantity → different sig)
+    // Mutate mockItems (different quantity → different sig) then re-render
+    // so the component picks up the new items before we re-activate Comparar.
     mockItems = [makeItem({ cart_item_id: 1, quantity: 3 })];
     mockItemCount = 3;
+    rerender(<Cart />);
 
     // Re-activate Comparar → sig changed → fetch #2
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
     });
     await waitFor(() => expect(mockCompare).toHaveBeenCalledTimes(2));
+  });
+
+  it('no needless refetch: unchanged cart does not trigger a second fetch', async () => {
+    mockCompare.mockResolvedValue(makeCompareResult());
+
+    renderCart();
+
+    // Open Comparar → fetch #1
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
+    });
+    await waitFor(() => expect(mockCompare).toHaveBeenCalledTimes(1));
+
+    // Switch to Editar (cart unchanged)
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    });
+
+    // Back to Comparar — same sig → guard must skip the fetch
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
+    });
+
+    // Still exactly one call
+    await waitFor(() => expect(mockCompare).toHaveBeenCalledTimes(1));
   });
 });

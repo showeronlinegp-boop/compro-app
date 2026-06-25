@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ItemMatchTable, OptionATable, OptionBBreakdown } from '../components/compare';
 import { api } from '../api';
+import { ItemMatchTable, OptionATable, OptionBBreakdown } from '../components/compare';
 import { pesos, superCfg } from '../supers';
 import type { CompareResult } from '../types/api';
 
@@ -122,13 +122,13 @@ export default function Compare() {
             <OptionBBreakdown result={result.option_b} items={result.items} />
           </div>
 
-          {/* Resumen de ahorro */}
+          {/* Resumen de ahorro — Planner-only; intentionally not extracted into a shared component */}
           {savings > 0 && cheapestA && (
             <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-center">
               <p className="text-sm font-semibold text-emerald-800">
                 Dividir la compra te ahorra{' '}
-                <span className="text-emerald-700 font-bold">{pesos(savings)}</span> vs comprar todo en{' '}
-                {superCfg(cheapestA.super).label}
+                <span className="text-emerald-700 font-bold">{pesos(savings)}</span> vs comprar todo
+                en {superCfg(cheapestA.super).label}
               </p>
               <p className="text-xs text-emerald-600 mt-1">
                 Tiene sentido si los supers están cerca uno del otro

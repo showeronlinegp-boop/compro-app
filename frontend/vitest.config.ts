@@ -7,5 +7,6 @@ export default defineConfig({
     environment: 'jsdom',
     globals: false,
     pool: 'forks',
+    forbidOnly: true,
   },
 });

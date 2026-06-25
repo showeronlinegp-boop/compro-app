@@ -3,6 +3,10 @@ import type { CompareItem } from '../../types/api';
 
 interface ItemMatchTableProps {
   items: CompareItem[];
+  /**
+   * DISPLAY-LABEL hint only. Prices are always pre-multiplied by the caller/back end;
+   * this component never performs any multiplication — it renders whatever values it receives.
+   */
   priceMode?: 'unit' | 'line';
 }
 
