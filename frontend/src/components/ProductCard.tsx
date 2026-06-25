@@ -1,6 +1,6 @@
-import { useCart } from '../contexts/CartContext';
 import { pesos, superCfg } from '../supers';
 import type { Product } from '../types/api';
+import AddToCartButton from './AddToCartButton';
 import ProductImage from './ProductImage';
 
 export interface ProductCardProps {
@@ -16,7 +16,6 @@ export default function ProductCard({
   onToggleInterest,
   onAddToShopping,
 }: ProductCardProps) {
-  const { addItem } = useCart();
   const cfg = superCfg(product.super);
   const price = product.offer_price ?? product.raw_price;
 
@@ -96,16 +95,7 @@ export default function ProductCard({
             </button>
           )}
 
-          <button
-            type="button"
-            aria-label="Agregar al carrito"
-            onClick={() => {
-              addItem(product.id).catch(console.error);
-            }}
-            className="text-xs px-2.5 py-1.5 rounded-xl font-medium border bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 transition-colors"
-          >
-            + Carrito
-          </button>
+          <AddToCartButton productId={product.id} />
         </div>
       </div>
     </div>
