@@ -61,9 +61,52 @@ describe('makeCartRepo', () => {
         expect(second.cart_id).toBe(first.cart_id);
       });
     });
+
+    it('preserves pre-existing items on the second call', async () => {
+      await withRollback(async (tx) => {
+        const productId = await seedProduct(tx);
+        const repo = makeCartRepo(tx);
+
+        await repo.getOrCreate();
+        await repo.addItem(productId, 2);
+
+        // Second getOrCreate must not wipe items
+        const second = await repo.getOrCreate();
+        expect(second.items).toHaveLength(1);
+        expect(second.items[0]?.quantity).toBe(2);
+      });
+    });
   });
 
   describe('addItem', () => {
+    it('creates the cart automatically when none exists, then adds the item', async () => {
+      await withRollback(async (tx) => {
+        const productId = await seedProduct(tx);
+        const repo = makeCartRepo(tx);
+
+        // No getOrCreate call first — addItem must create the cart itself
+        const result = await repo.addItem(productId, 1);
+
+        expect(result.cart_id).toBeTypeOf('number');
+        expect(result.cart_id).toBeGreaterThan(0);
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]?.quantity).toBe(1);
+      });
+    });
+
+    it('honors the passed quantity on the create branch (not defaulting to 1)', async () => {
+      await withRollback(async (tx) => {
+        const productId = await seedProduct(tx);
+        const repo = makeCartRepo(tx);
+
+        // No pre-existing cart
+        const result = await repo.addItem(productId, 3);
+
+        expect(result.items[0]?.quantity).toBe(3);
+        expect(result.item_count).toBe(3);
+      });
+    });
+
     it('inserts a new item and returns updated CartResult', async () => {
       await withRollback(async (tx) => {
         const productId = await seedProduct(tx);
@@ -97,13 +140,10 @@ describe('makeCartRepo', () => {
     it('throws 404 when product_id does not exist', async () => {
       await withRollback(async (tx) => {
         const repo = makeCartRepo(tx);
-        await expect(repo.addItem(99999, 1)).rejects.toThrow('Producto no encontrado');
-
-        try {
-          await repo.addItem(99999, 1);
-        } catch (err) {
-          expect((err as Error & { statusCode?: number }).statusCode).toBe(404);
-        }
+        await expect(repo.addItem(99999, 1)).rejects.toMatchObject({
+          message: expect.stringContaining('Producto no encontrado'),
+          statusCode: 404,
+        });
       });
     });
   });
@@ -137,26 +177,20 @@ describe('makeCartRepo', () => {
         expect(itemId).toBeDefined();
         if (!itemId) throw new Error('cart_item_id missing');
 
-        await expect(repo.updateQty(itemId, 0)).rejects.toThrow('La cantidad debe ser al menos 1');
-
-        try {
-          await repo.updateQty(itemId, 0);
-        } catch (err) {
-          expect((err as Error & { statusCode?: number }).statusCode).toBe(400);
-        }
+        await expect(repo.updateQty(itemId, 0)).rejects.toMatchObject({
+          message: expect.stringContaining('La cantidad debe ser al menos 1'),
+          statusCode: 400,
+        });
       });
     });
 
     it('throws 404 when cart_item_id does not exist', async () => {
       await withRollback(async (tx) => {
         const repo = makeCartRepo(tx);
-        await expect(repo.updateQty(99999, 1)).rejects.toThrow('Item no encontrado');
-
-        try {
-          await repo.updateQty(99999, 1);
-        } catch (err) {
-          expect((err as Error & { statusCode?: number }).statusCode).toBe(404);
-        }
+        await expect(repo.updateQty(99999, 1)).rejects.toMatchObject({
+          message: expect.stringContaining('Item no encontrado'),
+          statusCode: 404,
+        });
       });
     });
   });
@@ -188,13 +222,10 @@ describe('makeCartRepo', () => {
     it('throws 404 when cart_item_id does not exist', async () => {
       await withRollback(async (tx) => {
         const repo = makeCartRepo(tx);
-        await expect(repo.removeItem(99999)).rejects.toThrow('Item no encontrado');
-
-        try {
-          await repo.removeItem(99999);
-        } catch (err) {
-          expect((err as Error & { statusCode?: number }).statusCode).toBe(404);
-        }
+        await expect(repo.removeItem(99999)).rejects.toMatchObject({
+          message: expect.stringContaining('Item no encontrado'),
+          statusCode: 404,
+        });
       });
     });
   });

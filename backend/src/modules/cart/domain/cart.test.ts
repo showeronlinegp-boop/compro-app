@@ -16,22 +16,33 @@ describe('sumItemCount', () => {
 });
 
 describe('clampQty', () => {
-  it('returns the value unchanged when n >= 1', () => {
+  it('returns the value unchanged when 1 <= n <= 999', () => {
     expect(clampQty(1)).toBe(1);
     expect(clampQty(5)).toBe(5);
-    expect(clampQty(100)).toBe(100);
+    expect(clampQty(999)).toBe(999);
   });
 
   it('throws a 400-tagged Error when n < 1', () => {
-    expect(() => clampQty(0)).toThrow('La cantidad debe ser al menos 1');
-    expect(() => clampQty(-1)).toThrow('La cantidad debe ser al menos 1');
+    expect(() => clampQty(0)).toThrowError(
+      expect.objectContaining({
+        message: expect.stringContaining('La cantidad debe ser al menos 1'),
+        statusCode: 400,
+      }),
+    );
+    expect(() => clampQty(-1)).toThrowError(
+      expect.objectContaining({
+        message: expect.stringContaining('La cantidad debe ser al menos 1'),
+        statusCode: 400,
+      }),
+    );
   });
 
-  it('attaches statusCode 400 to the thrown error', () => {
-    try {
-      clampQty(0);
-    } catch (err) {
-      expect((err as Error & { statusCode?: number }).statusCode).toBe(400);
-    }
+  it('throws a 400-tagged Error when n > 999', () => {
+    expect(() => clampQty(1000)).toThrowError(
+      expect.objectContaining({
+        message: expect.stringContaining('La cantidad no puede superar 999'),
+        statusCode: 400,
+      }),
+    );
   });
 });
