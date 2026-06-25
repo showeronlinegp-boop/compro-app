@@ -55,10 +55,22 @@ type PrismaLike = Pick<PrismaClient, '$queryRaw' | '$executeRaw'> & {
   products: PrismaClient['products'];
 };
 
+// ─── Atomic single-cart resolver ──────────────────────────────────────────────
+// Ensures exactly one cart row exists (id = 1). The upsert is idempotent:
+// concurrent calls hit the same primary key and the DB serialises them safely.
+
+async function resolveCart(prisma: PrismaLike): Promise<{ id: number }> {
+  return prisma.cart.upsert({
+    where: { id: 1 },
+    create: { id: 1 },
+    update: {},
+  });
+}
+
 // ─── Hydration helper ─────────────────────────────────────────────────────────
 
 async function hydrateCart(prisma: PrismaLike, cart_id: number): Promise<CartResult> {
-  const rows = await (prisma as PrismaClient).$queryRaw<CartItemRow[]>(Prisma.sql`
+  const rows = await prisma.$queryRaw<CartItemRow[]>(Prisma.sql`
     SELECT
       ci.id AS cart_item_id,
       ci.quantity,
@@ -83,11 +95,7 @@ async function hydrateCart(prisma: PrismaLike, cart_id: number): Promise<CartRes
 export function makeCartRepo(prisma: PrismaLike): CartRepo {
   return {
     async getOrCreate() {
-      // Single-cart app: always resolve to id=1 (get-or-create).
-      let cart = await prisma.cart.findFirst({ orderBy: { id: 'asc' } });
-      if (!cart) {
-        cart = await prisma.cart.create({ data: {} });
-      }
+      const cart = await resolveCart(prisma);
       return hydrateCart(prisma, cart.id);
     },
 
@@ -99,10 +107,7 @@ export function makeCartRepo(prisma: PrismaLike): CartRepo {
 
       clampQty(quantity);
 
-      let cart = await prisma.cart.findFirst({ orderBy: { id: 'asc' } });
-      if (!cart) {
-        cart = await prisma.cart.create({ data: {} });
-      }
+      const cart = await resolveCart(prisma);
 
       await prisma.cart_items.upsert({
         where: {
@@ -143,13 +148,8 @@ export function makeCartRepo(prisma: PrismaLike): CartRepo {
     },
 
     async clear() {
-      let cart = await prisma.cart.findFirst({ orderBy: { id: 'asc' } });
-      if (!cart) {
-        cart = await prisma.cart.create({ data: {} });
-      }
-
+      const cart = await resolveCart(prisma);
       await prisma.cart_items.deleteMany({ where: { cart_id: cart.id } });
-
       return hydrateCart(prisma, cart.id);
     },
   };
