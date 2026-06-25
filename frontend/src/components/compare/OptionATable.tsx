@@ -31,7 +31,8 @@ export function OptionATable({ summaries }: OptionATableProps) {
                 {cfg.label}
               </span>
               <span className="text-xs text-gray-500">
-                {s.coverage}% de ítems ({s.missing_items > 0 ? `faltan ${s.missing_items}` : 'completo'})
+                {s.coverage}% de ítems (
+                {s.missing_items > 0 ? `faltan ${s.missing_items}` : 'completo'})
               </span>
             </div>
             <div className="text-right">

@@ -26,7 +26,9 @@ export function ItemMatchTable({ items, priceMode = 'unit' }: ItemMatchTableProp
               const cfg = superCfg(s);
               return (
                 <th key={s} className="text-center py-2 px-2">
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}>
+                  <span
+                    className={`text-xs font-bold px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}
+                  >
                     {cfg.label}
                   </span>
                 </th>
@@ -42,7 +44,9 @@ export function ItemMatchTable({ items, priceMode = 'unit' }: ItemMatchTableProp
 
             return (
               <tr key={item.shopping_id} className="border-b border-gray-50 hover:bg-gray-50">
-                <td className="py-2 pr-3 text-gray-700 font-medium truncate max-w-40">{item.name}</td>
+                <td className="py-2 pr-3 text-gray-700 font-medium truncate max-w-40">
+                  {item.name}
+                </td>
                 {allSupers.map((s) => {
                   const match = matchBySuperMap.get(s);
                   const isBest = bestPrice !== null && match?.price === bestPrice;

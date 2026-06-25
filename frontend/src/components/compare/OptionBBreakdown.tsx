@@ -43,7 +43,9 @@ export function OptionBBreakdown({ result, items }: OptionBBreakdownProps) {
             >
               <p className="text-gray-700 truncate flex-1 mr-3">{item.name}</p>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}>
+                <span
+                  className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}
+                >
                   {cfg.label}
                 </span>
                 <span className="font-semibold text-gray-900">{pesos(b.price)}</span>
