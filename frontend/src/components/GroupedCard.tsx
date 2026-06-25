@@ -1,6 +1,6 @@
+import { useCart } from '../contexts/CartContext';
 import { pesos, superCfg } from '../supers';
 import type { Product, ProductGroup, Promotion } from '../types/api';
-import { useCart } from '../contexts/CartContext';
 import ProductImage from './ProductImage';
 
 export interface GroupedCardProps {
@@ -214,7 +214,9 @@ export default function GroupedCard({
         <button
           type="button"
           aria-label="Agregar al carrito"
-          onClick={() => { addItem(target.id).catch(console.error); }}
+          onClick={() => {
+            addItem(target.id).catch(console.error);
+          }}
           className="text-xs px-2.5 py-1.5 rounded-xl font-medium border bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 transition-colors"
         >
           + Carrito
