@@ -266,6 +266,17 @@ export interface CartResult {
 
 // ─── Compare multi-super ─────────────────────────────────────────────────────
 
+/**
+ * A source row that drives the parameterized compare engine.
+ * item_id is the caller-defined identifier (shopping_id or cart_item_id).
+ * quantity is used for line-total price multiplication inside the engine.
+ */
+export interface SourceRow {
+  item_id: number;
+  product_id: number;
+  quantity: number;
+}
+
 export interface SuperMatch {
   super: string;
   product_id: number;

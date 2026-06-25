@@ -1,9 +1,10 @@
 import type { PrismaClient } from '@prisma/client';
 import { Prisma } from '@prisma/client';
-import type { CompareItem, SuperMatch } from '../../../shared/types.js';
+import type { CompareItem, SourceRow, SuperMatch } from '../../../shared/types.js';
 
-interface ShoppingBaseRow {
-  shopping_id: number;
+// ─── Internal row types ───────────────────────────────────────────────────────
+
+interface ProductBaseRow {
   product_id: number;
   name: string;
   home_super: string;
@@ -13,7 +14,7 @@ interface ShoppingBaseRow {
 }
 
 interface MatchRow {
-  shopping_id: number;
+  product_id: number;
   match_product_id: number;
   match_super: string;
   match_name: string;
@@ -21,71 +22,90 @@ interface MatchRow {
   matched_by: 'barcode' | 'name_similarity';
 }
 
+interface ShoppingRow {
+  shopping_id: number;
+  product_id: number;
+}
+
+// ─── Repo interface ───────────────────────────────────────────────────────────
+
 export interface CompareRepo {
   buildCompareItems(): Promise<CompareItem[]>;
+  buildCompareItemsFromSource(source: SourceRow[]): Promise<CompareItem[]>;
 }
+
+// ─── Factory ──────────────────────────────────────────────────────────────────
 
 export function makeCompareRepo(prisma: PrismaClient): CompareRepo {
   return {
-    async buildCompareItems() {
-      // Load all shopping items with their product info
-      const baseRows = await prisma.$queryRaw<ShoppingBaseRow[]>(Prisma.sql`
+    async buildCompareItemsFromSource(source: SourceRow[]): Promise<CompareItem[]> {
+      if (source.length === 0) return [];
+
+      const productIds = [...new Set(source.map((s) => s.product_id))];
+
+      // Load base product rows (anchor on p.id IN product_ids)
+      const baseRows = await prisma.$queryRaw<ProductBaseRow[]>(Prisma.sql`
         SELECT
-          s.id AS shopping_id,
           p.id AS product_id,
           p.name,
           p.super AS home_super,
           p.barcode,
           p.category_key,
           COALESCE(p.offer_price, p.raw_price) AS home_price
-        FROM shopping s
-        JOIN products p ON s.product_id = p.id
-        WHERE COALESCE(p.offer_price, p.raw_price) IS NOT NULL
+        FROM products p
+        WHERE p.id IN (${Prisma.join(productIds)})
+          AND COALESCE(p.offer_price, p.raw_price) IS NOT NULL
       `);
 
       if (baseRows.length === 0) return [];
 
-      // Barcode matching (exact, cross-super)
+      // Build product_id → base row map
+      const baseByProductId = new Map<number, ProductBaseRow>();
+      for (const r of baseRows) {
+        baseByProductId.set(Number(r.product_id), r);
+      }
+
+      // ── Barcode matching (exact, cross-super) ──────────────────────────────
+
       const barcodeMatches = await prisma.$queryRaw<MatchRow[]>(Prisma.sql`
         SELECT
-          s.id AS shopping_id,
+          p.id AS product_id,
           p2.id AS match_product_id,
           p2.super AS match_super,
           p2.name AS match_name,
           COALESCE(p2.offer_price, p2.raw_price) AS match_price,
           'barcode' AS matched_by
-        FROM shopping s
-        JOIN products p ON s.product_id = p.id
+        FROM products p
         JOIN products p2 ON p2.barcode = p.barcode
                          AND p2.barcode IS NOT NULL
                          AND p2.barcode != ''
                          AND p2.super != p.super
                          AND p2.available = true
                          AND COALESCE(p2.offer_price, p2.raw_price) IS NOT NULL
+        WHERE p.id IN (${Prisma.join(productIds)})
       `);
 
-      // Collect shopping_ids that already have barcode matches (at least one super)
-      const withBarcodeMatch = new Set(barcodeMatches.map((r) => Number(r.shopping_id)));
+      // product_ids that already have barcode matches (at least one super)
+      const withBarcodeMatch = new Set(barcodeMatches.map((r) => Number(r.product_id)));
 
-      // Name similarity matching for items without barcode matches
-      const itemsNeedingSimilarity = baseRows.filter(
-        (r) => !withBarcodeMatch.has(Number(r.shopping_id)) && r.category_key,
+      // ── Name similarity matching for products without barcode matches ──────
+
+      const productIdsNeedingSimilarity = productIds.filter(
+        (pid) => !withBarcodeMatch.has(pid) && baseByProductId.get(pid)?.category_key,
       );
 
       let similarityMatches: MatchRow[] = [];
 
-      if (itemsNeedingSimilarity.length > 0) {
-        const shoppingIds = itemsNeedingSimilarity.map((r) => Number(r.shopping_id));
+      if (productIdsNeedingSimilarity.length > 0) {
         similarityMatches = await prisma.$queryRaw<MatchRow[]>(Prisma.sql`
-          SELECT DISTINCT ON (s.id, p2.super)
-            s.id AS shopping_id,
+          SELECT DISTINCT ON (p.id, p2.super)
+            p.id AS product_id,
             p2.id AS match_product_id,
             p2.super AS match_super,
             p2.name AS match_name,
             COALESCE(p2.offer_price, p2.raw_price) AS match_price,
             'name_similarity' AS matched_by
-          FROM shopping s
-          JOIN products p ON s.product_id = p.id
+          FROM products p
           JOIN products p2
             ON p2.super != p.super
            AND p2.available = true
@@ -96,8 +116,8 @@ export function makeCompareRepo(prisma: PrismaClient): CompareRepo {
                  regexp_replace(lower(immutable_unaccent(p.name)), '[^a-z0-9]+', ' ', 'g'),
                  regexp_replace(lower(immutable_unaccent(p2.name)), '[^a-z0-9]+', ' ', 'g')
                ) > 0.35
-          WHERE s.id IN (${Prisma.join(shoppingIds)})
-          ORDER BY s.id, p2.super,
+          WHERE p.id IN (${Prisma.join(productIdsNeedingSimilarity)})
+          ORDER BY p.id, p2.super,
             similarity(
               regexp_replace(lower(immutable_unaccent(p.name)), '[^a-z0-9]+', ' ', 'g'),
               regexp_replace(lower(immutable_unaccent(p2.name)), '[^a-z0-9]+', ' ', 'g')
@@ -107,51 +127,85 @@ export function makeCompareRepo(prisma: PrismaClient): CompareRepo {
 
       const allMatches = [...barcodeMatches, ...similarityMatches];
 
-      // Group matches by shopping_id
-      const matchesByShoppingId = new Map<number, SuperMatch[]>();
+      // ── Build product_id → SuperMatch[] map (unit prices, pre-dedup) ────────
+
+      const matchesByProductId = new Map<number, SuperMatch[]>();
       for (const m of allMatches) {
-        const id = Number(m.shopping_id);
-        const list = matchesByShoppingId.get(id) ?? [];
+        const pid = Number(m.product_id);
+        const list = matchesByProductId.get(pid) ?? [];
         list.push({
           super: m.match_super,
           product_id: Number(m.match_product_id),
           name: m.match_name,
-          price: Number(m.match_price),
+          price: Number(m.match_price), // unit price — multiplied per-row below
           matched_by: m.matched_by,
         });
-        matchesByShoppingId.set(id, list);
+        matchesByProductId.set(pid, list);
       }
 
-      // Build CompareItems including the home super as a match
-      return baseRows.map((r): CompareItem => {
-        const id = Number(r.shopping_id);
-        const externalMatches = matchesByShoppingId.get(id) ?? [];
+      // ── Iterate source rows — one CompareItem per SourceRow ─────────────────
+
+      const result: CompareItem[] = [];
+
+      for (const s of source) {
+        const base = baseByProductId.get(s.product_id);
+        if (!base) continue; // product has no priced row — skip silently
+
+        const qty = s.quantity;
+        const unitHomePrice = Number(base.home_price);
+        const externalUnitMatches = matchesByProductId.get(s.product_id) ?? [];
 
         const homeMatch: SuperMatch = {
-          super: r.home_super,
-          product_id: Number(r.product_id),
-          name: r.name,
-          price: Number(r.home_price),
+          super: base.home_super,
+          product_id: s.product_id,
+          name: base.name,
+          price: unitHomePrice, // dedup first at unit level, then multiply
           matched_by: 'barcode',
         };
 
-        // Merge home match + external matches, deduplicate by super (keep cheapest)
+        // Merge home + external matches, dedup per super (keep cheapest unit price)
         const bySuperMap = new Map<string, SuperMatch>();
-        for (const m of [homeMatch, ...externalMatches]) {
+        for (const m of [homeMatch, ...externalUnitMatches]) {
           const existing = bySuperMap.get(m.super);
           if (!existing || m.price < existing.price) {
             bySuperMap.set(m.super, m);
           }
         }
 
-        return {
-          shopping_id: id,
-          name: r.name,
-          home_super: r.home_super,
-          home_price: Number(r.home_price),
-          matches: [...bySuperMap.values()],
-        };
-      });
+        // Apply quantity multiplication after dedup
+        const dedupedMatches = [...bySuperMap.values()].map((m) => ({
+          ...m,
+          price: m.price * qty,
+        }));
+
+        result.push({
+          shopping_id: s.item_id,
+          name: base.name,
+          home_super: base.home_super,
+          home_price: unitHomePrice * qty,
+          matches: dedupedMatches,
+        });
+      }
+
+      return result;
+    },
+
+    async buildCompareItems(): Promise<CompareItem[]> {
+      // Fetch shopping rows → map to SourceRow (quantity=1) → delegate
+      const shoppingRows = await prisma.$queryRaw<ShoppingRow[]>(Prisma.sql`
+        SELECT s.id AS shopping_id, s.product_id
+        FROM shopping s
+        JOIN products p ON s.product_id = p.id
+        WHERE COALESCE(p.offer_price, p.raw_price) IS NOT NULL
+      `);
+
+      const source: SourceRow[] = shoppingRows.map((r) => ({
+        item_id: Number(r.shopping_id),
+        product_id: Number(r.product_id),
+        quantity: 1,
+      }));
+
+      return this.buildCompareItemsFromSource(source);
     },
   };
 }
