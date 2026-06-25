@@ -1,9 +1,16 @@
 import type { PrismaClient } from '@prisma/client';
 import { Prisma } from '@prisma/client';
-import type { CartItemEntry, CartResult, CompareResult, ProductRow, Promotion, SourceRow } from '../../../shared/types.js';
-import { clampQty, sumItemCount } from '../domain/cart.js';
+import type {
+  CartItemEntry,
+  CartResult,
+  CompareResult,
+  ProductRow,
+  Promotion,
+  SourceRow,
+} from '../../../shared/types.js';
 import { buildCompareResult } from '../../compare/domain/matcher.js';
 import type { CompareRepo } from '../../compare/infrastructure/compare.repo.js';
+import { clampQty, sumItemCount } from '../domain/cart.js';
 
 // ─── Row types from JOIN queries ──────────────────────────────────────────────
 
@@ -159,6 +166,16 @@ export function makeCartRepo(prisma: PrismaLike, compareRepo: CompareRepo): Cart
     async compareCart(): Promise<CompareResult> {
       const cart = await resolveCart(prisma);
       const cartResult = await hydrateCart(prisma, cart.id);
+
+      // Guard: refuse to compare carts with more than 100 distinct products
+      // to prevent runaway pg_trgm queries.
+      const distinctProducts = new Set(cartResult.items.map((i) => i.id));
+      if (distinctProducts.size > 100) {
+        throw Object.assign(
+          new Error('El carrito excede el límite de 100 productos distintos para comparar'),
+          { statusCode: 400 },
+        );
+      }
 
       const source: SourceRow[] = cartResult.items.map((i) => ({
         item_id: i.cart_item_id,

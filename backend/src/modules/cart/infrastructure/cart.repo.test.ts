@@ -323,5 +323,57 @@ describe('makeCartRepo', () => {
         expect(result.option_b.savings_vs_option_a).toBe(0);
       });
     });
+
+    it('non-empty cart → result.items[0].home_price = unitPrice × qty, shopping_id = cart_item_id', async () => {
+      await withRollback(async (tx) => {
+        const prismaLike = tx as unknown as Parameters<typeof makeCartRepo>[0];
+        const { makeCompareRepo } = await import('../../compare/infrastructure/compare.repo.js');
+
+        // Seed a priced product
+        const unitPrice = 350;
+        const productId = await tx.products
+          .create({
+            data: {
+              super: 'vea',
+              product_id: `cart-cmp-${Date.now()}`,
+              name: 'Leche Descremada 1L',
+              available: true,
+              categories: [],
+              raw_price: unitPrice,
+              offer_price: null,
+            },
+          })
+          .then((r) => r.id);
+
+        const compareRepo = makeCompareRepo(
+          prismaLike as unknown as Parameters<typeof makeCompareRepo>[0],
+        );
+        const repo = makeCartRepo(prismaLike, compareRepo);
+
+        // Add product with qty=2; capture the cart_item_id
+        const cartResult = await repo.addItem(productId, 2);
+        const cartItem = cartResult.items[0];
+        expect(cartItem).toBeDefined();
+        if (!cartItem) throw new Error('cartItem missing');
+        const cartItemId = cartItem.cart_item_id;
+
+        // compareCart exercises the real chain:
+        // hydrateCart → SourceRow mapping (item_id=cart_item_id, product_id=i.id)
+        // → buildCompareItemsFromSource → buildCompareResult
+        const result = await repo.compareCart();
+
+        expect(result.items).toHaveLength(1);
+        const cmpItem = result.items[0];
+        expect(cmpItem).toBeDefined();
+        if (!cmpItem) throw new Error('cmpItem missing');
+
+        // home_price must equal unitPrice × qty (proves qty multiplication end-to-end)
+        expect(cmpItem.home_price).toBe(unitPrice * 2);
+
+        // shopping_id must be cart_item_id, not the product PK
+        // (proves i.cart_item_id mapping, not i.id)
+        expect(cmpItem.shopping_id).toBe(cartItemId);
+      });
+    });
   });
 });

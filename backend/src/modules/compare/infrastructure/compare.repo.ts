@@ -10,7 +10,8 @@ interface ProductBaseRow {
   home_super: string;
   barcode: string | null;
   category_key: string | null;
-  home_price: number | null;
+  // Guaranteed non-null by the COALESCE(...) IS NOT NULL SQL filter.
+  home_price: number;
 }
 
 interface MatchRow {
@@ -151,7 +152,8 @@ export function makeCompareRepo(prisma: PrismaClient): CompareRepo {
         const base = baseByProductId.get(s.product_id);
         if (!base) continue; // product has no priced row — skip silently
 
-        const qty = s.quantity;
+        // Clamp quantity defensively — bad DB values must not corrupt totals.
+        const qty = Math.max(1, Math.floor(Number(s.quantity) || 1));
         const unitHomePrice = Number(base.home_price);
         const externalUnitMatches = matchesByProductId.get(s.product_id) ?? [];
 
@@ -172,7 +174,9 @@ export function makeCompareRepo(prisma: PrismaClient): CompareRepo {
           }
         }
 
-        // Apply quantity multiplication after dedup
+        // Multiply AFTER unit-level dedup so the cheapest-unit winner is preserved
+        // before scaling. Deduping post-multiplication would risk picking the wrong
+        // winner when quantities differ across source rows.
         const dedupedMatches = [...bySuperMap.values()].map((m) => ({
           ...m,
           price: m.price * qty,

@@ -268,8 +268,14 @@ export interface CartResult {
 
 /**
  * A source row that drives the parameterized compare engine.
- * item_id is the caller-defined identifier (shopping_id or cart_item_id).
- * quantity is used for line-total price multiplication inside the engine.
+ *
+ * - `item_id`    Caller-defined identifier propagated as `CompareItem.shopping_id`
+ *                (shopping table PK when called from buildCompareItems, cart_item_id
+ *                when called from compareCart).
+ * - `product_id` PK of the home product in the products table.
+ * - `quantity`   Units in the caller's list; the engine multiplies unit prices by this
+ *                value AFTER per-super dedup, so the returned `CompareItem.home_price`
+ *                and each `SuperMatch.price` are unit_price × quantity (line totals).
  */
 export interface SourceRow {
   item_id: number;

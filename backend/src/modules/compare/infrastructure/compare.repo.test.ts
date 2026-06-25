@@ -70,6 +70,32 @@ describe('makeCompareRepo', () => {
       });
     });
 
+    it('skips products with no price (raw_price=null, offer_price=null)', async () => {
+      await withRollback(async (tx) => {
+        const prismaLike = tx as unknown as Parameters<typeof makeCompareRepo>[0];
+
+        // Seed directly — seedProduct defaults raw_price to 100 via ??, so we bypass it
+        const priceless = await tx.products.create({
+          data: {
+            super: 'vea',
+            product_id: `noprice-${Date.now()}`,
+            name: 'Producto sin precio',
+            available: true,
+            categories: [],
+            raw_price: null,
+            offer_price: null,
+          },
+        });
+
+        const source: SourceRow[] = [{ item_id: 1, product_id: priceless.id, quantity: 1 }];
+        const repo = makeCompareRepo(prismaLike);
+        const result = await repo.buildCompareItemsFromSource(source);
+
+        // Product with no price must be silently skipped
+        expect(result).toEqual([]);
+      });
+    });
+
     it('qty=1: produces same CompareItem shape as buildCompareItems wrapper', async () => {
       await withRollback(async (tx) => {
         const prismaLike = tx as unknown as Parameters<typeof makeCompareRepo>[0];
@@ -114,19 +140,20 @@ describe('makeCompareRepo', () => {
         expect(sourceItem).toBeDefined();
         if (!wrapperItem || !sourceItem) return;
 
-        // Shape parity: same home_super, same home_price, same number of matches
-        expect(sourceItem.home_super).toBe(wrapperItem.home_super);
-        expect(sourceItem.home_price).toBe(wrapperItem.home_price);
-        expect(sourceItem.matches).toHaveLength(wrapperItem.matches.length);
+        // Full equality: the only intentional difference is shopping_id (wrapper uses
+        // the shopping table PK; source path uses item_id=999 passed directly).
+        // Sort matches by super so comparison is order-stable.
+        const sortMatches = (item: (typeof viaSource)[0]) => ({
+          ...item,
+          matches: [...item.matches].sort((a, b) => a.super.localeCompare(b.super)),
+        });
+        expect(sortMatches(sourceItem)).toEqual({
+          ...sortMatches(wrapperItem),
+          shopping_id: 999,
+        });
 
-        // The barcode match (carrefour) should appear in both
-        const wrapperCarrefour = wrapperItem.matches.find((m) => m.super === 'carrefour');
-        const sourceCarrefour = sourceItem.matches.find((m) => m.super === 'carrefour');
-        expect(wrapperCarrefour).toBeDefined();
-        expect(sourceCarrefour).toBeDefined();
-        expect(sourceCarrefour?.price).toBe(wrapperCarrefour?.price);
-
-        void matchId; // referenced above via barcode join
+        // matchId is seeded and matched via the DB barcode join — not referenced directly in code
+        void matchId;
       });
     });
 
@@ -226,6 +253,13 @@ describe('makeCompareRepo', () => {
 
         // option_b total = 560 + 2400 = 2960
         expect(result.option_b.total).toBe(2960);
+
+        // option_a cheapest: vea covers both items
+        //   item1 at vea: 300×2=600; item2 at vea: 800×3=2400 → vea total=3000
+        //   carrefour covers both: 280×2=560; 820×3=2460 → carrefour total=3020
+        // cheapest option_a super = vea (3000)
+        // savings = 3000 - 2960 = 40
+        expect(result.option_b.savings_vs_option_a).toBe(40);
       });
     });
   });
