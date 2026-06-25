@@ -2,7 +2,7 @@ import { useCart } from '../contexts/CartContext';
 import { pesos } from '../supers';
 
 export default function Cart() {
-  const { items, clear, updateQty, removeItem } = useCart();
+  const { items, itemCount, clear, updateQty, removeItem } = useCart();
 
   if (items.length === 0) {
     return (
@@ -20,7 +20,7 @@ export default function Cart() {
     <div className="max-w-2xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-lg font-bold text-gray-900">
-          Carrito ({items.length} {items.length === 1 ? 'artículo' : 'artículos'})
+          Carrito ({itemCount} {itemCount === 1 ? 'artículo' : 'artículos'})
         </h1>
         <button
           type="button"
