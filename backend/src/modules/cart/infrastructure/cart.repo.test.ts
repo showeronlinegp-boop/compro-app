@@ -7,6 +7,13 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { testPrisma } from '../../../test/helpers/test-client.js';
 import { withRollback } from '../../../test/helpers/with-rollback.js';
 import { makeCartRepo } from './cart.repo.js';
+import type { CompareRepo } from '../../compare/infrastructure/compare.repo.js';
+
+// Minimal stub — existing tests don't exercise compareCart
+const stubCompareRepo: CompareRepo = {
+  buildCompareItems: async () => [],
+  buildCompareItemsFromSource: async () => [],
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -42,7 +49,7 @@ describe('makeCartRepo', () => {
   describe('getOrCreate', () => {
     it('returns an empty CartResult with a cart_id', async () => {
       await withRollback(async (tx) => {
-        const repo = makeCartRepo(tx);
+        const repo = makeCartRepo(tx, stubCompareRepo);
         const result = await repo.getOrCreate();
 
         expect(result.cart_id).toBeTypeOf('number');
@@ -54,7 +61,7 @@ describe('makeCartRepo', () => {
 
     it('returns the same cart_id on repeated calls (get-or-create semantics)', async () => {
       await withRollback(async (tx) => {
-        const repo = makeCartRepo(tx);
+        const repo = makeCartRepo(tx, stubCompareRepo);
         const first = await repo.getOrCreate();
         const second = await repo.getOrCreate();
 
@@ -65,7 +72,7 @@ describe('makeCartRepo', () => {
     it('preserves pre-existing items on the second call', async () => {
       await withRollback(async (tx) => {
         const productId = await seedProduct(tx);
-        const repo = makeCartRepo(tx);
+        const repo = makeCartRepo(tx, stubCompareRepo);
 
         await repo.getOrCreate();
         await repo.addItem(productId, 2);
@@ -82,7 +89,7 @@ describe('makeCartRepo', () => {
     it('creates the cart automatically when none exists, then adds the item', async () => {
       await withRollback(async (tx) => {
         const productId = await seedProduct(tx);
-        const repo = makeCartRepo(tx);
+        const repo = makeCartRepo(tx, stubCompareRepo);
 
         // No getOrCreate call first — addItem must create the cart itself
         const result = await repo.addItem(productId, 1);
@@ -97,7 +104,7 @@ describe('makeCartRepo', () => {
     it('honors the passed quantity on the create branch (not defaulting to 1)', async () => {
       await withRollback(async (tx) => {
         const productId = await seedProduct(tx);
-        const repo = makeCartRepo(tx);
+        const repo = makeCartRepo(tx, stubCompareRepo);
 
         // No pre-existing cart
         const result = await repo.addItem(productId, 3);
@@ -110,7 +117,7 @@ describe('makeCartRepo', () => {
     it('inserts a new item and returns updated CartResult', async () => {
       await withRollback(async (tx) => {
         const productId = await seedProduct(tx);
-        const repo = makeCartRepo(tx);
+        const repo = makeCartRepo(tx, stubCompareRepo);
         await repo.getOrCreate();
 
         const result = await repo.addItem(productId, 1);
@@ -125,7 +132,7 @@ describe('makeCartRepo', () => {
     it('upserts: adding the same product_id a second time increments quantity', async () => {
       await withRollback(async (tx) => {
         const productId = await seedProduct(tx);
-        const repo = makeCartRepo(tx);
+        const repo = makeCartRepo(tx, stubCompareRepo);
         await repo.getOrCreate();
 
         await repo.addItem(productId, 1);
@@ -139,7 +146,7 @@ describe('makeCartRepo', () => {
 
     it('throws 404 when product_id does not exist', async () => {
       await withRollback(async (tx) => {
-        const repo = makeCartRepo(tx);
+        const repo = makeCartRepo(tx, stubCompareRepo);
         await expect(repo.addItem(99999, 1)).rejects.toMatchObject({
           message: expect.stringContaining('Producto no encontrado'),
           statusCode: 404,
@@ -152,7 +159,7 @@ describe('makeCartRepo', () => {
     it('changes quantity and returns updated CartResult', async () => {
       await withRollback(async (tx) => {
         const productId = await seedProduct(tx);
-        const repo = makeCartRepo(tx);
+        const repo = makeCartRepo(tx, stubCompareRepo);
         await repo.getOrCreate();
 
         const added = await repo.addItem(productId, 1);
@@ -169,7 +176,7 @@ describe('makeCartRepo', () => {
     it('throws 400 when quantity < 1', async () => {
       await withRollback(async (tx) => {
         const productId = await seedProduct(tx);
-        const repo = makeCartRepo(tx);
+        const repo = makeCartRepo(tx, stubCompareRepo);
         await repo.getOrCreate();
 
         const added = await repo.addItem(productId, 1);
@@ -186,7 +193,7 @@ describe('makeCartRepo', () => {
 
     it('throws 404 when cart_item_id does not exist', async () => {
       await withRollback(async (tx) => {
-        const repo = makeCartRepo(tx);
+        const repo = makeCartRepo(tx, stubCompareRepo);
         await expect(repo.updateQty(99999, 1)).rejects.toMatchObject({
           message: expect.stringContaining('Item no encontrado'),
           statusCode: 404,
@@ -200,7 +207,7 @@ describe('makeCartRepo', () => {
       await withRollback(async (tx) => {
         const p1 = await seedProduct(tx, { product_id: 'r1' });
         const p2 = await seedProduct(tx, { product_id: 'r2' });
-        const repo = makeCartRepo(tx);
+        const repo = makeCartRepo(tx, stubCompareRepo);
         await repo.getOrCreate();
 
         await repo.addItem(p1, 1);
@@ -221,7 +228,7 @@ describe('makeCartRepo', () => {
 
     it('throws 404 when cart_item_id does not exist', async () => {
       await withRollback(async (tx) => {
-        const repo = makeCartRepo(tx);
+        const repo = makeCartRepo(tx, stubCompareRepo);
         await expect(repo.removeItem(99999)).rejects.toMatchObject({
           message: expect.stringContaining('Item no encontrado'),
           statusCode: 404,
@@ -235,7 +242,7 @@ describe('makeCartRepo', () => {
       await withRollback(async (tx) => {
         const p1 = await seedProduct(tx, { product_id: 'c1' });
         const p2 = await seedProduct(tx, { product_id: 'c2' });
-        const repo = makeCartRepo(tx);
+        const repo = makeCartRepo(tx, stubCompareRepo);
         await repo.getOrCreate();
 
         await repo.addItem(p1, 2);
@@ -257,7 +264,7 @@ describe('makeCartRepo', () => {
         const p1 = await seedProduct(tx, { product_id: 'q1' });
         const p2 = await seedProduct(tx, { product_id: 'q2' });
         const p3 = await seedProduct(tx, { product_id: 'q3' });
-        const repo = makeCartRepo(tx);
+        const repo = makeCartRepo(tx, stubCompareRepo);
         await repo.getOrCreate();
 
         await repo.addItem(p1, 3);
@@ -273,7 +280,7 @@ describe('makeCartRepo', () => {
     it('includes full Product fields and cart-specific fields', async () => {
       await withRollback(async (tx) => {
         const productId = await seedProduct(tx, { name: 'Leche Entera' });
-        const repo = makeCartRepo(tx);
+        const repo = makeCartRepo(tx, stubCompareRepo);
         await repo.getOrCreate();
 
         const result = await repo.addItem(productId, 2);
