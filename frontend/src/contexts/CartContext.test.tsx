@@ -39,6 +39,7 @@ interface CartState {
   itemCount: number;
   itemsLength: number;
   addItem: (product_id: number, quantity?: number) => Promise<void>;
+  updateQty: (cart_item_id: number, quantity: number) => Promise<void>;
   removeItem: (cart_item_id: number) => Promise<void>;
   clear: () => Promise<void>;
 }
@@ -46,8 +47,8 @@ interface CartState {
 let captured: CartState | null = null;
 
 function TestConsumer() {
-  const { itemCount, items, addItem, removeItem, clear } = useCart();
-  captured = { itemCount, itemsLength: items.length, addItem, removeItem, clear };
+  const { itemCount, items, addItem, updateQty, removeItem, clear } = useCart();
+  captured = { itemCount, itemsLength: items.length, addItem, updateQty, removeItem, clear };
   return null;
 }
 
@@ -146,5 +147,22 @@ describe('CartContext behavior', () => {
 
     expect(captured?.itemCount).toBe(0);
     expect(mockClear).toHaveBeenCalledTimes(1);
+  });
+
+  it('updateQty calls api with correct args and reflects mocked response', async () => {
+    mockGet.mockResolvedValue(makeCart({ item_count: 1 }));
+    const afterUpdate = makeCart({ item_count: 3, items: [{}] as CartResult['items'] });
+    mockUpdateQty.mockResolvedValue(afterUpdate);
+
+    setup();
+    await waitFor(() => expect(captured?.itemCount).toBe(1));
+
+    await act(async () => {
+      await captured?.updateQty(7, 3);
+    });
+
+    expect(mockUpdateQty).toHaveBeenCalledWith(7, 3);
+    expect(captured?.itemCount).toBe(3);
+    expect(captured?.itemsLength).toBe(1);
   });
 });
