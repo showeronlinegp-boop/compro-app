@@ -1,6 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import { Prisma } from '@prisma/client';
-import type { CartItemEntry, CartResult, Promotion, ProductRow } from '../../../shared/types.js';
+import type { CartItemEntry, CartResult, ProductRow, Promotion } from '../../../shared/types.js';
 import { clampQty, sumItemCount } from '../domain/cart.js';
 
 // ─── Row types from JOIN queries ──────────────────────────────────────────────

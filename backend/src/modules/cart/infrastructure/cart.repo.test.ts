@@ -118,8 +118,9 @@ describe('makeCartRepo', () => {
         const added = await repo.addItem(productId, 1);
         const itemId = added.items[0]?.cart_item_id;
         expect(itemId).toBeDefined();
+        if (!itemId) throw new Error('cart_item_id missing');
 
-        const updated = await repo.updateQty(itemId!, 5);
+        const updated = await repo.updateQty(itemId, 5);
         expect(updated.items[0]?.quantity).toBe(5);
         expect(updated.item_count).toBe(5);
       });
@@ -134,11 +135,12 @@ describe('makeCartRepo', () => {
         const added = await repo.addItem(productId, 1);
         const itemId = added.items[0]?.cart_item_id;
         expect(itemId).toBeDefined();
+        if (!itemId) throw new Error('cart_item_id missing');
 
-        await expect(repo.updateQty(itemId!, 0)).rejects.toThrow('La cantidad debe ser al menos 1');
+        await expect(repo.updateQty(itemId, 0)).rejects.toThrow('La cantidad debe ser al menos 1');
 
         try {
-          await repo.updateQty(itemId!, 0);
+          await repo.updateQty(itemId, 0);
         } catch (err) {
           expect((err as Error & { statusCode?: number }).statusCode).toBe(400);
         }
@@ -171,17 +173,15 @@ describe('makeCartRepo', () => {
         const after2 = await repo.addItem(p2, 1);
         expect(after2.items).toHaveLength(2);
 
-        const itemId = after2.items.find((i) => i.product_id === String(p1) || i.id === p1)
-          ?.cart_item_id;
         // Find item by the product's numeric id
         const p1Item = after2.items.find((i) => i.id === p1);
         expect(p1Item).toBeDefined();
+        if (!p1Item) throw new Error('p1Item missing');
 
-        const removed = await repo.removeItem(p1Item!.cart_item_id);
+        const removed = await repo.removeItem(p1Item.cart_item_id);
         expect(removed.items).toHaveLength(1);
         expect(removed.items[0]?.id).toBe(p2);
         expect(removed.item_count).toBe(1);
-        void itemId; // unused in this assertion path
       });
     });
 
@@ -249,12 +249,13 @@ describe('makeCartRepo', () => {
         const item = result.items[0];
 
         expect(item).toBeDefined();
-        expect(item?.cart_item_id).toBeTypeOf('number');
-        expect(item?.quantity).toBe(2);
-        expect(item?.added_at).toBeTypeOf('string');
-        expect(item?.name).toBe('Leche Entera');
-        expect(item?.available).toBe(true);
-        expect(Array.isArray(item?.categories)).toBe(true);
+        if (!item) throw new Error('item missing');
+        expect(item.cart_item_id).toBeTypeOf('number');
+        expect(item.quantity).toBe(2);
+        expect(item.added_at).toBeTypeOf('string');
+        expect(item.name).toBe('Leche Entera');
+        expect(item.available).toBe(true);
+        expect(Array.isArray(item.categories)).toBe(true);
       });
     });
   });
