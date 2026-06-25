@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ItemMatchTable, OptionATable, OptionBBreakdown } from '../components/compare';
 import { api } from '../api';
+import { ItemMatchTable, OptionATable, OptionBBreakdown } from '../components/compare';
 import { useCart } from '../contexts/CartContext';
 import { pesos } from '../supers';
 import type { CompareResult } from '../types/api';
@@ -38,7 +38,7 @@ export default function Cart() {
         setCompareError('No se pudo cargar la comparación.');
       })
       .finally(() => setCompareLoading(false));
-  }, [tab, sig]);
+  }, [tab, sig, compareResult, loadedSig]);
 
   // ─── Empty cart ─────────────────────────────────────────────────────────────
   if (items.length === 0) {
@@ -194,85 +194,79 @@ export default function Cart() {
             <p className="text-sm text-red-400 text-center py-8">{compareError}</p>
           )}
 
-          {!compareLoading && !compareError && compareResult !== null && (
-            <>
-              {compareResult.items.length === 0 ? (
-                <div className="text-center py-12 text-gray-400">
-                  <p className="text-4xl mb-3">🔍</p>
-                  <p className="font-medium">Sin resultados para comparar</p>
-                  <p className="text-sm mt-1">
-                    No encontramos precios en otros supers para los productos de tu carrito
+          {!compareLoading &&
+            !compareError &&
+            compareResult !== null &&
+            (compareResult.items.length === 0 ? (
+              <div className="text-center py-12 text-gray-400">
+                <p className="text-4xl mb-3">🔍</p>
+                <p className="font-medium">Sin resultados para comparar</p>
+                <p className="text-sm mt-1">
+                  No encontramos precios en otros supers para los productos de tu carrito
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Transparency line */}
+                {matched < items.length && (
+                  <p className="text-xs text-gray-500 text-center">
+                    Comparamos {matched} de {items.length} productos
                   </p>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {/* Transparency line */}
-                  {matched < items.length && (
-                    <p className="text-xs text-gray-500 text-center">
-                      Comparamos {matched} de {items.length} productos
-                    </p>
-                  )}
+                )}
 
-                  {/* Opción A */}
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h2 className="font-bold text-gray-900">Opción A — Todo en un super</h2>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          Comprás todo en el super más barato para tu carrito
-                        </p>
-                      </div>
-                      {compareResult.option_a[0] && (
-                        <div className="text-right">
-                          <p className="text-2xl font-bold text-gray-900">
-                            {pesos(compareResult.option_a[0].total)}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {compareResult.option_a[0].coverage}% de ítems
-                          </p>
-                        </div>
-                      )}
+                {/* Opción A */}
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h2 className="font-bold text-gray-900">Opción A — Todo en un super</h2>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Comprás todo en el super más barato para tu carrito
+                      </p>
                     </div>
-                    <OptionATable summaries={compareResult.option_a} />
-                  </div>
-
-                  {/* Opción B */}
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h2 className="font-bold text-gray-900">
-                          Opción B — El más barato por ítem
-                        </h2>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          Dividís la compra y llevás cada producto del super que lo tiene más barato
-                        </p>
-                      </div>
+                    {compareResult.option_a[0] && (
                       <div className="text-right">
                         <p className="text-2xl font-bold text-gray-900">
-                          {pesos(compareResult.option_b.total)}
+                          {pesos(compareResult.option_a[0].total)}
                         </p>
-                        {compareResult.option_b.savings_vs_option_a > 0 && (
-                          <p className="text-xs text-green-600 font-semibold">
-                            Ahorrás {pesos(compareResult.option_b.savings_vs_option_a)} vs Opción A
-                          </p>
-                        )}
+                        <p className="text-xs text-gray-500">
+                          {compareResult.option_a[0].coverage}% de ítems
+                        </p>
                       </div>
-                    </div>
-                    <OptionBBreakdown
-                      result={compareResult.option_b}
-                      items={compareResult.items}
-                    />
+                    )}
                   </div>
-
-                  {/* Tabla detalle con precios por línea */}
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                    <h2 className="font-bold text-gray-900 mb-4">Precios por producto y super</h2>
-                    <ItemMatchTable items={compareResult.items} priceMode="line" />
-                  </div>
+                  <OptionATable summaries={compareResult.option_a} />
                 </div>
-              )}
-            </>
-          )}
+
+                {/* Opción B */}
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h2 className="font-bold text-gray-900">Opción B — El más barato por ítem</h2>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Dividís la compra y llevás cada producto del super que lo tiene más barato
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-gray-900">
+                        {pesos(compareResult.option_b.total)}
+                      </p>
+                      {compareResult.option_b.savings_vs_option_a > 0 && (
+                        <p className="text-xs text-green-600 font-semibold">
+                          Ahorrás {pesos(compareResult.option_b.savings_vs_option_a)} vs Opción A
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <OptionBBreakdown result={compareResult.option_b} items={compareResult.items} />
+                </div>
+
+                {/* Tabla detalle con precios por línea */}
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                  <h2 className="font-bold text-gray-900 mb-4">Precios por producto y super</h2>
+                  <ItemMatchTable items={compareResult.items} priceMode="line" />
+                </div>
+              </div>
+            ))}
         </div>
       )}
     </div>
