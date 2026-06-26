@@ -371,19 +371,32 @@ describe('Cart Oportunidades section', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
     });
 
-    await waitFor(() => expect(screen.getByText('Oportunidades')).toBeDefined());
+    // Wait for the Oportunidades section root to appear
+    await waitFor(() => expect(screen.getByTestId('opportunities-section')).toBeDefined());
 
-    // target_qty shown in the button
+    const section = screen.getByTestId('opportunities-section');
+
+    // Section heading
+    expect(section.textContent).toContain('Oportunidades');
+
+    // Nudge copy: "Agregá N más de <name> te conviene …"
+    expect(section.textContent).toContain('Agregá');
+    expect(section.textContent).toContain('más de');
+    expect(section.textContent).toContain('Oreo');
+
+    // target_qty shown in the Agregar button
     expect(screen.getByRole('button', { name: /Agregar 2/i })).toBeDefined();
-    // super names appear somewhere in the Oportunidades card
-    expect(screen.getAllByText(/DIA/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/VEA/i).length).toBeGreaterThan(0);
+
+    // Super name pills appear inside the nudge section
+    expect(section.textContent).toMatch(/DIA/i);
+    expect(section.textContent).toMatch(/VEA/i);
+
     // flips badge
     expect(screen.getByTestId('flips-badge')).toBeDefined();
     expect(screen.getByTestId('flips-badge').textContent).toContain('Cambia el súper más barato');
   });
 
-  it('Agregar button calls updateQty with (shopping_id, target_qty) and is disabled during the call', async () => {
+  it('Agregar button calls updateQty with (shopping_id, target_qty) and is disabled during the call; re-fetches compare when sig changes', async () => {
     let resolveAgregar!: () => void;
     mockUpdateQty.mockReturnValue(
       new Promise<void>((resolve) => {
@@ -394,12 +407,13 @@ describe('Cart Oportunidades section', () => {
     const opp = makeOpportunity({ shopping_id: 1, target_qty: 2 });
     mockCompare.mockResolvedValue(makeCompareResultWithOpportunity(opp));
 
-    renderCart();
+    const { rerender } = renderCart();
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
     });
 
     await waitFor(() => expect(screen.getByRole('button', { name: /Agregar 2/i })).toBeDefined());
+    expect(mockCompare).toHaveBeenCalledTimes(1);
 
     const btn = screen.getByRole('button', { name: /Agregar 2/i });
 
@@ -412,13 +426,122 @@ describe('Cart Oportunidades section', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: /Agregando/i })).toBeDefined());
     expect(screen.getByRole('button', { name: /Agregando/i }).hasAttribute('disabled')).toBe(true);
 
-    // Resolve the promise
+    // Resolve updateQty — simulates the cart item quantity changing to target_qty (sig changes)
     act(() => {
       resolveAgregar();
     });
 
-    // After resolution updateQty should have been called with (shopping_id, target_qty)
     await waitFor(() => expect(mockUpdateQty).toHaveBeenCalledWith(1, 2));
+
+    // Simulate the cart context reflecting the new quantity (sig changes from 1:1 → 1:2)
+    mockItems = [makeItem({ cart_item_id: 1, quantity: 2 })];
+    mockItemCount = 2;
+    rerender(<Cart />);
+
+    // The stale-sig guard must trigger a second compare fetch
+    await waitFor(() => expect(mockCompare).toHaveBeenCalledTimes(2));
+  });
+
+  it('Agregar button returns to enabled (loading=false) when onAgregar rejects', async () => {
+    mockUpdateQty.mockRejectedValue(new Error('network error'));
+
+    const opp = makeOpportunity({ shopping_id: 1, target_qty: 2 });
+    mockCompare.mockResolvedValue(makeCompareResultWithOpportunity(opp));
+
+    renderCart();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
+    });
+
+    await waitFor(() => expect(screen.getByRole('button', { name: /Agregar 2/i })).toBeDefined());
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: /Agregar 2/i }));
+    });
+
+    // After the rejection settles the button must be re-enabled (no loading state)
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Agregar 2/i }).hasAttribute('disabled')).toBe(
+        false,
+      ),
+    );
+  });
+
+  it('sorts nudge cards by projected savings descending', async () => {
+    // Item A: saving = (1000 - 700) × 3 = 900
+    const oppA: PromoOpportunity = makeOpportunity({
+      shopping_id: 1,
+      current_best_unit_price: 1000,
+      effective_unit_price_at_target: 700,
+      target_qty: 3,
+      best_super: 'dia',
+      current_best_super: 'vea',
+    });
+    // Item B: saving = (800 - 600) × 2 = 400  (lower — should render second)
+    const oppB: PromoOpportunity = makeOpportunity({
+      shopping_id: 2,
+      current_best_unit_price: 800,
+      effective_unit_price_at_target: 600,
+      target_qty: 2,
+      best_super: 'carrefour',
+      current_best_super: 'dia',
+    });
+
+    const result: CompareResult = {
+      items: [
+        {
+          shopping_id: 1,
+          name: 'Oreo',
+          home_super: 'vea',
+          home_price: 1000,
+          home_unit_price: 1000,
+          home_promo_label: null,
+          home_info_badges: [],
+          matches: [],
+          opportunity: oppA,
+        },
+        {
+          shopping_id: 2,
+          name: 'Leche',
+          home_super: 'dia',
+          home_price: 800,
+          home_unit_price: 800,
+          home_promo_label: null,
+          home_info_badges: [],
+          matches: [],
+          opportunity: oppB,
+        },
+      ],
+      option_a: [{ super: 'vea', total: 1800, coverage: 100, missing_items: 0 }],
+      option_b: {
+        total: 1300,
+        by_super: [{ super: 'vea', total: 1300, coverage: 100, missing_items: 0 }],
+        breakdown: [
+          { shopping_id: 1, best_super: 'vea', price: 1000 },
+          { shopping_id: 2, best_super: 'dia', price: 800 },
+        ],
+        savings_vs_option_a: 500,
+      },
+    };
+
+    mockItems = [makeItem({ cart_item_id: 1 }), makeItem({ cart_item_id: 2, name: 'Leche' })];
+    mockItemCount = 2;
+    mockCompare.mockResolvedValue(result);
+
+    renderCart();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
+    });
+
+    await waitFor(() => expect(screen.getByTestId('opportunities-section')).toBeDefined());
+
+    const section = screen.getByTestId('opportunities-section');
+    const nudgeButtons = section.querySelectorAll('button[type="button"]');
+
+    // First nudge button should say "Agregar 3" (item A — higher savings)
+    expect(nudgeButtons[0]?.textContent).toContain('Agregar 3');
+    // Second nudge button should say "Agregar 2" (item B — lower savings)
+    expect(nudgeButtons[1]?.textContent).toContain('Agregar 2');
   });
 
   it('does not render Oportunidades heading when all opportunity fields are null', async () => {
@@ -432,5 +555,6 @@ describe('Cart Oportunidades section', () => {
     await waitFor(() => expect(screen.getByText('Opción A — Todo en un super')).toBeDefined());
 
     expect(screen.queryByText('Oportunidades')).toBeNull();
+    expect(screen.queryByTestId('opportunities-section')).toBeNull();
   });
 });

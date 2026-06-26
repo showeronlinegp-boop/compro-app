@@ -68,6 +68,45 @@ export default function Cart() {
     ? compareResult.items.filter((i) => i.matches.some((m) => m.super !== i.home_super)).length
     : 0;
 
+  // ─── Oportunidades section ───────────────────────────────────────────────────
+  // projected total savings = (unit saving) × target_qty, sort desc
+  function savings(o: {
+    current_best_unit_price: number;
+    effective_unit_price_at_target: number;
+    target_qty: number;
+  }) {
+    return (o.current_best_unit_price - o.effective_unit_price_at_target) * o.target_qty;
+  }
+
+  const opportunitiesSection = (() => {
+    if (!compareResult) return null;
+    const opps = compareResult.items.flatMap((item) =>
+      item.opportunity != null ? [{ opportunity: item.opportunity, name: item.name }] : [],
+    );
+    opps.sort((a, b) => savings(b.opportunity) - savings(a.opportunity));
+    if (opps.length === 0) return null;
+    return (
+      <div
+        data-testid="opportunities-section"
+        className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5"
+      >
+        <h3 className="font-bold text-gray-900 mb-3">Oportunidades</h3>
+        <div className="space-y-3">
+          {opps.map((opp) => (
+            <PromoNudge
+              key={opp.opportunity.shopping_id}
+              opportunity={opp.opportunity}
+              name={opp.name}
+              onAgregar={async (shoppingId, targetQty) => {
+                await updateQty(shoppingId, targetQty);
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  })();
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       {/* Header */}
@@ -264,40 +303,7 @@ export default function Cart() {
                 </div>
 
                 {/* Oportunidades */}
-                {(() => {
-                  const opps = compareResult.items.flatMap((item) =>
-                    item.opportunity != null
-                      ? [{ opportunity: item.opportunity, name: item.name }]
-                      : [],
-                  );
-                  opps.sort(
-                    (a, b) =>
-                      (b.opportunity.current_best_unit_price -
-                        b.opportunity.effective_unit_price_at_target) *
-                        b.opportunity.target_qty -
-                      (a.opportunity.current_best_unit_price -
-                        a.opportunity.effective_unit_price_at_target) *
-                        a.opportunity.target_qty,
-                  );
-                  if (opps.length === 0) return null;
-                  return (
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                      <h3 className="font-bold text-gray-900 mb-3">Oportunidades</h3>
-                      <div className="space-y-3">
-                        {opps.map((opp) => (
-                          <PromoNudge
-                            key={opp.opportunity.shopping_id}
-                            opportunity={opp.opportunity}
-                            name={opp.name}
-                            onAgregar={async (shoppingId, targetQty) => {
-                              await updateQty(shoppingId, targetQty);
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })()}
+                {opportunitiesSection}
 
                 {/* Tabla detalle con precios por línea */}
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">

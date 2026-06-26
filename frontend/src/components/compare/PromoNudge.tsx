@@ -19,7 +19,8 @@ export function PromoNudge({ opportunity, name, onAgregar }: PromoNudgeProps) {
     try {
       await onAgregar(opportunity.shopping_id, opportunity.target_qty);
     } catch {
-      // Re-enable on error so the user can retry
+      // Intentionally silent: user-facing error feedback is deferred cross-cutting debt (TODO).
+      // The finally block re-enables the button so the user can retry.
     } finally {
       setLoading(false);
     }
