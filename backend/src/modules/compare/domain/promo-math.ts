@@ -37,9 +37,7 @@ export function pickBestNthUnitPromo(
   qty: number,
 ): Promotion | undefined {
   return promotions
-    .filter(
-      (p) => p.type === 'nth_unit' && (p.min_qty ?? 0) >= 2 && (p.discount_pct ?? 0) > 0,
-    )
+    .filter((p) => p.type === 'nth_unit' && (p.min_qty ?? 0) >= 2 && (p.discount_pct ?? 0) > 0)
     .reduce<Promotion | undefined>((best, p) => {
       if (!best) return p;
       return effectiveLineTotal(unitPrice, p, qty) < effectiveLineTotal(unitPrice, best, qty)

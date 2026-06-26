@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Promotion } from '../../../shared/types.js';
-import {
-  collectInfoBadges,
-  effectiveLineTotal,
-  pickBestNthUnitPromo,
-} from './promo-math.js';
+import { collectInfoBadges, effectiveLineTotal, pickBestNthUnitPromo } from './promo-math.js';
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
