@@ -13,12 +13,18 @@ function makeItem(
     name: `Item ${shopping_id}`,
     home_super: 'vea',
     home_price: 100,
+    home_unit_price: 100,
+    home_promo_label: null,
+    home_info_badges: [],
     matches: matches.map((m, i) => ({
       super: m.super,
       product_id: m.product_id ?? i + 1,
       name: `Product ${i + 1}`,
       price: m.price,
       matched_by: 'barcode' as const,
+      unit_price: m.price,
+      promo_label: null,
+      info_badges: [],
     })),
   };
 }
