@@ -36,6 +36,7 @@ export function OptionBBreakdown({ result, items }: OptionBBreakdownProps) {
           const item = itemMap.get(b.shopping_id);
           if (!item) return null;
           const cfg = superCfg(b.best_super);
+          const winMatch = item.matches.find((m) => m.super === b.best_super);
           return (
             <div
               key={b.shopping_id}
@@ -48,6 +49,11 @@ export function OptionBBreakdown({ result, items }: OptionBBreakdownProps) {
                 >
                   {cfg.label}
                 </span>
+                {winMatch?.promo_label && (
+                  <span className="inline-flex items-center gap-0.5 rounded bg-amber-50 border border-amber-200 px-1 text-[9px] font-bold text-amber-700">
+                    🏷️ {winMatch.promo_label}
+                  </span>
+                )}
                 <span className="font-semibold text-gray-900">{pesos(b.price)}</span>
               </div>
             </div>

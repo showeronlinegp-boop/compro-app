@@ -57,14 +57,34 @@ export function ItemMatchTable({ items, priceMode = 'unit' }: ItemMatchTableProp
                   return (
                     <td key={s} className="text-center py-2 px-2">
                       {match ? (
-                        <span
-                          className={`font-semibold ${isBest ? 'text-indigo-700 font-bold' : 'text-gray-700'}`}
-                        >
-                          {pesos(match.price)}
-                          {match.matched_by === 'name_similarity' && (
-                            <span className="text-gray-300 ml-0.5">~</span>
+                        <div className="flex flex-col items-center gap-0.5">
+                          {match.unit_price !== match.price && (
+                            <span className="text-gray-400 line-through text-[10px]">
+                              {pesos(match.unit_price)}
+                            </span>
                           )}
-                        </span>
+                          <span
+                            className={`font-semibold ${isBest ? 'text-indigo-700 font-bold' : 'text-gray-700'}`}
+                          >
+                            {pesos(match.price)}
+                            {match.matched_by === 'name_similarity' && (
+                              <span className="text-gray-300 ml-0.5">~</span>
+                            )}
+                          </span>
+                          {match.promo_label && (
+                            <span className="inline-flex items-center gap-0.5 rounded bg-amber-50 border border-amber-200 px-1 text-[9px] font-bold text-amber-700">
+                              🏷️ {match.promo_label}
+                            </span>
+                          )}
+                          {match.info_badges.map((badge) => (
+                            <span
+                              key={badge}
+                              className="rounded-md border border-violet-200 bg-violet-50 px-1 text-[9px] font-semibold text-violet-700"
+                            >
+                              🎉 {badge}
+                            </span>
+                          ))}
+                        </div>
                       ) : (
                         <span className="text-gray-200">—</span>
                       )}
