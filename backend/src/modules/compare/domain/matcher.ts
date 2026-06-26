@@ -1,4 +1,5 @@
 import type { CompareItem, CompareResult, SuperSummary } from '../../../shared/types.js';
+import { round2 } from './round.js';
 
 export function calcOptionA(items: CompareItem[]): SuperSummary[] {
   const supers = [...new Set(items.flatMap((i) => i.matches.map((m) => m.super)))];
@@ -67,8 +68,4 @@ export function buildCompareResult(items: CompareItem[]): CompareResult {
     option_a,
     option_b: { ...option_b_raw, savings_vs_option_a },
   };
-}
-
-function round2(n: number): number {
-  return Math.round(n * 100) / 100;
 }

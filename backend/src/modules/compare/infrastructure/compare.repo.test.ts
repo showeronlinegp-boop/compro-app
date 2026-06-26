@@ -8,8 +8,9 @@
  *   4. (a) effective math end-to-end: nth_unit promo applied correctly
  *   5. (b) ranking flip: DIA cheaper after promo vs MAS without promo
  *   6. (c) Planner regression: qty=1 → price===unit_price (no discount triggered)
- *   7. (d) tie-break: barcode match beats name_similarity on equal price
+ *   7. (d) barcode match carries matched_by='barcode'
  *   8. (e) info_badges: 'other' promo populates badges, price unchanged
+ *   9. (f) parsePromotions: malformed JSONB entries are dropped and do NOT produce NaN
  *
  * Uses withRollback() for per-test isolation.
  */
@@ -18,7 +19,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Promotion, SourceRow } from '../../../shared/types.js';
 import { testPrisma } from '../../../test/helpers/test-client.js';
 import { withRollback } from '../../../test/helpers/with-rollback.js';
-import { makeCompareRepo } from './compare.repo.js';
+import { makeCompareRepo, parsePromotions } from './compare.repo.js';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -53,8 +54,6 @@ async function seedProduct(tx: Tx, opts: SeedProductOptions = {}): Promise<numbe
   });
   return result.id;
 }
-
-const round2 = (n: number) => Math.round(n * 100) / 100;
 
 // ─── Setup / Teardown ─────────────────────────────────────────────────────────
 
@@ -315,14 +314,14 @@ describe('makeCompareRepo', () => {
         const diaMatch = item.matches.find((m) => m.super === 'dia');
         expect(diaMatch).toBeDefined();
         expect(diaMatch?.price).toBeCloseTo(2964, 2);
-        expect(diaMatch?.unit_price).toBe(round2(2470 * 2)); // 4940 — shelf total
+        expect(diaMatch?.unit_price).toBe(4940); // shelf total: 2470 * 2
         expect(diaMatch?.promo_label).toBe('2do al 80%');
 
         // MAS: no promo → 1599 × 2 = 3198
         const masMatch = item.matches.find((m) => m.super === 'masonline');
         expect(masMatch).toBeDefined();
-        expect(masMatch?.price).toBe(round2(1599 * 2)); // 3198
-        expect(masMatch?.unit_price).toBe(round2(1599 * 2)); // 3198
+        expect(masMatch?.price).toBe(3198); // 1599 * 2
+        expect(masMatch?.unit_price).toBe(3198); // shelf total: 1599 * 2
         expect(masMatch?.promo_label).toBeNull();
       });
     });
@@ -413,76 +412,29 @@ describe('makeCompareRepo', () => {
       });
     });
 
-    // ── (d) Tie-break: barcode over name_similarity ────────────────────────────
+    // ── (d) matched_by field: barcode match is correctly labelled ─────────────
+    //
+    // Note: the barcode-over-name_similarity tie-break in the dedup loop fires
+    // only when the same (product_id, match_super) pair appears in BOTH the
+    // barcodeMatches and similarityMatches arrays. Because the engine gates on
+    // `withBarcodeMatch` — products that already have a barcode match are excluded
+    // from the similarity query — this same-super collision is unreachable through
+    // buildCompareItemsFromSource. The dedup comparator logic is covered via
+    // unit tests in promo-math.test.ts.
+    //
+    // What this test ACTUALLY verifies: when a barcode join fires, the resulting
+    // SuperMatch carries matched_by='barcode', proving the field is populated
+    // from the right query path.
 
-    it('(d) tie-break: barcode match survives dedup over name_similarity on equal price', async () => {
+    it('(d) barcode match carries matched_by="barcode" (tie-break path is unreachable via public API)', async () => {
       await withRollback(async (tx) => {
         const prismaLike = tx as unknown as Parameters<typeof makeCompareRepo>[0];
 
         const barcode = `bc-tiebreak-${Date.now()}`;
         const categoryKey = `cat-${Date.now()}`;
 
-        // Home product (vea, no barcode for similarity path, but we need barcode + similarity)
-        // Strategy: home has barcode; one match via barcode, one via name_similarity
-        // To get a name_similarity match, the similarity query only runs when withBarcodeMatch is false.
-        // So: seed home WITHOUT barcode, then seed barcode-match and similarity-match for same super via category.
-        // Actually the barcode beats similarity in the dedup when BOTH match the same super.
-        // Let's use two different supers: one barcode (carrefour), one similarity (masonline).
-        // Both at same shelf price — barcode should survive in the dedup for carrefour,
-        // similarity should be in masonline. They're different supers so no dedup conflict.
-        // Better: seed two products at the SAME super (dia) — one via barcode, one via similarity
-        // but that's impossible since barcode excludes similarity.
-        // Simplest: seed same super match appearing in BOTH queries by having a barcode match
-        // and a name_similarity match that would hit the same super but with same price.
-        // The dedup is per-super, and barcode match takes priority over name_similarity
-        // when both price and super are equal.
-
-        // Approach: home has a barcode that matches 'carrefour'; also home has category_key
-        // so similarity could match 'carrefour' too — but the barcode match excludes
-        // home from the similarity path (withBarcodeMatch). So we can't test same-super
-        // barcode-vs-similarity this way. Instead: give home a different barcode from the match,
-        // forcing similarity path, then inject a barcode match manually by having two seeds
-        // for the same match super.
-        //
-        // Realistic approach: create two seeded match products for the same super (dia):
-        //   - one matching via barcode (exact barcode join)
-        //   - the barcode match query and similarity query both fire for different product_ids;
-        //     both appear in allMatches for the same `match_super=dia`
-        //   - the dedup picks the barcode one if prices are equal
-
-        // home: vea, no barcode → goes to similarity path AND we manually set barcode for another sub-product
-        // This is complex. Let's use a simpler approach:
-        // Give home a barcode → barcode match fires → withBarcodeMatch includes home → similarity skips home.
-        // So we must test tie-break within the barcode matches only (two matches same super different prices).
-        // OR: test with name_similarity by giving home NO barcode.
-
-        // Final approach: give home NO barcode (category_key set), seed TWO match products in 'carrefour':
-        //   - product A via barcode: but home has no barcode, so barcode join won't fire for home.
-        //   - Only similarity fires for home.
-        // We can't inject a barcode match when home has no barcode.
-        //
-        // ACTUAL approach per design: the barcode query and similarity query can return the SAME
-        // match_super for a product (if somehow both paths fire for different reason).
-        // The real scenario: home has barcode B1; barcode match returns (dia, priceX, barcode);
-        // somehow a name_similarity match also returns (dia, priceX, name_similarity).
-        // But withBarcodeMatch prevents home from entering similarity path.
-        //
-        // Therefore the tie-break only matters when home appears as barcode AND an external
-        // product for the SAME super appears in both barcode + similarity queries — impossible
-        // given the withBarcodeMatch gate.
-        //
-        // Correct test: seed matches for TWO different supers with equal price; one is barcode,
-        // one is similarity; the dedup is PER super so they don't conflict.
-        // The barcode vs name_similarity tie-break fires within a SINGLE super when the SAME
-        // match_super appears in both barcodeMatches AND similarityMatches for a product_id.
-        // This can only happen if home has a barcode (triggering barcode path for super X)
-        // AND somehow also triggers similarity for super X — but the filter excludes home
-        // from similarity if withBarcodeMatch has home's product_id.
-        //
-        // Conclusion: the tie-break in the code handles an edge case where the same super
-        // can appear twice only if barcodeMatches and similarityMatches run for different
-        // product_ids sharing the same source product. Let's test the simpler observable
-        // behavior: matched_by field correctly reflects 'barcode' when barcode match fires.
+        // See block comment above the it() call for why the same-super collision
+        // is unreachable. This test verifies matched_by='barcode' is set correctly.
 
         const homeId = await seedProduct(tx, {
           super_key: 'vea',
@@ -493,7 +445,6 @@ describe('makeCompareRepo', () => {
           category_key: categoryKey,
         });
 
-        // barcode match at same price as a hypothetical similarity match
         await seedProduct(tx, {
           super_key: 'carrefour',
           product_id: `match-bc-${Date.now()}`,
@@ -511,7 +462,6 @@ describe('makeCompareRepo', () => {
         const item = result[0];
         if (!item) return;
 
-        // The carrefour match should be 'barcode' (not 'name_similarity')
         const carrefourMatch = item.matches.find((m) => m.super === 'carrefour');
         expect(carrefourMatch).toBeDefined();
         expect(carrefourMatch?.matched_by).toBe('barcode');
@@ -559,18 +509,70 @@ describe('makeCompareRepo', () => {
         if (!item) return;
 
         // Home item (vea): 'other' promo → no discount applied; badge in home_info_badges
-        expect(item.home_price).toBe(round2(800 * 2)); // 1600 — no discount
-        expect(item.home_unit_price).toBe(round2(800 * 2)); // 1600
+        expect(item.home_price).toBe(1600); // 800 * 2, no discount
+        expect(item.home_unit_price).toBe(1600); // shelf total: 800 * 2
         expect(item.home_promo_label).toBeNull(); // 'other' doesn't set promo_label
         expect(item.home_info_badges).toContain('Cuotas sin interés');
 
         // vea match also has the 'other' promo (same product) — badge populated
         const veaMatch = item.matches.find((m) => m.super === 'vea');
         expect(veaMatch).toBeDefined();
-        expect(veaMatch?.price).toBe(round2(800 * 2)); // no effective discount
+        expect(veaMatch?.price).toBe(1600); // 800 * 2, no effective discount
         expect(veaMatch?.promo_label).toBeNull();
         expect(veaMatch?.info_badges).toContain('Cuotas sin interés');
       });
+    });
+  });
+
+  // ── (f) parsePromotions: JSONB type validation ─────────────────────────────
+
+  describe('parsePromotions', () => {
+    it('drops malformed entries and does NOT produce NaN in effective price', () => {
+      // A crawled blob with min_qty as a string and discount_pct as null is malformed.
+      // It must be discarded — not cast through — so ranking never sees NaN.
+      const raw: unknown[] = [
+        { type: 'nth_unit', label: 'Bad entry', min_qty: 'two', discount_pct: null },
+        { type: 'other', label: 42, min_qty: null, discount_pct: null }, // label not a string
+        { type: 'unknown_type', label: 'Also bad', min_qty: 2, discount_pct: 80 }, // bad type
+        null, // primitive
+        { type: 'nth_unit', label: '2do al 80%', min_qty: 2, discount_pct: 80 }, // valid
+        { type: 'other', label: 'Cuotas sin interés', min_qty: null, discount_pct: null }, // valid
+      ];
+
+      const result = parsePromotions(raw);
+
+      // Only the two valid entries survive.
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual({
+        type: 'nth_unit',
+        label: '2do al 80%',
+        min_qty: 2,
+        discount_pct: 80,
+      });
+      expect(result[1]).toEqual({
+        type: 'other',
+        label: 'Cuotas sin interés',
+        min_qty: null,
+        discount_pct: null,
+      });
+
+      // No entry in the result may carry NaN in a numeric field.
+      for (const p of result) {
+        if (p.min_qty !== null) expect(Number.isNaN(p.min_qty)).toBe(false);
+        if (p.discount_pct !== null) expect(Number.isNaN(p.discount_pct)).toBe(false);
+      }
+    });
+
+    it('returns [] for an empty array', () => {
+      expect(parsePromotions([])).toEqual([]);
+    });
+
+    it('returns [] when all entries are malformed', () => {
+      const raw: unknown[] = [
+        { type: 'nth_unit', label: 'Bad', min_qty: 'two', discount_pct: null },
+        { type: 'other', label: 123, min_qty: null, discount_pct: null },
+      ];
+      expect(parsePromotions(raw)).toEqual([]);
     });
   });
 });

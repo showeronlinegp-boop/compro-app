@@ -6,6 +6,7 @@ import {
   effectiveLineTotal,
   pickBestNthUnitPromo,
 } from '../domain/promo-math.js';
+import { round2 } from '../domain/round.js';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -19,7 +20,32 @@ function tryParse<T>(v: unknown[] | string | null | undefined): T[] {
   }
 }
 
-const round2 = (n: number) => Math.round(n * 100) / 100;
+/**
+ * Validate and narrow a raw JSONB promotion array to well-typed Promotion entries.
+ *
+ * Malformed entries (e.g. `{ type:'nth_unit', min_qty:'two', discount_pct:null }`)
+ * silently cast through tryParse<Promotion> and produce NaN that poisons the ranking.
+ * This function discards any entry that does not satisfy the Promotion contract:
+ *   - type must be 'nth_unit' or 'other'
+ *   - label must be a non-empty string
+ *   - min_qty must be number | null
+ *   - discount_pct must be number | null
+ *
+ * Discarded entries are dropped silently; a single bad blob cannot corrupt totals.
+ */
+export function parsePromotions(raw: unknown[]): Promotion[] {
+  return raw.filter((entry): entry is Promotion => {
+    if (typeof entry !== 'object' || entry === null) return false;
+    const p = entry as Record<string, unknown>;
+    return (
+      (p.type === 'nth_unit' || p.type === 'other') &&
+      typeof p.label === 'string' &&
+      (p.label as string).length > 0 &&
+      (p.min_qty === null || typeof p.min_qty === 'number') &&
+      (p.discount_pct === null || typeof p.discount_pct === 'number')
+    );
+  });
+}
 
 // ─── Internal row types ───────────────────────────────────────────────────────
 
@@ -49,7 +75,19 @@ interface ShoppingRow {
   product_id: number;
 }
 
-// Internal extended type that carries promotions pre-dedup
+/**
+ * Internal working type that augments SuperMatch with the raw promotion array.
+ *
+ * The inherited `unit_price`, `promo_label`, and `info_badges` fields are
+ * SENTINEL PLACEHOLDERS (0, null, []) at construction time. They are filled in
+ * during the per-source dedup-and-effective loop, after the cheapest shelf
+ * price per super has been selected. Only the final `dedupedMatches` array
+ * contains real computed values.
+ *
+ * `_promotions` is the validated promotion list for this match entry, used by
+ * `pickBestNthUnitPromo` and `collectInfoBadges` to derive effective totals and
+ * info badges after dedup.
+ */
 interface UnitMatch extends SuperMatch {
   _promotions: Promotion[];
 }
@@ -169,7 +207,7 @@ export function makeCompareRepo(prisma: PrismaClient): CompareRepo {
           name: m.match_name,
           price: Number(m.match_price), // shelf UNIT price — effective computed after dedup
           matched_by: m.matched_by,
-          _promotions: tryParse<Promotion>(m.match_promotions),
+          _promotions: parsePromotions(tryParse<unknown>(m.match_promotions)),
           // new SuperMatch fields — filled in during per-source loop below
           unit_price: 0,
           promo_label: null,
@@ -189,7 +227,7 @@ export function makeCompareRepo(prisma: PrismaClient): CompareRepo {
         // Clamp quantity defensively — bad DB values must not corrupt totals.
         const qty = Math.max(1, Math.floor(Number(s.quantity) || 1));
         const unitHomePrice = Number(base.home_price);
-        const homePromos = tryParse<Promotion>(base.home_promotions);
+        const homePromos = parsePromotions(tryParse<unknown>(base.home_promotions));
         const externalUnitMatches = matchesByProductId.get(s.product_id) ?? [];
 
         // Home as UnitMatch (always included in dedup pool)
@@ -237,7 +275,11 @@ export function makeCompareRepo(prisma: PrismaClient): CompareRepo {
           };
         });
 
-        // Home effective fields
+        // Home effective fields are re-derived here rather than read from dedupedMatches.
+        // The home entry survives dedup as bySuperMap.get(base.home_super), but looking
+        // it up by super key would couple this code to the dedup map layout and require an
+        // unsafe cast back through UnitMatch. Re-deriving is cheap (two pure function calls)
+        // and keeps the home_price / home_unit_price computation explicit and independent.
         const homeBest = pickBestNthUnitPromo(homePromos, unitHomePrice, qty);
         const homeEffective = effectiveLineTotal(unitHomePrice, homeBest, qty);
 

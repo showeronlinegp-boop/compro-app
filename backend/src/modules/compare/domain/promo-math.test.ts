@@ -84,6 +84,31 @@ describe('effectiveLineTotal', () => {
     const promo: Promotion = { label: 'P', type: 'nth_unit', min_qty: 2, discount_pct: -5 };
     expect(effectiveLineTotal(100, promo, 3)).toBe(300);
   });
+
+  // ── Over-discount guard ─────────────────────────────────────────────────────
+
+  it('guard: discount_pct=150 → falls back to unitPrice*qty (not negative, not zero)', () => {
+    const promo: Promotion = { label: 'P', type: 'nth_unit', min_qty: 2, discount_pct: 150 };
+    const result = effectiveLineTotal(100, promo, 3);
+    // Must equal unitPrice*qty; must NOT be negative or zero.
+    expect(result).toBe(300);
+    expect(result).toBeGreaterThan(0);
+  });
+
+  it('guard: discount_pct=200 → falls back to unitPrice*qty (not negative, not zero)', () => {
+    const promo: Promotion = { label: 'P', type: 'nth_unit', min_qty: 2, discount_pct: 200 };
+    const result = effectiveLineTotal(100, promo, 2);
+    expect(result).toBe(200);
+    expect(result).toBeGreaterThan(0);
+  });
+
+  // ── Quantity=0 self-defense ─────────────────────────────────────────────────
+
+  it('quantity=0 → treated as 1 (self-defensive clamp), returns unitPrice*1', () => {
+    // Internal Math.max(1, ...) ensures no zero total for 0-qty caller.
+    expect(effectiveLineTotal(100, undefined, 0)).toBe(100);
+    expect(effectiveLineTotal(100, makeNthUnit(2, 80), 0)).toBe(100);
+  });
 });
 
 // ─── pickBestNthUnitPromo ─────────────────────────────────────────────────────
@@ -113,6 +138,36 @@ describe('pickBestNthUnitPromo', () => {
     const result = pickBestNthUnitPromo([other, nth], 100, 2);
     expect(result).toBe(nth);
   });
+
+  it('filters out over-discount (>100) promos; only valid promo wins', () => {
+    // discount_pct=150 is malformed — filter must exclude it, so the 80% promo wins.
+    const bad: Promotion = { label: 'Bad', type: 'nth_unit', min_qty: 2, discount_pct: 150 };
+    const good = makeNthUnit(2, 80, 'Good');
+    const result = pickBestNthUnitPromo([bad, good], 100, 2);
+    expect(result).toBe(good);
+  });
+
+  // ── Best-promo-only label (product decision) ────────────────────────────────
+  // Product rule: when a product has multiple nth_unit promos, only the best
+  // (lowest effective) label is surfaced as promo_label; the non-winner must NOT
+  // appear in info_badges (info_badges is for 'other' type only).
+
+  it('when two nth_unit promos exist, only the best label is returned — the other is not leaked', () => {
+    // At qty=4: promo A (N=2, D=80) effective=240 (cheaper)
+    //           promo B (N=4, D=50) effective=350 (more expensive)
+    const promoA = makeNthUnit(2, 80, 'BestPromo');
+    const promoB = makeNthUnit(4, 50, 'WorsePromo');
+
+    const best = pickBestNthUnitPromo([promoA, promoB], 100, 4);
+    // Only the best label is surfaced; caller uses best?.label as promo_label.
+    expect(best?.label).toBe('BestPromo');
+
+    // collectInfoBadges must NOT contain either nth_unit promo label.
+    const badges = collectInfoBadges([promoA, promoB]);
+    expect(badges).not.toContain('BestPromo');
+    expect(badges).not.toContain('WorsePromo');
+    expect(badges).toHaveLength(0);
+  });
 });
 
 // ─── collectInfoBadges ────────────────────────────────────────────────────────
@@ -133,5 +188,15 @@ describe('collectInfoBadges', () => {
 
   it('returns [] when all promos are nth_unit', () => {
     expect(collectInfoBadges([makeNthUnit(2, 80)])).toEqual([]);
+  });
+
+  it('de-duplicates identical "other" labels', () => {
+    // Duplicate labels must not produce duplicate React keys downstream.
+    const promotions: Promotion[] = [
+      makeOther('Cuotas sin interés'),
+      makeOther('Cuotas sin interés'),
+      makeOther('Envío gratis'),
+    ];
+    expect(collectInfoBadges(promotions)).toEqual(['Cuotas sin interés', 'Envío gratis']);
   });
 });

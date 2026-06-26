@@ -276,6 +276,10 @@ export interface CompareItem {
   home_super: string;
   /** Effective line total (after best nth_unit promo). */
   home_price: number;
+  /**
+   * Shelf TOTAL for the home product: COALESCE(offer_price, raw_price) × qty.
+   * Mirrors SuperMatch.unit_price — the strike-through baseline before any promo.
+   */
   home_unit_price: number;
   home_promo_label: string | null;
   home_info_badges: string[];
