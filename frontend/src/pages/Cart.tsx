@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../api';
-import { ItemMatchTable, OptionATable, OptionBBreakdown } from '../components/compare';
+import { ItemMatchTable, OptionATable, OptionBBreakdown, PromoNudge } from '../components/compare';
 import { useCart } from '../contexts/CartContext';
 import { pesos } from '../supers';
 import type { CompareResult } from '../types/api';
@@ -262,6 +262,42 @@ export default function Cart() {
                   </div>
                   <OptionBBreakdown result={compareResult.option_b} items={compareResult.items} />
                 </div>
+
+                {/* Oportunidades */}
+                {(() => {
+                  const opps = compareResult.items.flatMap((item) =>
+                    item.opportunity != null
+                      ? [{ opportunity: item.opportunity, name: item.name }]
+                      : [],
+                  );
+                  opps.sort(
+                    (a, b) =>
+                      (b.opportunity.current_best_unit_price -
+                        b.opportunity.effective_unit_price_at_target) *
+                        b.opportunity.target_qty -
+                      (a.opportunity.current_best_unit_price -
+                        a.opportunity.effective_unit_price_at_target) *
+                        a.opportunity.target_qty,
+                  );
+                  if (opps.length === 0) return null;
+                  return (
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                      <h3 className="font-bold text-gray-900 mb-3">Oportunidades</h3>
+                      <div className="space-y-3">
+                        {opps.map((opp) => (
+                          <PromoNudge
+                            key={opp.opportunity.shopping_id}
+                            opportunity={opp.opportunity}
+                            name={opp.name}
+                            onAgregar={async (shoppingId, targetQty) => {
+                              await updateQty(shoppingId, targetQty);
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Tabla detalle con precios por línea */}
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
