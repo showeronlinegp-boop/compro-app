@@ -2,9 +2,15 @@ import type { PromoOpportunity, Promotion } from '../../../shared/types.js';
 
 // ─── Promo nudge epsilon constants ────────────────────────────────────────────
 
-/** Minimum absolute improvement per unit (ARS) to trigger a nudge. */
+/**
+ * Minimum absolute improvement per unit (ARS) to trigger a nudge.
+ * Either ABS or PCT must be exceeded — whichever threshold is higher wins (max gate).
+ */
 export const PROMO_NUDGE_MIN_ABS = 1;
-/** Minimum relative improvement (fraction of current best unit price) to trigger a nudge. */
+/**
+ * Minimum relative improvement (fraction of current best unit price) to trigger a nudge.
+ * Either ABS or PCT must be exceeded — whichever threshold is higher wins (max gate).
+ */
 export const PROMO_NUDGE_MIN_PCT = 0.005;
 
 // ─── Internal candidate type ──────────────────────────────────────────────────
@@ -95,8 +101,14 @@ export function collectInfoBadges(promotions: Promotion[]): string[] {
   return [...new Set(labels)];
 }
 
+/** Maximum quantity the cart endpoint accepts (mirrors backend clampQty / parseQuantity). */
+const MAX_CART_QTY = 999;
+
 /**
  * Compute the single best promo nudge opportunity across a set of super candidates.
+ *
+ * Returns `Omit<PromoOpportunity, 'shopping_id'>` — the caller must attach `shopping_id`
+ * from the source row (s.item_id) so the type system enforces the assignment.
  *
  * For each candidate, determines if adding `missing` units would trigger an nth_unit
  * promo that makes the per-unit price at `target_qty` cheaper than the current best
@@ -108,18 +120,24 @@ export function collectInfoBadges(promotions: Promotion[]): string[] {
  *   - `currentBestUnit` uses `pickBestNthUnitPromo` at `currentQty` (not shelf price).
  *   - The promo at `target_qty` is re-evaluated with `pickBestNthUnitPromo(promos, shelfUnit, target_qty)`
  *     because a DIFFERENT promo may win at the higher quantity.
- *   - Epsilon: improvement must be > $1/unit OR > 0.5% of current best to suppress centavo-noise.
+ *   - Epsilon: improvement must exceed max($1/unit, 0.5% of current best) — EITHER threshold
+ *     alone is sufficient to fire (max gate, not AND gate). This ensures large absolute savings
+ *     on cheap items fire even when pct is tiny, and large percentage savings on expensive items
+ *     fire even when absolute delta is small.
+ *   - Suppressed when `target_qty > 999` (cart max) to avoid offering un-actionable nudges.
+ *   - Suppressed when `shelfUnit <= 0` (corrupt data) to avoid fabricating bogus savings.
  */
 export function computePromoOpportunity(
   candidates: OpportunityCandidate[],
   currentQty: number,
-): PromoOpportunity | null {
+): Omit<PromoOpportunity, 'shopping_id'> | null {
   const q = Math.max(1, Math.floor(currentQty));
 
   // ── Step 1: compute current best effective unit price over all candidates ────
   let currentBestUnit = Number.POSITIVE_INFINITY;
   let currentBestSuper = '';
   for (const c of candidates) {
+    if (c.shelfUnit <= 0) continue; // guard: corrupt zero/negative price — skip
     const best = pickBestNthUnitPromo(c.promotions, c.shelfUnit, q);
     const effUnit = effectiveLineTotal(c.shelfUnit, best, q) / q;
     if (effUnit < currentBestUnit) {
@@ -138,6 +156,8 @@ export function computePromoOpportunity(
   let bestAtTarget: Promotion | undefined;
 
   for (const c of candidates) {
+    if (c.shelfUnit <= 0) continue; // guard: corrupt zero/negative price — skip
+
     // Filter to nth_unit promos only (valid ones — same guard as pickBestNthUnitPromo)
     const nthUnitPromos = c.promotions.filter(
       (p) =>
@@ -157,6 +177,9 @@ export function computePromoOpportunity(
     if (missing === 0) continue;
 
     const targetQty = q + missing;
+
+    // Guard: target_qty > MAX_CART_QTY — the "Agregar" button would hit a 400; skip.
+    if (targetQty > MAX_CART_QTY) continue;
 
     // Re-evaluate: which promo wins AT target_qty (may differ from current qty winner)
     const promoAtTarget = pickBestNthUnitPromo(c.promotions, c.shelfUnit, targetQty);
@@ -181,7 +204,6 @@ export function computePromoOpportunity(
   if (bestEffUnit >= threshold) return null;
 
   return {
-    shopping_id: bestCandidate.product_id, // caller overwrites this with s.item_id
     missing_units: bestMissing,
     target_qty: bestTargetQty,
     best_super: bestCandidate.super,

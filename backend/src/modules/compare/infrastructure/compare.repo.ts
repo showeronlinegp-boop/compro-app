@@ -1,12 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import { Prisma } from '@prisma/client';
-import type {
-  CompareItem,
-  PromoOpportunity,
-  Promotion,
-  SourceRow,
-  SuperMatch,
-} from '../../../shared/types.js';
+import type { CompareItem, Promotion, SourceRow, SuperMatch } from '../../../shared/types.js';
 import {
   collectInfoBadges,
   computePromoOpportunity,
@@ -264,7 +258,9 @@ export function makeCompareRepo(prisma: PrismaClient): CompareRepo {
           if (beatsExisting) bySuperMap.set(m.super, m);
         }
 
-        // Build opportunity candidates from the deduped super map (while _promotions are in scope).
+        // Build opportunity candidates from the deduped super map while _promotions are still in scope.
+        // NOTE: _promotions is NOT forwarded to the public SuperMatch shape in dedupedMatches below,
+        // so it MUST be read here before that mapping drops it from the working type.
         // One candidate per surviving super: shelfUnit = deduped shelf price, promotions from _promotions.
         const opportunityCandidates = [...bySuperMap.values()].map((m) => ({
           super: m.super,
@@ -272,10 +268,7 @@ export function makeCompareRepo(prisma: PrismaClient): CompareRepo {
           shelfUnit: m.price,
           promotions: m._promotions,
         }));
-        const rawOpportunity: PromoOpportunity | null = computePromoOpportunity(
-          opportunityCandidates,
-          qty,
-        );
+        const rawOpportunity = computePromoOpportunity(opportunityCandidates, qty);
 
         // After dedup: compute effective line total per surviving super (ADR-1).
         // nth_unit math is non-linear in qty — must compute at real qty, not per-unit × qty.
@@ -312,8 +305,8 @@ export function makeCompareRepo(prisma: PrismaClient): CompareRepo {
           home_promo_label: homeBest?.label ?? null,
           home_info_badges: collectInfoBadges(homePromos),
           matches: dedupedMatches,
-          // Overwrite shopping_id on the opportunity with the source item id (s.item_id).
-          // The helper uses product_id as a placeholder; the caller corrects it here.
+          // shopping_id is not produced by the helper (Omit<PromoOpportunity, 'shopping_id'>)
+          // — the type system enforces that the caller supplies it from the source row.
           opportunity: rawOpportunity ? { ...rawOpportunity, shopping_id: s.item_id } : null,
         });
       }
