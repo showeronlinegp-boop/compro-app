@@ -1,5 +1,6 @@
 import { pesos, superCfg } from '../../supers';
 import type { CompareItem, CompareResult } from '../../types/api';
+import { PromoBadge } from './PromoBadge';
 
 interface OptionBBreakdownProps {
   result: CompareResult['option_b'];
@@ -49,11 +50,7 @@ export function OptionBBreakdown({ result, items }: OptionBBreakdownProps) {
                 >
                   {cfg.label}
                 </span>
-                {winMatch?.promo_label && (
-                  <span className="inline-flex items-center gap-0.5 rounded bg-amber-50 border border-amber-200 px-1 text-[9px] font-bold text-amber-700">
-                    🏷️ {winMatch.promo_label}
-                  </span>
-                )}
+                {winMatch?.promo_label && <PromoBadge label={winMatch.promo_label} />}
                 <span className="font-semibold text-gray-900">{pesos(b.price)}</span>
               </div>
             </div>

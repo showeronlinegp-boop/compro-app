@@ -59,9 +59,10 @@ describe('OptionBBreakdown — promo badge on winning row', () => {
 
     render(<OptionBBreakdown result={optionB} items={items} />);
 
-    const badge = screen.getByText(/2do al 80%/);
+    const badge = screen.getByTestId('promo-badge');
     expect(badge).toBeDefined();
-    expect(badge.className).toContain('text-amber-700');
+    expect(badge.textContent).toContain('2do al 80%');
+    expect(badge.getAttribute('aria-label')).toContain('2do al 80%');
   });
 
   it('does not render amber badge when promo_label is null', () => {
@@ -70,7 +71,6 @@ describe('OptionBBreakdown — promo badge on winning row', () => {
 
     render(<OptionBBreakdown result={optionB} items={items} />);
 
-    const amberSpans = document.querySelectorAll('.text-amber-700');
-    expect(amberSpans.length).toBe(0);
+    expect(screen.queryByTestId('promo-badge')).toBeNull();
   });
 });

@@ -1,5 +1,6 @@
 import { pesos, superCfg } from '../../supers';
 import type { CompareItem } from '../../types/api';
+import { InfoBadge, PromoBadge } from './PromoBadge';
 
 interface ItemMatchTableProps {
   items: CompareItem[];
@@ -59,7 +60,10 @@ export function ItemMatchTable({ items, priceMode = 'unit' }: ItemMatchTableProp
                       {match ? (
                         <div className="flex flex-col items-center gap-0.5">
                           {match.unit_price !== match.price && (
-                            <span className="text-gray-400 line-through text-[10px]">
+                            <span
+                              data-testid="shelf-strike"
+                              className="text-gray-400 line-through text-[10px]"
+                            >
                               {pesos(match.unit_price)}
                             </span>
                           )}
@@ -71,18 +75,10 @@ export function ItemMatchTable({ items, priceMode = 'unit' }: ItemMatchTableProp
                               <span className="text-gray-300 ml-0.5">~</span>
                             )}
                           </span>
-                          {match.promo_label && (
-                            <span className="inline-flex items-center gap-0.5 rounded bg-amber-50 border border-amber-200 px-1 text-[9px] font-bold text-amber-700">
-                              🏷️ {match.promo_label}
-                            </span>
-                          )}
-                          {match.info_badges.map((badge) => (
-                            <span
-                              key={badge}
-                              className="rounded-md border border-violet-200 bg-violet-50 px-1 text-[9px] font-semibold text-violet-700"
-                            >
-                              🎉 {badge}
-                            </span>
+                          {match.promo_label && <PromoBadge label={match.promo_label} />}
+                          {match.info_badges.map((badge, idx) => (
+                            // biome-ignore lint/suspicious/noArrayIndexKey: backend deduplicates badges; index is safe here
+                            <InfoBadge key={idx} label={badge} />
                           ))}
                         </div>
                       ) : (
