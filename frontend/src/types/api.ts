@@ -259,15 +259,30 @@ export interface SuperMatch {
   super: string;
   product_id: number;
   name: string;
+  /** EFFECTIVE line total after the best nth_unit promo (× qty). */
   price: number;
   matched_by: 'barcode' | 'name_similarity';
+  /** Shelf price (COALESCE(offer,raw)) × qty — strike-through baseline. */
+  unit_price: number;
+  /** Best applied nth_unit promo label, or null. */
+  promo_label: string | null;
+  /** Informational 'other' promo labels (never folded into ranking). */
+  info_badges: string[];
 }
 
 export interface CompareItem {
   shopping_id: number;
   name: string;
   home_super: string;
+  /** Effective line total (after best nth_unit promo). */
   home_price: number;
+  /**
+   * Shelf TOTAL for the home product: COALESCE(offer_price, raw_price) × qty.
+   * Mirrors SuperMatch.unit_price — the strike-through baseline before any promo.
+   */
+  home_unit_price: number;
+  home_promo_label: string | null;
+  home_info_badges: string[];
   matches: SuperMatch[];
 }
 

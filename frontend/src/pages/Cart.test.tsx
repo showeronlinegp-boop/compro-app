@@ -69,6 +69,9 @@ function makeCompareResult(overrides: Partial<CompareResult> = {}): CompareResul
         name: 'Leche',
         home_super: 'vea',
         home_price: 500,
+        home_unit_price: 500,
+        home_promo_label: null,
+        home_info_badges: [],
         matches: [
           {
             super: 'carrefour',
@@ -76,6 +79,9 @@ function makeCompareResult(overrides: Partial<CompareResult> = {}): CompareResul
             name: 'Leche entera',
             price: 450,
             matched_by: 'barcode',
+            unit_price: 450,
+            promo_label: null,
+            info_badges: [],
           },
         ],
       },
@@ -176,6 +182,9 @@ describe('Cart compare tab behavior', () => {
           name: 'Leche',
           home_super: 'vea',
           home_price: 500,
+          home_unit_price: 500,
+          home_promo_label: null,
+          home_info_badges: [],
           matches: [
             {
               super: 'carrefour',
@@ -183,6 +192,9 @@ describe('Cart compare tab behavior', () => {
               name: 'Leche entera',
               price: 450,
               matched_by: 'barcode',
+              unit_price: 450,
+              promo_label: null,
+              info_badges: [],
             },
           ],
         },
@@ -191,9 +203,21 @@ describe('Cart compare tab behavior', () => {
           name: 'Arroz',
           home_super: 'vea',
           home_price: 300,
+          home_unit_price: 300,
+          home_promo_label: null,
+          home_info_badges: [],
           // Only home_super match — no cross-super
           matches: [
-            { super: 'vea', product_id: 50, name: 'Arroz', price: 300, matched_by: 'barcode' },
+            {
+              super: 'vea',
+              product_id: 50,
+              name: 'Arroz',
+              price: 300,
+              matched_by: 'barcode',
+              unit_price: 300,
+              promo_label: null,
+              info_badges: [],
+            },
           ],
         },
       ],
