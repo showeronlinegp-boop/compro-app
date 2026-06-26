@@ -266,6 +266,19 @@ export interface CartResult {
 
 // ─── Compare multi-super ─────────────────────────────────────────────────────
 
+export interface PromoOpportunity {
+  shopping_id: number; // == cart_item_id in cart context
+  missing_units: number;
+  target_qty: number;
+  best_super: string;
+  best_product_id: number;
+  effective_unit_price_at_target: number;
+  current_best_unit_price: number;
+  current_best_super: string;
+  flips_super: boolean;
+  promo_label: string;
+}
+
 /**
  * A source row that drives the parameterized compare engine.
  *
@@ -312,6 +325,7 @@ export interface CompareItem {
   home_promo_label: string | null;
   home_info_badges: string[];
   matches: SuperMatch[];
+  opportunity: PromoOpportunity | null;
 }
 
 export interface SuperSummary {
