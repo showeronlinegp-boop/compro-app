@@ -57,10 +57,11 @@ export default function Cart() {
 
   // ─── Header copy (WU-6) ─────────────────────────────────────────────────────
   // N = distinct products, M = total units
+  const productWord = items.length === 1 ? 'producto' : 'productos';
   const headerCopy =
     itemCount === items.length
-      ? `${items.length} productos`
-      : `${items.length} productos · ${itemCount} unidades`;
+      ? `${items.length} ${productWord}`
+      : `${items.length} ${productWord} · ${itemCount} unidades`;
 
   // ─── Compare transparency line ───────────────────────────────────────────────
   // Only counts items with at least one match from a super other than their home super.

@@ -62,7 +62,7 @@ export function PromoNudge({ opportunity, name, onAgregar }: PromoNudgeProps) {
         onClick={handleAgregar}
         className="mt-1 rounded-xl bg-amber-500 px-4 py-1.5 text-sm font-semibold text-white hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
-        {loading ? 'Agregando…' : `Agregar ${opportunity.target_qty}`}
+        {loading ? 'Agregando…' : `Llevar a ${opportunity.target_qty}`}
       </button>
     </div>
   );
