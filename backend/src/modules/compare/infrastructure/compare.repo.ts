@@ -1,8 +1,9 @@
 import type { PrismaClient } from '@prisma/client';
 import { Prisma } from '@prisma/client';
-import type { CompareItem, Promotion, SourceRow, SuperMatch } from '../../../shared/types.js';
+import type { CompareItem, PromoOpportunity, Promotion, SourceRow, SuperMatch } from '../../../shared/types.js';
 import {
   collectInfoBadges,
+  computePromoOpportunity,
   effectiveLineTotal,
   pickBestNthUnitPromo,
 } from '../domain/promo-math.js';
@@ -257,6 +258,16 @@ export function makeCompareRepo(prisma: PrismaClient): CompareRepo {
           if (beatsExisting) bySuperMap.set(m.super, m);
         }
 
+        // Build opportunity candidates from the deduped super map (while _promotions are in scope).
+        // One candidate per surviving super: shelfUnit = deduped shelf price, promotions from _promotions.
+        const opportunityCandidates = [...bySuperMap.values()].map((m) => ({
+          super: m.super,
+          product_id: m.product_id,
+          shelfUnit: m.price,
+          promotions: m._promotions,
+        }));
+        const rawOpportunity: PromoOpportunity | null = computePromoOpportunity(opportunityCandidates, qty);
+
         // After dedup: compute effective line total per surviving super (ADR-1).
         // nth_unit math is non-linear in qty — must compute at real qty, not per-unit × qty.
         const dedupedMatches: SuperMatch[] = [...bySuperMap.values()].map((m) => {
@@ -292,6 +303,9 @@ export function makeCompareRepo(prisma: PrismaClient): CompareRepo {
           home_promo_label: homeBest?.label ?? null,
           home_info_badges: collectInfoBadges(homePromos),
           matches: dedupedMatches,
+          // Overwrite shopping_id on the opportunity with the source item id (s.item_id).
+          // The helper uses product_id as a placeholder; the caller corrects it here.
+          opportunity: rawOpportunity ? { ...rawOpportunity, shopping_id: s.item_id } : null,
         });
       }
 

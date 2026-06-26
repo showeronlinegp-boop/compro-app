@@ -26,6 +26,7 @@ function makeItem(
       promo_label: null,
       info_badges: [],
     })),
+    opportunity: null,
   };
 }
 
