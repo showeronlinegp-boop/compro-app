@@ -49,7 +49,7 @@ async function seedProduct(tx: Tx, opts: SeedProductOptions = {}): Promise<numbe
       raw_price: opts.raw_price ?? 100,
       offer_price: opts.offer_price ?? null,
       category_key: opts.category_key ?? null,
-      promotions: opts.promotions ?? [],
+      promotions: (opts.promotions ?? []) as object[],
     },
   });
   return result.id;
