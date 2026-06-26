@@ -1,6 +1,15 @@
 import type { PrismaClient } from '@prisma/client';
 import { Prisma } from '@prisma/client';
-import type { CartItemEntry, CartResult, ProductRow, Promotion } from '../../../shared/types.js';
+import type {
+  CartItemEntry,
+  CartResult,
+  CompareResult,
+  ProductRow,
+  Promotion,
+  SourceRow,
+} from '../../../shared/types.js';
+import { buildCompareResult } from '../../compare/domain/matcher.js';
+import type { CompareRepo } from '../../compare/infrastructure/compare.repo.js';
 import { clampQty, sumItemCount } from '../domain/cart.js';
 
 // ─── Row types from JOIN queries ──────────────────────────────────────────────
@@ -46,6 +55,7 @@ export interface CartRepo {
   updateQty(cart_item_id: number, quantity: number): Promise<CartResult>;
   removeItem(cart_item_id: number): Promise<CartResult>;
   clear(): Promise<CartResult>;
+  compareCart(): Promise<CompareResult>;
 }
 
 // Accept PrismaClient or TransactionClient
@@ -92,7 +102,7 @@ async function hydrateCart(prisma: PrismaLike, cart_id: number): Promise<CartRes
 
 // ─── Factory ──────────────────────────────────────────────────────────────────
 
-export function makeCartRepo(prisma: PrismaLike): CartRepo {
+export function makeCartRepo(prisma: PrismaLike, compareRepo: CompareRepo): CartRepo {
   return {
     async getOrCreate() {
       const cart = await resolveCart(prisma);
@@ -151,6 +161,30 @@ export function makeCartRepo(prisma: PrismaLike): CartRepo {
       const cart = await resolveCart(prisma);
       await prisma.cart_items.deleteMany({ where: { cart_id: cart.id } });
       return hydrateCart(prisma, cart.id);
+    },
+
+    async compareCart(): Promise<CompareResult> {
+      const cart = await resolveCart(prisma);
+      const cartResult = await hydrateCart(prisma, cart.id);
+
+      // Guard: refuse to compare carts with more than 100 distinct products
+      // to prevent runaway pg_trgm queries.
+      const distinctProducts = new Set(cartResult.items.map((i) => i.id));
+      if (distinctProducts.size > 100) {
+        throw Object.assign(
+          new Error('El carrito excede el límite de 100 productos distintos para comparar'),
+          { statusCode: 400 },
+        );
+      }
+
+      const source: SourceRow[] = cartResult.items.map((i) => ({
+        item_id: i.cart_item_id,
+        product_id: i.id,
+        quantity: i.quantity,
+      }));
+
+      const compareItems = await compareRepo.buildCompareItemsFromSource(source);
+      return buildCompareResult(compareItems);
     },
   };
 }

@@ -13,5 +13,6 @@ import { makeCompareRepo } from './compare.repo.js';
     },
   ],
   controllers: [CompareController],
+  exports: [COMPARE_REPO],
 })
 export class CompareModule {}

@@ -54,6 +54,11 @@ export class CartController {
     return this.repo.getOrCreate();
   }
 
+  @Get('compare')
+  compareCart() {
+    return this.repo.compareCart();
+  }
+
   @Post('items')
   async addItem(
     @Body() body: { product_id?: unknown; quantity?: unknown },

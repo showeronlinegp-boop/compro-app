@@ -125,5 +125,6 @@ export const api = {
     removeItem: (cart_item_id: number) =>
       req<CartResult>(`/cart/items/${cart_item_id}`, { method: 'DELETE' }),
     clear: () => req<CartResult>('/cart', { method: 'DELETE' }),
+    compare: () => req<CompareResult>('/cart/compare'),
   },
 };
