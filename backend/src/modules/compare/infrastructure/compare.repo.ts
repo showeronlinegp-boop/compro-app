@@ -1,6 +1,12 @@
 import type { PrismaClient } from '@prisma/client';
 import { Prisma } from '@prisma/client';
-import type { CompareItem, PromoOpportunity, Promotion, SourceRow, SuperMatch } from '../../../shared/types.js';
+import type {
+  CompareItem,
+  PromoOpportunity,
+  Promotion,
+  SourceRow,
+  SuperMatch,
+} from '../../../shared/types.js';
 import {
   collectInfoBadges,
   computePromoOpportunity,
@@ -266,7 +272,10 @@ export function makeCompareRepo(prisma: PrismaClient): CompareRepo {
           shelfUnit: m.price,
           promotions: m._promotions,
         }));
-        const rawOpportunity: PromoOpportunity | null = computePromoOpportunity(opportunityCandidates, qty);
+        const rawOpportunity: PromoOpportunity | null = computePromoOpportunity(
+          opportunityCandidates,
+          qty,
+        );
 
         // After dedup: compute effective line total per surviving super (ADR-1).
         // nth_unit math is non-linear in qty — must compute at real qty, not per-unit × qty.

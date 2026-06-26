@@ -584,16 +584,16 @@ describe('makeCompareRepo', () => {
         if (!item) return;
 
         expect(item.opportunity).not.toBeNull();
-        const opp = item.opportunity!;
+        if (!item.opportunity) return;
 
         // Improvement: dia at target=2 effUnit=1200 < masonline 1600-8=1592 → fires
-        expect(opp.best_super).toBe('dia');
-        expect(opp.flips_super).toBe(true); // dia !== masonline (home)
-        expect(opp.missing_units).toBeGreaterThan(0);
-        expect(opp.missing_units).toBe(1);
-        expect(opp.target_qty).toBe(2);
+        expect(item.opportunity.best_super).toBe('dia');
+        expect(item.opportunity.flips_super).toBe(true); // dia !== masonline (home)
+        expect(item.opportunity.missing_units).toBeGreaterThan(0);
+        expect(item.opportunity.missing_units).toBe(1);
+        expect(item.opportunity.target_qty).toBe(2);
         // shopping_id must be the source item_id (99), not the product_id
-        expect(opp.shopping_id).toBe(99);
+        expect(item.opportunity.shopping_id).toBe(99);
       });
     });
 

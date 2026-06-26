@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { Promotion } from '../../../shared/types.js';
 import {
+  PROMO_NUDGE_MIN_ABS,
   collectInfoBadges,
   computePromoOpportunity,
   effectiveLineTotal,
-  PROMO_NUDGE_MIN_ABS,
   pickBestNthUnitPromo,
 } from './promo-math.js';
 
@@ -188,20 +188,25 @@ describe('computePromoOpportunity', () => {
   //   improvement: 1599 - 1080 = 519 > max(1, 7.995)=7.995 → fires
   //   best_super='dia', currentBestSuper='masonline' → flips_super=true
   it('Oreo flip: qty=1, MAS no promo shelfUnit=1599 (currentBest), DIA 2do-al-80% shelfUnit=1800 → flips_super=true missing=1 target=2', () => {
-    const diaPromo: Promotion = { label: '2do al 80%', type: 'nth_unit', min_qty: 2, discount_pct: 80 };
+    const diaPromo: Promotion = {
+      label: '2do al 80%',
+      type: 'nth_unit',
+      min_qty: 2,
+      discount_pct: 80,
+    };
     const candidates = [
       { super: 'masonline', product_id: 2, shelfUnit: 1599, promotions: [] },
       { super: 'dia', product_id: 1, shelfUnit: 1800, promotions: [diaPromo] },
     ];
     const opp = computePromoOpportunity(candidates, 1);
     expect(opp).not.toBeNull();
-    expect(opp!.flips_super).toBe(true); // best_super='dia', currentBestSuper='masonline'
-    expect(opp!.missing_units).toBe(1);
-    expect(opp!.target_qty).toBe(2);
-    expect(opp!.best_super).toBe('dia');
-    expect(opp!.current_best_super).toBe('masonline');
+    expect(opp?.flips_super).toBe(true); // best_super='dia', currentBestSuper='masonline'
+    expect(opp?.missing_units).toBe(1);
+    expect(opp?.target_qty).toBe(2);
+    expect(opp?.best_super).toBe('dia');
+    expect(opp?.current_best_super).toBe('masonline');
     // effUnit at target: 1800*1.2/2 = 1080
-    expect(opp!.effective_unit_price_at_target).toBeCloseTo(1080, 2);
+    expect(opp?.effective_unit_price_at_target).toBeCloseTo(1080, 2);
   });
 
   // best-promo-at-target subtlety: candidate has TWO nth_unit promos.
@@ -223,7 +228,12 @@ describe('computePromoOpportunity', () => {
   // currentQty=2: "2do al 80%" would be the best at qty=2. missing for N=3 is 1 → target=3.
   // At target=3: 3x2 beats 2do-al-80%. Verify the helper picks 3x2, not 2do-al-80%.
   it('best-promo-at-target subtlety: 3x2 promo wins at target_qty=3 even though 2do-al-80% wins at current qty=2', () => {
-    const promo2do: Promotion = { label: '2do al 80%', type: 'nth_unit', min_qty: 2, discount_pct: 80 };
+    const promo2do: Promotion = {
+      label: '2do al 80%',
+      type: 'nth_unit',
+      min_qty: 2,
+      discount_pct: 80,
+    };
     const promo3x2: Promotion = { label: '3x2', type: 'nth_unit', min_qty: 3, discount_pct: 100 };
     // Only one super so no flip. shelfUnit=1000.
     // currentQty=2: 2do-al-80% is cheapest at qty=2 (effUnit=600), but we check missing for min_qty=3:
@@ -235,7 +245,7 @@ describe('computePromoOpportunity', () => {
     // currentBestUnit at qty=2: effectiveLineTotal(1000, 2do, 2)/2 = 1200/2 = 600
     // effUnit at target=3: 2000/3 ≈ 666.7 > 600? → 666.7 < 600 - max(1, 3) = 597? NO → null!
     // We need currentBestUnit to be higher for the nudge to fire. Use a second candidate with no promo.
-    const candidates = [
+    const _candidates = [
       { super: 'dia', product_id: 1, shelfUnit: 1000, promotions: [promo2do, promo3x2] },
       { super: 'masonline', product_id: 2, shelfUnit: 1200, promotions: [] }, // higher shelf, no promo
     ];
@@ -285,14 +295,19 @@ describe('computePromoOpportunity', () => {
     // 666.7 < 1000 - max(1, 5) = 995 → fires! promo_label='3x2'
     const opp2 = computePromoOpportunity(candidates2, 2);
     expect(opp2).not.toBeNull();
-    expect(opp2!.promo_label).toBe('3x2');
-    expect(opp2!.missing_units).toBe(1);
-    expect(opp2!.target_qty).toBe(3);
+    expect(opp2?.promo_label).toBe('3x2');
+    expect(opp2?.missing_units).toBe(1);
+    expect(opp2?.target_qty).toBe(3);
   });
 
   it('no-op: missing===0 (already at multiple of min_qty)', () => {
     // N=2, currentQty=2 → q%minQty=0 → missing=0 → skip
-    const promo: Promotion = { label: '2do al 80%', type: 'nth_unit', min_qty: 2, discount_pct: 80 };
+    const promo: Promotion = {
+      label: '2do al 80%',
+      type: 'nth_unit',
+      min_qty: 2,
+      discount_pct: 80,
+    };
     const candidates = [
       { super: 'masonline', product_id: 1, shelfUnit: 1000, promotions: [promo] },
     ];
@@ -300,7 +315,12 @@ describe('computePromoOpportunity', () => {
   });
 
   it('no-op: no nth_unit promo in any candidate', () => {
-    const otherPromo: Promotion = { label: 'Cuotas', type: 'other', min_qty: null, discount_pct: null };
+    const otherPromo: Promotion = {
+      label: 'Cuotas',
+      type: 'other',
+      min_qty: null,
+      discount_pct: null,
+    };
     const candidates = [
       { super: 'masonline', product_id: 1, shelfUnit: 1000, promotions: [otherPromo] },
     ];
@@ -310,7 +330,12 @@ describe('computePromoOpportunity', () => {
   it('no-op: promo not cheapest at target (effUnit > currentBestUnit - epsilon)', () => {
     // currentBestUnit from home (no promo) = 500. Promo candidate target effUnit = 499
     // improvement = 500 - 499 = 1 which is NOT > max(1, 500*0.005=2.5) = 2.5 → null
-    const promo: Promotion = { label: '2do al 80%', type: 'nth_unit', min_qty: 2, discount_pct: 80 };
+    const promo: Promotion = {
+      label: '2do al 80%',
+      type: 'nth_unit',
+      min_qty: 2,
+      discount_pct: 80,
+    };
     // shelfUnit chosen so that effUnit at target is only 0.5 below currentBestUnit
     // currentBestUnit=500 (home, no promo, qty=1)
     // at target=2: effectiveLineTotal(shelfUnit, promo, 2)/2 = shelfUnit*1.2/2 = shelfUnit*0.6
@@ -331,7 +356,12 @@ describe('computePromoOpportunity', () => {
     // At target: effUnit = 1595 → null
     // effectiveLineTotal(shelfUnit, {N=2,D=80}, 2) / 2 = shelfUnit * 0.6
     // shelfUnit * 0.6 = 1595 → shelfUnit = 2658.33 → use 2659 → 2659*0.6=1595.4 > 1592 → null
-    const promo: Promotion = { label: '2do al 80%', type: 'nth_unit', min_qty: 2, discount_pct: 80 };
+    const promo: Promotion = {
+      label: '2do al 80%',
+      type: 'nth_unit',
+      min_qty: 2,
+      discount_pct: 80,
+    };
     const candidates = [
       { super: 'home', product_id: 1, shelfUnit: 1600, promotions: [] },
       { super: 'dia', product_id: 2, shelfUnit: 2659, promotions: [promo] },
@@ -345,16 +375,21 @@ describe('computePromoOpportunity', () => {
     // shelfUnit=1600: currentBestUnit=1600
     //   effUnit at target=2: 1600*1.2/2=960
     //   improvement=1600-960=640 > max(1,8)=8 → fires
-    const promo: Promotion = { label: '2do al 80%', type: 'nth_unit', min_qty: 2, discount_pct: 80 };
+    const promo: Promotion = {
+      label: '2do al 80%',
+      type: 'nth_unit',
+      min_qty: 2,
+      discount_pct: 80,
+    };
     const candidates = [
       { super: 'masonline', product_id: 1, shelfUnit: 1600, promotions: [promo] },
     ];
     const opp = computePromoOpportunity(candidates, 1);
     expect(opp).not.toBeNull();
-    expect(opp!.flips_super).toBe(false); // best_super === current_best_super ('masonline')
-    expect(opp!.best_super).toBe('masonline');
-    expect(opp!.current_best_super).toBe('masonline');
-    expect(opp!.missing_units).toBe(1);
+    expect(opp?.flips_super).toBe(false); // best_super === current_best_super ('masonline')
+    expect(opp?.best_super).toBe('masonline');
+    expect(opp?.current_best_super).toBe('masonline');
+    expect(opp?.missing_units).toBe(1);
   });
 
   it('returns null for empty candidates array', () => {

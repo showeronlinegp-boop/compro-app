@@ -1,4 +1,4 @@
-import type { Promotion, PromoOpportunity } from '../../../shared/types.js';
+import type { PromoOpportunity, Promotion } from '../../../shared/types.js';
 
 // ─── Promo nudge epsilon constants ────────────────────────────────────────────
 
@@ -117,7 +117,7 @@ export function computePromoOpportunity(
   const q = Math.max(1, Math.floor(currentQty));
 
   // ── Step 1: compute current best effective unit price over all candidates ────
-  let currentBestUnit = Infinity;
+  let currentBestUnit = Number.POSITIVE_INFINITY;
   let currentBestSuper = '';
   for (const c of candidates) {
     const best = pickBestNthUnitPromo(c.promotions, c.shelfUnit, q);
@@ -128,10 +128,10 @@ export function computePromoOpportunity(
     }
   }
 
-  if (!isFinite(currentBestUnit)) return null; // no candidates
+  if (!Number.isFinite(currentBestUnit)) return null; // no candidates
 
   // ── Step 2: find the candidate with the best effective unit at target_qty ────
-  let bestEffUnit = Infinity;
+  let bestEffUnit = Number.POSITIVE_INFINITY;
   let bestCandidate: OpportunityCandidate | null = null;
   let bestMissing = 0;
   let bestTargetQty = 0;
@@ -173,10 +173,11 @@ export function computePromoOpportunity(
     }
   }
 
-  if (!bestCandidate || !isFinite(bestEffUnit)) return null;
+  if (!bestCandidate || !Number.isFinite(bestEffUnit)) return null;
 
   // ── Step 3: epsilon gate ─────────────────────────────────────────────────────
-  const threshold = currentBestUnit - Math.max(PROMO_NUDGE_MIN_ABS, currentBestUnit * PROMO_NUDGE_MIN_PCT);
+  const threshold =
+    currentBestUnit - Math.max(PROMO_NUDGE_MIN_ABS, currentBestUnit * PROMO_NUDGE_MIN_PCT);
   if (bestEffUnit >= threshold) return null;
 
   return {
