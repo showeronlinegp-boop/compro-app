@@ -7,6 +7,17 @@
   body { font-family: system-ui, -apple-system, sans-serif; }
 }
 
+/* Respect reduced-motion preference — disable all CSS animations and transitions */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 @layer utilities {
   .line-clamp-2 {
     display: -webkit-box;

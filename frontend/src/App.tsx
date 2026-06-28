@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { api } from './api';
+import { FOCUS_RING } from './styles';
 import { LocationSelector } from './components/LocationSelector';
 import { CartProvider, useCart } from './contexts/CartContext';
 import Cart from './pages/Cart';
@@ -312,7 +313,7 @@ function AppShell() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Navbar */}
       <nav className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 flex items-center h-14 gap-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center h-14 gap-6">
           <span className="font-bold text-gray-900 text-base tracking-tight">🛒 COMPRO</span>
 
           <div className="flex gap-1 flex-1">
@@ -334,7 +335,7 @@ function AppShell() {
                   to={to}
                   end={to === '/'}
                   className={({ isActive }) =>
-                    `text-sm font-medium px-3 py-1.5 rounded-xl transition-colors ${
+                    `text-sm font-medium px-3 py-1.5 rounded-xl transition-colors ${FOCUS_RING} ${
                       isActive
                         ? 'bg-indigo-50 text-indigo-700'
                         : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'
@@ -351,7 +352,7 @@ function AppShell() {
             to="/cart"
             aria-label={cartLabel}
             className={({ isActive }) =>
-              `relative inline-flex items-center justify-center w-9 h-9 rounded-xl transition-colors ${
+              `relative inline-flex items-center justify-center w-9 h-9 rounded-xl transition-colors ${FOCUS_RING} ${
                 isActive
                   ? 'bg-indigo-50 text-indigo-700'
                   : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'

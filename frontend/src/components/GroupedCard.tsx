@@ -83,7 +83,7 @@ export default function GroupedCard({
   const isInterest = interestIds?.has(target.id) ?? false;
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-md transition-shadow duration-200">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-full hover:shadow-md transition-shadow duration-200">
       {/* Imagen */}
       <div className="relative bg-gray-50 h-36 flex items-center justify-center p-3">
         <ProductImage

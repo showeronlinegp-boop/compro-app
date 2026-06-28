@@ -1,5 +1,9 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import FreqModal from '../components/FreqModal';
+import { EmptyState } from '../components/EmptyState';
+import { PageContainer } from '../components/layout/PageContainer';
+import { FOCUS_RING, PRIMARY_CTA } from '../styles';
 import { pesos, superCfg } from '../supers';
 import type { Interest, Product } from '../types/api';
 
@@ -26,19 +30,31 @@ export default function Intereses({
 
   if (interests.length === 0) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-24 text-center text-gray-400">
-        <p className="text-5xl mb-4">♡</p>
-        <p className="font-medium text-lg">No tenés intereses guardados</p>
-        <p className="text-sm mt-2">Buscá productos en "Explorar" y guardá los que te interesan</p>
-      </div>
+      <PageContainer>
+        <EmptyState
+          icon="♡"
+          title="No tenés intereses guardados"
+          description='Buscá productos en "Explorar" y guardá los que te interesan'
+          action={
+            <Link
+              to="/"
+              className={`${PRIMARY_CTA} ${FOCUS_RING}`}
+            >
+              Ir a Explorar
+            </Link>
+          }
+        />
+      </PageContainer>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6">
+    <PageContainer>
+      <h1 className="sr-only">Mis Intereses</h1>
       <p className="text-xs text-gray-400 mb-4">{interests.length} productos guardados</p>
 
-      <div className="flex flex-col gap-2">
+      {/* Cap list width so rows don't span the full 7xl container (void avoidance) */}
+      <div className="max-w-3xl flex flex-col gap-2">
         {interests.map((item) => {
           const cfg = superCfg(item.super);
           const price = item.offer_price ?? item.raw_price;
@@ -120,6 +136,6 @@ export default function Intereses({
           onClose={() => setFreqTarget(null)}
         />
       )}
-    </div>
+    </PageContainer>
   );
 }

@@ -24,7 +24,9 @@ export function OptionBBreakdown({ result, items }: OptionBBreakdownProps) {
               <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}>
                 {cfg.label}
               </span>
-              <span className="text-sm font-semibold text-gray-800">{pesos(s.total)}</span>
+              <span className="text-sm font-semibold tabular-nums text-gray-800">
+                {pesos(s.total)}
+              </span>
             </div>
           );
         })}
@@ -51,7 +53,7 @@ export function OptionBBreakdown({ result, items }: OptionBBreakdownProps) {
                   {cfg.label}
                 </span>
                 {winMatch?.promo_label && <PromoBadge label={winMatch.promo_label} />}
-                <span className="font-semibold text-gray-900">{pesos(b.price)}</span>
+                <span className="font-semibold tabular-nums text-gray-900">{pesos(b.price)}</span>
               </div>
             </div>
           );

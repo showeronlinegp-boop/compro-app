@@ -23,14 +23,30 @@ export function ItemMatchTable({ items, priceMode = 'unit' }: ItemMatchTableProp
           Precios = unitario × cantidad (total por línea)
         </p>
       )}
-      <table className="w-full text-xs">
+      {/* aria-label identifies the table for screen readers (A11Y-4) */}
+      <table className="w-full text-xs" aria-label="Precios por producto y supermercado">
         <thead>
+          {/* Sticky thead: position:sticky on each th for cross-browser table support.
+              z-10 keeps header above rows; bg-white prevents content showing through.
+              top-0 is intentional: this thead's scroll container is the surrounding
+              overflow-x-auto wrapper, so top is measured from the wrapper's edge, not
+              the viewport. A non-zero offset (e.g. navbar height) would push the header
+              down by that amount AT REST, since the wrapper sits below the navbar already. */}
           <tr className="border-b border-gray-100">
-            <th className="text-left py-2 pr-3 text-gray-500 font-medium w-40">Producto</th>
+            <th
+              scope="col"
+              className="sticky top-0 bg-white z-10 text-left py-2 pr-3 text-gray-500 font-medium w-40"
+            >
+              Producto
+            </th>
             {allSupers.map((s) => {
               const cfg = superCfg(s);
               return (
-                <th key={s} className="text-center py-2 px-2">
+                <th
+                  key={s}
+                  scope="col"
+                  className="sticky top-0 bg-white z-10 text-center py-2 px-2"
+                >
                   <span
                     className={`text-xs font-bold px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}
                   >
@@ -49,9 +65,13 @@ export function ItemMatchTable({ items, priceMode = 'unit' }: ItemMatchTableProp
 
             return (
               <tr key={item.shopping_id} className="border-b border-gray-50 hover:bg-gray-50">
-                <td className="py-2 pr-3 text-gray-700 font-medium truncate max-w-40">
+                {/* Row header for screen readers (scope="row" + th element) */}
+                <th
+                  scope="row"
+                  className="py-2 pr-3 text-gray-700 text-left truncate max-w-40 font-normal"
+                >
                   {item.name}
-                </td>
+                </th>
                 {allSupers.map((s) => {
                   const match = matchBySuperMap.get(s);
                   const isBest = bestPrice !== null && match?.price === bestPrice;
@@ -62,13 +82,13 @@ export function ItemMatchTable({ items, priceMode = 'unit' }: ItemMatchTableProp
                           {match.unit_price !== match.price && (
                             <span
                               data-testid="shelf-strike"
-                              className="text-gray-400 line-through text-[10px]"
+                              className="text-gray-400 line-through text-[10px] tabular-nums"
                             >
                               {pesos(match.unit_price)}
                             </span>
                           )}
                           <span
-                            className={`font-semibold ${isBest ? 'text-indigo-700 font-bold' : 'text-gray-700'}`}
+                            className={`font-semibold tabular-nums ${isBest ? 'text-indigo-700 font-bold' : 'text-gray-700'}`}
                           >
                             {pesos(match.price)}
                             {match.matched_by === 'name_similarity' && (
