@@ -13,6 +13,7 @@ function makeMatch(overrides: Partial<SuperMatch> = {}): SuperMatch {
   return {
     super: 'carrefour',
     product_id: 1,
+    sku_id: null,
     name: 'Leche entera',
     price: 3198,
     matched_by: 'barcode',

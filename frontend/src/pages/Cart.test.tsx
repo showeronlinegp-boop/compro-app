@@ -76,6 +76,7 @@ function makeCompareResult(overrides: Partial<CompareResult> = {}): CompareResul
           {
             super: 'carrefour',
             product_id: 99,
+            sku_id: null,
             name: 'Leche entera',
             price: 450,
             matched_by: 'barcode',
@@ -190,6 +191,7 @@ describe('Cart compare tab behavior', () => {
             {
               super: 'carrefour',
               product_id: 99,
+              sku_id: null,
               name: 'Leche entera',
               price: 450,
               matched_by: 'barcode',
@@ -213,6 +215,7 @@ describe('Cart compare tab behavior', () => {
             {
               super: 'vea',
               product_id: 50,
+              sku_id: null,
               name: 'Arroz',
               price: 300,
               matched_by: 'barcode',
@@ -332,6 +335,7 @@ function makeCompareResultWithOpportunity(
           {
             super: 'dia',
             product_id: 42,
+            sku_id: null,
             name: 'Oreo DIA',
             price: 800,
             matched_by: 'barcode',
@@ -587,5 +591,754 @@ describe('Cart Oportunidades section', () => {
 
     expect(screen.queryByText('Oportunidades')).toBeNull();
     expect(screen.queryByTestId('opportunities-section')).toBeNull();
+  });
+});
+
+// ─── Task 8: Handoff button render tests ─────────────────────────────────────
+
+/**
+ * Build a CompareResult configured for handoff button testing.
+ * Uses MISMATCHED quantities in fixtures to catch qty=1 hardcode bugs.
+ */
+function makeHandoffCompareResult(overrides: Partial<CompareResult> = {}): CompareResult {
+  return {
+    items: [
+      {
+        shopping_id: 1,
+        name: 'Leche',
+        home_super: 'vea',
+        home_price: 1500,
+        home_unit_price: 1500,
+        home_promo_label: null,
+        home_info_badges: [],
+        matches: [
+          {
+            super: 'carrefour',
+            product_id: 10,
+            sku_id: 'sku-carrefour-1',
+            name: 'Leche Carrefour',
+            price: 1350,
+            matched_by: 'barcode',
+            unit_price: 1350,
+            promo_label: null,
+            info_badges: [],
+          },
+        ],
+        opportunity: null,
+      },
+      {
+        shopping_id: 2,
+        name: 'Yogur',
+        home_super: 'vea',
+        home_price: 600,
+        home_unit_price: 600,
+        home_promo_label: null,
+        home_info_badges: [],
+        matches: [
+          {
+            super: 'carrefour',
+            product_id: 20,
+            sku_id: 'sku-carrefour-2',
+            name: 'Yogur Carrefour',
+            price: 580,
+            matched_by: 'barcode',
+            unit_price: 580,
+            promo_label: null,
+            info_badges: [],
+          },
+        ],
+        opportunity: null,
+      },
+    ],
+    option_a: [
+      { super: 'carrefour', total: 1930, coverage: 100, missing_items: 0 },
+    ],
+    option_b: {
+      total: 1930,
+      by_super: [{ super: 'carrefour', total: 1930, coverage: 100, missing_items: 0 }],
+      breakdown: [
+        { shopping_id: 1, best_super: 'carrefour', price: 1350 },
+        { shopping_id: 2, best_super: 'carrefour', price: 580 },
+      ],
+      savings_vs_option_a: 0,
+    },
+    ...overrides,
+  };
+}
+
+describe('Cart handoff buttons', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // MISMATCHED quantities: item 1 qty=3, item 2 qty=1 — catches qty=1 hardcode
+    mockItems = [
+      makeItem({ cart_item_id: 1, quantity: 3, name: 'Leche' }),
+      makeItem({ cart_item_id: 2, quantity: 1, name: 'Yogur' }),
+    ];
+    mockItemCount = 4;
+  });
+
+  // SC-5.1: Option A renders a handoff button for EVERY super in option_a (D1 reversed)
+  it('SC-5.1: Option A renders a button per super (winner AND non-winner), each with correct URL', async () => {
+    const result = makeHandoffCompareResult({
+      option_a: [
+        { super: 'carrefour', total: 1930, coverage: 100, missing_items: 0 },
+        { super: 'dia', total: 2200, coverage: 100, missing_items: 0 },
+      ],
+      // Add dia matches so the dia button has non-null skus
+      items: [
+        {
+          shopping_id: 1,
+          name: 'Leche',
+          home_super: 'vea',
+          home_price: 1500,
+          home_unit_price: 1500,
+          home_promo_label: null,
+          home_info_badges: [],
+          matches: [
+            {
+              super: 'carrefour',
+              product_id: 10,
+              sku_id: 'sku-carrefour-1',
+              name: 'Leche Carrefour',
+              price: 1350,
+              matched_by: 'barcode',
+              unit_price: 1350,
+              promo_label: null,
+              info_badges: [],
+            },
+            {
+              super: 'dia',
+              product_id: 11,
+              sku_id: 'sku-dia-1',
+              name: 'Leche DIA',
+              price: 1400,
+              matched_by: 'barcode',
+              unit_price: 1400,
+              promo_label: null,
+              info_badges: [],
+            },
+          ],
+          opportunity: null,
+        },
+        {
+          shopping_id: 2,
+          name: 'Yogur',
+          home_super: 'vea',
+          home_price: 600,
+          home_unit_price: 600,
+          home_promo_label: null,
+          home_info_badges: [],
+          matches: [
+            {
+              super: 'carrefour',
+              product_id: 20,
+              sku_id: 'sku-carrefour-2',
+              name: 'Yogur Carrefour',
+              price: 580,
+              matched_by: 'barcode',
+              unit_price: 580,
+              promo_label: null,
+              info_badges: [],
+            },
+            {
+              super: 'dia',
+              product_id: 21,
+              sku_id: 'sku-dia-2',
+              name: 'Yogur DIA',
+              price: 620,
+              matched_by: 'barcode',
+              unit_price: 620,
+              promo_label: null,
+              info_badges: [],
+            },
+          ],
+          opportunity: null,
+        },
+      ],
+    });
+    mockCompare.mockResolvedValue(result);
+
+    renderCart();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
+    });
+
+    // Both supers must get a button
+    await waitFor(() => expect(screen.getByTestId('handoff-option-a-carrefour')).toBeDefined());
+    expect(screen.getByTestId('handoff-option-a-dia')).toBeDefined();
+
+    const carrefourBtn = screen.getByTestId('handoff-option-a-carrefour') as HTMLAnchorElement;
+    const diaBtn = screen.getByTestId('handoff-option-a-dia') as HTMLAnchorElement;
+
+    // Winner (carrefour) button → anchor with correct origin, its own skus, sc=1
+    expect(carrefourBtn.tagName.toLowerCase()).toBe('a');
+    expect(carrefourBtn.href).toContain('carrefour.com.ar');
+    expect(carrefourBtn.href).toContain('sku-carrefour-1');
+    expect(carrefourBtn.href).toContain('sc=1');
+    expect(carrefourBtn.href).not.toContain('sc=34');
+
+    // Non-winner (dia) button → anchor with correct origin and its own skus
+    expect(diaBtn.tagName.toLowerCase()).toBe('a');
+    expect(diaBtn.href).toContain('supermercadosdia.com.ar');
+    expect(diaBtn.href).toContain('sku-dia-1');
+    expect(diaBtn.href).toContain('sc=1');
+
+    // No sku leakage across supers
+    expect(carrefourBtn.href).not.toContain('sku-dia');
+    expect(diaBtn.href).not.toContain('sku-carrefour');
+  });
+
+  // SC-5.3: Home-super winner works without special-casing
+  it('SC-5.3: Home-super winner carries sku_id correctly, no special-casing', async () => {
+    // dia is both the home super AND the option_a winner
+    const result: CompareResult = {
+      items: [
+        {
+          shopping_id: 1,
+          name: 'Leche',
+          home_super: 'dia',
+          home_price: 900,
+          home_unit_price: 900,
+          home_promo_label: null,
+          home_info_badges: [],
+          matches: [
+            {
+              super: 'dia',
+              product_id: 77,
+              sku_id: 'dia-sku-55',
+              name: 'Leche DIA',
+              price: 900,
+              matched_by: 'barcode',
+              unit_price: 900,
+              promo_label: null,
+              info_badges: [],
+            },
+          ],
+          opportunity: null,
+        },
+      ],
+      option_a: [{ super: 'dia', total: 900, coverage: 100, missing_items: 0 }],
+      option_b: {
+        total: 900,
+        by_super: [{ super: 'dia', total: 900, coverage: 100, missing_items: 0 }],
+        breakdown: [{ shopping_id: 1, best_super: 'dia', price: 900 }],
+        savings_vs_option_a: 0,
+      },
+    };
+    mockItems = [makeItem({ cart_item_id: 1, quantity: 3, super: 'dia' })];
+    mockItemCount = 3;
+    mockCompare.mockResolvedValue(result);
+
+    renderCart();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
+    });
+
+    await waitFor(() => expect(screen.getByTestId('handoff-option-a-dia')).toBeDefined());
+
+    const handoffBtn = screen.getByTestId('handoff-option-a-dia');
+    // Must be an anchor with href containing dia-sku-55
+    expect(handoffBtn.tagName.toLowerCase()).toBe('a');
+    expect((handoffBtn as HTMLAnchorElement).href).toContain('sku=dia-sku-55');
+  });
+
+  // SC-5.4: Button is inert when all sku_ids null for Option A winner
+  it('SC-5.4: Button is inert (no href) when all sku_ids are null for the winner', async () => {
+    const result = makeHandoffCompareResult({
+      items: [
+        {
+          shopping_id: 1,
+          name: 'Leche',
+          home_super: 'vea',
+          home_price: 500,
+          home_unit_price: 500,
+          home_promo_label: null,
+          home_info_badges: [],
+          matches: [
+            {
+              super: 'carrefour',
+              product_id: 10,
+              sku_id: null, // null → button inert
+              name: 'Leche Carrefour',
+              price: 450,
+              matched_by: 'barcode',
+              unit_price: 450,
+              promo_label: null,
+              info_badges: [],
+            },
+          ],
+          opportunity: null,
+        },
+      ],
+      option_a: [{ super: 'carrefour', total: 450, coverage: 100, missing_items: 0 }],
+    });
+    mockItems = [makeItem({ cart_item_id: 1, quantity: 1 })];
+    mockItemCount = 1;
+    mockCompare.mockResolvedValue(result);
+
+    renderCart();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
+    });
+
+    await waitFor(() => expect(screen.getByTestId('handoff-option-a-carrefour')).toBeDefined());
+
+    const handoffEl = screen.getByTestId('handoff-option-a-carrefour');
+    // Must be a span (inert), not an anchor
+    expect(handoffEl.tagName.toLowerCase()).toBe('span');
+    expect(handoffEl.hasAttribute('href')).toBe(false);
+  });
+
+  // SC-6.1: One button per Option B super
+  it('SC-6.1: One Option B button per split super, no extra buttons', async () => {
+    const result: CompareResult = {
+      items: [
+        {
+          shopping_id: 1,
+          name: 'Leche',
+          home_super: 'vea',
+          home_price: 600,
+          home_unit_price: 600,
+          home_promo_label: null,
+          home_info_badges: [],
+          matches: [
+            {
+              super: 'carrefour',
+              product_id: 11,
+              sku_id: '11',
+              name: 'Leche Carrefour',
+              price: 550,
+              matched_by: 'barcode',
+              unit_price: 550,
+              promo_label: null,
+              info_badges: [],
+            },
+          ],
+          opportunity: null,
+        },
+        {
+          shopping_id: 2,
+          name: 'Yogur',
+          home_super: 'vea',
+          home_price: 400,
+          home_unit_price: 400,
+          home_promo_label: null,
+          home_info_badges: [],
+          matches: [
+            {
+              super: 'dia',
+              product_id: 22,
+              sku_id: '22',
+              name: 'Yogur DIA',
+              price: 380,
+              matched_by: 'barcode',
+              unit_price: 380,
+              promo_label: null,
+              info_badges: [],
+            },
+          ],
+          opportunity: null,
+        },
+      ],
+      option_a: [{ super: 'carrefour', total: 930, coverage: 100, missing_items: 0 }],
+      option_b: {
+        total: 930,
+        by_super: [
+          { super: 'carrefour', total: 550, coverage: 50, missing_items: 1 },
+          { super: 'dia', total: 380, coverage: 50, missing_items: 1 },
+        ],
+        breakdown: [
+          { shopping_id: 1, best_super: 'carrefour', price: 550 },
+          { shopping_id: 2, best_super: 'dia', price: 380 },
+        ],
+        savings_vs_option_a: 0,
+      },
+    };
+    mockCompare.mockResolvedValue(result);
+
+    renderCart();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
+    });
+
+    await waitFor(() => expect(screen.getByTestId('handoff-option-b-carrefour')).toBeDefined());
+
+    expect(screen.getByTestId('handoff-option-b-carrefour')).toBeDefined();
+    expect(screen.getByTestId('handoff-option-b-dia')).toBeDefined();
+    expect(screen.queryByTestId('handoff-option-b-vea')).toBeNull();
+    expect(screen.queryByTestId('handoff-option-b-masonline')).toBeNull();
+
+    // Option B explainer: 2-super split → "se divide en 2 supers"
+    expect(document.body.textContent).toContain('se divide en 2 supers');
+  });
+
+  // SC-6.2: No cross-super sku leakage
+  it('SC-6.2: Carrefour button URL contains sku=11 not sku=22; dia button vice versa', async () => {
+    const result: CompareResult = {
+      items: [
+        {
+          shopping_id: 1,
+          name: 'Leche',
+          home_super: 'vea',
+          home_price: 600,
+          home_unit_price: 600,
+          home_promo_label: null,
+          home_info_badges: [],
+          matches: [
+            {
+              super: 'carrefour',
+              product_id: 11,
+              sku_id: '11',
+              name: 'Leche Carrefour',
+              price: 550,
+              matched_by: 'barcode',
+              unit_price: 550,
+              promo_label: null,
+              info_badges: [],
+            },
+          ],
+          opportunity: null,
+        },
+        {
+          shopping_id: 2,
+          name: 'Yogur',
+          home_super: 'vea',
+          home_price: 400,
+          home_unit_price: 400,
+          home_promo_label: null,
+          home_info_badges: [],
+          matches: [
+            {
+              super: 'dia',
+              product_id: 22,
+              sku_id: '22',
+              name: 'Yogur DIA',
+              price: 380,
+              matched_by: 'barcode',
+              unit_price: 380,
+              promo_label: null,
+              info_badges: [],
+            },
+          ],
+          opportunity: null,
+        },
+      ],
+      option_a: [{ super: 'carrefour', total: 930, coverage: 100, missing_items: 0 }],
+      option_b: {
+        total: 930,
+        by_super: [
+          { super: 'carrefour', total: 550, coverage: 50, missing_items: 1 },
+          { super: 'dia', total: 380, coverage: 50, missing_items: 1 },
+        ],
+        breakdown: [
+          { shopping_id: 1, best_super: 'carrefour', price: 550 },
+          { shopping_id: 2, best_super: 'dia', price: 380 },
+        ],
+        savings_vs_option_a: 0,
+      },
+    };
+    mockCompare.mockResolvedValue(result);
+
+    renderCart();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
+    });
+
+    await waitFor(() => expect(screen.getByTestId('handoff-option-b-carrefour')).toBeDefined());
+
+    const carrefourBtn = screen.getByTestId('handoff-option-b-carrefour') as HTMLAnchorElement;
+    const diaBtn = screen.getByTestId('handoff-option-b-dia') as HTMLAnchorElement;
+
+    expect(carrefourBtn.href).toContain('sku=11');
+    expect(carrefourBtn.href).not.toContain('sku=22');
+    expect(diaBtn.href).toContain('sku=22');
+    expect(diaBtn.href).not.toContain('sku=11');
+  });
+
+  // SC-7.1: Disclaimer present when compareResult loaded
+  it('SC-7.1: Disclaimer text appears when handoff button renders', async () => {
+    mockCompare.mockResolvedValue(makeHandoffCompareResult());
+
+    renderCart();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
+    });
+
+    await waitFor(() => expect(screen.getByTestId('handoff-option-a-carrefour')).toBeDefined());
+
+    expect(
+      screen.getAllByText('Los precios pueden variar al momento de pagar.').length,
+    ).toBeGreaterThan(0);
+  });
+
+  // SC-8.1: Partial count shown when some skus null
+  it('SC-8.1: Partial count "2 de 3 productos" shown when one sku is null', async () => {
+    const result: CompareResult = {
+      items: [
+        {
+          shopping_id: 1,
+          name: 'Item A',
+          home_super: 'vea',
+          home_price: 500,
+          home_unit_price: 500,
+          home_promo_label: null,
+          home_info_badges: [],
+          matches: [
+            {
+              super: 'carrefour',
+              product_id: 10,
+              sku_id: 'sku-a',
+              name: 'Item A Carrefour',
+              price: 480,
+              matched_by: 'barcode',
+              unit_price: 480,
+              promo_label: null,
+              info_badges: [],
+            },
+          ],
+          opportunity: null,
+        },
+        {
+          shopping_id: 2,
+          name: 'Item B',
+          home_super: 'vea',
+          home_price: 400,
+          home_unit_price: 400,
+          home_promo_label: null,
+          home_info_badges: [],
+          matches: [
+            {
+              super: 'carrefour',
+              product_id: 20,
+              sku_id: 'sku-b',
+              name: 'Item B Carrefour',
+              price: 380,
+              matched_by: 'barcode',
+              unit_price: 380,
+              promo_label: null,
+              info_badges: [],
+            },
+          ],
+          opportunity: null,
+        },
+        {
+          shopping_id: 3,
+          name: 'Item C',
+          home_super: 'vea',
+          home_price: 300,
+          home_unit_price: 300,
+          home_promo_label: null,
+          home_info_badges: [],
+          matches: [
+            {
+              super: 'carrefour',
+              product_id: 30,
+              sku_id: null, // null → excluded from URL
+              name: 'Item C Carrefour',
+              price: 290,
+              matched_by: 'barcode',
+              unit_price: 290,
+              promo_label: null,
+              info_badges: [],
+            },
+          ],
+          opportunity: null,
+        },
+      ],
+      option_a: [{ super: 'carrefour', total: 1150, coverage: 100, missing_items: 0 }],
+      option_b: {
+        total: 1150,
+        by_super: [{ super: 'carrefour', total: 1150, coverage: 100, missing_items: 0 }],
+        breakdown: [
+          { shopping_id: 1, best_super: 'carrefour', price: 480 },
+          { shopping_id: 2, best_super: 'carrefour', price: 380 },
+          { shopping_id: 3, best_super: 'carrefour', price: 290 },
+        ],
+        savings_vs_option_a: 0,
+      },
+    };
+    // 3 cart items with MISMATCHED quantities
+    mockItems = [
+      makeItem({ cart_item_id: 1, quantity: 3, name: 'Item A' }),
+      makeItem({ cart_item_id: 2, quantity: 1, name: 'Item B' }),
+      makeItem({ cart_item_id: 3, quantity: 2, name: 'Item C' }),
+    ];
+    mockItemCount = 6;
+    mockCompare.mockResolvedValue(result);
+
+    renderCart();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
+    });
+
+    await waitFor(() => expect(screen.getByTestId('handoff-option-a-carrefour')).toBeDefined());
+
+    // 2 of 3 items linked → partial count disclosure (may appear in both Option A and B sections)
+    expect(screen.getAllByText('2 de 3 productos').length).toBeGreaterThan(0);
+  });
+
+  // SC-8.2: No partial count when all items linked
+  it('SC-8.2: No partial count text when all sku_ids non-null', async () => {
+    mockCompare.mockResolvedValue(makeHandoffCompareResult());
+
+    renderCart();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
+    });
+
+    await waitFor(() => expect(screen.getByTestId('handoff-option-a-carrefour')).toBeDefined());
+
+    // "2 de 2" should NOT appear
+    expect(screen.queryByText(/\d+ de \d+ productos/)).toBeNull();
+  });
+
+  // SC-9: VEA handoff uses the sc=34 sales channel (no misleading availability hint)
+  it('SC-9: VEA handoff button uses the sc=34 sales channel when winner is vea', async () => {
+    const result: CompareResult = {
+      items: [
+        {
+          shopping_id: 1,
+          name: 'Leche',
+          home_super: 'vea',
+          home_price: 500,
+          home_unit_price: 500,
+          home_promo_label: null,
+          home_info_badges: [],
+          matches: [
+            {
+              super: 'vea',
+              product_id: 10,
+              sku_id: 'vea-sku-1',
+              name: 'Leche VEA',
+              price: 480,
+              matched_by: 'barcode',
+              unit_price: 480,
+              promo_label: null,
+              info_badges: [],
+            },
+          ],
+          opportunity: null,
+        },
+      ],
+      option_a: [{ super: 'vea', total: 480, coverage: 100, missing_items: 0 }],
+      option_b: {
+        total: 480,
+        by_super: [{ super: 'vea', total: 480, coverage: 100, missing_items: 0 }],
+        breakdown: [{ shopping_id: 1, best_super: 'vea', price: 480 }],
+        savings_vs_option_a: 0,
+      },
+    };
+    mockItems = [makeItem({ cart_item_id: 1, quantity: 1 })];
+    mockItemCount = 1;
+    mockCompare.mockResolvedValue(result);
+
+    renderCart();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
+    });
+
+    await waitFor(() => expect(screen.getByTestId('handoff-option-a-vea')).toBeDefined());
+
+    const handoffBtn = screen.getByTestId('handoff-option-a-vea');
+    // Enabled (anchor with href)
+    expect(handoffBtn.tagName.toLowerCase()).toBe('a');
+    expect((handoffBtn as HTMLAnchorElement).href).toContain('vea-sku-1');
+
+    // No VEA-specific availability hint — our crawl is zone-aware, so claiming a
+    // product "may not be available at your store" would contradict our own data.
+    expect(document.body.textContent).not.toContain('no estar disponibles en tu sucursal');
+
+    // VEA sales channel must be sc=34, NOT sc=1 (Cencosud VTEX channel)
+    expect((handoffBtn as HTMLAnchorElement).href).toContain('sc=34');
+    expect((handoffBtn as HTMLAnchorElement).href).not.toContain('sc=1');
+  });
+
+  // SC-8.3: all sku_ids null → inert button + "0 de N productos" indicator shown
+  it('SC-8.3: inert button + "0 de N" count shown when all sku_ids null', async () => {
+    const result: CompareResult = {
+      items: [
+        {
+          shopping_id: 1,
+          name: 'Leche',
+          home_super: 'vea',
+          home_price: 500,
+          home_unit_price: 500,
+          home_promo_label: null,
+          home_info_badges: [],
+          matches: [
+            {
+              super: 'carrefour',
+              product_id: 10,
+              sku_id: null,
+              name: 'Leche Carrefour',
+              price: 450,
+              matched_by: 'barcode',
+              unit_price: 450,
+              promo_label: null,
+              info_badges: [],
+            },
+          ],
+          opportunity: null,
+        },
+        {
+          shopping_id: 2,
+          name: 'Yogur',
+          home_super: 'vea',
+          home_price: 400,
+          home_unit_price: 400,
+          home_promo_label: null,
+          home_info_badges: [],
+          matches: [
+            {
+              super: 'carrefour',
+              product_id: 20,
+              sku_id: null,
+              name: 'Yogur Carrefour',
+              price: 380,
+              matched_by: 'barcode',
+              unit_price: 380,
+              promo_label: null,
+              info_badges: [],
+            },
+          ],
+          opportunity: null,
+        },
+      ],
+      option_a: [{ super: 'carrefour', total: 830, coverage: 100, missing_items: 0 }],
+      option_b: {
+        total: 830,
+        by_super: [{ super: 'carrefour', total: 830, coverage: 100, missing_items: 0 }],
+        breakdown: [
+          { shopping_id: 1, best_super: 'carrefour', price: 450 },
+          { shopping_id: 2, best_super: 'carrefour', price: 380 },
+        ],
+        savings_vs_option_a: 0,
+      },
+    };
+    mockItems = [
+      makeItem({ cart_item_id: 1, quantity: 1 }),
+      makeItem({ cart_item_id: 2, quantity: 1, name: 'Yogur' }),
+    ];
+    mockItemCount = 2;
+    mockCompare.mockResolvedValue(result);
+
+    renderCart();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
+    });
+
+    await waitFor(() => expect(screen.getByTestId('handoff-option-a-carrefour')).toBeDefined());
+
+    // Button must be inert (span, no href)
+    const handoffEl = screen.getByTestId('handoff-option-a-carrefour');
+    expect(handoffEl.tagName.toLowerCase()).toBe('span');
+    expect(handoffEl.hasAttribute('href')).toBe(false);
+
+    // "0 de 2 productos" transparency count must appear (SC-8.3)
+    expect(screen.getAllByText('0 de 2 productos').length).toBeGreaterThan(0);
   });
 });

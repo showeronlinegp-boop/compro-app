@@ -13,6 +13,7 @@ function makeMatch(overrides: Partial<SuperMatch> = {}): SuperMatch {
   return {
     super: 'dia',
     product_id: 2,
+    sku_id: null,
     name: 'Leche DIA',
     price: 2964,
     matched_by: 'barcode',

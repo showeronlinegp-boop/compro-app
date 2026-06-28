@@ -35,14 +35,27 @@ interface SeedProductOptions {
   category_key?: string | null;
   available?: boolean;
   promotions?: Promotion[];
+  /**
+   * VTEX sku_id for handoff propagation tests. When omitted a deterministic
+   * non-null value is derived from the product name so existing propagation
+   * assertions remain honest (distinct per-product sku). Pass null explicitly
+   * when testing the null-propagation path.
+   */
+  sku_id?: string | null;
 }
 
 async function seedProduct(tx: Tx, opts: SeedProductOptions = {}): Promise<number> {
+  const name = opts.name ?? 'Test Product';
+  // Derive a deterministic non-null sku_id from the name when the caller does
+  // not supply one. This keeps propagation tests honest: each product gets a
+  // distinct sku by default so an assertion of sku_id === 'x' cannot vacuously
+  // pass because all products share the same (null) sku.
+  const skuId = 'sku_id' in opts ? opts.sku_id : `sku-${name.replace(/\s+/g, '-').toLowerCase()}`;
   const result = await tx.products.create({
     data: {
       super: opts.super_key ?? 'vea',
       product_id: opts.product_id ?? `pid-${Date.now()}-${Math.random()}`,
-      name: opts.name ?? 'Test Product',
+      name,
       available: opts.available ?? true,
       categories: [],
       barcode: opts.barcode ?? null,
@@ -50,6 +63,7 @@ async function seedProduct(tx: Tx, opts: SeedProductOptions = {}): Promise<numbe
       offer_price: opts.offer_price ?? null,
       category_key: opts.category_key ?? null,
       promotions: (opts.promotions ?? []) as object[],
+      sku_id: skuId,
     },
   });
   return result.id;
@@ -520,6 +534,179 @@ describe('makeCompareRepo', () => {
         expect(veaMatch?.price).toBe(1600); // 800 * 2, no effective discount
         expect(veaMatch?.promo_label).toBeNull();
         expect(veaMatch?.info_badges).toContain('Cuotas sin interés');
+      });
+    });
+
+    // ── sku_id propagation (SC-1.1 through SC-1.5) ────────────────────────────
+
+    it('(SC-1.1) barcode branch propagates sku_id for external match', async () => {
+      await withRollback(async (tx) => {
+        const prismaLike = tx as unknown as Parameters<typeof makeCompareRepo>[0];
+
+        const barcode = `bc-sku-b-${Date.now()}`;
+        const homeId = await seedProduct(tx, {
+          super_key: 'vea',
+          product_id: `home-sku-b-${Date.now()}`,
+          name: 'Leche Entera SC11',
+          barcode,
+          raw_price: 500,
+          sku_id: 'home-sku-B',
+        });
+        await seedProduct(tx, {
+          super_key: 'carrefour',
+          product_id: `ext-sku-b-${Date.now()}`,
+          name: 'Leche Entera SC11',
+          barcode,
+          raw_price: 480,
+          sku_id: 'ext-sku-B',
+        });
+
+        const source: SourceRow[] = [{ item_id: 1, product_id: homeId, quantity: 1 }];
+        const repo = makeCompareRepo(prismaLike);
+        const result = await repo.buildCompareItemsFromSource(source);
+
+        expect(result).toHaveLength(1);
+        const item = result[0];
+        if (!item) return;
+
+        const carrefourMatch = item.matches.find((m) => m.super === 'carrefour');
+        expect(carrefourMatch).toBeDefined();
+        expect(carrefourMatch?.sku_id).toBe('ext-sku-B');
+      });
+    });
+
+    it('(SC-1.2) similarity branch propagates sku_id for external match', async () => {
+      await withRollback(async (tx) => {
+        const prismaLike = tx as unknown as Parameters<typeof makeCompareRepo>[0];
+
+        // Use a unique barcode for the home product only, no cross-super barcode match →
+        // forces the similarity branch. Seed products with the same category_key and a
+        // very similar name so similarity > 0.35.
+        const categoryKey = `cat-sim-${Date.now()}`;
+        const homeId = await seedProduct(tx, {
+          super_key: 'vea',
+          product_id: `home-sim-${Date.now()}`,
+          name: 'Aceite Girasol 900ml',
+          barcode: `bc-home-only-${Date.now()}`,
+          raw_price: 600,
+          category_key: categoryKey,
+          sku_id: 'home-sku-sim',
+        });
+        await seedProduct(tx, {
+          super_key: 'dia',
+          product_id: `ext-sim-${Date.now()}`,
+          name: 'Aceite Girasol 900ml',
+          barcode: null, // no barcode — pure similarity match
+          raw_price: 580,
+          category_key: categoryKey,
+          sku_id: 'ext-sku-sim',
+        });
+
+        const source: SourceRow[] = [{ item_id: 2, product_id: homeId, quantity: 1 }];
+        const repo = makeCompareRepo(prismaLike);
+        const result = await repo.buildCompareItemsFromSource(source);
+
+        expect(result).toHaveLength(1);
+        const item = result[0];
+        if (!item) return;
+
+        const diaMatch = item.matches.find((m) => m.super === 'dia');
+        expect(diaMatch).toBeDefined();
+        // The similarity branch must carry the cross-super product's sku_id.
+        expect(diaMatch?.sku_id).toBe('ext-sku-sim');
+      });
+    });
+
+    it('(SC-1.3) null sku_id external match propagates null (not undefined)', async () => {
+      await withRollback(async (tx) => {
+        const prismaLike = tx as unknown as Parameters<typeof makeCompareRepo>[0];
+
+        const barcode = `bc-null-sku-${Date.now()}`;
+        const homeId = await seedProduct(tx, {
+          super_key: 'vea',
+          product_id: `home-null-sku-${Date.now()}`,
+          name: 'Arroz SC13',
+          barcode,
+          raw_price: 300,
+          sku_id: 'home-sku-arr',
+        });
+        await seedProduct(tx, {
+          super_key: 'masonline',
+          product_id: `ext-null-sku-${Date.now()}`,
+          name: 'Arroz SC13',
+          barcode,
+          raw_price: 290,
+          sku_id: null, // enrichment incomplete
+        });
+
+        const source: SourceRow[] = [{ item_id: 3, product_id: homeId, quantity: 1 }];
+        const repo = makeCompareRepo(prismaLike);
+        const result = await repo.buildCompareItemsFromSource(source);
+
+        expect(result).toHaveLength(1);
+        const item = result[0];
+        if (!item) return;
+
+        const masMatch = item.matches.find((m) => m.super === 'masonline');
+        expect(masMatch).toBeDefined();
+        expect(masMatch?.sku_id).toBeNull();
+        // Explicitly not undefined
+        expect(masMatch?.sku_id).not.toBeUndefined();
+      });
+    });
+
+    it('(SC-1.4) home super match carries the home product sku_id', async () => {
+      await withRollback(async (tx) => {
+        const prismaLike = tx as unknown as Parameters<typeof makeCompareRepo>[0];
+
+        const homeId = await seedProduct(tx, {
+          super_key: 'carrefour',
+          product_id: `home-sku-7-${Date.now()}`,
+          name: 'Yogur SC14',
+          barcode: null,
+          raw_price: 400,
+          sku_id: 'home-sku-7',
+        });
+
+        const source: SourceRow[] = [{ item_id: 4, product_id: homeId, quantity: 1 }];
+        const repo = makeCompareRepo(prismaLike);
+        const result = await repo.buildCompareItemsFromSource(source);
+
+        expect(result).toHaveLength(1);
+        const item = result[0];
+        if (!item) return;
+
+        // The home super entry in matches must carry the home product's own sku_id.
+        const homeMatch = item.matches.find((m) => m.super === item.home_super);
+        expect(homeMatch).toBeDefined();
+        expect(homeMatch?.sku_id).toBe('home-sku-7');
+      });
+    });
+
+    it('(SC-1.5) home super with null sku_id propagates null', async () => {
+      await withRollback(async (tx) => {
+        const prismaLike = tx as unknown as Parameters<typeof makeCompareRepo>[0];
+
+        const homeId = await seedProduct(tx, {
+          super_key: 'dia',
+          product_id: `home-null-home-sku-${Date.now()}`,
+          name: 'Manteca SC15',
+          barcode: null,
+          raw_price: 700,
+          sku_id: null, // home product with no sku_id
+        });
+
+        const source: SourceRow[] = [{ item_id: 5, product_id: homeId, quantity: 1 }];
+        const repo = makeCompareRepo(prismaLike);
+        const result = await repo.buildCompareItemsFromSource(source);
+
+        expect(result).toHaveLength(1);
+        const item = result[0];
+        if (!item) return;
+
+        const homeMatch = item.matches.find((m) => m.super === item.home_super);
+        expect(homeMatch).toBeDefined();
+        expect(homeMatch?.sku_id).toBeNull();
       });
     });
   });

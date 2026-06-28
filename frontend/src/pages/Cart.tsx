@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../api';
 import { ItemMatchTable, OptionATable, OptionBBreakdown, PromoNudge } from '../components/compare';
 import { useCart } from '../contexts/CartContext';
-import { pesos } from '../supers';
+import type { HandoffItem, HandoffResult } from '../handoff';
+import { buildHandoffUrl } from '../handoff';
+import { pesos, superCfg } from '../supers';
 import type { CompareResult } from '../types/api';
 
 export default function Cart() {
@@ -20,6 +22,66 @@ export default function Cart() {
 
   // Stale signature: one entry per cart item, cart_item_id:quantity
   const sig = items.map((i) => `${i.cart_item_id}:${i.quantity}`).join(',');
+
+  // ─── Handoff derivation ─────────────────────────────────────────────────────
+
+  // Qty lookup: CompareItem.shopping_id === cart_item_id (verified identity alignment).
+  const qtyByCartItem = useMemo(
+    () => new Map(items.map((i) => [i.cart_item_id, i.quantity])),
+    [items],
+  );
+
+  // Option A: one handoff button PER super in option_a (user picks which super to go to).
+  // The cheapest is option_a[0] and stays visually highlighted ("MÁS BARATO" badge).
+  // For each super S, ALL cart items are considered:
+  //   - item has a match for S → use match sku_id
+  //   - no match → sku_id: null (filtered by buildHandoffUrl; reflected in partial count)
+  const optionAHandoffs = useMemo<Map<string, HandoffResult>>(() => {
+    if (!compareResult) return new Map();
+    const result = new Map<string, HandoffResult>();
+    for (const s of compareResult.option_a) {
+      const handoffItems: HandoffItem[] = compareResult.items.map((item) => {
+        const m = item.matches.find((x) => x.super === s.super);
+        return { sku_id: m?.sku_id ?? null, qty: qtyByCartItem.get(item.shopping_id) ?? 1 };
+      });
+      result.set(
+        s.super,
+        buildHandoffUrl(
+          superCfg(s.super).checkoutBaseUrl ?? '',
+          handoffItems,
+          superCfg(s.super).salesChannel ?? 1,
+        ),
+      );
+    }
+    return result;
+  }, [compareResult, qtyByCartItem]);
+
+  // Option B: one button per super in option_b.by_super.
+  const optionBHandoffs = useMemo<Map<string, HandoffResult>>(() => {
+    if (!compareResult) return new Map();
+    const itemMap = new Map(compareResult.items.map((i) => [i.shopping_id, i]));
+    const bySuper = new Map<string, HandoffItem[]>();
+    for (const b of compareResult.option_b.breakdown) {
+      const item = itemMap.get(b.shopping_id);
+      if (!item) continue;
+      const m = item.matches.find((x) => x.super === b.best_super);
+      const list = bySuper.get(b.best_super) ?? [];
+      list.push({ sku_id: m?.sku_id ?? null, qty: qtyByCartItem.get(b.shopping_id) ?? 1 });
+      bySuper.set(b.best_super, list);
+    }
+    const result = new Map<string, HandoffResult>();
+    for (const s of compareResult.option_b.by_super) {
+      result.set(
+        s.super,
+        buildHandoffUrl(
+          superCfg(s.super).checkoutBaseUrl ?? '',
+          bySuper.get(s.super) ?? [],
+          superCfg(s.super).salesChannel ?? 1,
+        ),
+      );
+    }
+    return result;
+  }, [compareResult, qtyByCartItem]);
 
   // Guard: skip if already loaded for this cart snapshot (sig).
   // Refetch when the snapshot changed (new sig) or on first Comparar activation.
@@ -271,7 +333,7 @@ export default function Cart() {
                     <div>
                       <h2 className="font-bold text-gray-900">Opción A — Todo en un super</h2>
                       <p className="text-xs text-gray-500 mt-0.5">
-                        Comprás todo en el super más barato para tu carrito
+                        Comprás todo en un solo super — elegí cuál
                       </p>
                     </div>
                     {compareResult.option_a[0] && (
@@ -285,7 +347,57 @@ export default function Cart() {
                       </div>
                     )}
                   </div>
-                  <OptionATable summaries={compareResult.option_a} />
+                  <OptionATable
+                    summaries={compareResult.option_a}
+                    renderAction={(superKey) => {
+                      const result = optionAHandoffs.get(superKey);
+                      const cfg = superCfg(superKey);
+                      return (
+                        <div className="space-y-1">
+                          {result?.url ? (
+                            <a
+                              href={result.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              data-testid={`handoff-option-a-${superKey}`}
+                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
+                            >
+                              Armar carrito en {cfg.label}
+                            </a>
+                          ) : (
+                            <span
+                              data-testid={`handoff-option-a-${superKey}`}
+                              aria-disabled="true"
+                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gray-200 text-gray-400 text-sm font-semibold cursor-not-allowed"
+                            >
+                              Armar carrito en {cfg.label}
+                            </span>
+                          )}
+                          {result && result.included < result.total && (
+                            <p className="text-xs text-gray-500">
+                              {result.included} de {result.total} productos
+                            </p>
+                          )}
+                          {superKey === 'vea' && (
+                            <p className="text-xs text-amber-600">
+                              ⚠ VEA puede pedirte elegir tu sucursal antes de confirmar
+                            </p>
+                          )}
+                        </div>
+                      );
+                    }}
+                  />
+                  {/* Explainer + disclaimer once below the table, not repeated per button */}
+                  {compareResult.option_a.length > 0 && (
+                    <div className="mt-3 space-y-0.5">
+                      <p className="text-xs text-gray-500">
+                        Te abrimos la tienda del super con tu carrito cargado. Completás la compra ahí.
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Los precios pueden variar al momento de pagar.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Opción B */}
@@ -309,6 +421,58 @@ export default function Cart() {
                     </div>
                   </div>
                   <OptionBBreakdown result={compareResult.option_b} items={compareResult.items} />
+
+                  {/* Option B handoff buttons — one per super in by_super */}
+                  {compareResult.option_b.by_super.length > 0 && (
+                    <div className="mt-4 space-y-3">
+                      {/* Explainer: how many supers the split covers */}
+                      {(() => {
+                        const n = compareResult.option_b.by_super.length;
+                        return (
+                          <p className="text-xs text-gray-500">
+                            {n === 1
+                              ? 'Tu compra es en 1 super. Te armamos el carrito con los productos que convienen ahí — completás la compra ahí.'
+                              : `Tu compra se divide en ${n} supers. Te armamos el carrito en cada uno con los productos que convienen ahí — completás cada compra por separado.`}
+                          </p>
+                        );
+                      })()}
+                      {compareResult.option_b.by_super.map((s) => {
+                        const superHandoff = optionBHandoffs.get(s.super);
+                        return (
+                          <div key={s.super} className="space-y-1">
+                            {superHandoff?.url ? (
+                              <a
+                                href={superHandoff.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                data-testid={`handoff-option-b-${s.super}`}
+                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
+                              >
+                                Armar carrito en {superCfg(s.super).label}
+                              </a>
+                            ) : (
+                              <span
+                                aria-disabled="true"
+                                data-testid={`handoff-option-b-${s.super}`}
+                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gray-200 text-gray-400 text-sm font-semibold cursor-not-allowed"
+                              >
+                                Armar carrito en {superCfg(s.super).label}
+                              </span>
+                            )}
+                            {superHandoff &&
+                              superHandoff.included < superHandoff.total && (
+                                <p className="text-xs text-gray-500">
+                                  {superHandoff.included} de {superHandoff.total} productos
+                                </p>
+                              )}
+                            <p className="text-xs text-gray-500">
+                              Los precios pueden variar al momento de pagar.
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 {/* Tabla detalle con precios por línea */}

@@ -56,6 +56,7 @@ interface ProductBaseRow {
   home_super: string;
   barcode: string | null;
   category_key: string | null;
+  home_sku_id: string | null;
   // Guaranteed non-null by the COALESCE(...) IS NOT NULL SQL filter.
   home_price: number;
   home_promotions: unknown[] | null;
@@ -67,6 +68,7 @@ interface MatchRow {
   match_super: string;
   match_name: string;
   match_price: number;
+  match_sku_id: string | null;
   matched_by: 'barcode' | 'name_similarity';
   match_promotions: unknown[] | null;
 }
@@ -117,6 +119,7 @@ export function makeCompareRepo(prisma: PrismaClient): CompareRepo {
           p.super AS home_super,
           p.barcode,
           p.category_key,
+          p.sku_id AS home_sku_id,
           COALESCE(p.offer_price, p.raw_price) AS home_price,
           p.promotions AS home_promotions
         FROM products p
@@ -141,6 +144,7 @@ export function makeCompareRepo(prisma: PrismaClient): CompareRepo {
           p2.super AS match_super,
           p2.name AS match_name,
           COALESCE(p2.offer_price, p2.raw_price) AS match_price,
+          p2.sku_id AS match_sku_id,
           'barcode' AS matched_by,
           p2.promotions AS match_promotions
         FROM products p
@@ -172,6 +176,7 @@ export function makeCompareRepo(prisma: PrismaClient): CompareRepo {
             p2.super AS match_super,
             p2.name AS match_name,
             COALESCE(p2.offer_price, p2.raw_price) AS match_price,
+            p2.sku_id AS match_sku_id,
             'name_similarity' AS matched_by,
             p2.promotions AS match_promotions
           FROM products p
@@ -205,6 +210,7 @@ export function makeCompareRepo(prisma: PrismaClient): CompareRepo {
         list.push({
           super: m.match_super,
           product_id: Number(m.match_product_id),
+          sku_id: m.match_sku_id ?? null,
           name: m.match_name,
           price: Number(m.match_price), // shelf UNIT price — effective computed after dedup
           matched_by: m.matched_by,
@@ -235,6 +241,7 @@ export function makeCompareRepo(prisma: PrismaClient): CompareRepo {
         const homeUnitMatch: UnitMatch = {
           super: base.home_super,
           product_id: s.product_id,
+          sku_id: base.home_sku_id ?? null,
           name: base.name,
           price: unitHomePrice, // shelf UNIT price — effective computed after dedup
           matched_by: 'barcode',
@@ -279,6 +286,7 @@ export function makeCompareRepo(prisma: PrismaClient): CompareRepo {
           return {
             super: m.super,
             product_id: m.product_id,
+            sku_id: m.sku_id,
             name: m.name,
             matched_by: m.matched_by,
             price: round2(effective), // EFFECTIVE line total
