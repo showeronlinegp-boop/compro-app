@@ -26,8 +26,13 @@ const SORT_OPTIONS: ReadonlyArray<{ value: SortKey; label: string }> = [
   { value: 'discount_desc', label: 'Mayor descuento' },
 ];
 
-/** Grid column classes shared by the skeleton and the real grid. */
-const GRID_COLS = 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5';
+/**
+ * Grid column classes shared by the skeleton and the real grid.
+ * Mobile/sm: fixed 2–3 columns. lg+: fluid auto-fill so the grid fills the full
+ * viewport width with comfortably-sized cards (more columns on wider screens)
+ * instead of a fixed column count that leaves dead horizontal space.
+ */
+const GRID_COLS = 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-[repeat(auto-fill,minmax(14rem,1fr))]';
 
 export interface ExplorarProps {
   interests: Interest[];

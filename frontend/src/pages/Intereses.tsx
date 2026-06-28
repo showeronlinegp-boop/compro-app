@@ -50,7 +50,7 @@ export default function Intereses({
       <h1 className="sr-only">Mis Intereses</h1>
       <p className="text-xs text-gray-400 mb-4">{interests.length} productos guardados</p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-3">
         {interests.map((item) => {
           const cfg = superCfg(item.super);
           const price = item.offer_price ?? item.raw_price;

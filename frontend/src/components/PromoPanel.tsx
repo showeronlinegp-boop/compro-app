@@ -69,12 +69,12 @@ export default function PromoPanel({ offers }: PromoPanelProps) {
                 href={offer.sourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-shrink-0 snap-start relative rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 w-48"
+                className="flex-shrink-0 snap-start relative rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 w-56 h-48"
               >
                 <img
                   src={offer.imageUrl}
                   alt={`Promo ${cfg.label}`}
-                  className="w-full h-36 object-contain bg-white"
+                  className="w-full h-full object-contain bg-white"
                 />
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
                   <span
@@ -104,7 +104,7 @@ export default function PromoPanel({ offers }: PromoPanelProps) {
               href={offer.sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-shrink-0 snap-start rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 bg-white w-52 flex flex-col overflow-hidden"
+              className="flex-shrink-0 snap-start rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 bg-white w-56 h-48 flex flex-col overflow-hidden"
             >
               {/* Bank logo or colored header */}
               <div className="h-14 flex items-center justify-center bg-gray-50 px-3 border-b border-gray-100">
