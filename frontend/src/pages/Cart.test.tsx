@@ -971,6 +971,9 @@ describe('Cart handoff buttons', () => {
     expect(screen.getByTestId('handoff-option-b-dia')).toBeDefined();
     expect(screen.queryByTestId('handoff-option-b-vea')).toBeNull();
     expect(screen.queryByTestId('handoff-option-b-masonline')).toBeNull();
+
+    // Option B explainer: 2-super split → "se divide en 2 supers"
+    expect(document.body.textContent).toContain('se divide en 2 supers');
   });
 
   // SC-6.2: No cross-super sku leakage

@@ -333,7 +333,7 @@ export default function Cart() {
                     <div>
                       <h2 className="font-bold text-gray-900">Opción A — Todo en un super</h2>
                       <p className="text-xs text-gray-500 mt-0.5">
-                        Comprás todo en el super más barato para tu carrito
+                        Comprás todo en un solo super — elegí cuál
                       </p>
                     </div>
                     {compareResult.option_a[0] && (
@@ -362,7 +362,7 @@ export default function Cart() {
                               data-testid={`handoff-option-a-${superKey}`}
                               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
                             >
-                              Ir a {cfg.label}
+                              Armar carrito en {cfg.label}
                             </a>
                           ) : (
                             <span
@@ -370,7 +370,7 @@ export default function Cart() {
                               aria-disabled="true"
                               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gray-200 text-gray-400 text-sm font-semibold cursor-not-allowed"
                             >
-                              Ir a {cfg.label}
+                              Armar carrito en {cfg.label}
                             </span>
                           )}
                           {result && result.included < result.total && (
@@ -387,11 +387,16 @@ export default function Cart() {
                       );
                     }}
                   />
-                  {/* Disclaimer once below the table, not repeated per button */}
+                  {/* Explainer + disclaimer once below the table, not repeated per button */}
                   {compareResult.option_a.length > 0 && (
-                    <p className="text-xs text-gray-500 mt-3">
-                      Los precios pueden variar al momento de pagar.
-                    </p>
+                    <div className="mt-3 space-y-0.5">
+                      <p className="text-xs text-gray-500">
+                        Te abrimos la tienda del super con tu carrito cargado. Completás la compra ahí.
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Los precios pueden variar al momento de pagar.
+                      </p>
+                    </div>
                   )}
                 </div>
 
@@ -420,6 +425,17 @@ export default function Cart() {
                   {/* Option B handoff buttons — one per super in by_super */}
                   {compareResult.option_b.by_super.length > 0 && (
                     <div className="mt-4 space-y-3">
+                      {/* Explainer: how many supers the split covers */}
+                      {(() => {
+                        const n = compareResult.option_b.by_super.length;
+                        return (
+                          <p className="text-xs text-gray-500">
+                            {n === 1
+                              ? 'Tu compra es en 1 super. Te armamos el carrito con los productos que convienen ahí — completás la compra ahí.'
+                              : `Tu compra se divide en ${n} supers. Te armamos el carrito en cada uno con los productos que convienen ahí — completás cada compra por separado.`}
+                          </p>
+                        );
+                      })()}
                       {compareResult.option_b.by_super.map((s) => {
                         const superHandoff = optionBHandoffs.get(s.super);
                         return (
@@ -432,7 +448,7 @@ export default function Cart() {
                                 data-testid={`handoff-option-b-${s.super}`}
                                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
                               >
-                                Ir a {superCfg(s.super).label}
+                                Armar carrito en {superCfg(s.super).label}
                               </a>
                             ) : (
                               <span
@@ -440,7 +456,7 @@ export default function Cart() {
                                 data-testid={`handoff-option-b-${s.super}`}
                                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gray-200 text-gray-400 text-sm font-semibold cursor-not-allowed"
                               >
-                                Ir a {superCfg(s.super).label}
+                                Armar carrito en {superCfg(s.super).label}
                               </span>
                             )}
                             {superHandoff &&
