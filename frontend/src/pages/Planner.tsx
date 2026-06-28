@@ -4,7 +4,7 @@ import { api } from '../api';
 import RecommendationBanner from '../components/RecommendationBanner';
 import { EmptyState } from '../components/EmptyState';
 import { PageContainer } from '../components/layout/PageContainer';
-import { FOCUS_RING } from '../styles';
+import { FOCUS_RING, PRIMARY_CTA } from '../styles';
 import { CATEGORY_LABEL, FREQ_OPTIONS, pesos, superCfg } from '../supers';
 import type { Product, ShoppingItem, WeeklyGroup } from '../types/api';
 
@@ -173,7 +173,7 @@ function ListTab({ list, onMarkBought, onChangeFreq, onRemove, onSwap }: ListTab
         action={
           <Link
             to="/intereses"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors"
+            className={`${PRIMARY_CTA} ${FOCUS_RING}`}
           >
             Ir a Intereses
           </Link>

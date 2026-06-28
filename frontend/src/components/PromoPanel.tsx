@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { FOCUS_RING } from '../styles';
 import { superCfg } from '../supers';
 import type { PromoOffer } from '../types/api';
 
@@ -22,7 +23,7 @@ export default function PromoPanel({ offers }: PromoPanelProps) {
           <button
             type="button"
             onClick={() => setActiveSuper(null)}
-            className={`flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
+            className={`flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${FOCUS_RING} ${
               activeSuper === null
                 ? 'bg-gray-800 text-white border-gray-800'
                 : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
@@ -37,7 +38,7 @@ export default function PromoPanel({ offers }: PromoPanelProps) {
                 key={s}
                 type="button"
                 onClick={() => setActiveSuper((prev) => (prev === s ? null : s))}
-                className={`flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
+                className={`flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${FOCUS_RING} ${
                   activeSuper === s
                     ? `${cfg.bg} ${cfg.text} border-transparent`
                     : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'

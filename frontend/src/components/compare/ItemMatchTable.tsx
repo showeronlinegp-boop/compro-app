@@ -28,12 +28,12 @@ export function ItemMatchTable({ items, priceMode = 'unit' }: ItemMatchTableProp
         <thead>
           {/* Sticky thead: position:sticky on each th for cross-browser table support.
               z-10 keeps header above rows; bg-white prevents content showing through.
-              top-0 is relative to the scroll container (overflow-x-auto wrapper), so
-              vertical sticky works as long as no overflow-y is added to the wrapper. */}
+              top-14 offsets the header by the navbar height (56px / h-14, z-40) so
+              the sticky row lands flush below the navbar instead of hiding behind it. */}
           <tr className="border-b border-gray-100">
             <th
               scope="col"
-              className="sticky top-0 bg-white z-10 text-left py-2 pr-3 text-gray-500 font-medium w-40"
+              className="sticky top-14 bg-white z-10 text-left py-2 pr-3 text-gray-500 font-medium w-40"
             >
               Producto
             </th>
@@ -43,7 +43,7 @@ export function ItemMatchTable({ items, priceMode = 'unit' }: ItemMatchTableProp
                 <th
                   key={s}
                   scope="col"
-                  className="sticky top-0 bg-white z-10 text-center py-2 px-2"
+                  className="sticky top-14 bg-white z-10 text-center py-2 px-2"
                 >
                   <span
                     className={`text-xs font-bold px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}
@@ -66,7 +66,7 @@ export function ItemMatchTable({ items, priceMode = 'unit' }: ItemMatchTableProp
                 {/* Row header for screen readers (scope="row" + th element) */}
                 <th
                   scope="row"
-                  className="py-2 pr-3 text-gray-700 font-medium text-left truncate max-w-40 font-normal"
+                  className="py-2 pr-3 text-gray-700 text-left truncate max-w-40 font-normal"
                 >
                   {item.name}
                 </th>

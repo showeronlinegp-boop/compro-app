@@ -4,7 +4,7 @@ import { api } from '../api';
 import { EmptyState } from '../components/EmptyState';
 import { CompareView } from '../components/compare/CompareView';
 import { PageContainer } from '../components/layout/PageContainer';
-import { FOCUS_RING } from '../styles';
+import { FOCUS_RING, PRIMARY_CTA } from '../styles';
 import { pesos, superCfg } from '../supers';
 import type { CompareResult } from '../types/api';
 
@@ -53,7 +53,7 @@ export default function Compare() {
           action={
             <Link
               to="/planner"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors"
+              className={`${PRIMARY_CTA} ${FOCUS_RING}`}
             >
               Ir al Planner
             </Link>

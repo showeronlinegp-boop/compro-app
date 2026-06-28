@@ -13,3 +13,10 @@
  */
 export const FOCUS_RING =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2';
+
+/**
+ * Primary CTA button/link appearance — indigo filled pill.
+ * Compose with FOCUS_RING at call sites: `${PRIMARY_CTA} ${FOCUS_RING}`
+ */
+export const PRIMARY_CTA =
+  'inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors';

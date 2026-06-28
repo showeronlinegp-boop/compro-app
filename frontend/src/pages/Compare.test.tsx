@@ -1,4 +1,5 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CompareResult, PromoOpportunity } from '../types/api';
 
@@ -17,6 +18,15 @@ vi.mock('../api', () => ({
 // ─── Import component AFTER mocks ─────────────────────────────────────────────
 
 import Compare from './Compare';
+
+// Helper: wrap in MemoryRouter so Link components never crash
+function renderCompare() {
+  return render(
+    <MemoryRouter>
+      <Compare />
+    </MemoryRouter>,
+  );
+}
 
 // ─── Factories ────────────────────────────────────────────────────────────────
 
@@ -88,7 +98,7 @@ describe('Planner Compare page — Oportunidades non-regression', () => {
     // The Planner Compare page must never render it regardless of opportunity data.
     mockShoppingCompare.mockResolvedValue(makeCompareResult(makeOpportunity()));
 
-    render(<Compare />);
+    renderCompare();
 
     // Wait for loading to finish (Option A heading appears when data loads)
     await waitFor(() => expect(screen.getByText('Opción A — Todo en un super')).toBeDefined());
@@ -96,5 +106,42 @@ describe('Planner Compare page — Oportunidades non-regression', () => {
     expect(screen.queryByText('Oportunidades')).toBeNull();
     expect(screen.queryByTestId('opportunities-section')).toBeNull();
     expect(screen.queryByRole('button', { name: /Agregar/i })).toBeNull();
+  });
+});
+
+// ─── Detalle tab — ItemMatchTable renders per-product price table ─────────────
+
+describe('Compare page — Detalle tab shows ItemMatchTable', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('switching to Detalle tab renders the per-product price table', async () => {
+    mockShoppingCompare.mockResolvedValue(makeCompareResult());
+
+    renderCompare();
+
+    // Wait for options tab to be loaded
+    await waitFor(() => expect(screen.getByText('Opción A — Todo en un super')).toBeDefined());
+
+    // Switch to Detalle tab
+    const detalleBtn = screen.getByRole('button', { name: /Detalle/i });
+    act(() => {
+      fireEvent.click(detalleBtn);
+    });
+
+    // ItemMatchTable renders a table with the aria-label defined in the component
+    await waitFor(() =>
+      expect(
+        screen.getByRole('table', { name: 'Precios por producto y supermercado' }),
+      ).toBeDefined(),
+    );
+
+    // The product name from the fixture appears as a row header
+    expect(screen.getByText('Oreo')).toBeDefined();
   });
 });

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import FreqModal from '../components/FreqModal';
 import { EmptyState } from '../components/EmptyState';
 import { PageContainer } from '../components/layout/PageContainer';
+import { FOCUS_RING, PRIMARY_CTA } from '../styles';
 import { pesos, superCfg } from '../supers';
 import type { Interest, Product } from '../types/api';
 
@@ -37,7 +38,7 @@ export default function Intereses({
           action={
             <Link
               to="/"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors"
+              className={`${PRIMARY_CTA} ${FOCUS_RING}`}
             >
               Ir a Explorar
             </Link>
