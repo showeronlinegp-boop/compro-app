@@ -50,6 +50,7 @@ function makeCompareResult(opportunity: PromoOpportunity | null = null): Compare
           {
             super: 'dia',
             product_id: 42,
+            sku_id: null,
             name: 'Oreo DIA',
             price: 800,
             matched_by: 'barcode',

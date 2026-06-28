@@ -7,6 +7,8 @@ export interface SuperConfig {
   light: string;
   /** Optional per-super disclaimer shown on the price card. */
   note?: string;
+  /** VTEX storefront origin for building cart-add handoff deep links. */
+  checkoutBaseUrl?: string;
 }
 
 export const SUPERS: Record<SuperKey, SuperConfig> = {
@@ -16,24 +18,28 @@ export const SUPERS: Record<SuperKey, SuperConfig> = {
     text: 'text-white',
     light: 'bg-red-50 text-red-700 border-red-200',
     note: 'Precio y promos de VEA pueden variar según tu sucursal.',
+    checkoutBaseUrl: 'https://www.vea.com.ar',
   },
   carrefour: {
     label: 'CARREFOUR',
     bg: 'bg-blue-700',
     text: 'text-white',
     light: 'bg-blue-50 text-blue-700 border-blue-200',
+    checkoutBaseUrl: 'https://www.carrefour.com.ar',
   },
   dia: {
     label: 'DIA',
     bg: 'bg-rose-600',
     text: 'text-white',
     light: 'bg-rose-50 text-rose-700 border-rose-200',
+    checkoutBaseUrl: 'https://diaonline.supermercadosdia.com.ar',
   },
   masonline: {
     label: 'MAS',
     bg: 'bg-orange-500',
     text: 'text-white',
     light: 'bg-orange-50 text-orange-700 border-orange-200',
+    checkoutBaseUrl: 'https://www.masonline.com.ar',
   },
 };
 
