@@ -681,12 +681,83 @@ describe('Cart handoff buttons', () => {
     mockItemCount = 4;
   });
 
-  // SC-5.1: Option A winner renders exactly one button for option_a[0]
-  it('SC-5.1: Option A renders exactly one button for the winner super', async () => {
+  // SC-5.1: Option A renders a handoff button for EVERY super in option_a (D1 reversed)
+  it('SC-5.1: Option A renders a button per super (winner AND non-winner), each with correct URL', async () => {
     const result = makeHandoffCompareResult({
       option_a: [
         { super: 'carrefour', total: 1930, coverage: 100, missing_items: 0 },
         { super: 'dia', total: 2200, coverage: 100, missing_items: 0 },
+      ],
+      // Add dia matches so the dia button has non-null skus
+      items: [
+        {
+          shopping_id: 1,
+          name: 'Leche',
+          home_super: 'vea',
+          home_price: 1500,
+          home_unit_price: 1500,
+          home_promo_label: null,
+          home_info_badges: [],
+          matches: [
+            {
+              super: 'carrefour',
+              product_id: 10,
+              sku_id: 'sku-carrefour-1',
+              name: 'Leche Carrefour',
+              price: 1350,
+              matched_by: 'barcode',
+              unit_price: 1350,
+              promo_label: null,
+              info_badges: [],
+            },
+            {
+              super: 'dia',
+              product_id: 11,
+              sku_id: 'sku-dia-1',
+              name: 'Leche DIA',
+              price: 1400,
+              matched_by: 'barcode',
+              unit_price: 1400,
+              promo_label: null,
+              info_badges: [],
+            },
+          ],
+          opportunity: null,
+        },
+        {
+          shopping_id: 2,
+          name: 'Yogur',
+          home_super: 'vea',
+          home_price: 600,
+          home_unit_price: 600,
+          home_promo_label: null,
+          home_info_badges: [],
+          matches: [
+            {
+              super: 'carrefour',
+              product_id: 20,
+              sku_id: 'sku-carrefour-2',
+              name: 'Yogur Carrefour',
+              price: 580,
+              matched_by: 'barcode',
+              unit_price: 580,
+              promo_label: null,
+              info_badges: [],
+            },
+            {
+              super: 'dia',
+              product_id: 21,
+              sku_id: 'sku-dia-2',
+              name: 'Yogur DIA',
+              price: 620,
+              matched_by: 'barcode',
+              unit_price: 620,
+              promo_label: null,
+              info_badges: [],
+            },
+          ],
+          opportunity: null,
+        },
       ],
     });
     mockCompare.mockResolvedValue(result);
@@ -696,15 +767,29 @@ describe('Cart handoff buttons', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
     });
 
-    await waitFor(() => expect(screen.getByTestId('handoff-option-a')).toBeDefined());
+    // Both supers must get a button
+    await waitFor(() => expect(screen.getByTestId('handoff-option-a-carrefour')).toBeDefined());
+    expect(screen.getByTestId('handoff-option-a-dia')).toBeDefined();
 
-    const handoffBtn = screen.getByTestId('handoff-option-a');
-    expect(handoffBtn.textContent).toContain('CARREFOUR');
-    // Must NOT render DIA as an Option A button
-    expect(screen.queryByText(/Ir a DIA/i)).toBeNull();
-    // Non-VEA supers use sc=1 (the VTEX default)
-    expect((handoffBtn as HTMLAnchorElement).href).toContain('sc=1');
-    expect((handoffBtn as HTMLAnchorElement).href).not.toContain('sc=34');
+    const carrefourBtn = screen.getByTestId('handoff-option-a-carrefour') as HTMLAnchorElement;
+    const diaBtn = screen.getByTestId('handoff-option-a-dia') as HTMLAnchorElement;
+
+    // Winner (carrefour) button → anchor with correct origin, its own skus, sc=1
+    expect(carrefourBtn.tagName.toLowerCase()).toBe('a');
+    expect(carrefourBtn.href).toContain('carrefour.com.ar');
+    expect(carrefourBtn.href).toContain('sku-carrefour-1');
+    expect(carrefourBtn.href).toContain('sc=1');
+    expect(carrefourBtn.href).not.toContain('sc=34');
+
+    // Non-winner (dia) button → anchor with correct origin and its own skus
+    expect(diaBtn.tagName.toLowerCase()).toBe('a');
+    expect(diaBtn.href).toContain('supermercadosdia.com.ar');
+    expect(diaBtn.href).toContain('sku-dia-1');
+    expect(diaBtn.href).toContain('sc=1');
+
+    // No sku leakage across supers
+    expect(carrefourBtn.href).not.toContain('sku-dia');
+    expect(diaBtn.href).not.toContain('sku-carrefour');
   });
 
   // SC-5.3: Home-super winner works without special-casing
@@ -753,9 +838,9 @@ describe('Cart handoff buttons', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
     });
 
-    await waitFor(() => expect(screen.getByTestId('handoff-option-a')).toBeDefined());
+    await waitFor(() => expect(screen.getByTestId('handoff-option-a-dia')).toBeDefined());
 
-    const handoffBtn = screen.getByTestId('handoff-option-a');
+    const handoffBtn = screen.getByTestId('handoff-option-a-dia');
     // Must be an anchor with href containing dia-sku-55
     expect(handoffBtn.tagName.toLowerCase()).toBe('a');
     expect((handoffBtn as HTMLAnchorElement).href).toContain('sku=dia-sku-55');
@@ -800,9 +885,9 @@ describe('Cart handoff buttons', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
     });
 
-    await waitFor(() => expect(screen.getByTestId('handoff-option-a')).toBeDefined());
+    await waitFor(() => expect(screen.getByTestId('handoff-option-a-carrefour')).toBeDefined());
 
-    const handoffEl = screen.getByTestId('handoff-option-a');
+    const handoffEl = screen.getByTestId('handoff-option-a-carrefour');
     // Must be a span (inert), not an anchor
     expect(handoffEl.tagName.toLowerCase()).toBe('span');
     expect(handoffEl.hasAttribute('href')).toBe(false);
@@ -980,7 +1065,7 @@ describe('Cart handoff buttons', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
     });
 
-    await waitFor(() => expect(screen.getByTestId('handoff-option-a')).toBeDefined());
+    await waitFor(() => expect(screen.getByTestId('handoff-option-a-carrefour')).toBeDefined());
 
     expect(
       screen.getAllByText('Los precios pueden variar al momento de pagar.').length,
@@ -1087,7 +1172,7 @@ describe('Cart handoff buttons', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
     });
 
-    await waitFor(() => expect(screen.getByTestId('handoff-option-a')).toBeDefined());
+    await waitFor(() => expect(screen.getByTestId('handoff-option-a-carrefour')).toBeDefined());
 
     // 2 of 3 items linked → partial count disclosure (may appear in both Option A and B sections)
     expect(screen.getAllByText('2 de 3 productos').length).toBeGreaterThan(0);
@@ -1102,7 +1187,7 @@ describe('Cart handoff buttons', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
     });
 
-    await waitFor(() => expect(screen.getByTestId('handoff-option-a')).toBeDefined());
+    await waitFor(() => expect(screen.getByTestId('handoff-option-a-carrefour')).toBeDefined());
 
     // "2 de 2" should NOT appear
     expect(screen.queryByText(/\d+ de \d+ productos/)).toBeNull();
@@ -1153,9 +1238,9 @@ describe('Cart handoff buttons', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
     });
 
-    await waitFor(() => expect(screen.getByTestId('handoff-option-a')).toBeDefined());
+    await waitFor(() => expect(screen.getByTestId('handoff-option-a-vea')).toBeDefined());
 
-    const handoffBtn = screen.getByTestId('handoff-option-a');
+    const handoffBtn = screen.getByTestId('handoff-option-a-vea');
     // Enabled (anchor with href)
     expect(handoffBtn.tagName.toLowerCase()).toBe('a');
     expect((handoffBtn as HTMLAnchorElement).href).toContain('vea-sku-1');
@@ -1243,10 +1328,10 @@ describe('Cart handoff buttons', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
     });
 
-    await waitFor(() => expect(screen.getByTestId('handoff-option-a')).toBeDefined());
+    await waitFor(() => expect(screen.getByTestId('handoff-option-a-carrefour')).toBeDefined());
 
     // Button must be inert (span, no href)
-    const handoffEl = screen.getByTestId('handoff-option-a');
+    const handoffEl = screen.getByTestId('handoff-option-a-carrefour');
     expect(handoffEl.tagName.toLowerCase()).toBe('span');
     expect(handoffEl.hasAttribute('href')).toBe(false);
 

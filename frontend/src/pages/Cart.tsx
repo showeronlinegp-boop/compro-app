@@ -31,29 +31,30 @@ export default function Cart() {
     [items],
   );
 
-  // Option A: one button for the winner (option_a[0]).
-  const winnerSuper = compareResult?.option_a?.[0]?.super ?? null;
-
-  const optionAItems = useMemo<HandoffItem[]>(() => {
-    if (!winnerSuper || !compareResult) return [];
-    return compareResult.items.flatMap((item) => {
-      const m = item.matches.find((x) => x.super === winnerSuper);
-      if (!m) return [];
-      return [{ sku_id: m.sku_id, qty: qtyByCartItem.get(item.shopping_id) ?? 1 }];
-    });
-  }, [compareResult, winnerSuper, qtyByCartItem]);
-
-  const optionAHandoff = useMemo<HandoffResult | null>(
-    () =>
-      winnerSuper
-        ? buildHandoffUrl(
-            superCfg(winnerSuper).checkoutBaseUrl ?? '',
-            optionAItems,
-            superCfg(winnerSuper).salesChannel ?? 1,
-          )
-        : null, // null only when there is no winner super — not when skus are missing
-    [winnerSuper, optionAItems],
-  );
+  // Option A: one handoff button PER super in option_a (user picks which super to go to).
+  // The cheapest is option_a[0] and stays visually highlighted ("MÁS BARATO" badge).
+  // For each super S, ALL cart items are considered:
+  //   - item has a match for S → use match sku_id
+  //   - no match → sku_id: null (filtered by buildHandoffUrl; reflected in partial count)
+  const optionAHandoffs = useMemo<Map<string, HandoffResult>>(() => {
+    if (!compareResult) return new Map();
+    const result = new Map<string, HandoffResult>();
+    for (const s of compareResult.option_a) {
+      const handoffItems: HandoffItem[] = compareResult.items.map((item) => {
+        const m = item.matches.find((x) => x.super === s.super);
+        return { sku_id: m?.sku_id ?? null, qty: qtyByCartItem.get(item.shopping_id) ?? 1 };
+      });
+      result.set(
+        s.super,
+        buildHandoffUrl(
+          superCfg(s.super).checkoutBaseUrl ?? '',
+          handoffItems,
+          superCfg(s.super).salesChannel ?? 1,
+        ),
+      );
+    }
+    return result;
+  }, [compareResult, qtyByCartItem]);
 
   // Option B: one button per super in option_b.by_super.
   const optionBHandoffs = useMemo<Map<string, HandoffResult>>(() => {
@@ -346,39 +347,51 @@ export default function Cart() {
                       </div>
                     )}
                   </div>
-                  <OptionATable summaries={compareResult.option_a} />
-
-                  {/* Option A handoff button — always rendered when a winner super exists */}
-                  {winnerSuper && (
-                    <div className="mt-4 space-y-1">
-                      {optionAHandoff?.url ? (
-                        <a
-                          href={optionAHandoff.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          data-testid="handoff-option-a"
-                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
-                        >
-                          Ir a {superCfg(winnerSuper).label}
-                        </a>
-                      ) : (
-                        <span
-                          data-testid="handoff-option-a"
-                          aria-disabled="true"
-                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gray-200 text-gray-400 text-sm font-semibold cursor-not-allowed"
-                        >
-                          Ir a {superCfg(winnerSuper).label}
-                        </span>
-                      )}
-                      {optionAHandoff && optionAHandoff.included < optionAHandoff.total && (
-                        <p className="text-xs text-gray-500">
-                          {optionAHandoff.included} de {optionAHandoff.total} productos
-                        </p>
-                      )}
-                      <p className="text-xs text-gray-500">
-                        Los precios pueden variar al momento de pagar.
-                      </p>
-                    </div>
+                  <OptionATable
+                    summaries={compareResult.option_a}
+                    renderAction={(superKey) => {
+                      const result = optionAHandoffs.get(superKey);
+                      const cfg = superCfg(superKey);
+                      return (
+                        <div className="space-y-1">
+                          {result?.url ? (
+                            <a
+                              href={result.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              data-testid={`handoff-option-a-${superKey}`}
+                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
+                            >
+                              Ir a {cfg.label}
+                            </a>
+                          ) : (
+                            <span
+                              data-testid={`handoff-option-a-${superKey}`}
+                              aria-disabled="true"
+                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gray-200 text-gray-400 text-sm font-semibold cursor-not-allowed"
+                            >
+                              Ir a {cfg.label}
+                            </span>
+                          )}
+                          {result && result.included < result.total && (
+                            <p className="text-xs text-gray-500">
+                              {result.included} de {result.total} productos
+                            </p>
+                          )}
+                          {superKey === 'vea' && (
+                            <p className="text-xs text-amber-600">
+                              ⚠ VEA puede pedirte elegir tu sucursal antes de confirmar
+                            </p>
+                          )}
+                        </div>
+                      );
+                    }}
+                  />
+                  {/* Disclaimer once below the table, not repeated per button */}
+                  {compareResult.option_a.length > 0 && (
+                    <p className="text-xs text-gray-500 mt-3">
+                      Los precios pueden variar al momento de pagar.
+                    </p>
                   )}
                 </div>
 
