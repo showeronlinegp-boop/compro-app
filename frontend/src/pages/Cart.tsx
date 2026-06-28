@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../api';
-import { ItemMatchTable, OptionATable, OptionBBreakdown, PromoNudge } from '../components/compare';
+import { PromoNudge } from '../components/compare';
+import { CompareView } from '../components/compare/CompareView';
 import { useCart } from '../contexts/CartContext';
 import type { HandoffItem, HandoffResult } from '../handoff';
 import { buildHandoffUrl } from '../handoff';
@@ -316,114 +317,57 @@ export default function Cart() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-6">
-                {/* Oportunidades — hero callout, surfaced first as the most actionable saving */}
-                {opportunitiesSection}
-
-                {/* Transparency line */}
-                {crossSuperMatchedCount < items.length && (
-                  <p className="text-xs text-gray-500 text-center">
-                    Comparamos {crossSuperMatchedCount} de {items.length} productos
-                  </p>
-                )}
-
-                {/* Opción A */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h2 className="font-bold text-gray-900">Opción A — Todo en un super</h2>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        Comprás todo en un solo super — elegí cuál
-                      </p>
-                    </div>
-                    {compareResult.option_a[0] && (
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-gray-900">
-                          {pesos(compareResult.option_a[0].total)}
-                        </p>
+              <CompareView
+                result={compareResult}
+                priceMode="line"
+                layout="stacked"
+                topSlot={opportunitiesSection}
+                noticeSlot={
+                  crossSuperMatchedCount < items.length ? (
+                    <p className="text-xs text-gray-500 text-center">
+                      Comparamos {crossSuperMatchedCount} de {items.length} productos
+                    </p>
+                  ) : null
+                }
+                renderOptionAAction={(superKey) => {
+                  const handoff = optionAHandoffs.get(superKey);
+                  const cfg = superCfg(superKey);
+                  return (
+                    <div className="space-y-1">
+                      {handoff?.url ? (
+                        <a
+                          href={handoff.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          data-testid={`handoff-option-a-${superKey}`}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
+                        >
+                          Armar carrito en {cfg.label}
+                        </a>
+                      ) : (
+                        <span
+                          data-testid={`handoff-option-a-${superKey}`}
+                          aria-disabled="true"
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gray-200 text-gray-400 text-sm font-semibold cursor-not-allowed"
+                        >
+                          Armar carrito en {cfg.label}
+                        </span>
+                      )}
+                      {handoff && handoff.included < handoff.total && (
                         <p className="text-xs text-gray-500">
-                          {compareResult.option_a[0].coverage}% de ítems
+                          {handoff.included} de {handoff.total} productos
                         </p>
-                      </div>
-                    )}
-                  </div>
-                  <OptionATable
-                    summaries={compareResult.option_a}
-                    renderAction={(superKey) => {
-                      const result = optionAHandoffs.get(superKey);
-                      const cfg = superCfg(superKey);
-                      return (
-                        <div className="space-y-1">
-                          {result?.url ? (
-                            <a
-                              href={result.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              data-testid={`handoff-option-a-${superKey}`}
-                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
-                            >
-                              Armar carrito en {cfg.label}
-                            </a>
-                          ) : (
-                            <span
-                              data-testid={`handoff-option-a-${superKey}`}
-                              aria-disabled="true"
-                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gray-200 text-gray-400 text-sm font-semibold cursor-not-allowed"
-                            >
-                              Armar carrito en {cfg.label}
-                            </span>
-                          )}
-                          {result && result.included < result.total && (
-                            <p className="text-xs text-gray-500">
-                              {result.included} de {result.total} productos
-                            </p>
-                          )}
-                          {superKey === 'vea' && (
-                            <p className="text-xs text-amber-600">
-                              ⚠ VEA puede pedirte elegir tu sucursal antes de confirmar
-                            </p>
-                          )}
-                        </div>
-                      );
-                    }}
-                  />
-                  {/* Explainer + disclaimer once below the table, not repeated per button */}
-                  {compareResult.option_a.length > 0 && (
-                    <div className="mt-3 space-y-0.5">
-                      <p className="text-xs text-gray-500">
-                        Te abrimos la tienda del super con tu carrito cargado. Completás la compra ahí.
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Los precios pueden variar al momento de pagar.
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Opción B */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h2 className="font-bold text-gray-900">Opción B — El más barato por ítem</h2>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        Dividís la compra y llevás cada producto del super que lo tiene más barato
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-gray-900">
-                        {pesos(compareResult.option_b.total)}
-                      </p>
-                      {compareResult.option_b.savings_vs_option_a > 0 && (
-                        <p className="text-xs text-green-600 font-semibold">
-                          Ahorrás {pesos(compareResult.option_b.savings_vs_option_a)} vs Opción A
+                      )}
+                      {superKey === 'vea' && (
+                        <p className="text-xs text-amber-600">
+                          ⚠ VEA puede pedirte elegir tu sucursal antes de confirmar
                         </p>
                       )}
                     </div>
-                  </div>
-                  <OptionBBreakdown result={compareResult.option_b} items={compareResult.items} />
-
-                  {/* Option B handoff buttons — one per super in by_super */}
-                  {compareResult.option_b.by_super.length > 0 && (
+                  );
+                }}
+                optionBFooter={
+                  compareResult.option_b.by_super.length > 0 ? (
                     <div className="mt-4 space-y-3">
                       {/* Explainer: how many supers the split covers */}
                       {(() => {
@@ -459,12 +403,11 @@ export default function Cart() {
                                 Armar carrito en {superCfg(s.super).label}
                               </span>
                             )}
-                            {superHandoff &&
-                              superHandoff.included < superHandoff.total && (
-                                <p className="text-xs text-gray-500">
-                                  {superHandoff.included} de {superHandoff.total} productos
-                                </p>
-                              )}
+                            {superHandoff && superHandoff.included < superHandoff.total && (
+                              <p className="text-xs text-gray-500">
+                                {superHandoff.included} de {superHandoff.total} productos
+                              </p>
+                            )}
                             <p className="text-xs text-gray-500">
                               Los precios pueden variar al momento de pagar.
                             </p>
@@ -472,15 +415,9 @@ export default function Cart() {
                         );
                       })}
                     </div>
-                  )}
-                </div>
-
-                {/* Tabla detalle con precios por línea */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                  <h2 className="font-bold text-gray-900 mb-4">Precios por producto y super</h2>
-                  <ItemMatchTable items={compareResult.items} priceMode="line" />
-                </div>
-              </div>
+                  ) : null
+                }
+              />
             ))}
         </div>
       )}

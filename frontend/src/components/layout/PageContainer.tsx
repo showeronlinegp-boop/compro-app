@@ -18,13 +18,10 @@ interface PageContainerProps {
  * Onboarding keeps its own narrow layout and must NOT use this component.
  */
 export function PageContainer({ children, size = 'default', className }: PageContainerProps) {
-  const widthClass =
-    size === 'narrow' ? 'max-w-lg' : 'max-w-7xl';
+  const widthClass = size === 'narrow' ? 'max-w-lg' : 'max-w-7xl';
 
   return (
-    <div
-      className={`${widthClass} mx-auto px-4 sm:px-6 lg:px-8 py-6 ${className ?? ''}`}
-    >
+    <div className={`${widthClass} mx-auto px-4 sm:px-6 lg:px-8 py-6 ${className ?? ''}`}>
       {children}
     </div>
   );

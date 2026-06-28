@@ -41,13 +41,9 @@ export function TwoColumn({
   railTopOffsetClass = 'top-[4.5rem]',
 }: TwoColumnProps) {
   const gridColsClass =
-    railWidth === 'md'
-      ? 'lg:grid-cols-[22rem_1fr]'
-      : 'lg:grid-cols-[18rem_1fr]';
+    railWidth === 'md' ? 'lg:grid-cols-[22rem_1fr]' : 'lg:grid-cols-[18rem_1fr]';
 
-  const railStickyClass = stickyRail
-    ? `lg:sticky lg:self-start ${railTopOffsetClass}`
-    : '';
+  const railStickyClass = stickyRail ? `lg:sticky lg:self-start ${railTopOffsetClass}` : '';
 
   const railEl = (
     <div>
