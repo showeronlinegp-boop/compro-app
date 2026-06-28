@@ -300,11 +300,14 @@ function makeOpportunity(overrides: Partial<PromoOpportunity> = {}): PromoOpport
     shopping_id: 1,
     missing_units: 1,
     target_qty: 2,
+    // Default: promo worth it but the cheapest super does NOT change (same-super
+    // case). best_super === current_best_super, so flips_super is false — this is
+    // the internally-consistent shape the backend actually emits.
     best_super: 'dia',
     best_product_id: 42,
     effective_unit_price_at_target: 800,
     current_best_unit_price: 1000,
-    current_best_super: 'vea',
+    current_best_super: 'dia',
     flips_super: false,
     promo_label: '2do al 80%',
     ...overrides,
@@ -362,8 +365,9 @@ describe('Cart Oportunidades section', () => {
     mockItemCount = 1;
   });
 
-  it('renders nudge card copy and flips badge when flips_super=true', async () => {
-    const opp = makeOpportunity({ flips_super: true });
+  it('renders cross-super copy and flips badge when the cheapest super changes', async () => {
+    // best_super (dia) !== current_best_super (vea) → cross-super comparison + badge
+    const opp = makeOpportunity({ flips_super: true, current_best_super: 'vea' });
     mockCompare.mockResolvedValue(makeCompareResultWithOpportunity(opp));
 
     renderCart();
@@ -379,10 +383,11 @@ describe('Cart Oportunidades section', () => {
     // Section heading
     expect(section.textContent).toContain('Oportunidades');
 
-    // Nudge copy: "Agregá N más de <name> te conviene …"
+    // Cross-super copy: "Agregá N más de <name> y te conviene <best> … vs … en <current>"
     expect(section.textContent).toContain('Agregá');
     expect(section.textContent).toContain('más de');
     expect(section.textContent).toContain('Oreo');
+    expect(section.textContent).toContain('te conviene');
 
     // missing_units shown in the Agregar button copy
     expect(screen.getByRole('button', { name: /Agregar 1 para la promo/i })).toBeDefined();
@@ -394,6 +399,28 @@ describe('Cart Oportunidades section', () => {
     // flips badge
     expect(screen.getByTestId('flips-badge')).toBeDefined();
     expect(screen.getByTestId('flips-badge').textContent).toContain('Cambia el súper más barato');
+  });
+
+  it('uses non-redundant promo-only copy when the cheapest super does not change', async () => {
+    // best_super === current_best_super → showing "te conviene VEA vs VEA" is
+    // redundant; the nudge must only announce that the promo activates.
+    const opp = makeOpportunity({ best_super: 'vea', current_best_super: 'vea', flips_super: false });
+    mockCompare.mockResolvedValue(makeCompareResultWithOpportunity(opp));
+
+    renderCart();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
+    });
+
+    await waitFor(() => expect(screen.getByTestId('opportunities-section')).toBeDefined());
+    const section = screen.getByTestId('opportunities-section');
+
+    // Promo-activation phrasing, NOT the cross-super comparison
+    expect(section.textContent).toContain('se activa la promo');
+    expect(section.textContent).toContain('en vez de');
+    expect(section.textContent).not.toContain('te conviene');
+    // No "Cambia el súper más barato" badge when the super is unchanged
+    expect(screen.queryByTestId('flips-badge')).toBeNull();
   });
 
   it('Agregar button calls updateQty with (shopping_id, target_qty) and is disabled during the call; re-fetches compare when sig changes', async () => {
@@ -477,6 +504,7 @@ describe('Cart Oportunidades section', () => {
       target_qty: 3,
       best_super: 'dia',
       current_best_super: 'vea',
+      flips_super: true,
     });
     // Item B: saving = (800 - 600) × 2 = 400  (lower — should render second)
     const oppB: PromoOpportunity = makeOpportunity({
@@ -487,6 +515,7 @@ describe('Cart Oportunidades section', () => {
       target_qty: 2,
       best_super: 'carrefour',
       current_best_super: 'dia',
+      flips_super: true,
     });
 
     const result: CompareResult = {
