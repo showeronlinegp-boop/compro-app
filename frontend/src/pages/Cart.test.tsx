@@ -1108,8 +1108,8 @@ describe('Cart handoff buttons', () => {
     expect(screen.queryByText(/\d+ de \d+ productos/)).toBeNull();
   });
 
-  // SC-9.1: VEA button renders with warning hint
-  it('SC-9.1: VEA button renders with ⚠ warning hint when winner is vea', async () => {
+  // SC-9: VEA handoff uses the sc=34 sales channel (no misleading availability hint)
+  it('SC-9: VEA handoff button uses the sc=34 sales channel when winner is vea', async () => {
     const result: CompareResult = {
       items: [
         {
@@ -1160,13 +1160,9 @@ describe('Cart handoff buttons', () => {
     expect(handoffBtn.tagName.toLowerCase()).toBe('a');
     expect((handoffBtn as HTMLAnchorElement).href).toContain('vea-sku-1');
 
-    // ⚠ warning hint must be in the DOM — handoff-specific, not the price-variance note
-    expect(document.body.textContent).toContain('⚠');
-    expect(document.body.textContent).toContain(
-      'En VEA, algunos productos pueden no estar disponibles en tu sucursal',
-    );
-    // Must NOT render the generic price-variance note in the handoff hint position
-    expect(document.body.textContent).not.toContain('Precio y promos de VEA pueden variar');
+    // No VEA-specific availability hint — our crawl is zone-aware, so claiming a
+    // product "may not be available at your store" would contradict our own data.
+    expect(document.body.textContent).not.toContain('no estar disponibles en tu sucursal');
 
     // VEA sales channel must be sc=34, NOT sc=1 (Cencosud VTEX channel)
     expect((handoffBtn as HTMLAnchorElement).href).toContain('sc=34');

@@ -375,11 +375,6 @@ export default function Cart() {
                           {optionAHandoff.included} de {optionAHandoff.total} productos
                         </p>
                       )}
-                      {winnerSuper === 'vea' && (
-                        <p className="text-xs text-amber-600">
-                          ⚠ En VEA, algunos productos pueden no estar disponibles en tu sucursal
-                        </p>
-                      )}
                       <p className="text-xs text-gray-500">
                         Los precios pueden variar al momento de pagar.
                       </p>
@@ -441,11 +436,6 @@ export default function Cart() {
                                   {superHandoff.included} de {superHandoff.total} productos
                                 </p>
                               )}
-                            {s.super === 'vea' && (
-                              <p className="text-xs text-amber-600">
-                                ⚠ En VEA, algunos productos pueden no estar disponibles en tu sucursal
-                              </p>
-                            )}
                             <p className="text-xs text-gray-500">
                               Los precios pueden variar al momento de pagar.
                             </p>
