@@ -46,7 +46,11 @@ export default function Cart() {
   const optionAHandoff = useMemo<HandoffResult | null>(
     () =>
       winnerSuper
-        ? buildHandoffUrl(superCfg(winnerSuper).checkoutBaseUrl ?? '', optionAItems)
+        ? buildHandoffUrl(
+            superCfg(winnerSuper).checkoutBaseUrl ?? '',
+            optionAItems,
+            superCfg(winnerSuper).salesChannel ?? 1,
+          )
         : null, // null only when there is no winner super — not when skus are missing
     [winnerSuper, optionAItems],
   );
@@ -68,7 +72,11 @@ export default function Cart() {
     for (const s of compareResult.option_b.by_super) {
       result.set(
         s.super,
-        buildHandoffUrl(superCfg(s.super).checkoutBaseUrl ?? '', bySuper.get(s.super) ?? []),
+        buildHandoffUrl(
+          superCfg(s.super).checkoutBaseUrl ?? '',
+          bySuper.get(s.super) ?? [],
+          superCfg(s.super).salesChannel ?? 1,
+        ),
       );
     }
     return result;
@@ -369,7 +377,7 @@ export default function Cart() {
                       )}
                       {winnerSuper === 'vea' && (
                         <p className="text-xs text-amber-600">
-                          ⚠ VEA puede pedirte elegir tu sucursal antes de confirmar
+                          ⚠ En VEA, algunos productos pueden no estar disponibles en tu sucursal
                         </p>
                       )}
                       <p className="text-xs text-gray-500">
@@ -435,7 +443,7 @@ export default function Cart() {
                               )}
                             {s.super === 'vea' && (
                               <p className="text-xs text-amber-600">
-                                ⚠ VEA puede pedirte elegir tu sucursal antes de confirmar
+                                ⚠ En VEA, algunos productos pueden no estar disponibles en tu sucursal
                               </p>
                             )}
                             <p className="text-xs text-gray-500">

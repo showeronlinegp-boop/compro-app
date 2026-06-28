@@ -9,6 +9,12 @@ export interface SuperConfig {
   note?: string;
   /** VTEX storefront origin for building cart-add handoff deep links. */
   checkoutBaseUrl?: string;
+  /**
+   * VTEX sales channel (sc= param) for cart-add handoff URLs.
+   * VEA (Cencosud) uses 34 — sc=1 returns no regional sellers for Cencosud stores.
+   * Omit to use the default of 1.
+   */
+  salesChannel?: number;
 }
 
 export const SUPERS: Record<SuperKey, SuperConfig> = {
@@ -19,6 +25,7 @@ export const SUPERS: Record<SuperKey, SuperConfig> = {
     light: 'bg-red-50 text-red-700 border-red-200',
     note: 'Precio y promos de VEA pueden variar según tu sucursal.',
     checkoutBaseUrl: 'https://www.vea.com.ar',
+    salesChannel: 34, // VEA/Cencosud VTEX sales channel — sc=1 returns no regional sellers
   },
   carrefour: {
     label: 'CARREFOUR',

@@ -49,10 +49,13 @@ const URL_LENGTH_LIMIT = 2000;
  * @param checkoutBaseUrl - VTEX storefront origin, e.g. "https://www.carrefour.com.ar".
  *   An empty/falsy value → `url: null`, counts are zero.
  * @param items - Array of {sku_id, qty} pairs. sku_id === null → item skipped.
+ * @param salesChannel - VTEX sales channel (sc= param). Defaults to 1 (standard).
+ *   VEA/Cencosud must pass 34 — sc=1 returns no regional sellers for VEA stores.
  */
 export function buildHandoffUrl(
   checkoutBaseUrl: string,
   items: HandoffItem[],
+  salesChannel: number = 1,
 ): HandoffResult {
   const total = items.length;
 
@@ -75,7 +78,7 @@ export function buildHandoffUrl(
     const clampedQty = Math.max(1, Math.floor(item.qty));
     const sku = encodeURIComponent(item.sku_id);
     const separator = firstParam ? '?' : '&';
-    const segment = `${separator}sku=${sku}&qty=${clampedQty}&seller=1&sc=1`;
+    const segment = `${separator}sku=${sku}&qty=${clampedQty}&seller=1&sc=${salesChannel}`;
 
     // Check URL length BEFORE appending.
     if ((url + segment).length > URL_LENGTH_LIMIT) {

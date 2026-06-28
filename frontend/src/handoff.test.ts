@@ -136,6 +136,20 @@ describe('buildHandoffUrl', () => {
     expect(scCount).toBe(2);
   });
 
+  // SC-4.9: salesChannel param changes sc= in URL (VEA uses 34)
+  it('SC-4.9: salesChannel=34 sets sc=34 in URL, not sc=1', () => {
+    const result = buildHandoffUrl(
+      'https://www.vea.com.ar',
+      [{ sku_id: 'vea-sku-1', qty: 2 }],
+      34,
+    );
+
+    expect(result.url).not.toBeNull();
+    expect(result.url).toContain('sc=34');
+    expect(result.url).not.toContain('sc=1');
+    expect(result.included).toBe(1);
+  });
+
   // Extra: negative qty is clamped to 1
   it('negative qty is clamped to 1', () => {
     const result = buildHandoffUrl(BASE, [{ sku_id: 'X', qty: -5 }]);

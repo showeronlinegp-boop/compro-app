@@ -702,6 +702,9 @@ describe('Cart handoff buttons', () => {
     expect(handoffBtn.textContent).toContain('CARREFOUR');
     // Must NOT render DIA as an Option A button
     expect(screen.queryByText(/Ir a DIA/i)).toBeNull();
+    // Non-VEA supers use sc=1 (the VTEX default)
+    expect((handoffBtn as HTMLAnchorElement).href).toContain('sc=1');
+    expect((handoffBtn as HTMLAnchorElement).href).not.toContain('sc=34');
   });
 
   // SC-5.3: Home-super winner works without special-casing
@@ -1159,9 +1162,15 @@ describe('Cart handoff buttons', () => {
 
     // ⚠ warning hint must be in the DOM — handoff-specific, not the price-variance note
     expect(document.body.textContent).toContain('⚠');
-    expect(document.body.textContent).toContain('VEA puede pedirte elegir tu sucursal');
+    expect(document.body.textContent).toContain(
+      'En VEA, algunos productos pueden no estar disponibles en tu sucursal',
+    );
     // Must NOT render the generic price-variance note in the handoff hint position
     expect(document.body.textContent).not.toContain('Precio y promos de VEA pueden variar');
+
+    // VEA sales channel must be sc=34, NOT sc=1 (Cencosud VTEX channel)
+    expect((handoffBtn as HTMLAnchorElement).href).toContain('sc=34');
+    expect((handoffBtn as HTMLAnchorElement).href).not.toContain('sc=1');
   });
 
   // SC-8.3: all sku_ids null → inert button + "0 de N productos" indicator shown
