@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../api';
+import { EmptyState } from '../components/EmptyState';
 import { PromoNudge } from '../components/compare';
 import { CompareView } from '../components/compare/CompareView';
+import { PageContainer } from '../components/layout/PageContainer';
 import { useCart } from '../contexts/CartContext';
 import type { HandoffItem, HandoffResult } from '../handoff';
 import { buildHandoffUrl } from '../handoff';
@@ -108,13 +111,21 @@ export default function Cart() {
   // ─── Empty cart ─────────────────────────────────────────────────────────────
   if (items.length === 0) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-24 text-center text-gray-400">
-        <p className="text-5xl mb-4">🛒</p>
-        <p className="font-medium text-lg">Tu carrito está vacío</p>
-        <p className="text-sm mt-2">
-          Agregá productos desde Explorar o Intereses con el botón &quot;+ Carrito&quot;
-        </p>
-      </div>
+      <PageContainer>
+        <EmptyState
+          icon="🛒"
+          title="Tu carrito está vacío"
+          description='Agregá productos desde Explorar o Intereses con el botón "+ Carrito"'
+          action={
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors"
+            >
+              Ir a Explorar
+            </Link>
+          }
+        />
+      </PageContainer>
     );
   }
 
@@ -177,7 +188,7 @@ export default function Cart() {
   })();
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
+    <PageContainer>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-lg font-bold text-gray-900">Carrito ({headerCopy})</h1>
@@ -309,13 +320,11 @@ export default function Cart() {
             !compareError &&
             compareResult !== null &&
             (compareResult.items.length === 0 ? (
-              <div className="text-center py-12 text-gray-400">
-                <p className="text-4xl mb-3">🔍</p>
-                <p className="font-medium">Sin resultados para comparar</p>
-                <p className="text-sm mt-1">
-                  No encontramos precios en otros supers para los productos de tu carrito
-                </p>
-              </div>
+              <EmptyState
+                icon="🔍"
+                title="Sin resultados para comparar"
+                description="No encontramos precios en otros supers para los productos de tu carrito"
+              />
             ) : (
               <CompareView
                 result={compareResult}
@@ -421,6 +430,6 @@ export default function Cart() {
             ))}
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

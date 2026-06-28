@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../api';
+import { EmptyState } from '../components/EmptyState';
 import { CompareView } from '../components/compare/CompareView';
+import { PageContainer } from '../components/layout/PageContainer';
 import { pesos, superCfg } from '../supers';
 import type { CompareResult } from '../types/api';
 
@@ -25,27 +28,37 @@ export default function Compare() {
 
   if (loading) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-12 text-center text-gray-400 text-sm">
-        Calculando comparación…
-      </div>
+      <PageContainer>
+        <div className="py-12 text-center text-gray-400 text-sm">Calculando comparación…</div>
+      </PageContainer>
     );
   }
 
   if (error) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-12 text-center text-red-400 text-sm">{error}</div>
+      <PageContainer>
+        <div className="py-12 text-center text-red-400 text-sm">{error}</div>
+      </PageContainer>
     );
   }
 
   if (!result || result.items.length === 0) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-12 text-center text-gray-400">
-        <p className="text-4xl mb-3">🔍</p>
-        <p className="font-medium">Sin datos para comparar</p>
-        <p className="text-sm mt-1">
-          Agregá productos a tu lista de compras y sincronizá los supers primero
-        </p>
-      </div>
+      <PageContainer>
+        <EmptyState
+          icon="🔍"
+          title="Sin datos para comparar"
+          description="Agregá productos a tu lista de compras y sincronizá los supers primero"
+          action={
+            <Link
+              to="/planner"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors"
+            >
+              Ir al Planner
+            </Link>
+          }
+        />
+      </PageContainer>
     );
   }
 
@@ -68,7 +81,7 @@ export default function Compare() {
     ) : null;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6">
+    <PageContainer>
       <h1 className="text-xl font-bold text-gray-900 mb-1">Comparador multi-super</h1>
       <p className="text-sm text-gray-500 mb-6">
         {result.items.length} productos de tu lista de compras
@@ -102,6 +115,6 @@ export default function Compare() {
         activeTab={view}
         noticeSlot={emeraldSavingsCard}
       />
-    </div>
+    </PageContainer>
   );
 }

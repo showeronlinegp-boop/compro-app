@@ -3,6 +3,7 @@ import { api } from '../api';
 import FreqModal from '../components/FreqModal';
 import GroupedCard from '../components/GroupedCard';
 import PromoPanel from '../components/PromoPanel';
+import { PageContainer } from '../components/layout/PageContainer';
 import type {
   EnrichStatus,
   GroupsResult,
@@ -129,7 +130,8 @@ export default function Explorar({
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6">
+    <PageContainer>
+      <h1 className="sr-only">Explorar productos</h1>
       {/* Banner sincronización en vivo */}
       {isSyncing &&
         syncStatus
@@ -352,6 +354,6 @@ export default function Explorar({
           onClose={() => setFreqTarget(null)}
         />
       )}
-    </div>
+    </PageContainer>
   );
 }

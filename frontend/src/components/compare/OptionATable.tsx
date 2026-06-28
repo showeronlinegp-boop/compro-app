@@ -44,11 +44,15 @@ export function OptionATable({ summaries, renderAction }: OptionATableProps) {
                 </span>
               </div>
               <div className="text-right">
-                <p className={`text-lg font-bold ${isBest ? 'text-indigo-700' : 'text-gray-800'}`}>
+                <p
+                  className={`text-lg font-bold tabular-nums ${isBest ? 'text-indigo-700' : 'text-gray-800'}`}
+                >
                   {pesos(s.total)}
                 </p>
                 {!isBest && best && (
-                  <p className="text-xs text-indigo-500">+{pesos(s.total - best.total)}</p>
+                  <p className="text-xs tabular-nums text-indigo-500">
+                    +{pesos(s.total - best.total)}
+                  </p>
                 )}
               </div>
             </div>

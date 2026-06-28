@@ -1,14 +1,15 @@
 import type { ReactNode } from 'react';
-import { pesos } from '../../supers';
+import { pesos, superCfg } from '../../supers';
 import type { CompareResult, SuperKey } from '../../types/api';
+import { TwoColumn } from '../layout/TwoColumn';
 import { ItemMatchTable } from './ItemMatchTable';
 import { OptionATable } from './OptionATable';
 import { OptionBBreakdown } from './OptionBBreakdown';
 
-// ─── Phase 1: pixel-identical extraction ──────────────────────────────────────
-// This component reproduces the EXACT markup that Compare.tsx and Cart.tsx
-// produce today, with no layout changes. Phase 2 will apply the two-column
-// sticky restyle inside this single component.
+// ─── Phase 2: two-column sticky layout ───────────────────────────────────────
+// CompareView now renders the sticky-rail two-column layout at lg+ while keeping
+// single-column on mobile. The summary rail shows per-super totals and savings;
+// the main column shows options + detail table.
 
 export interface CompareViewProps {
   result: CompareResult;
@@ -47,6 +48,106 @@ export interface CompareViewProps {
   activeTab?: 'options' | 'detail';
 }
 
+// ─── Summary rail ─────────────────────────────────────────────────────────────
+// Compact sticky panel: Option A cheapest + Option B total/savings.
+// Shown at lg+ as a sticky left rail; hidden below lg (detail is already in main).
+
+interface SummaryRailProps {
+  result: CompareResult;
+  renderOptionAAction?: (superKey: SuperKey) => ReactNode;
+  optionBFooter?: ReactNode;
+}
+
+function SummaryRail({ result, renderOptionAAction, optionBFooter }: SummaryRailProps) {
+  const cheapestA = result.option_a[0];
+  const savings = result.option_b.savings_vs_option_a;
+
+  return (
+    <div className="space-y-4">
+      {/* Option A — per-super totals compact */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+        <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">
+          Opción A — Un super
+        </p>
+        {result.option_a.map((s, i) => {
+          const cfg = superCfg(s.super);
+          const isBest = i === 0;
+          return (
+            <div
+              key={s.super}
+              className={`rounded-xl border px-3 py-2 mb-2 last:mb-0 ${
+                isBest ? 'border-indigo-200 bg-indigo-50' : 'border-gray-100 bg-white'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  {isBest && (
+                    <span className="text-[10px] font-bold bg-indigo-600 text-white px-1.5 py-0.5 rounded-full shrink-0">
+                      ✓
+                    </span>
+                  )}
+                  <span
+                    className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${cfg.bg} ${cfg.text} shrink-0`}
+                  >
+                    {cfg.label}
+                  </span>
+                </div>
+                <span
+                  className={`text-sm font-bold tabular-nums shrink-0 ${isBest ? 'text-indigo-700' : 'text-gray-800'}`}
+                >
+                  {pesos(s.total)}
+                </span>
+              </div>
+              <p className="text-[10px] text-gray-400">{s.coverage}% de ítems</p>
+              {renderOptionAAction && (
+                <div className="mt-2">{renderOptionAAction(s.super as SuperKey)}</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Option B — total + savings */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+        <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">
+          Opción B — Mejor por ítem
+        </p>
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <span className="text-xs text-gray-600">Total estimado</span>
+          <span className="text-sm font-bold tabular-nums text-gray-900">
+            {pesos(result.option_b.total)}
+          </span>
+        </div>
+        {savings > 0 && cheapestA && (
+          <p className="text-xs font-semibold text-green-700 mb-2">
+            Ahorrás {pesos(savings)} vs {superCfg(cheapestA.super).label}
+          </p>
+        )}
+        {/* Per-super split in Option B */}
+        {result.option_b.by_super.map((s) => {
+          const cfg = superCfg(s.super);
+          return (
+            <div
+              key={s.super}
+              className="flex items-center justify-between gap-2 py-1.5 border-t border-gray-50 first:border-t-0"
+            >
+              <span
+                className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}
+              >
+                {cfg.label}
+              </span>
+              <span className="text-xs font-semibold tabular-nums text-gray-700">
+                {pesos(s.total)}
+              </span>
+            </div>
+          );
+        })}
+        {optionBFooter && <div className="mt-3">{optionBFooter}</div>}
+      </div>
+    </div>
+  );
+}
+
 export function CompareView({
   result,
   priceMode,
@@ -75,7 +176,9 @@ export function CompareView({
         </div>
         {cheapestA && (
           <div className="text-right">
-            <p className="text-2xl font-bold text-gray-900">{pesos(cheapestA.total)}</p>
+            <p className="text-2xl font-bold tabular-nums text-gray-900">
+              {pesos(cheapestA.total)}
+            </p>
             <p className="text-xs text-gray-500">{cheapestA.coverage}% de ítems</p>
           </div>
         )}
@@ -103,7 +206,9 @@ export function CompareView({
           </p>
         </div>
         <div className="text-right">
-          <p className="text-2xl font-bold text-gray-900">{pesos(result.option_b.total)}</p>
+          <p className="text-2xl font-bold tabular-nums text-gray-900">
+            {pesos(result.option_b.total)}
+          </p>
           {savings > 0 && (
             <p className="text-xs text-green-600 font-semibold">
               Ahorrás {pesos(savings)} vs Opción A
@@ -123,24 +228,44 @@ export function CompareView({
     </div>
   );
 
+  // ── Summary rail (shown at lg+ via TwoColumn; hidden on mobile since content
+  //    is already visible inline in the main column) ──────────────────────────
+
+  const summaryRail = (
+    <SummaryRail
+      result={result}
+      renderOptionAAction={renderOptionAAction}
+      optionBFooter={optionBFooter}
+    />
+  );
+
   // ── Tabbed layout (Compare page) ───────────────────────────────────────────
   if (layout === 'tabbed') {
+    if (activeTab === 'options') {
+      return (
+        <div className="space-y-6">
+          {optionACard}
+          {optionBCard}
+          {noticeSlot}
+        </div>
+      );
+    }
+    // detail tab: two-column — sticky rail on left, full item table on right
     return (
-      <div>
-        {activeTab === 'options' && (
-          <div className="space-y-6">
-            {optionACard}
-            {optionBCard}
-            {noticeSlot}
-          </div>
-        )}
-        {activeTab === 'detail' && detailCard}
-      </div>
+      <TwoColumn
+        rail={summaryRail}
+        main={detailCard}
+        railWidth="md"
+        stickyRail
+        railTopOffsetClass="top-[4.5rem]"
+      />
     );
   }
 
-  // ── Stacked layout (Cart Comparar tab) ────────────────────────────────────
-  return (
+  // ── Stacked layout (Cart Comparar tab) — two-column at lg+ ────────────────
+  // Rail: summary totals (compact) + Option B handoffs
+  // Main: top/notice slots + full Option A/B cards + detail table
+  const mainContent = (
     <div className="space-y-6">
       {topSlot}
       {noticeSlot}
@@ -148,5 +273,15 @@ export function CompareView({
       {optionBCard}
       {detailCard}
     </div>
+  );
+
+  return (
+    <TwoColumn
+      rail={summaryRail}
+      main={mainContent}
+      railWidth="md"
+      stickyRail
+      railTopOffsetClass="top-[4.5rem]"
+    />
   );
 }

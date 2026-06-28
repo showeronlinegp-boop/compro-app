@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
 import RecommendationBanner from '../components/RecommendationBanner';
+import { PageContainer } from '../components/layout/PageContainer';
 import { CATEGORY_LABEL, FREQ_OPTIONS, pesos, superCfg } from '../supers';
 import type { Product, ShoppingItem, WeeklyGroup } from '../types/api';
 
@@ -415,14 +416,15 @@ export default function Planner() {
 
   if (loading) {
     return (
-      <div className="max-w-5xl mx-auto px-4 py-12 text-center text-gray-400 text-sm">
-        Cargando…
-      </div>
+      <PageContainer>
+        <div className="py-12 text-center text-gray-400 text-sm">Cargando…</div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6">
+    <PageContainer>
+      <h1 className="sr-only">Planner de compras</h1>
       <RecommendationBanner />
 
       {/* Tabs */}
@@ -470,6 +472,6 @@ export default function Planner() {
       {tab === 'weekly' && (
         <WeeklyTab groups={weekly} total={totalWeekly} onMarkBought={markBought} />
       )}
-    </div>
+    </PageContainer>
   );
 }

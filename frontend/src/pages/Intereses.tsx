@@ -1,5 +1,8 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import FreqModal from '../components/FreqModal';
+import { EmptyState } from '../components/EmptyState';
+import { PageContainer } from '../components/layout/PageContainer';
 import { pesos, superCfg } from '../supers';
 import type { Interest, Product } from '../types/api';
 
@@ -26,16 +29,27 @@ export default function Intereses({
 
   if (interests.length === 0) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-24 text-center text-gray-400">
-        <p className="text-5xl mb-4">♡</p>
-        <p className="font-medium text-lg">No tenés intereses guardados</p>
-        <p className="text-sm mt-2">Buscá productos en "Explorar" y guardá los que te interesan</p>
-      </div>
+      <PageContainer>
+        <EmptyState
+          icon="♡"
+          title="No tenés intereses guardados"
+          description='Buscá productos en "Explorar" y guardá los que te interesan'
+          action={
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors"
+            >
+              Ir a Explorar
+            </Link>
+          }
+        />
+      </PageContainer>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6">
+    <PageContainer>
+      <h1 className="sr-only">Mis Intereses</h1>
       <p className="text-xs text-gray-400 mb-4">{interests.length} productos guardados</p>
 
       <div className="flex flex-col gap-2">
@@ -120,6 +134,6 @@ export default function Intereses({
           onClose={() => setFreqTarget(null)}
         />
       )}
-    </div>
+    </PageContainer>
   );
 }
