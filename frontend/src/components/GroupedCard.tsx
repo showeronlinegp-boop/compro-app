@@ -1,4 +1,4 @@
-import { pesos, superCfg } from '../supers';
+import { pesos, resolveStoreUrl, superCfg } from '../supers';
 import type { Product, ProductGroup, Promotion } from '../types/api';
 import AddToCartButton from './AddToCartButton';
 import ProductImage from './ProductImage';
@@ -108,6 +108,49 @@ export default function GroupedCard({
           // shown as informational badges, never as a computed per-unit price.
           const infoPromos = (v.promotions ?? []).filter((pr) => pr.type === 'other');
           const isBest = isComparison && comparePrice(v) === bestPrice;
+          // VTEX product_url can be relative ("/slug/p") → resolve to the super's
+          // storefront origin so the link opens the super, not our own app.
+          const href = resolveStoreUrl(v.product_url, v.super);
+
+          // Per-super shelf-price row. When the store URL resolves, the whole row
+          // links there (new tab) with an ↗ affordance so it reads as clickable.
+          const priceRow = (
+            <>
+              <span
+                className={`shrink-0 font-bold px-1.5 py-0.5 rounded-md text-white text-[10px] ${cfg.bg}`}
+              >
+                {cfg.label}
+              </span>
+              <div className="flex items-center gap-1.5 whitespace-nowrap">
+                {v.offer_price && (
+                  <span className="text-gray-400 line-through">{pesos(v.raw_price)}</span>
+                )}
+                <span
+                  className={`font-bold ${isBest && !promo ? 'text-green-700' : 'text-gray-800'}`}
+                >
+                  {pesos(price)}
+                </span>
+                {isBest && !promo && <span className="text-green-600 font-bold">✓</span>}
+                {href && (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    stroke="currentColor"
+                    aria-hidden="true"
+                    className="w-3 h-3 shrink-0 text-gray-400 transition-colors group-hover:text-indigo-500"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+                    />
+                  </svg>
+                )}
+              </div>
+            </>
+          );
 
           return (
             <div
@@ -116,30 +159,21 @@ export default function GroupedCard({
                 isBest ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-100'
               }`}
             >
-              {/* Precio real de góndola (1 unidad) — siempre honesto */}
-              <a
-                href={v.product_url ?? undefined}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between gap-2 transition-colors hover:opacity-80"
-              >
-                <span
-                  className={`shrink-0 font-bold px-1.5 py-0.5 rounded-md text-white text-[10px] ${cfg.bg}`}
+              {/* Precio real de góndola (1 unidad) — siempre honesto.
+                  Clickear la fila abre la página del producto en el súper (pestaña nueva). */}
+              {href ? (
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={`Ver en ${cfg.label}`}
+                  className="group -mx-1 flex items-center justify-between gap-2 rounded-md px-1 py-0.5 transition-colors hover:bg-black/[0.04]"
                 >
-                  {cfg.label}
-                </span>
-                <div className="flex items-center gap-1.5 whitespace-nowrap">
-                  {v.offer_price && (
-                    <span className="text-gray-400 line-through">{pesos(v.raw_price)}</span>
-                  )}
-                  <span
-                    className={`font-bold ${isBest && !promo ? 'text-green-700' : 'text-gray-800'}`}
-                  >
-                    {pesos(price)}
-                  </span>
-                  {isBest && !promo && <span className="text-green-600 font-bold">✓</span>}
-                </div>
-              </a>
+                  {priceRow}
+                </a>
+              ) : (
+                <div className="flex items-center justify-between gap-2">{priceRow}</div>
+              )}
 
               {/* Precio efectivo por la promo — etiquetado para no confundir */}
               {promo && (
