@@ -28,12 +28,14 @@ export function ItemMatchTable({ items, priceMode = 'unit' }: ItemMatchTableProp
         <thead>
           {/* Sticky thead: position:sticky on each th for cross-browser table support.
               z-10 keeps header above rows; bg-white prevents content showing through.
-              top-14 offsets the header by the navbar height (56px / h-14, z-40) so
-              the sticky row lands flush below the navbar instead of hiding behind it. */}
+              top-0 is intentional: this thead's scroll container is the surrounding
+              overflow-x-auto wrapper, so top is measured from the wrapper's edge, not
+              the viewport. A non-zero offset (e.g. navbar height) would push the header
+              down by that amount AT REST, since the wrapper sits below the navbar already. */}
           <tr className="border-b border-gray-100">
             <th
               scope="col"
-              className="sticky top-14 bg-white z-10 text-left py-2 pr-3 text-gray-500 font-medium w-40"
+              className="sticky top-0 bg-white z-10 text-left py-2 pr-3 text-gray-500 font-medium w-40"
             >
               Producto
             </th>
@@ -43,7 +45,7 @@ export function ItemMatchTable({ items, priceMode = 'unit' }: ItemMatchTableProp
                 <th
                   key={s}
                   scope="col"
-                  className="sticky top-14 bg-white z-10 text-center py-2 px-2"
+                  className="sticky top-0 bg-white z-10 text-center py-2 px-2"
                 >
                   <span
                     className={`text-xs font-bold px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}
