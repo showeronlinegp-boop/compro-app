@@ -19,6 +19,7 @@ import {
   ENV_ENRICH_HTML_CONC,
   ENV_ENRICH_PROMO_BATCH,
   ENV_ENRICH_PROMO_CONC,
+  ENV_ENRICH_SIM_QTY,
   ENV_ENRICH_SKU_CONC,
 } from '../../config/env.js';
 import { SUPERS, resolveEnrichStrategy } from '../../config/supers.js';
@@ -27,6 +28,7 @@ import {
   fetchPromoPrice,
   fetchSearchPromotions,
 } from '../../infrastructure/vtex/promotions-client.js';
+import { fetchSimulationPromos } from '../../infrastructure/vtex/simulation-client.js';
 import { runPool } from '../../shared/pool.js';
 import type { EnrichStatus, StoreMap, SuperKey } from '../../shared/types.js';
 import { conditionalPromo, effectiveDiscount, offerPrice } from '../domain/discount.js';
@@ -186,6 +188,88 @@ async function enrichViaHtmlScraping(
   }
 }
 
+// ─── Strategy C: checkout simulation (masonline) ─────────────────────────────
+
+/**
+ * Enrich via the checkout orderForm simulation, one POST per SKU.
+ *
+ * The only path that surfaces VTEX "PromoVolumen" quantity promos (e.g. "2da al
+ * 70%") for stores that expose them neither in the IS-API teasers nor in
+ * search-promotions (confirmed for masonline). A single simulation at qty N yields
+ * BOTH signals, kept separable:
+ *   - nth_unit promo: parsed from the benefit identifier names via conditionalPromo()
+ *     (same path as VEA's search-promotions). When present it wins — offer_price is
+ *     cleared and the per-unit price is computed downstream from raw_price + min_qty.
+ *   - flat discount:  items[0].price (unconditional unit) vs listPrice, via offerPrice()
+ *     (same math as the JSON-LD strategy it replaces). Used only when there is no
+ *     nth_unit promo, so the strike-through stays honest.
+ */
+async function enrichViaSimulation(
+  superKey: string,
+  baseUrl: string,
+  seller: string,
+  quantity: number,
+  products: ProductEnrichRow[],
+  st: EnrichStatus,
+  prisma: PrismaClient,
+): Promise<void> {
+  const conc = ENV_ENRICH_HTML_CONC;
+
+  let fetched_ok = 0;
+  let fetch_errors = 0;
+  let nth_unit = 0;
+  let lastLogged = 0;
+
+  await runPool(products, conc, async (p) => {
+    st.done++;
+    if (!p.sku_id) return;
+
+    const outcome = await fetchSimulationPromos(baseUrl, p.sku_id, seller, quantity);
+    if (outcome.kind === 'fetch_error') {
+      fetch_errors++;
+      return;
+    }
+    fetched_ok++;
+
+    const { benefitNames, unitPrice, listPrice } = outcome.result;
+
+    // nth_unit promo (e.g. "2da al 70%") takes precedence — mirrors enrichViaPromos.
+    let promo = null;
+    for (const name of benefitNames) {
+      promo = conditionalPromo(name);
+      if (promo) break;
+    }
+
+    let data: { offer_price: number | null; discount_pct: number; promotions: object[] } | null =
+      null;
+    if (promo) {
+      data = { offer_price: null, discount_pct: 0, promotions: [promo] };
+      nth_unit++;
+    } else if (unitPrice != null && listPrice != null) {
+      const flat = offerPrice(p.raw_price, { promoPrice: unitPrice, listPrice });
+      data = flat
+        ? { offer_price: flat.offer_price, discount_pct: flat.discount_pct, promotions: [] }
+        : { offer_price: null, discount_pct: 0, promotions: [] };
+    }
+
+    if (data) {
+      await prisma.products.update({ where: { id: p.id }, data });
+      st.updated++;
+    }
+
+    if (st.done - lastLogged >= 600 || st.done === st.total) {
+      lastLogged = st.done;
+      console.log(
+        `[enrich:${superKey}] ${st.done}/${st.total} (simulation) — fetched_ok=${fetched_ok} fetch_errors=${fetch_errors} nth_unit=${nth_unit} updated=${st.updated}`,
+      );
+    }
+  });
+
+  console.log(
+    `[enrich:${superKey}] done — fetched_ok=${fetched_ok} fetch_errors=${fetch_errors} nth_unit=${nth_unit} updated=${st.updated}`,
+  );
+}
+
 // ─── Public factory ───────────────────────────────────────────────────────────
 
 export function makeEnricher(prisma: PrismaClient): EnrichService {
@@ -238,6 +322,18 @@ export function makeEnricher(prisma: PrismaClient): EnrichService {
           // no profile / stores → keep the config promoSeller fallback
         }
         await enrichViaPromos(superKey, cfg as { baseUrl: string }, seller, enrichable, st, prisma);
+      } else if (strategy === 'simulation') {
+        const baseUrl = cfg?.baseUrl ?? '';
+        const simSeller = cfg?.simSeller ?? '1';
+        await enrichViaSimulation(
+          superKey,
+          baseUrl,
+          simSeller,
+          ENV_ENRICH_SIM_QTY,
+          enrichable,
+          st,
+          prisma,
+        );
       } else {
         // strategy === 'jsonld'
         const baseUrl = cfg?.baseUrl ?? '';

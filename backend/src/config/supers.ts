@@ -10,7 +10,17 @@ export const SUPERS: Record<SuperKey, SuperConfig> = {
   // VEA: ListPrice is stale garbage (e.g. 528017 vs Price 6389) → trustListPrice OFF.
   // Real discounts come from the search-promotions enricher (promoSeller set).
   vea: { baseUrl: 'https://www.vea.com.ar', promoSeller: 'jumboargentinav700cordoba700' },
-  masonline: { baseUrl: 'https://www.masonline.com.ar', trustListPrice: true },
+  // masonline hides its quantity promos ("2da al 70%") from BOTH the IS-API teasers
+  // and search-promotions (404) — they only materialize in the checkout simulation
+  // as "PromoVolumen" benefits. The 'simulation' strategy reads them (and the flat
+  // ListPrice discount) per SKU. seller "1" is required: regional sellers return
+  // price=null. trustListPrice still feeds the crawl-time flat discount.
+  masonline: {
+    baseUrl: 'https://www.masonline.com.ar',
+    trustListPrice: true,
+    enrichStrategy: 'simulation',
+    simSeller: '1',
+  },
   // Carrefour renders JSON-LD client-side: data_found=0/18303 in production runs.
   // Discounts come from the IS-API crawl. PriceWithoutDiscount === Price for discounted
   // items; the real strike-through lives in ListPrice → trustListPrice ON.
@@ -43,10 +53,13 @@ export function resolveCrawlConfig(superKey: string): CrawlConcurrency {
  * - Explicit 'none'        → skip enrichment (e.g. Carrefour: client-side JSON-LD, crawl has discounts).
  * - Explicit 'promotions'  → use search-promotions endpoint.
  * - Explicit 'jsonld'      → use HTML JSON-LD scraping.
+ * - Explicit 'simulation'  → POST checkout simulation per SKU (e.g. masonline).
  * - Unset + promoSeller    → 'promotions' (e.g. vea).
- * - Unset + no promoSeller → 'jsonld' (e.g. dia, masonline).
+ * - Unset + no promoSeller → 'jsonld' (e.g. dia).
  */
-export function resolveEnrichStrategy(superKey: string): 'promotions' | 'jsonld' | 'none' {
+export function resolveEnrichStrategy(
+  superKey: string,
+): 'promotions' | 'jsonld' | 'simulation' | 'none' {
   const cfg = SUPERS[superKey as SuperKey];
   if (cfg?.enrichStrategy != null) return cfg.enrichStrategy;
   return cfg?.promoSeller ? 'promotions' : 'jsonld';

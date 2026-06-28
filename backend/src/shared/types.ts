@@ -27,11 +27,23 @@ export interface SuperConfig {
    *
    * - 'promotions': use the search-promotions endpoint (requires promoSeller).
    * - 'jsonld':     scrape product pages for server-side JSON-LD price data.
+   * - 'simulation': POST the checkout orderForm simulation per SKU. The only path
+   *                 that surfaces VTEX "PromoVolumen" quantity promos (e.g. "2da al
+   *                 70%") for stores that hide them from the IS-API teasers AND from
+   *                 search-promotions (confirmed for masonline). Captures the flat
+   *                 catalog discount too (items[].price vs listPrice).
    * - 'none':       skip enrichment entirely; discounts come from the crawl itself.
    *
    * When unset, the strategy is derived: promoSeller present → 'promotions', else → 'jsonld'.
    */
-  enrichStrategy?: 'promotions' | 'jsonld' | 'none';
+  enrichStrategy?: 'promotions' | 'jsonld' | 'simulation' | 'none';
+  /**
+   * Seller id used for the 'simulation' enrich strategy. The promo engine only
+   * fires (and returns real prices) for the seller that actually sells the SKU —
+   * for masonline that is the marketplace default "1", NOT the regional fulfillment
+   * sellers (masonlineprodXXXX return price=null). Defaults to "1" when unset.
+   */
+  simSeller?: string;
   /**
    * When true, the normalizer falls back to ListPrice to detect a discount when
    * PriceWithoutDiscount === Price (i.e. the super encodes its strike-through in

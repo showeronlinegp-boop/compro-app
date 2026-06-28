@@ -2,10 +2,10 @@
  * supers.test.ts — Unit tests for resolveEnrichStrategy.
  *
  * Verifies:
- *   - carrefour → 'none'  (explicit config wins)
+ *   - carrefour → 'none'       (explicit config wins)
  *   - vea       → 'promotions' (derived from promoSeller)
- *   - dia       → 'jsonld'    (no promoSeller, no explicit override)
- *   - masonline → 'jsonld'    (same — default for stores without promoSeller)
+ *   - dia       → 'jsonld'     (no promoSeller, no explicit override)
+ *   - masonline → 'simulation' (explicit override — its promos live only in checkout sim)
  *   - explicit enrichStrategy override always wins over the derived default
  */
 
@@ -25,8 +25,8 @@ describe('resolveEnrichStrategy', () => {
     expect(resolveEnrichStrategy('dia')).toBe('jsonld');
   });
 
-  it('masonline → jsonld (no promoSeller, no explicit override)', () => {
-    expect(resolveEnrichStrategy('masonline')).toBe('jsonld');
+  it('masonline → simulation (explicit override)', () => {
+    expect(resolveEnrichStrategy('masonline')).toBe('simulation');
   });
 
   it('unknown super key → jsonld (safe fallback, no config found)', () => {
