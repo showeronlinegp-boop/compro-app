@@ -406,6 +406,13 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     navigate('/planner', { replace: true });
   }
 
+  // Onboarding is optional: persist the opt-out locally so the app doesn't
+  // redirect here again, then drop the user into the main app.
+  function handleSkip() {
+    localStorage.setItem('onboarding_skipped', '1');
+    navigate('/', { replace: true });
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-xl border border-gray-100 w-full max-w-lg p-6">
@@ -494,6 +501,18 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             </button>
           )}
         </div>
+
+        {/* Optional escape hatch — onboarding is not mandatory */}
+        {step < 3 && (
+          <button
+            type="button"
+            onClick={handleSkip}
+            disabled={loading}
+            className="mt-3 w-full text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-40"
+          >
+            Saltar por ahora
+          </button>
+        )}
       </div>
     </div>
   );
