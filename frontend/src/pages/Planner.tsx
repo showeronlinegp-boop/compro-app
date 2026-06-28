@@ -356,8 +356,8 @@ function ListTab({ list, onMarkBought, onChangeFreq, onRemove, onSwap }: ListTab
       {/* lg+: two-column layout — sticky category nav on the left */}
       <div className="lg:grid lg:grid-cols-[13rem_1fr] lg:gap-6">
         {/* Category nav — hidden on mobile, sticky on lg+ */}
-        <aside className="hidden lg:block">
-          <div className="lg:sticky lg:top-[4.5rem] lg:self-start">
+        <aside className="hidden lg:block lg:self-start">
+          <div className="lg:sticky lg:top-[4.5rem]">
             <CategoryNav groups={navGroups} />
           </div>
         </aside>

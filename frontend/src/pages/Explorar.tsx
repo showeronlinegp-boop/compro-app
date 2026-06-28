@@ -19,6 +19,117 @@ import type {
 
 const SKELETON_KEYS = Array.from({ length: 12 }, (_, i) => `sk-${i}`) as string[];
 
+// ─── FilterSidebar ────────────────────────────────────────────────────────────
+// Module-level so React never unmounts/remounts it on Explorar re-renders.
+
+interface FilterSidebarProps {
+  categories: TaxonomyEntry[];
+  category: string;
+  onSelectCategory: (slug: string) => void;
+  discount: boolean;
+  onToggleDiscount: () => void;
+  sort: SortKey;
+  onChangeSort: (s: SortKey) => void;
+}
+
+/** Desktop sidebar: vertical category list + filter controls. Hidden on <lg. */
+function FilterSidebar({
+  categories,
+  category,
+  onSelectCategory,
+  discount,
+  onToggleDiscount,
+  sort,
+  onChangeSort,
+}: FilterSidebarProps) {
+  return (
+    <aside aria-label="Filtros" className="hidden lg:block lg:self-start">
+      {/* Sticky wrapper — sticks to viewport as the grid scrolls. */}
+      <div className="lg:sticky lg:top-[4.5rem] space-y-6">
+        {/* Categorías section */}
+        <section aria-labelledby="sidebar-cats-heading">
+          <h2
+            id="sidebar-cats-heading"
+            className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2"
+          >
+            Categorías
+          </h2>
+          <ul className="space-y-0.5">
+            <li>
+              <button
+                type="button"
+                onClick={() => onSelectCategory('')}
+                className={`w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-colors ${FOCUS_RING} ${
+                  !category ? 'bg-gray-800 text-white' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                Todo
+              </button>
+            </li>
+            {categories.map((cat) => (
+              <li key={cat.slug}>
+                <button
+                  type="button"
+                  onClick={() => onSelectCategory(cat.slug)}
+                  className={`w-full text-left flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${FOCUS_RING} ${
+                    category === cat.slug
+                      ? 'bg-indigo-600 text-white'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <span aria-hidden="true">{cat.icon}</span>
+                  <span>{cat.label}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        {/* Filtros section */}
+        <section aria-labelledby="sidebar-filters-heading">
+          <h2
+            id="sidebar-filters-heading"
+            className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2"
+          >
+            Filtros
+          </h2>
+          <div className="space-y-4">
+            {/* Discount toggle */}
+            <button
+              type="button"
+              onClick={onToggleDiscount}
+              className={`w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-colors ${FOCUS_RING} ${
+                discount ? 'bg-red-500 text-white' : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              🔥 Con descuento
+            </button>
+
+            {/* Sort */}
+            <div>
+              <label htmlFor="sidebar-sort" className="block text-xs text-gray-500 mb-1.5">
+                Ordenar
+              </label>
+              <select
+                id="sidebar-sort"
+                value={sort}
+                onChange={(e) => onChangeSort(e.target.value as SortKey)}
+                className={`w-full text-sm font-medium text-gray-700 px-3 py-2 rounded-xl border border-gray-200 bg-white shadow-sm cursor-pointer ${FOCUS_RING_INPUT}`}
+              >
+                {SORT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </section>
+      </div>
+    </aside>
+  );
+}
+
 const SORT_OPTIONS: ReadonlyArray<{ value: SortKey; label: string }> = [
   { value: 'relevance', label: 'Relevancia' },
   { value: 'price_asc', label: 'Precio: menor a mayor' },
@@ -146,100 +257,6 @@ export default function Explorar({
     setQ('');
     setCategory('');
     setDiscount(false);
-  }
-
-  // ---------------------------------------------------------------------------
-  // Sub-components (inline — presentational only, no state of their own)
-  // ---------------------------------------------------------------------------
-
-  /** Desktop sidebar: vertical category list + filter controls. Hidden on <lg. */
-  function FilterSidebar() {
-    return (
-      <aside aria-label="Filtros" className="hidden lg:block">
-        {/* Sticky wrapper — sticks to viewport as the grid scrolls. */}
-        <div className="lg:sticky lg:top-[4.5rem] lg:self-start space-y-6">
-          {/* Categorías section */}
-          <section aria-labelledby="sidebar-cats-heading">
-            <h2
-              id="sidebar-cats-heading"
-              className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2"
-            >
-              Categorías
-            </h2>
-            <ul className="space-y-0.5">
-              <li>
-                <button
-                  type="button"
-                  onClick={() => setCategory('')}
-                  className={`w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-colors ${FOCUS_RING} ${
-                    !category ? 'bg-gray-800 text-white' : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  Todo
-                </button>
-              </li>
-              {categories.map((cat) => (
-                <li key={cat.slug}>
-                  <button
-                    type="button"
-                    onClick={() => setCategory((c) => (c === cat.slug ? '' : cat.slug))}
-                    className={`w-full text-left flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${FOCUS_RING} ${
-                      category === cat.slug
-                        ? 'bg-indigo-600 text-white'
-                        : 'text-gray-600 hover:bg-gray-100'
-                    }`}
-                  >
-                    <span aria-hidden="true">{cat.icon}</span>
-                    <span>{cat.label}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          {/* Filtros section */}
-          <section aria-labelledby="sidebar-filters-heading">
-            <h2
-              id="sidebar-filters-heading"
-              className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2"
-            >
-              Filtros
-            </h2>
-            <div className="space-y-4">
-              {/* Discount toggle */}
-              <button
-                type="button"
-                onClick={() => setDiscount((d) => !d)}
-                className={`w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-colors ${FOCUS_RING} ${
-                  discount ? 'bg-red-500 text-white' : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                🔥 Con descuento
-              </button>
-
-              {/* Sort */}
-              <div>
-                <label htmlFor="sidebar-sort" className="block text-xs text-gray-500 mb-1.5">
-                  Ordenar
-                </label>
-                <select
-                  id="sidebar-sort"
-                  value={sort}
-                  onChange={(e) => setSort(e.target.value as SortKey)}
-                  className={`w-full text-sm font-medium text-gray-700 px-3 py-2 rounded-xl border border-gray-200 bg-white shadow-sm cursor-pointer ${FOCUS_RING_INPUT}`}
-                >
-                  {SORT_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </section>
-        </div>
-      </aside>
-    );
   }
 
   return (
@@ -386,7 +403,7 @@ export default function Explorar({
         </button>
 
         <label className="ml-auto flex items-center gap-1.5 text-xs text-gray-500">
-          <span className="hidden sm:inline">Ordenar:</span>
+          <span className="sr-only sm:not-sr-only">Ordenar:</span>
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as SortKey)}
@@ -404,7 +421,15 @@ export default function Explorar({
       {/* ── Two-column layout on lg+: [sidebar | grid] ───────────────────────── */}
       <div className="lg:grid lg:grid-cols-[13rem_1fr] lg:gap-6">
         {/* Left sidebar — desktop only */}
-        <FilterSidebar />
+        <FilterSidebar
+          categories={categories}
+          category={category}
+          onSelectCategory={(slug) => setCategory((c) => (c === slug ? '' : slug))}
+          discount={discount}
+          onToggleDiscount={() => setDiscount((d) => !d)}
+          sort={sort}
+          onChangeSort={setSort}
+        />
 
         {/* Main content column */}
         <div className="min-w-0">

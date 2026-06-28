@@ -228,7 +228,7 @@ export default function Cart() {
       {/* ─── Editar tab ─────────────────────────────────────────────────────── */}
       {/* Cap list width so rows don't span the full 7xl container (void avoidance) */}
       {tab === 'edit' && (
-        <div className="max-w-3xl flex flex-col gap-3">
+        <div className="max-w-3xl mx-auto flex flex-col gap-3">
           {items.map((item) => {
             const refPrice = item.offer_price ?? item.raw_price;
 

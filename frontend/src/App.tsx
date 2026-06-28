@@ -312,7 +312,7 @@ function AppShell() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Navbar */}
-      <nav className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-40">
+      <nav aria-label="Principal" className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-40">
         <div className="w-full px-4 sm:px-6 lg:px-8 flex items-center h-14 gap-3 sm:gap-6">
           <span className="font-bold text-gray-900 text-base tracking-tight flex-shrink-0">
             🛒 COMPRO
@@ -455,7 +455,7 @@ function AppShell() {
 
       {/* Bottom tab bar — primary navigation on small screens (the inline top-bar
           links are hidden < lg). Keeps the top bar from overflowing the viewport. */}
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-gray-100">
+      <nav aria-label="Navegación inferior" className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-gray-100">
         <div className="flex items-stretch">
           {[
             { to: '/', label: 'Explorar', icon: '🔍' },
