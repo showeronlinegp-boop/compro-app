@@ -313,7 +313,7 @@ function AppShell() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Navbar */}
       <nav aria-label="Principal" className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-40">
-        <div className="w-full px-4 sm:px-6 lg:px-8 flex items-center h-14 gap-3 sm:gap-6">
+        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 flex items-center h-14 gap-3 sm:gap-6">
           <span className="font-bold text-gray-900 text-base tracking-tight flex-shrink-0">
             🛒 COMPRO
           </span>

@@ -362,8 +362,10 @@ function ListTab({ list, onMarkBought, onChangeFreq, onRemove, onSwap }: ListTab
           </div>
         </aside>
 
-        {/* Grouped list — full width on mobile, right column on lg+ */}
-        <div>{groupedList}</div>
+        {/* Grouped list — full width on mobile, right column on lg+.
+            Capped width keeps each row scannable (item info next to its controls)
+            instead of stretching controls to the far edge on wide screens. */}
+        <div className="max-w-4xl">{groupedList}</div>
       </div>
 
       {swapItem && <SwapModal item={swapItem} onSwap={onSwap} onClose={() => setSwapItem(null)} />}

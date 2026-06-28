@@ -20,12 +20,17 @@ interface PageContainerProps {
  * gutters: px-4 (mobile) → sm:px-6 (≥640px) → lg:px-8 (≥1024px).
  *
  * Onboarding keeps its own narrow layout and must NOT use this component.
+ *
+ * Gutters grow on larger screens (px-4 → 2xl:px-16) so content keeps a little
+ * breathing room from the viewport edge instead of running to the very limit.
  */
 export function PageContainer({ children, size = 'default', className }: PageContainerProps) {
   const widthClass = size === 'narrow' ? 'max-w-lg mx-auto' : 'w-full';
 
   return (
-    <div className={`${widthClass} px-4 sm:px-6 lg:px-8 py-6 ${className ?? ''}`}>
+    <div
+      className={`${widthClass} px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-6 ${className ?? ''}`}
+    >
       {children}
     </div>
   );
