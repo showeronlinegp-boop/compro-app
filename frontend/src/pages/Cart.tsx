@@ -89,9 +89,14 @@ export default function Cart() {
     return (
       <div
         data-testid="opportunities-section"
-        className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5"
+        className="bg-white rounded-2xl border border-amber-300 shadow-sm p-5"
       >
-        <h3 className="font-bold text-gray-900 mb-3">Oportunidades</h3>
+        <h2 className="flex items-center gap-2 font-bold text-gray-900">
+          <span aria-hidden="true">💡</span> Oportunidades de ahorro
+        </h2>
+        <p className="text-xs text-gray-500 mt-0.5 mb-4">
+          Pequeños ajustes que activan promos y bajan el precio por unidad
+        </p>
         <div className="space-y-3">
           {opps.map((opp) => (
             <PromoNudge
@@ -250,6 +255,9 @@ export default function Cart() {
               </div>
             ) : (
               <div className="space-y-6">
+                {/* Oportunidades — hero callout, surfaced first as the most actionable saving */}
+                {opportunitiesSection}
+
                 {/* Transparency line */}
                 {crossSuperMatchedCount < items.length && (
                   <p className="text-xs text-gray-500 text-center">
@@ -302,9 +310,6 @@ export default function Cart() {
                   </div>
                   <OptionBBreakdown result={compareResult.option_b} items={compareResult.items} />
                 </div>
-
-                {/* Oportunidades */}
-                {opportunitiesSection}
 
                 {/* Tabla detalle con precios por línea */}
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">

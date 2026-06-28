@@ -384,8 +384,8 @@ describe('Cart Oportunidades section', () => {
     expect(section.textContent).toContain('más de');
     expect(section.textContent).toContain('Oreo');
 
-    // target_qty shown in the Agregar button
-    expect(screen.getByRole('button', { name: /Llevar a 2/i })).toBeDefined();
+    // missing_units shown in the Agregar button copy
+    expect(screen.getByRole('button', { name: /Agregar 1 para la promo/i })).toBeDefined();
 
     // Super name pills appear inside the nudge section
     expect(section.textContent).toMatch(/DIA/i);
@@ -412,10 +412,10 @@ describe('Cart Oportunidades section', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
     });
 
-    await waitFor(() => expect(screen.getByRole('button', { name: /Llevar a 2/i })).toBeDefined());
+    await waitFor(() => expect(screen.getByRole('button', { name: /Agregar 1 para la promo/i })).toBeDefined());
     expect(mockCompare).toHaveBeenCalledTimes(1);
 
-    const btn = screen.getByRole('button', { name: /Llevar a 2/i });
+    const btn = screen.getByRole('button', { name: /Agregar 1 para la promo/i });
 
     // Click to start the call
     act(() => {
@@ -453,15 +453,15 @@ describe('Cart Oportunidades section', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
     });
 
-    await waitFor(() => expect(screen.getByRole('button', { name: /Llevar a 2/i })).toBeDefined());
+    await waitFor(() => expect(screen.getByRole('button', { name: /Agregar 1 para la promo/i })).toBeDefined());
 
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: /Llevar a 2/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Agregar 1 para la promo/i }));
     });
 
     // After the rejection settles the button must be re-enabled (no loading state)
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: /Llevar a 2/i }).hasAttribute('disabled')).toBe(
+      expect(screen.getByRole('button', { name: /Agregar 1 para la promo/i }).hasAttribute('disabled')).toBe(
         false,
       ),
     );
@@ -473,6 +473,7 @@ describe('Cart Oportunidades section', () => {
       shopping_id: 1,
       current_best_unit_price: 1000,
       effective_unit_price_at_target: 700,
+      missing_units: 2,
       target_qty: 3,
       best_super: 'dia',
       current_best_super: 'vea',
@@ -482,6 +483,7 @@ describe('Cart Oportunidades section', () => {
       shopping_id: 2,
       current_best_unit_price: 800,
       effective_unit_price_at_target: 600,
+      missing_units: 1,
       target_qty: 2,
       best_super: 'carrefour',
       current_best_super: 'dia',
@@ -538,10 +540,10 @@ describe('Cart Oportunidades section', () => {
     const section = screen.getByTestId('opportunities-section');
     const nudgeButtons = section.querySelectorAll('button[type="button"]');
 
-    // First nudge button should say "Llevar a 3" (item A — higher savings)
-    expect(nudgeButtons[0]?.textContent).toContain('Llevar a 3');
-    // Second nudge button should say "Llevar a 2" (item B — lower savings)
-    expect(nudgeButtons[1]?.textContent).toContain('Llevar a 2');
+    // First nudge button should say "Agregar 2 para la promo" (item A — higher savings)
+    expect(nudgeButtons[0]?.textContent).toContain('Agregar 2 para la promo');
+    // Second nudge button should say "Agregar 1 para la promo" (item B — lower savings)
+    expect(nudgeButtons[1]?.textContent).toContain('Agregar 1 para la promo');
   });
 
   it('does not render Oportunidades heading when all opportunity fields are null', async () => {
