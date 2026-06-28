@@ -11,6 +11,7 @@ import {
   ENRICH_HTML_CONC,
   ENRICH_PROMO_BATCH,
   ENRICH_PROMO_CONC,
+  ENRICH_SIM_QTY,
   ENRICH_SKU_CONC,
 } from './throttles.js';
 
@@ -96,3 +97,6 @@ export const ENV_ENRICH_SKU_CONC: number = numEnv('ENRICH_SKU_CONC', ENRICH_SKU_
 
 /** SKUs per search-promotions POST request (env: ENRICH_PROMO_BATCH). Hard endpoint limit = 20. */
 export const ENV_ENRICH_PROMO_BATCH: number = numEnv('ENRICH_PROMO_BATCH', ENRICH_PROMO_BATCH);
+
+/** Cart quantity for the 'simulation' enrich strategy (env: ENRICH_SIM_QTY). */
+export const ENV_ENRICH_SIM_QTY: number = numEnv('ENRICH_SIM_QTY', ENRICH_SIM_QTY);

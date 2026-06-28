@@ -85,6 +85,15 @@ export const ENRICH_PROMO_CONC = 8;
 /** Max concurrent SKU-ID variation fetches (enricher.js: SKU_CONC) */
 export const ENRICH_SKU_CONC = 10;
 
+/**
+ * Cart quantity used by the 'simulation' enrich strategy (masonline).
+ * 2 surfaces "2da al X%" / "2x1" promos — masonline's observed PromoVolumen promos
+ * are all 2-unit thresholds. Raise to 3 to also catch "3x2"/"3er al X%" (none seen
+ * on masonline as of the 2026-06 audit). The promo's real min_qty is parsed from the
+ * benefit label, so this only gates which promos ACTIVATE, not the computed price.
+ */
+export const ENRICH_SIM_QTY = 2;
+
 // ---------------------------------------------------------------------------
 // Migration (backend/migrate-sku-ids.js)
 // Used by the one-off sku_id backfill script.
