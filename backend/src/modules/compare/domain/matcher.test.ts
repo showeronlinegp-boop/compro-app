@@ -19,6 +19,7 @@ function makeItem(
     matches: matches.map((m, i) => ({
       super: m.super,
       product_id: m.product_id ?? i + 1,
+      sku_id: null,
       name: `Product ${i + 1}`,
       price: m.price,
       matched_by: 'barcode' as const,

@@ -326,6 +326,8 @@ export interface SourceRow {
 export interface SuperMatch {
   super: string;
   product_id: number;
+  /** VTEX sku_id of the matched product, for cart-add deep link. null if not enriched. */
+  sku_id: string | null;
   name: string;
   /** EFFECTIVE line total after the best nth_unit promo (× qty). */
   price: number;

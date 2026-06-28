@@ -80,6 +80,9 @@ async function resolveCart(prisma: PrismaLike): Promise<{ id: number }> {
 // ─── Hydration helper ─────────────────────────────────────────────────────────
 
 async function hydrateCart(prisma: PrismaLike, cart_id: number): Promise<CartResult> {
+  // REQ-10 verification (cart-handoff): `p.*` includes `sku_id` from the products table.
+  // ProductRow.sku_id: string | null is part of the spread in parseCartItemRow, so
+  // CartItemEntry.sku_id is correctly returned in the GET /cart response. No change needed.
   const rows = await prisma.$queryRaw<CartItemRow[]>(Prisma.sql`
     SELECT
       ci.id AS cart_item_id,
