@@ -34,6 +34,7 @@ function makeItems(matchOverrides: Partial<SuperMatch> = {}): CompareItem[] {
       home_promo_label: null,
       home_info_badges: [],
       matches: [makeMatch(matchOverrides)],
+      opportunity: null,
     },
   ];
 }

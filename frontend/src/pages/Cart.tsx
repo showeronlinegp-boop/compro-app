@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../api';
-import { ItemMatchTable, OptionATable, OptionBBreakdown } from '../components/compare';
+import { ItemMatchTable, OptionATable, OptionBBreakdown, PromoNudge } from '../components/compare';
 import { useCart } from '../contexts/CartContext';
 import { pesos } from '../supers';
 import type { CompareResult } from '../types/api';
@@ -57,16 +57,61 @@ export default function Cart() {
 
   // ─── Header copy (WU-6) ─────────────────────────────────────────────────────
   // N = distinct products, M = total units
+  const productWord = items.length === 1 ? 'producto' : 'productos';
   const headerCopy =
     itemCount === items.length
-      ? `${items.length} productos`
-      : `${items.length} productos · ${itemCount} unidades`;
+      ? `${items.length} ${productWord}`
+      : `${items.length} ${productWord} · ${itemCount} unidades`;
 
   // ─── Compare transparency line ───────────────────────────────────────────────
   // Only counts items with at least one match from a super other than their home super.
   const crossSuperMatchedCount = compareResult
     ? compareResult.items.filter((i) => i.matches.some((m) => m.super !== i.home_super)).length
     : 0;
+
+  // ─── Oportunidades section ───────────────────────────────────────────────────
+  // projected total savings = (unit saving) × target_qty, sort desc
+  function savings(o: {
+    current_best_unit_price: number;
+    effective_unit_price_at_target: number;
+    target_qty: number;
+  }) {
+    return (o.current_best_unit_price - o.effective_unit_price_at_target) * o.target_qty;
+  }
+
+  const opportunitiesSection = (() => {
+    if (!compareResult) return null;
+    const opps = compareResult.items.flatMap((item) =>
+      item.opportunity != null ? [{ opportunity: item.opportunity, name: item.name }] : [],
+    );
+    opps.sort((a, b) => savings(b.opportunity) - savings(a.opportunity));
+    if (opps.length === 0) return null;
+    return (
+      <div
+        data-testid="opportunities-section"
+        className="bg-white rounded-2xl border border-amber-300 shadow-sm p-5"
+      >
+        <h2 className="flex items-center gap-2 font-bold text-gray-900">
+          <span aria-hidden="true">💡</span> Oportunidades de ahorro
+        </h2>
+        <p className="text-xs text-gray-500 mt-0.5 mb-4">
+          Pequeños ajustes que activan promos y bajan el precio por unidad
+        </p>
+        <div className="space-y-3">
+          {opps.map((opp) => (
+            <PromoNudge
+              key={opp.opportunity.shopping_id}
+              opportunity={opp.opportunity}
+              name={opp.name}
+              onAgregar={async (shoppingId, targetQty) => {
+                await updateQty(shoppingId, targetQty);
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  })();
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -210,6 +255,9 @@ export default function Cart() {
               </div>
             ) : (
               <div className="space-y-6">
+                {/* Oportunidades — hero callout, surfaced first as the most actionable saving */}
+                {opportunitiesSection}
+
                 {/* Transparency line */}
                 {crossSuperMatchedCount < items.length && (
                   <p className="text-xs text-gray-500 text-center">

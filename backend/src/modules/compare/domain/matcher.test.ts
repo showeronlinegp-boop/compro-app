@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildCompareResult, calcOptionA, calcOptionB } from './matcher.js';
 import type { CompareItem } from '../../../shared/types.js';
+import { buildCompareResult, calcOptionA, calcOptionB } from './matcher.js';
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -26,6 +26,7 @@ function makeItem(
       promo_label: null,
       info_badges: [],
     })),
+    opportunity: null,
   };
 }
 
@@ -34,12 +35,15 @@ function makeItem(
 describe('calcOptionA', () => {
   it('returns one summary per distinct super across all items', () => {
     const items: CompareItem[] = [
-      makeItem(1, [{ super: 'vea', price: 100 }, { super: 'carrefour', price: 110 }]),
+      makeItem(1, [
+        { super: 'vea', price: 100 },
+        { super: 'carrefour', price: 110 },
+      ]),
       makeItem(2, [{ super: 'vea', price: 90 }]),
     ];
     const result = calcOptionA(items);
-    expect(result.map(r => r.super)).toContain('vea');
-    expect(result.map(r => r.super)).toContain('carrefour');
+    expect(result.map((r) => r.super)).toContain('vea');
+    expect(result.map((r) => r.super)).toContain('carrefour');
     expect(result).toHaveLength(2);
   });
 
@@ -55,11 +59,14 @@ describe('calcOptionA', () => {
 
   it('counts missing_items for items with no match in a super', () => {
     const items: CompareItem[] = [
-      makeItem(1, [{ super: 'vea', price: 100 }, { super: 'dia', price: 95 }]),
+      makeItem(1, [
+        { super: 'vea', price: 100 },
+        { super: 'dia', price: 95 },
+      ]),
       makeItem(2, [{ super: 'vea', price: 80 }]),
     ];
     const result = calcOptionA(items);
-    const dia = result.find(r => r.super === 'dia');
+    const dia = result.find((r) => r.super === 'dia');
     expect(dia?.missing_items).toBe(1);
     expect(dia?.coverage).toBe(50);
   });
@@ -73,7 +80,7 @@ describe('calcOptionA', () => {
     ];
     // vea has 3 of 4 items → coverage = round(3/4*100) = 75
     const result = calcOptionA(items);
-    const vea = result.find(r => r.super === 'vea');
+    const vea = result.find((r) => r.super === 'vea');
     expect(vea?.coverage).toBe(75);
     expect(vea?.missing_items).toBe(1);
   });
@@ -113,13 +120,11 @@ describe('calcOptionA', () => {
   });
 
   it('total is 0 and coverage is 0 when no items have a match in that super', () => {
-    const items: CompareItem[] = [
-      makeItem(1, [{ super: 'carrefour', price: 100 }]),
-    ];
+    const items: CompareItem[] = [makeItem(1, [{ super: 'carrefour', price: 100 }])];
     // dia appears in no matches so it will not appear in result at all
     // vea appears in no matches either
     const result = calcOptionA(items);
-    expect(result.every(r => r.super !== 'vea')).toBe(true);
+    expect(result.every((r) => r.super !== 'vea')).toBe(true);
   });
 });
 
@@ -141,8 +146,14 @@ describe('calcOptionB', () => {
 
   it('sums cheapest matches for total', () => {
     const items: CompareItem[] = [
-      makeItem(1, [{ super: 'vea', price: 100 }, { super: 'carrefour', price: 80 }]),
-      makeItem(2, [{ super: 'vea', price: 200 }, { super: 'carrefour', price: 250 }]),
+      makeItem(1, [
+        { super: 'vea', price: 100 },
+        { super: 'carrefour', price: 80 },
+      ]),
+      makeItem(2, [
+        { super: 'vea', price: 200 },
+        { super: 'carrefour', price: 250 },
+      ]),
     ];
     // item1 cheapest: carrefour 80, item2 cheapest: vea 200 → total = 280
     const result = calcOptionB(items);
@@ -150,10 +161,7 @@ describe('calcOptionB', () => {
   });
 
   it('skips items with empty matches array', () => {
-    const items: CompareItem[] = [
-      makeItem(1, [{ super: 'vea', price: 100 }]),
-      makeItem(2, []),
-    ];
+    const items: CompareItem[] = [makeItem(1, [{ super: 'vea', price: 100 }]), makeItem(2, [])];
     const result = calcOptionB(items);
     expect(result.total).toBe(100);
     expect(result.breakdown).toHaveLength(1);
@@ -162,8 +170,14 @@ describe('calcOptionB', () => {
 
   it('aggregates by_super sorted by total DESC', () => {
     const items: CompareItem[] = [
-      makeItem(1, [{ super: 'dia', price: 50 }, { super: 'vea', price: 200 }]),
-      makeItem(2, [{ super: 'dia', price: 50 }, { super: 'vea', price: 100 }]),
+      makeItem(1, [
+        { super: 'dia', price: 50 },
+        { super: 'vea', price: 200 },
+      ]),
+      makeItem(2, [
+        { super: 'dia', price: 50 },
+        { super: 'vea', price: 100 },
+      ]),
     ];
     // both items cheapest at dia (50 each) → dia total=100, vea not selected
     const result = calcOptionB(items);
@@ -174,9 +188,7 @@ describe('calcOptionB', () => {
   });
 
   it('breakdown contains shopping_id, best_super, price per included item', () => {
-    const items: CompareItem[] = [
-      makeItem(42, [{ super: 'vea', price: 99.99 }]),
-    ];
+    const items: CompareItem[] = [makeItem(42, [{ super: 'vea', price: 99.99 }])];
     const result = calcOptionB(items);
     expect(result.breakdown[0]).toEqual({ shopping_id: 42, best_super: 'vea', price: 99.99 });
   });
@@ -217,8 +229,14 @@ describe('calcOptionB', () => {
 describe('buildCompareResult', () => {
   it('sets savings_vs_option_a = cheapest option_a total - option_b total', () => {
     const items: CompareItem[] = [
-      makeItem(1, [{ super: 'vea', price: 300 }, { super: 'carrefour', price: 280 }]),
-      makeItem(2, [{ super: 'vea', price: 200 }, { super: 'carrefour', price: 180 }]),
+      makeItem(1, [
+        { super: 'vea', price: 300 },
+        { super: 'carrefour', price: 280 },
+      ]),
+      makeItem(2, [
+        { super: 'vea', price: 200 },
+        { super: 'carrefour', price: 180 },
+      ]),
     ];
     // option_a: carrefour (280+180=460 coverage 100), vea (300+200=500 coverage 100)
     // cheapest option_a = carrefour total = 460
@@ -250,9 +268,7 @@ describe('buildCompareResult', () => {
   });
 
   it('savings is never negative', () => {
-    const items: CompareItem[] = [
-      makeItem(1, [{ super: 'vea', price: 100 }]),
-    ];
+    const items: CompareItem[] = [makeItem(1, [{ super: 'vea', price: 100 }])];
     // option_a cheapest = 100, option_b = 100 → savings = 0
     const result = buildCompareResult(items);
     expect(result.option_b.savings_vs_option_a).toBeGreaterThanOrEqual(0);
@@ -274,7 +290,10 @@ describe('buildCompareResult', () => {
 
   it('option_b.savings_vs_option_a is rounded to 2 decimal places', () => {
     const items: CompareItem[] = [
-      makeItem(1, [{ super: 'vea', price: 100.005 }, { super: 'dia', price: 100 }]),
+      makeItem(1, [
+        { super: 'vea', price: 100.005 },
+        { super: 'dia', price: 100 },
+      ]),
     ];
     const result = buildCompareResult(items);
     const savings = result.option_b.savings_vs_option_a;

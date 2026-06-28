@@ -255,6 +255,44 @@ export interface CartResult {
 
 // ─── Compare multi-super ─────────────────────────────────────────────────────
 
+/**
+ * A single actionable promo nudge for a cart item.
+ *
+ * Field cluster summary:
+ *
+ * CURRENT STATE (at the user's existing quantity):
+ *   - `current_best_unit_price`  Cheapest EFFECTIVE unit price across all supers at `currentQty`.
+ *                                 Uses `pickBestNthUnitPromo` — not raw shelf price.
+ *   - `current_best_super`       The super that delivers `current_best_unit_price`.
+ *
+ * TARGET STATE (if the user adds `missing_units`):
+ *   - `target_qty`               currentQty + missing_units (≤ 999 — the cart cap).
+ *   - `best_super`               The super whose nth_unit promo wins at `target_qty`.
+ *   - `best_product_id`          Its product_id in the products table.
+ *   - `effective_unit_price_at_target`  Effective unit price of `best_super` at `target_qty`.
+ *   - `promo_label`              Label of the winning nth_unit promo at `target_qty`
+ *                                 (may differ from the promo that wins at `currentQty`).
+ *
+ * FLIP FLAG:
+ *   - `flips_super`  === (best_super !== current_best_super).
+ *                    True when adding units changes which super is cheapest.
+ *
+ * IDENTITY:
+ *   - `shopping_id`  == cart_item_id in the cart context.
+ */
+export interface PromoOpportunity {
+  shopping_id: number; // == cart_item_id in cart context
+  missing_units: number;
+  target_qty: number;
+  best_super: string;
+  best_product_id: number;
+  effective_unit_price_at_target: number;
+  current_best_unit_price: number;
+  current_best_super: string;
+  flips_super: boolean;
+  promo_label: string;
+}
+
 export interface SuperMatch {
   super: string;
   product_id: number;
@@ -284,6 +322,7 @@ export interface CompareItem {
   home_promo_label: string | null;
   home_info_badges: string[];
   matches: SuperMatch[];
+  opportunity: PromoOpportunity | null;
 }
 
 export interface SuperSummary {

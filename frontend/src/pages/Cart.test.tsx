@@ -84,6 +84,7 @@ function makeCompareResult(overrides: Partial<CompareResult> = {}): CompareResul
             info_badges: [],
           },
         ],
+        opportunity: null,
       },
     ],
     option_a: [
@@ -197,6 +198,7 @@ describe('Cart compare tab behavior', () => {
               info_badges: [],
             },
           ],
+          opportunity: null,
         },
         {
           shopping_id: 2,
@@ -219,6 +221,7 @@ describe('Cart compare tab behavior', () => {
               info_badges: [],
             },
           ],
+          opportunity: null,
         },
       ],
     });
@@ -285,5 +288,275 @@ describe('Cart compare tab behavior', () => {
 
     // Still exactly one call
     await waitFor(() => expect(mockCompare).toHaveBeenCalledTimes(1));
+  });
+});
+
+// ─── Task 6: PromoNudge / Oportunidades section ───────────────────────────────
+
+import type { PromoOpportunity } from '../types/api';
+
+function makeOpportunity(overrides: Partial<PromoOpportunity> = {}): PromoOpportunity {
+  return {
+    shopping_id: 1,
+    missing_units: 1,
+    target_qty: 2,
+    best_super: 'dia',
+    best_product_id: 42,
+    effective_unit_price_at_target: 800,
+    current_best_unit_price: 1000,
+    current_best_super: 'vea',
+    flips_super: false,
+    promo_label: '2do al 80%',
+    ...overrides,
+  };
+}
+
+function makeCompareResultWithOpportunity(
+  opp: PromoOpportunity | null,
+  overrides: Partial<CompareResult> = {},
+): CompareResult {
+  return {
+    items: [
+      {
+        shopping_id: 1,
+        name: 'Oreo',
+        home_super: 'vea',
+        home_price: 1000,
+        home_unit_price: 1000,
+        home_promo_label: null,
+        home_info_badges: [],
+        matches: [
+          {
+            super: 'dia',
+            product_id: 42,
+            name: 'Oreo DIA',
+            price: 800,
+            matched_by: 'barcode',
+            unit_price: 1000,
+            promo_label: '2do al 80%',
+            info_badges: [],
+          },
+        ],
+        opportunity: opp,
+      },
+    ],
+    option_a: [{ super: 'dia', total: 800, coverage: 100, missing_items: 0 }],
+    option_b: {
+      total: 800,
+      by_super: [{ super: 'dia', total: 800, coverage: 100, missing_items: 0 }],
+      breakdown: [{ shopping_id: 1, best_super: 'dia', price: 800 }],
+      savings_vs_option_a: 200,
+    },
+    ...overrides,
+  };
+}
+
+describe('Cart Oportunidades section', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockItems = [makeItem()];
+    mockItemCount = 1;
+  });
+
+  it('renders nudge card copy and flips badge when flips_super=true', async () => {
+    const opp = makeOpportunity({ flips_super: true });
+    mockCompare.mockResolvedValue(makeCompareResultWithOpportunity(opp));
+
+    renderCart();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
+    });
+
+    // Wait for the Oportunidades section root to appear
+    await waitFor(() => expect(screen.getByTestId('opportunities-section')).toBeDefined());
+
+    const section = screen.getByTestId('opportunities-section');
+
+    // Section heading
+    expect(section.textContent).toContain('Oportunidades');
+
+    // Nudge copy: "Agregá N más de <name> te conviene …"
+    expect(section.textContent).toContain('Agregá');
+    expect(section.textContent).toContain('más de');
+    expect(section.textContent).toContain('Oreo');
+
+    // missing_units shown in the Agregar button copy
+    expect(screen.getByRole('button', { name: /Agregar 1 para la promo/i })).toBeDefined();
+
+    // Super name pills appear inside the nudge section
+    expect(section.textContent).toMatch(/DIA/i);
+    expect(section.textContent).toMatch(/VEA/i);
+
+    // flips badge
+    expect(screen.getByTestId('flips-badge')).toBeDefined();
+    expect(screen.getByTestId('flips-badge').textContent).toContain('Cambia el súper más barato');
+  });
+
+  it('Agregar button calls updateQty with (shopping_id, target_qty) and is disabled during the call; re-fetches compare when sig changes', async () => {
+    let resolveAgregar!: () => void;
+    mockUpdateQty.mockReturnValue(
+      new Promise<void>((resolve) => {
+        resolveAgregar = resolve;
+      }),
+    );
+
+    const opp = makeOpportunity({ shopping_id: 1, target_qty: 2 });
+    mockCompare.mockResolvedValue(makeCompareResultWithOpportunity(opp));
+
+    const { rerender } = renderCart();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
+    });
+
+    await waitFor(() => expect(screen.getByRole('button', { name: /Agregar 1 para la promo/i })).toBeDefined());
+    expect(mockCompare).toHaveBeenCalledTimes(1);
+
+    const btn = screen.getByRole('button', { name: /Agregar 1 para la promo/i });
+
+    // Click to start the call
+    act(() => {
+      fireEvent.click(btn);
+    });
+
+    // Button should be disabled while promise is in flight
+    await waitFor(() => expect(screen.getByRole('button', { name: /Agregando/i })).toBeDefined());
+    expect(screen.getByRole('button', { name: /Agregando/i }).hasAttribute('disabled')).toBe(true);
+
+    // Resolve updateQty — simulates the cart item quantity changing to target_qty (sig changes)
+    act(() => {
+      resolveAgregar();
+    });
+
+    await waitFor(() => expect(mockUpdateQty).toHaveBeenCalledWith(1, 2));
+
+    // Simulate the cart context reflecting the new quantity (sig changes from 1:1 → 1:2)
+    mockItems = [makeItem({ cart_item_id: 1, quantity: 2 })];
+    mockItemCount = 2;
+    rerender(<Cart />);
+
+    // The stale-sig guard must trigger a second compare fetch
+    await waitFor(() => expect(mockCompare).toHaveBeenCalledTimes(2));
+  });
+
+  it('Agregar button returns to enabled (loading=false) when onAgregar rejects', async () => {
+    mockUpdateQty.mockRejectedValue(new Error('network error'));
+
+    const opp = makeOpportunity({ shopping_id: 1, target_qty: 2 });
+    mockCompare.mockResolvedValue(makeCompareResultWithOpportunity(opp));
+
+    renderCart();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
+    });
+
+    await waitFor(() => expect(screen.getByRole('button', { name: /Agregar 1 para la promo/i })).toBeDefined());
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: /Agregar 1 para la promo/i }));
+    });
+
+    // After the rejection settles the button must be re-enabled (no loading state)
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Agregar 1 para la promo/i }).hasAttribute('disabled')).toBe(
+        false,
+      ),
+    );
+  });
+
+  it('sorts nudge cards by projected savings descending', async () => {
+    // Item A: saving = (1000 - 700) × 3 = 900
+    const oppA: PromoOpportunity = makeOpportunity({
+      shopping_id: 1,
+      current_best_unit_price: 1000,
+      effective_unit_price_at_target: 700,
+      missing_units: 2,
+      target_qty: 3,
+      best_super: 'dia',
+      current_best_super: 'vea',
+    });
+    // Item B: saving = (800 - 600) × 2 = 400  (lower — should render second)
+    const oppB: PromoOpportunity = makeOpportunity({
+      shopping_id: 2,
+      current_best_unit_price: 800,
+      effective_unit_price_at_target: 600,
+      missing_units: 1,
+      target_qty: 2,
+      best_super: 'carrefour',
+      current_best_super: 'dia',
+    });
+
+    const result: CompareResult = {
+      items: [
+        {
+          shopping_id: 1,
+          name: 'Oreo',
+          home_super: 'vea',
+          home_price: 1000,
+          home_unit_price: 1000,
+          home_promo_label: null,
+          home_info_badges: [],
+          matches: [],
+          opportunity: oppA,
+        },
+        {
+          shopping_id: 2,
+          name: 'Leche',
+          home_super: 'dia',
+          home_price: 800,
+          home_unit_price: 800,
+          home_promo_label: null,
+          home_info_badges: [],
+          matches: [],
+          opportunity: oppB,
+        },
+      ],
+      option_a: [{ super: 'vea', total: 1800, coverage: 100, missing_items: 0 }],
+      option_b: {
+        total: 1300,
+        by_super: [{ super: 'vea', total: 1300, coverage: 100, missing_items: 0 }],
+        breakdown: [
+          { shopping_id: 1, best_super: 'vea', price: 1000 },
+          { shopping_id: 2, best_super: 'dia', price: 800 },
+        ],
+        savings_vs_option_a: 500,
+      },
+    };
+
+    mockItems = [makeItem({ cart_item_id: 1 }), makeItem({ cart_item_id: 2, name: 'Leche' })];
+    mockItemCount = 2;
+    mockCompare.mockResolvedValue(result);
+
+    renderCart();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
+    });
+
+    await waitFor(() => expect(screen.getByTestId('opportunities-section')).toBeDefined());
+
+    const section = screen.getByTestId('opportunities-section');
+    const nudgeButtons = section.querySelectorAll('button[type="button"]');
+
+    // First nudge button should say "Agregar 2 para la promo" (item A — higher savings)
+    expect(nudgeButtons[0]?.textContent).toContain('Agregar 2 para la promo');
+    // Second nudge button should say "Agregar 1 para la promo" (item B — lower savings)
+    expect(nudgeButtons[1]?.textContent).toContain('Agregar 1 para la promo');
+  });
+
+  it('does not render Oportunidades heading when all opportunity fields are null', async () => {
+    mockCompare.mockResolvedValue(makeCompareResultWithOpportunity(null));
+
+    renderCart();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
+    });
+
+    await waitFor(() => expect(screen.getByText('Opción A — Todo en un super')).toBeDefined());
+
+    expect(screen.queryByText('Oportunidades')).toBeNull();
+    expect(screen.queryByTestId('opportunities-section')).toBeNull();
   });
 });

@@ -524,6 +524,122 @@ describe('makeCompareRepo', () => {
     });
   });
 
+  // ── opportunity field ──────────────────────────────────────────────────────
+
+  describe('opportunity field', () => {
+    // Setup:
+    //   Product A (home, 'masonline'): shelfUnit=1600, no promo.
+    //   Product B ('dia'): shelfUnit=2000, promo="2do al 80%" (N=2, D=80), same barcode.
+    //
+    // At qty=1:
+    //   masonline: effectiveLineTotal(1600, undefined, 1)/1 = 1600 → currentBestUnit=1600, currentBestSuper='masonline'
+    //   dia at qty=1: effectiveLineTotal(2000, 2do, 1)/1 = 2000 (groups=0, rem=1) → 2000
+    //   dia missing=(2-(1%2))%2=1, target=2
+    //   dia at target=2: effectiveLineTotal(2000, 2do, 2)/2 = 2000*1.2/2=1200
+    //   improvement: 1600-1200=400 > max(1, 1600*0.005=8)=8 → FIRES; flips_super=true
+    //
+    // At qty=2:
+    //   masonline effUnit=1600; dia effUnit at qty=2=1200 → currentBestUnit=1200, currentBestSuper='dia'
+    //   dia: missing=(2-(2%2))%2=0 → skip → opportunity=null
+
+    it('(flip) qty=1 → opportunity non-null, flips_super=true, missing_units=1, shopping_id=item_id', async () => {
+      await withRollback(async (tx) => {
+        const prismaLike = tx as unknown as Parameters<typeof makeCompareRepo>[0];
+
+        const barcode = `bc-opp-${Date.now()}`;
+        const diaPromo: Promotion = {
+          label: '2do al 80%',
+          type: 'nth_unit',
+          min_qty: 2,
+          discount_pct: 80,
+        };
+
+        // Home: masonline, no promo, shelfUnit=1600
+        const homeId = await seedProduct(tx, {
+          super_key: 'masonline',
+          product_id: `mas-opp-${Date.now()}`,
+          name: 'Leche Entera 1L',
+          barcode,
+          raw_price: 1600,
+          promotions: [],
+        });
+
+        // Cross-super: dia with promo, shelfUnit=2000
+        // At target=2: effUnit=2000*1.2/2=1200 < 1600-8=1592 → improvement fires
+        await seedProduct(tx, {
+          super_key: 'dia',
+          product_id: `dia-opp-${Date.now()}`,
+          name: 'Leche Entera 1L',
+          barcode,
+          raw_price: 2000,
+          promotions: [diaPromo],
+        });
+
+        const source: SourceRow[] = [{ item_id: 99, product_id: homeId, quantity: 1 }];
+        const repo = makeCompareRepo(prismaLike);
+        const result = await repo.buildCompareItemsFromSource(source);
+
+        expect(result).toHaveLength(1);
+        const item = result[0];
+        if (!item) return;
+
+        expect(item.opportunity).not.toBeNull();
+        if (!item.opportunity) return;
+
+        // Improvement: dia at target=2 effUnit=1200 < masonline 1600-8=1592 → fires
+        expect(item.opportunity.best_super).toBe('dia');
+        expect(item.opportunity.flips_super).toBe(true); // dia !== masonline (home)
+        expect(item.opportunity.missing_units).toBeGreaterThan(0);
+        expect(item.opportunity.missing_units).toBe(1);
+        expect(item.opportunity.target_qty).toBe(2);
+        // shopping_id must be the source item_id (99), not the product_id
+        expect(item.opportunity.shopping_id).toBe(99);
+      });
+    });
+
+    it('(captured) qty=2 already at threshold → opportunity null', async () => {
+      await withRollback(async (tx) => {
+        const prismaLike = tx as unknown as Parameters<typeof makeCompareRepo>[0];
+
+        const barcode = `bc-opp-cap-${Date.now()}`;
+        const diaPromo: Promotion = {
+          label: '2do al 80%',
+          type: 'nth_unit',
+          min_qty: 2,
+          discount_pct: 80,
+        };
+
+        const homeId = await seedProduct(tx, {
+          super_key: 'masonline',
+          product_id: `mas-cap-${Date.now()}`,
+          name: 'Leche Entera 1L',
+          barcode,
+          raw_price: 1600,
+          promotions: [],
+        });
+        await seedProduct(tx, {
+          super_key: 'dia',
+          product_id: `dia-cap-${Date.now()}`,
+          name: 'Leche Entera 1L',
+          barcode,
+          raw_price: 2000,
+          promotions: [diaPromo],
+        });
+
+        // qty=2: dia is at a multiple of min_qty=2 → missing=0 → skip → opportunity null
+        const source: SourceRow[] = [{ item_id: 100, product_id: homeId, quantity: 2 }];
+        const repo = makeCompareRepo(prismaLike);
+        const result = await repo.buildCompareItemsFromSource(source);
+
+        expect(result).toHaveLength(1);
+        const item = result[0];
+        if (!item) return;
+
+        expect(item.opportunity).toBeNull();
+      });
+    });
+  });
+
   // ── (f) parsePromotions: JSONB type validation ─────────────────────────────
 
   describe('parsePromotions', () => {
