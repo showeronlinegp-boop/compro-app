@@ -63,6 +63,26 @@ export function superCfg(key: string): SuperConfig {
   return SUPERS[key as SuperKey] ?? { ...FALLBACK_CFG, label: key.toUpperCase() };
 }
 
+/**
+ * Resolve a product detail URL to an ABSOLUTE storefront URL.
+ *
+ * VTEX `product_url` can be a relative path (e.g. "/slug/p"). Rendered straight
+ * into an <a href>, the browser resolves it against OUR origin (the app) instead
+ * of the super's site — so the link wrongly stays inside the app. Prefixing the
+ * super's storefront origin makes it open the super. Already-absolute URLs pass
+ * through unchanged. Returns null when there's no URL or no known base.
+ */
+export function resolveStoreUrl(
+  productUrl: string | null | undefined,
+  superKey: string,
+): string | null {
+  if (!productUrl) return null;
+  if (/^https?:\/\//i.test(productUrl)) return productUrl;
+  const base = superCfg(superKey).checkoutBaseUrl;
+  if (!base) return null;
+  return `${base}${productUrl.startsWith('/') ? '' : '/'}${productUrl}`;
+}
+
 export const FREQ_OPTIONS: Array<{ days: number; label: string }> = [
   { days: 7, label: 'Semanal' },
   { days: 14, label: 'Quincenal' },
