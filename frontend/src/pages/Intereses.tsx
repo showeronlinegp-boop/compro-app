@@ -52,7 +52,8 @@ export default function Intereses({
       <h1 className="sr-only">Mis Intereses</h1>
       <p className="text-xs text-gray-400 mb-4">{interests.length} productos guardados</p>
 
-      <div className="flex flex-col gap-2">
+      {/* Cap list width so rows don't span the full 7xl container (void avoidance) */}
+      <div className="max-w-3xl flex flex-col gap-2">
         {interests.map((item) => {
           const cfg = superCfg(item.super);
           const price = item.offer_price ?? item.raw_price;

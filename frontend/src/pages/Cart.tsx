@@ -8,6 +8,7 @@ import { PageContainer } from '../components/layout/PageContainer';
 import { useCart } from '../contexts/CartContext';
 import type { HandoffItem, HandoffResult } from '../handoff';
 import { buildHandoffUrl } from '../handoff';
+import { FOCUS_RING } from '../styles';
 import { pesos, superCfg } from '../supers';
 import type { CompareResult } from '../types/api';
 
@@ -197,7 +198,7 @@ export default function Cart() {
           onClick={() => {
             clear().catch(console.error);
           }}
-          className="text-xs font-medium px-3 py-1.5 rounded-xl border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
+          className={`text-xs font-medium px-3 py-1.5 rounded-xl border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 transition-colors ${FOCUS_RING}`}
         >
           Limpiar carrito
         </button>
@@ -213,7 +214,7 @@ export default function Cart() {
             key={t.id}
             type="button"
             onClick={() => setTab(t.id)}
-            className={`text-sm font-semibold px-4 py-2 rounded-xl transition-colors ${
+            className={`text-sm font-semibold px-4 py-2 rounded-xl transition-colors ${FOCUS_RING} ${
               tab === t.id
                 ? 'bg-white shadow-sm text-gray-900'
                 : 'text-gray-500 hover:text-gray-700'
@@ -225,8 +226,9 @@ export default function Cart() {
       </div>
 
       {/* ─── Editar tab ─────────────────────────────────────────────────────── */}
+      {/* Cap list width so rows don't span the full 7xl container (void avoidance) */}
       {tab === 'edit' && (
-        <div className="flex flex-col gap-3">
+        <div className="max-w-3xl flex flex-col gap-3">
           {items.map((item) => {
             const refPrice = item.offer_price ?? item.raw_price;
 
@@ -269,7 +271,7 @@ export default function Cart() {
                         updateQty(item.cart_item_id, item.quantity - 1).catch(console.error);
                       }
                     }}
-                    className="w-7 h-7 rounded-lg bg-gray-100 text-gray-600 font-bold text-sm flex items-center justify-center hover:bg-gray-200 transition-colors"
+                    className={`w-7 h-7 rounded-lg bg-gray-100 text-gray-600 font-bold text-sm flex items-center justify-center hover:bg-gray-200 transition-colors ${FOCUS_RING}`}
                   >
                     −
                   </button>
@@ -282,7 +284,7 @@ export default function Cart() {
                     onClick={() => {
                       updateQty(item.cart_item_id, item.quantity + 1).catch(console.error);
                     }}
-                    className="w-7 h-7 rounded-lg bg-gray-100 text-gray-600 font-bold text-sm flex items-center justify-center hover:bg-gray-200 transition-colors"
+                    className={`w-7 h-7 rounded-lg bg-gray-100 text-gray-600 font-bold text-sm flex items-center justify-center hover:bg-gray-200 transition-colors ${FOCUS_RING}`}
                   >
                     +
                   </button>
@@ -295,7 +297,7 @@ export default function Cart() {
                   onClick={() => {
                     removeItem(item.cart_item_id).catch(console.error);
                   }}
-                  className="w-7 h-7 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-colors shrink-0"
+                  className={`w-7 h-7 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-colors shrink-0 ${FOCUS_RING}`}
                 >
                   ✕
                 </button>

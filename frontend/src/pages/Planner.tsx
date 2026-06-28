@@ -2,7 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
 import RecommendationBanner from '../components/RecommendationBanner';
+import { EmptyState } from '../components/EmptyState';
 import { PageContainer } from '../components/layout/PageContainer';
+import { FOCUS_RING } from '../styles';
 import { CATEGORY_LABEL, FREQ_OPTIONS, pesos, superCfg } from '../supers';
 import type { Product, ShoppingItem, WeeklyGroup } from '../types/api';
 
@@ -164,13 +166,19 @@ function ListTab({ list, onMarkBought, onChangeFreq, onRemove, onSwap }: ListTab
 
   if (list.length === 0) {
     return (
-      <div className="text-center py-16 text-gray-400">
-        <p className="text-4xl mb-3">📋</p>
-        <p className="font-medium">La lista está vacía</p>
-        <p className="text-sm mt-1">
-          Desde "Mis Intereses" agregá productos con su frecuencia de compra
-        </p>
-      </div>
+      <EmptyState
+        icon="📋"
+        title="La lista está vacía"
+        description='Desde "Mis Intereses" agregá productos con su frecuencia de compra'
+        action={
+          <Link
+            to="/intereses"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors"
+          >
+            Ir a Intereses
+          </Link>
+        }
+      />
     );
   }
 
@@ -257,8 +265,9 @@ function ListTab({ list, onMarkBought, onChangeFreq, onRemove, onSwap }: ListTab
                         <button
                           type="button"
                           onClick={() => setSwapItem(item)}
+                          aria-label="Reemplazar por otro producto"
                           title="Reemplazar por otro producto"
-                          className="text-xs px-2.5 py-1.5 rounded-xl bg-indigo-50 text-indigo-500 border border-indigo-200 hover:bg-indigo-100 font-medium"
+                          className={`text-xs px-2.5 py-1.5 rounded-xl bg-indigo-50 text-indigo-500 border border-indigo-200 hover:bg-indigo-100 font-medium ${FOCUS_RING}`}
                         >
                           ⇄
                         </button>
@@ -266,8 +275,9 @@ function ListTab({ list, onMarkBought, onChangeFreq, onRemove, onSwap }: ListTab
                         <button
                           type="button"
                           onClick={() => onMarkBought(item)}
+                          aria-label="Marcar como comprado hoy"
                           title="Marcar como comprado hoy"
-                          className="text-xs px-2.5 py-1.5 rounded-xl bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 font-medium"
+                          className={`text-xs px-2.5 py-1.5 rounded-xl bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 font-medium ${FOCUS_RING}`}
                         >
                           ✓
                         </button>
@@ -275,8 +285,9 @@ function ListTab({ list, onMarkBought, onChangeFreq, onRemove, onSwap }: ListTab
                         <button
                           type="button"
                           onClick={() => onRemove(item)}
+                          aria-label="Quitar de la lista"
                           title="Quitar de la lista"
-                          className="text-xs px-2.5 py-1.5 rounded-xl bg-gray-50 text-gray-400 border border-gray-200 hover:bg-red-50 hover:text-red-400 hover:border-red-200"
+                          className={`text-xs px-2.5 py-1.5 rounded-xl bg-gray-50 text-gray-400 border border-gray-200 hover:bg-red-50 hover:text-red-400 hover:border-red-200 ${FOCUS_RING}`}
                         >
                           ✕
                         </button>

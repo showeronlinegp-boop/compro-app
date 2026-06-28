@@ -4,6 +4,7 @@ import { api } from '../api';
 import { EmptyState } from '../components/EmptyState';
 import { CompareView } from '../components/compare/CompareView';
 import { PageContainer } from '../components/layout/PageContainer';
+import { FOCUS_RING } from '../styles';
 import { pesos, superCfg } from '../supers';
 import type { CompareResult } from '../types/api';
 
@@ -97,7 +98,7 @@ export default function Compare() {
             key={t.id}
             type="button"
             onClick={() => setView(t.id)}
-            className={`text-sm font-semibold px-4 py-2 rounded-xl transition-colors ${
+            className={`text-sm font-semibold px-4 py-2 rounded-xl transition-colors ${FOCUS_RING} ${
               view === t.id
                 ? 'bg-white shadow-sm text-gray-900'
                 : 'text-gray-500 hover:text-gray-700'

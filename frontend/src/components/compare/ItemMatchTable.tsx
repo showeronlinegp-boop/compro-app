@@ -40,7 +40,11 @@ export function ItemMatchTable({ items, priceMode = 'unit' }: ItemMatchTableProp
             {allSupers.map((s) => {
               const cfg = superCfg(s);
               return (
-                <th key={s} scope="col" className="sticky top-0 bg-white z-10 text-center py-2 px-2">
+                <th
+                  key={s}
+                  scope="col"
+                  className="sticky top-0 bg-white z-10 text-center py-2 px-2"
+                >
                   <span
                     className={`text-xs font-bold px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}
                   >

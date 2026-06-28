@@ -49,16 +49,16 @@ export interface CompareViewProps {
 }
 
 // ─── Summary rail ─────────────────────────────────────────────────────────────
-// Compact sticky panel: Option A cheapest + Option B total/savings.
-// Shown at lg+ as a sticky left rail; hidden below lg (detail is already in main).
+// Compact sticky panel: Option A totals + Option B summary.
+// Does NOT render handoff buttons (renderOptionAAction/optionBFooter) — those
+// stay in the full option cards in the main column to avoid duplicate testids
+// and duplicate interactive elements.
 
 interface SummaryRailProps {
   result: CompareResult;
-  renderOptionAAction?: (superKey: SuperKey) => ReactNode;
-  optionBFooter?: ReactNode;
 }
 
-function SummaryRail({ result, renderOptionAAction, optionBFooter }: SummaryRailProps) {
+function SummaryRail({ result }: SummaryRailProps) {
   const cheapestA = result.option_a[0];
   const savings = result.option_b.savings_vs_option_a;
 
@@ -99,9 +99,6 @@ function SummaryRail({ result, renderOptionAAction, optionBFooter }: SummaryRail
                 </span>
               </div>
               <p className="text-[10px] text-gray-400">{s.coverage}% de ítems</p>
-              {renderOptionAAction && (
-                <div className="mt-2">{renderOptionAAction(s.super as SuperKey)}</div>
-              )}
             </div>
           );
         })}
@@ -142,7 +139,6 @@ function SummaryRail({ result, renderOptionAAction, optionBFooter }: SummaryRail
             </div>
           );
         })}
-        {optionBFooter && <div className="mt-3">{optionBFooter}</div>}
       </div>
     </div>
   );
@@ -228,16 +224,11 @@ export function CompareView({
     </div>
   );
 
-  // ── Summary rail (shown at lg+ via TwoColumn; hidden on mobile since content
-  //    is already visible inline in the main column) ──────────────────────────
+  // ── Summary rail (shown at lg+ via TwoColumn; content is read-only totals/
+  //    savings only — handoff buttons stay in the main optionACard/optionBCard
+  //    to avoid duplicate interactive elements) ───────────────────────────────
 
-  const summaryRail = (
-    <SummaryRail
-      result={result}
-      renderOptionAAction={renderOptionAAction}
-      optionBFooter={optionBFooter}
-    />
-  );
+  const summaryRail = <SummaryRail result={result} />;
 
   // ── Tabbed layout (Compare page) ───────────────────────────────────────────
   if (layout === 'tabbed') {

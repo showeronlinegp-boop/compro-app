@@ -4,6 +4,7 @@ import FreqModal from '../components/FreqModal';
 import GroupedCard from '../components/GroupedCard';
 import PromoPanel from '../components/PromoPanel';
 import { PageContainer } from '../components/layout/PageContainer';
+import { FOCUS_RING } from '../styles';
 import type {
   EnrichStatus,
   GroupsResult,
@@ -225,13 +226,13 @@ export default function Explorar({
         />
       </div>
 
-      {/* Categorías */}
+      {/* Categorías — edge-bleed so last chip isn't clipped by container padding */}
       {categories.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide">
+        <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
           <button
             type="button"
             onClick={() => setCategory('')}
-            className={`flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
+            className={`flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${FOCUS_RING} ${
               !category
                 ? 'bg-gray-800 text-white border-gray-800'
                 : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
@@ -244,7 +245,7 @@ export default function Explorar({
               key={cat.slug}
               type="button"
               onClick={() => setCategory((c) => (c === cat.slug ? '' : cat.slug))}
-              className={`flex-shrink-0 flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
+              className={`flex-shrink-0 flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${FOCUS_RING} ${
                 category === cat.slug
                   ? 'bg-indigo-600 text-white border-indigo-600'
                   : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
@@ -262,7 +263,7 @@ export default function Explorar({
         <button
           type="button"
           onClick={() => setDiscount((d) => !d)}
-          className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
+          className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${FOCUS_RING} ${
             discount
               ? 'bg-red-500 text-white border-red-500'
               : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
@@ -329,7 +330,7 @@ export default function Explorar({
             type="button"
             disabled={page <= 1}
             onClick={() => load(page - 1)}
-            className="px-4 py-2 rounded-xl border border-gray-200 text-sm disabled:opacity-40 hover:bg-gray-50"
+            className={`px-4 py-2 rounded-xl border border-gray-200 text-sm disabled:opacity-40 hover:bg-gray-50 ${FOCUS_RING}`}
           >
             ← Anterior
           </button>
@@ -340,7 +341,7 @@ export default function Explorar({
             type="button"
             disabled={page >= pages}
             onClick={() => load(page + 1)}
-            className="px-4 py-2 rounded-xl border border-gray-200 text-sm disabled:opacity-40 hover:bg-gray-50"
+            className={`px-4 py-2 rounded-xl border border-gray-200 text-sm disabled:opacity-40 hover:bg-gray-50 ${FOCUS_RING}`}
           >
             Siguiente →
           </button>
