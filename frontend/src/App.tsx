@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { api } from './api';
-import { FOCUS_RING } from './styles';
+import { CartDrawer } from './components/CartDrawer';
 import { LocationSelector } from './components/LocationSelector';
 import { CartProvider, useCart } from './contexts/CartContext';
 import Cart from './pages/Cart';
@@ -10,6 +10,7 @@ import Explorar from './pages/Explorar';
 import Intereses from './pages/Intereses';
 import Onboarding from './pages/Onboarding';
 import Planner from './pages/Planner';
+import { FOCUS_RING } from './styles';
 import type {
   EnrichStatus,
   Interest,
@@ -164,7 +165,7 @@ function SyncPanel({
 function AppShell() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { itemCount } = useCart();
+  const { itemCount, openCart } = useCart();
   const [interests, setInterests] = useState<Interest[]>([]);
   const [shopping, setShopping] = useState<ShoppingItem[]>([]);
   const [syncStatus, setSyncStatus] = useState<SyncLog[]>([]);
@@ -312,7 +313,10 @@ function AppShell() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Navbar */}
-      <nav aria-label="Principal" className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-40">
+      <nav
+        aria-label="Principal"
+        className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-40"
+      >
         <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 flex items-center h-14 gap-3 sm:gap-6">
           <span className="font-bold text-gray-900 text-base tracking-tight flex-shrink-0">
             🛒 COMPRO
@@ -355,17 +359,12 @@ function AppShell() {
               inline nav links are hidden (they live in the bottom tab bar instead). */}
           <div className="flex-1 lg:hidden" aria-hidden="true" />
 
-          {/* Cart — primary action, top-right with item-count badge */}
-          <NavLink
-            to="/cart"
+          {/* Cart — opens the cart drawer */}
+          <button
+            type="button"
             aria-label={cartLabel}
-            className={({ isActive }) =>
-              `relative inline-flex items-center justify-center w-9 h-9 rounded-xl transition-colors ${FOCUS_RING} ${
-                isActive
-                  ? 'bg-indigo-50 text-indigo-700'
-                  : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'
-              }`
-            }
+            onClick={openCart}
+            className={`relative inline-flex items-center justify-center w-9 h-9 rounded-xl transition-colors ${FOCUS_RING} text-gray-500 hover:text-gray-800 hover:bg-gray-50`}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -387,7 +386,7 @@ function AppShell() {
                 {itemCount}
               </span>
             )}
-          </NavLink>
+          </button>
 
           {/* Location selector */}
           <LocationSelector
@@ -453,9 +452,15 @@ function AppShell() {
         </Routes>
       </main>
 
+      {/* Cart drawer — overlays all routes */}
+      <CartDrawer />
+
       {/* Bottom tab bar — primary navigation on small screens (the inline top-bar
           links are hidden < lg). Keeps the top bar from overflowing the viewport. */}
-      <nav aria-label="Navegación inferior" className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-gray-100">
+      <nav
+        aria-label="Navegación inferior"
+        className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-gray-100"
+      >
         <div className="flex items-stretch">
           {[
             { to: '/', label: 'Explorar', icon: '🔍' },

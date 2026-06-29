@@ -9,14 +9,11 @@ import { useCart } from '../contexts/CartContext';
 import type { HandoffItem, HandoffResult } from '../handoff';
 import { buildHandoffUrl } from '../handoff';
 import { FOCUS_RING, PRIMARY_CTA } from '../styles';
-import { pesos, superCfg } from '../supers';
+import { superCfg } from '../supers';
 import type { CompareResult } from '../types/api';
 
 export default function Cart() {
-  const { items, itemCount, clear, updateQty, removeItem } = useCart();
-
-  // ─── Tab state ──────────────────────────────────────────────────────────────
-  const [tab, setTab] = useState<'edit' | 'compare'>('edit');
+  const { items, itemCount, clear, updateQty, openCart } = useCart();
 
   // ─── Compare state ──────────────────────────────────────────────────────────
   const [compareResult, setCompareResult] = useState<CompareResult | null>(null);
@@ -88,10 +85,11 @@ export default function Cart() {
     return result;
   }, [compareResult, qtyByCartItem]);
 
-  // Guard: skip if already loaded for this cart snapshot (sig).
-  // Refetch when the snapshot changed (new sig) or on first Comparar activation.
+  // Load comparison on mount and whenever the cart snapshot changes.
+  // Guard: skip if already loaded for this exact snapshot.
+  // sig is empty-string when items is empty, so the items.length guard is implicit.
   useEffect(() => {
-    if (tab !== 'compare') return;
+    if (!sig) return;
     if (loadedSigRef.current === sig) return;
 
     setCompareLoading(true);
@@ -107,7 +105,7 @@ export default function Cart() {
         setCompareError('No se pudo cargar la comparación.');
       })
       .finally(() => setCompareLoading(false));
-  }, [tab, sig]);
+  }, [sig]);
 
   // ─── Empty cart ─────────────────────────────────────────────────────────────
   if (items.length === 0) {
@@ -118,10 +116,7 @@ export default function Cart() {
           title="Tu carrito está vacío"
           description='Agregá productos desde Explorar o Intereses con el botón "+ Carrito"'
           action={
-            <Link
-              to="/"
-              className={`${PRIMARY_CTA} ${FOCUS_RING}`}
-            >
+            <Link to="/" className={`${PRIMARY_CTA} ${FOCUS_RING}`}>
               Ir a Explorar
             </Link>
           }
@@ -130,7 +125,7 @@ export default function Cart() {
     );
   }
 
-  // ─── Header copy (WU-6) ─────────────────────────────────────────────────────
+  // ─── Header copy ─────────────────────────────────────────────────────────────
   // N = distinct products, M = total units
   const productWord = items.length === 1 ? 'producto' : 'productos';
   const headerCopy =
@@ -192,246 +187,150 @@ export default function Cart() {
     <PageContainer>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-lg font-bold text-gray-900">Carrito ({headerCopy})</h1>
-        <button
-          type="button"
-          onClick={() => {
-            clear().catch(console.error);
-          }}
-          className={`text-xs font-medium px-3 py-1.5 rounded-xl border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 transition-colors ${FOCUS_RING}`}
-        >
-          Limpiar carrito
-        </button>
-      </div>
-
-      {/* Pill toggle — Editar / Comparar */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-2xl mb-6 w-fit">
-        {[
-          { id: 'edit' as const, label: 'Editar' },
-          { id: 'compare' as const, label: 'Comparar' },
-        ].map((t) => (
+        <h1 className="text-lg font-bold text-gray-900">Comparar carrito ({headerCopy})</h1>
+        <div className="flex items-center gap-2">
           <button
-            key={t.id}
             type="button"
-            onClick={() => setTab(t.id)}
-            className={`text-sm font-semibold px-4 py-2 rounded-xl transition-colors ${FOCUS_RING} ${
-              tab === t.id
-                ? 'bg-white shadow-sm text-gray-900'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
+            onClick={openCart}
+            className={`text-xs font-medium px-3 py-1.5 rounded-xl border border-gray-200 text-gray-600 bg-white hover:bg-gray-50 transition-colors ${FOCUS_RING}`}
           >
-            {t.label}
+            Editar carrito
           </button>
-        ))}
+          <button
+            type="button"
+            onClick={() => {
+              clear().catch(console.error);
+            }}
+            className={`text-xs font-medium px-3 py-1.5 rounded-xl border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 transition-colors ${FOCUS_RING}`}
+          >
+            Limpiar carrito
+          </button>
+        </div>
       </div>
 
-      {/* ─── Editar tab ─────────────────────────────────────────────────────── */}
-      {/* Cap list width so rows don't span the full 7xl container (void avoidance) */}
-      {tab === 'edit' && (
-        <div className="max-w-3xl mx-auto flex flex-col gap-3">
-          {items.map((item) => {
-            const refPrice = item.offer_price ?? item.raw_price;
+      {/* Compare view */}
+      <div>
+        {compareLoading && (
+          <p className="text-sm text-gray-400 text-center py-8">Calculando comparación…</p>
+        )}
 
-            return (
-              <div
-                key={item.cart_item_id}
-                className="bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3 p-3 hover:shadow-md transition-shadow"
-              >
-                {/* Image */}
-                {item.image_url ? (
-                  <img
-                    src={item.image_url}
-                    alt={item.name}
-                    className="w-16 h-16 object-contain rounded-xl bg-gray-50 shrink-0"
-                  />
-                ) : (
-                  <div className="w-16 h-16 rounded-xl bg-gray-100 shrink-0" />
-                )}
+        {!compareLoading && compareError && (
+          <p className="text-sm text-red-400 text-center py-8">{compareError}</p>
+        )}
 
-                {/* Name + reference price */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-800 leading-snug line-clamp-2">
-                    {item.name}
+        {!compareLoading &&
+          !compareError &&
+          compareResult !== null &&
+          (compareResult.items.length === 0 ? (
+            <EmptyState
+              icon="🔍"
+              title="Sin resultados para comparar"
+              description="No encontramos precios en otros supers para los productos de tu carrito"
+            />
+          ) : (
+            <CompareView
+              result={compareResult}
+              priceMode="line"
+              layout="stacked"
+              topSlot={opportunitiesSection}
+              noticeSlot={
+                crossSuperMatchedCount < items.length ? (
+                  <p className="text-xs text-gray-500 text-center">
+                    Comparamos {crossSuperMatchedCount} de {items.length} productos
                   </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    <span className="font-semibold text-gray-600">{pesos(refPrice)}</span>{' '}
-                    <span className="italic">precio de referencia</span>
-                  </p>
-                </div>
-
-                {/* Qty stepper */}
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <button
-                    type="button"
-                    aria-label="Reducir cantidad"
-                    onClick={() => {
-                      if (item.quantity === 1) {
-                        removeItem(item.cart_item_id).catch(console.error);
-                      } else {
-                        updateQty(item.cart_item_id, item.quantity - 1).catch(console.error);
-                      }
-                    }}
-                    className={`w-7 h-7 rounded-lg bg-gray-100 text-gray-600 font-bold text-sm flex items-center justify-center hover:bg-gray-200 transition-colors ${FOCUS_RING}`}
-                  >
-                    −
-                  </button>
-                  <span className="w-6 text-center text-sm font-semibold text-gray-800">
-                    {item.quantity}
-                  </span>
-                  <button
-                    type="button"
-                    aria-label="Aumentar cantidad"
-                    onClick={() => {
-                      updateQty(item.cart_item_id, item.quantity + 1).catch(console.error);
-                    }}
-                    className={`w-7 h-7 rounded-lg bg-gray-100 text-gray-600 font-bold text-sm flex items-center justify-center hover:bg-gray-200 transition-colors ${FOCUS_RING}`}
-                  >
-                    +
-                  </button>
-                </div>
-
-                {/* Remove */}
-                <button
-                  type="button"
-                  aria-label="Eliminar del carrito"
-                  onClick={() => {
-                    removeItem(item.cart_item_id).catch(console.error);
-                  }}
-                  className={`w-7 h-7 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-colors shrink-0 ${FOCUS_RING}`}
-                >
-                  ✕
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* ─── Comparar tab ───────────────────────────────────────────────────── */}
-      {tab === 'compare' && (
-        <div>
-          {compareLoading && (
-            <p className="text-sm text-gray-400 text-center py-8">Calculando comparación…</p>
-          )}
-
-          {!compareLoading && compareError && (
-            <p className="text-sm text-red-400 text-center py-8">{compareError}</p>
-          )}
-
-          {!compareLoading &&
-            !compareError &&
-            compareResult !== null &&
-            (compareResult.items.length === 0 ? (
-              <EmptyState
-                icon="🔍"
-                title="Sin resultados para comparar"
-                description="No encontramos precios en otros supers para los productos de tu carrito"
-              />
-            ) : (
-              <CompareView
-                result={compareResult}
-                priceMode="line"
-                layout="stacked"
-                topSlot={opportunitiesSection}
-                noticeSlot={
-                  crossSuperMatchedCount < items.length ? (
-                    <p className="text-xs text-gray-500 text-center">
-                      Comparamos {crossSuperMatchedCount} de {items.length} productos
-                    </p>
-                  ) : null
-                }
-                renderOptionAAction={(superKey) => {
-                  const handoff = optionAHandoffs.get(superKey);
-                  const cfg = superCfg(superKey);
-                  return (
-                    <div className="space-y-1">
-                      {handoff?.url ? (
-                        <a
-                          href={handoff.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          data-testid={`handoff-option-a-${superKey}`}
-                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
-                        >
-                          Armar carrito en {cfg.label}
-                        </a>
-                      ) : (
-                        <span
-                          data-testid={`handoff-option-a-${superKey}`}
-                          aria-disabled="true"
-                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gray-200 text-gray-400 text-sm font-semibold cursor-not-allowed"
-                        >
-                          Armar carrito en {cfg.label}
-                        </span>
-                      )}
-                      {handoff && handoff.included < handoff.total && (
+                ) : null
+              }
+              renderOptionAAction={(superKey) => {
+                const handoff = optionAHandoffs.get(superKey);
+                const cfg = superCfg(superKey);
+                return (
+                  <div className="space-y-1">
+                    {handoff?.url ? (
+                      <a
+                        href={handoff.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        data-testid={`handoff-option-a-${superKey}`}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
+                      >
+                        Armar carrito en {cfg.label}
+                      </a>
+                    ) : (
+                      <span
+                        data-testid={`handoff-option-a-${superKey}`}
+                        aria-disabled="true"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gray-200 text-gray-400 text-sm font-semibold cursor-not-allowed"
+                      >
+                        Armar carrito en {cfg.label}
+                      </span>
+                    )}
+                    {handoff && handoff.included < handoff.total && (
+                      <p className="text-xs text-gray-500">
+                        {handoff.included} de {handoff.total} productos
+                      </p>
+                    )}
+                    {superKey === 'vea' && (
+                      <p className="text-xs text-amber-600">
+                        ⚠ VEA puede pedirte elegir tu sucursal antes de confirmar
+                      </p>
+                    )}
+                  </div>
+                );
+              }}
+              optionBFooter={
+                compareResult.option_b.by_super.length > 0 ? (
+                  <div className="mt-4 space-y-3">
+                    {/* Explainer: how many supers the split covers */}
+                    {(() => {
+                      const n = compareResult.option_b.by_super.length;
+                      return (
                         <p className="text-xs text-gray-500">
-                          {handoff.included} de {handoff.total} productos
+                          {n === 1
+                            ? 'Tu compra es en 1 super. Te armamos el carrito con los productos que convienen ahí — completás la compra ahí.'
+                            : `Tu compra se divide en ${n} supers. Te armamos el carrito en cada uno con los productos que convienen ahí — completás cada compra por separado.`}
                         </p>
-                      )}
-                      {superKey === 'vea' && (
-                        <p className="text-xs text-amber-600">
-                          ⚠ VEA puede pedirte elegir tu sucursal antes de confirmar
-                        </p>
-                      )}
-                    </div>
-                  );
-                }}
-                optionBFooter={
-                  compareResult.option_b.by_super.length > 0 ? (
-                    <div className="mt-4 space-y-3">
-                      {/* Explainer: how many supers the split covers */}
-                      {(() => {
-                        const n = compareResult.option_b.by_super.length;
-                        return (
-                          <p className="text-xs text-gray-500">
-                            {n === 1
-                              ? 'Tu compra es en 1 super. Te armamos el carrito con los productos que convienen ahí — completás la compra ahí.'
-                              : `Tu compra se divide en ${n} supers. Te armamos el carrito en cada uno con los productos que convienen ahí — completás cada compra por separado.`}
-                          </p>
-                        );
-                      })()}
-                      {compareResult.option_b.by_super.map((s) => {
-                        const superHandoff = optionBHandoffs.get(s.super);
-                        return (
-                          <div key={s.super} className="space-y-1">
-                            {superHandoff?.url ? (
-                              <a
-                                href={superHandoff.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                data-testid={`handoff-option-b-${s.super}`}
-                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
-                              >
-                                Armar carrito en {superCfg(s.super).label}
-                              </a>
-                            ) : (
-                              <span
-                                aria-disabled="true"
-                                data-testid={`handoff-option-b-${s.super}`}
-                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gray-200 text-gray-400 text-sm font-semibold cursor-not-allowed"
-                              >
-                                Armar carrito en {superCfg(s.super).label}
-                              </span>
-                            )}
-                            {superHandoff && superHandoff.included < superHandoff.total && (
-                              <p className="text-xs text-gray-500">
-                                {superHandoff.included} de {superHandoff.total} productos
-                              </p>
-                            )}
+                      );
+                    })()}
+                    {compareResult.option_b.by_super.map((s) => {
+                      const superHandoff = optionBHandoffs.get(s.super);
+                      return (
+                        <div key={s.super} className="space-y-1">
+                          {superHandoff?.url ? (
+                            <a
+                              href={superHandoff.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              data-testid={`handoff-option-b-${s.super}`}
+                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
+                            >
+                              Armar carrito en {superCfg(s.super).label}
+                            </a>
+                          ) : (
+                            <span
+                              aria-disabled="true"
+                              data-testid={`handoff-option-b-${s.super}`}
+                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gray-200 text-gray-400 text-sm font-semibold cursor-not-allowed"
+                            >
+                              Armar carrito en {superCfg(s.super).label}
+                            </span>
+                          )}
+                          {superHandoff && superHandoff.included < superHandoff.total && (
                             <p className="text-xs text-gray-500">
-                              Los precios pueden variar al momento de pagar.
+                              {superHandoff.included} de {superHandoff.total} productos
                             </p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : null
-                }
-              />
-            ))}
-        </div>
-      )}
+                          )}
+                          <p className="text-xs text-gray-500">
+                            Los precios pueden variar al momento de pagar.
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : null
+              }
+            />
+          ))}
+      </div>
     </PageContainer>
   );
 }

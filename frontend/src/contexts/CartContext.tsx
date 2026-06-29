@@ -6,6 +6,7 @@ import type { CartItemEntry, CartResult } from '../types/api';
 
 interface CartState {
   cart: CartResult | null;
+  isOpen: boolean;
 }
 
 const CartStateContext = createContext<CartState | null>(null);
@@ -17,6 +18,8 @@ interface CartDispatch {
   updateQty: (cart_item_id: number, quantity: number) => Promise<void>;
   removeItem: (cart_item_id: number) => Promise<void>;
   clear: () => Promise<void>;
+  openCart: () => void;
+  closeCart: () => void;
 }
 
 const CartDispatchContext = createContext<CartDispatch | null>(null);
@@ -25,6 +28,7 @@ const CartDispatchContext = createContext<CartDispatch | null>(null);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartResult | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
 
   // Load cart once on mount
   useEffect(() => {
@@ -51,9 +55,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setCart(result);
   }, []);
 
+  const openCart = useCallback(() => setIsOpen(true), []);
+  const closeCart = useCallback(() => setIsOpen(false), []);
+
   return (
-    <CartStateContext.Provider value={{ cart }}>
-      <CartDispatchContext.Provider value={{ addItem, updateQty, removeItem, clear }}>
+    <CartStateContext.Provider value={{ cart, isOpen }}>
+      <CartDispatchContext.Provider
+        value={{ addItem, updateQty, removeItem, clear, openCart, closeCart }}
+      >
         {children}
       </CartDispatchContext.Provider>
     </CartStateContext.Provider>
@@ -65,10 +74,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
 export interface UseCartResult {
   items: CartItemEntry[];
   itemCount: number;
+  isOpen: boolean;
   addItem: (product_id: number, quantity?: number) => Promise<void>;
   updateQty: (cart_item_id: number, quantity: number) => Promise<void>;
   removeItem: (cart_item_id: number) => Promise<void>;
   clear: () => Promise<void>;
+  openCart: () => void;
+  closeCart: () => void;
 }
 
 export function useCart(): UseCartResult {
@@ -82,9 +94,12 @@ export function useCart(): UseCartResult {
   return {
     items: state.cart?.items ?? [],
     itemCount: state.cart?.item_count ?? 0,
+    isOpen: state.isOpen,
     addItem: dispatch.addItem,
     updateQty: dispatch.updateQty,
     removeItem: dispatch.removeItem,
     clear: dispatch.clear,
+    openCart: dispatch.openCart,
+    closeCart: dispatch.closeCart,
   };
 }
