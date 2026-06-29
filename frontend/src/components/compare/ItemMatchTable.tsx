@@ -60,7 +60,9 @@ export function ItemMatchTable({ items, priceMode = 'unit' }: ItemMatchTableProp
         <tbody>
           {items.map((item) => {
             const matchBySuperMap = new Map(item.matches.map((m) => [m.super, m]));
-            const prices = item.matches.map((m) => m.price);
+            // Best price ignores out-of-stock supers — they are shown for
+            // transparency but can never win the comparison.
+            const prices = item.matches.filter((m) => m.available !== false).map((m) => m.price);
             const bestPrice = prices.length ? Math.min(...prices) : null;
 
             return (
@@ -74,12 +76,13 @@ export function ItemMatchTable({ items, priceMode = 'unit' }: ItemMatchTableProp
                 </th>
                 {allSupers.map((s) => {
                   const match = matchBySuperMap.get(s);
-                  const isBest = bestPrice !== null && match?.price === bestPrice;
+                  const isOos = match?.available === false;
+                  const isBest = bestPrice !== null && !isOos && match?.price === bestPrice;
                   return (
                     <td key={s} className="text-center py-2 px-2">
                       {match ? (
                         <div className="flex flex-col items-center gap-0.5">
-                          {match.unit_price !== match.price && (
+                          {!isOos && match.unit_price !== match.price && (
                             <span
                               data-testid="shelf-strike"
                               className="text-gray-400 line-through text-[10px] tabular-nums"
@@ -88,18 +91,32 @@ export function ItemMatchTable({ items, priceMode = 'unit' }: ItemMatchTableProp
                             </span>
                           )}
                           <span
-                            className={`font-semibold tabular-nums ${isBest ? 'text-indigo-700 font-bold' : 'text-gray-700'}`}
+                            className={`font-semibold tabular-nums ${
+                              isOos
+                                ? 'text-gray-400'
+                                : isBest
+                                  ? 'text-indigo-700 font-bold'
+                                  : 'text-gray-700'
+                            }`}
                           >
                             {pesos(match.price)}
-                            {match.matched_by === 'name_similarity' && (
+                            {!isOos && match.matched_by === 'name_similarity' && (
                               <span className="text-gray-300 ml-0.5">~</span>
                             )}
                           </span>
-                          {match.promo_label && <PromoBadge label={match.promo_label} />}
-                          {match.info_badges.map((badge, idx) => (
-                            // biome-ignore lint/suspicious/noArrayIndexKey: backend deduplicates badges; index is safe here
-                            <InfoBadge key={idx} label={badge} />
-                          ))}
+                          {isOos ? (
+                            <span className="text-[9px] font-semibold leading-tight text-amber-600">
+                              Sin stock
+                            </span>
+                          ) : (
+                            <>
+                              {match.promo_label && <PromoBadge label={match.promo_label} />}
+                              {match.info_badges.map((badge, idx) => (
+                                // biome-ignore lint/suspicious/noArrayIndexKey: backend deduplicates badges; index is safe here
+                                <InfoBadge key={idx} label={badge} />
+                              ))}
+                            </>
+                          )}
                         </div>
                       ) : (
                         <span className="text-gray-200">—</span>

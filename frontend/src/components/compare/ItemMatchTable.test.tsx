@@ -20,6 +20,7 @@ function makeMatch(overrides: Partial<SuperMatch> = {}): SuperMatch {
     unit_price: 3198,
     promo_label: null,
     info_badges: [],
+    available: true,
     ...overrides,
   };
 }
@@ -79,5 +80,37 @@ describe('ItemMatchTable — badge rendering', () => {
   it('renders no violet pills when info_badges is empty', () => {
     render(<ItemMatchTable items={[makeItem({ info_badges: [] })]} />);
     expect(screen.queryAllByTestId('info-badge')).toHaveLength(0);
+  });
+
+  describe('out-of-stock match', () => {
+    const twoSuperItem = (): CompareItem => ({
+      shopping_id: 1,
+      name: 'Tapas',
+      home_super: 'vea',
+      home_price: 50,
+      home_unit_price: 50,
+      home_promo_label: null,
+      home_info_badges: [],
+      matches: [
+        makeMatch({ super: 'vea', price: 50, unit_price: 50, available: false }),
+        makeMatch({ super: 'dia', price: 80, unit_price: 80, available: true }),
+      ],
+      opportunity: null,
+    });
+
+    it('shows a "Sin stock" label and no strike-through for the OOS cell', () => {
+      render(<ItemMatchTable items={[twoSuperItem()]} />);
+      expect(screen.getByText('Sin stock')).toBeDefined();
+      // OOS cell shows offer=raw so there is never a strike-through baseline for it.
+      expect(screen.queryByTestId('shelf-strike')).toBeNull();
+    });
+
+    it('never marks the cheaper OOS super as best — the in-stock super wins', () => {
+      const { container } = render(<ItemMatchTable items={[twoSuperItem()]} />);
+      const best = container.querySelector('.text-indigo-700');
+      // Best is DIA's $80, not the numerically cheaper but out-of-stock VEA $50.
+      expect(best?.textContent).toContain('80');
+      expect(best?.textContent).not.toContain('50');
+    });
   });
 });

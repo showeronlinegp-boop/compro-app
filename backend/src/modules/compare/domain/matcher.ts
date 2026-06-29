@@ -2,14 +2,17 @@ import type { CompareItem, CompareResult, SuperSummary } from '../../../shared/t
 import { round2 } from './round.js';
 
 export function calcOptionA(items: CompareItem[]): SuperSummary[] {
-  const supers = [...new Set(items.flatMap((i) => i.matches.map((m) => m.super)))];
+  // Only in-stock matches count: an out-of-stock super is never a place we send
+  // the user to buy, so it neither earns a row nor covers an item.
+  const inStock = (m: CompareItem['matches'][number]) => m.available !== false;
+  const supers = [...new Set(items.flatMap((i) => i.matches.filter(inStock).map((m) => m.super)))];
 
   return supers
     .map((sup) => {
       let total = 0;
       let missing = 0;
       for (const item of items) {
-        const match = item.matches.find((m) => m.super === sup);
+        const match = item.matches.find((m) => m.super === sup && inStock(m));
         if (match) {
           total += match.price;
         } else {
@@ -37,8 +40,10 @@ export function calcOptionB(items: CompareItem[]): CompareResult['option_b'] {
   let total = 0;
 
   for (const item of items) {
-    if (item.matches.length === 0) continue;
-    const best = item.matches.reduce((a, b) => (a.price <= b.price ? a : b));
+    // Out-of-stock supers cannot win an item — exclude them before picking best.
+    const candidates = item.matches.filter((m) => m.available !== false);
+    if (candidates.length === 0) continue;
+    const best = candidates.reduce((a, b) => (a.price <= b.price ? a : b));
     total += best.price;
     bySuperTotal.set(best.super, (bySuperTotal.get(best.super) ?? 0) + best.price);
     breakdown.push({ shopping_id: item.shopping_id, best_super: best.super, price: best.price });

@@ -283,8 +283,12 @@ export function makeEnricher(prisma: PrismaClient): EnrichService {
 
     const cfg = SUPERS[superKey as SuperKey];
 
+    // Only enrich in-stock products. Out-of-stock rows (e.g. VEA, marked by the
+    // crawl rescue) must keep the shelf price exactly as the super's page shows it
+    // — re-applying a search-promotions discount here would surface a phantom
+    // markdown on a product nobody can buy.
     const products = await prisma.products.findMany({
-      where: { super: superKey },
+      where: { super: superKey, available: true },
       select: { id: true, product_id: true, sku_id: true, raw_price: true, product_url: true },
       orderBy: { id: 'asc' },
     });

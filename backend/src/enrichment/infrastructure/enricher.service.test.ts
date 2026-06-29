@@ -43,6 +43,7 @@ interface MockProduct {
   product_url: string | null;
   offer_price: number | null;
   discount_pct: number;
+  available: boolean;
 }
 
 function makeMockPrisma(initialRows: MockProduct[] = []) {
@@ -51,10 +52,17 @@ function makeMockPrisma(initialRows: MockProduct[] = []) {
 
   return {
     products: {
-      findMany: vi.fn().mockImplementation(({ where }: { where?: { super?: string } } = {}) => {
-        const rows = where?.super ? store.filter((r) => r.super === where.super) : [...store];
-        return Promise.resolve(rows);
-      }),
+      findMany: vi
+        .fn()
+        .mockImplementation(
+          ({ where }: { where?: { super?: string; available?: boolean } } = {}) => {
+            let rows = where?.super ? store.filter((r) => r.super === where.super) : [...store];
+            if (where?.available !== undefined) {
+              rows = rows.filter((r) => r.available === where.available);
+            }
+            return Promise.resolve(rows);
+          },
+        ),
       update: vi.fn().mockImplementation(
         ({
           where,
@@ -83,6 +91,7 @@ function makeRow(overrides: Partial<MockProduct> = {}): MockProduct {
     product_url: overrides.product_url ?? 'https://example.com/p',
     offer_price: overrides.offer_price ?? null,
     discount_pct: overrides.discount_pct ?? 0,
+    available: overrides.available ?? true,
   };
 }
 
@@ -108,19 +117,35 @@ describe('enricher.service — Strategy A (search-promotions / vea)', () => {
     expect(fetchPromoPrice).not.toHaveBeenCalled();
   });
 
-  it('writes offer_price and discount_pct from Strategy A promo result', async () => {
-    const row = makeRow({ super: 'vea', sku_id: '336191', raw_price: 10000 });
+  it('writes the exact fixed_price (value) from Strategy A, not a reconstructed price', async () => {
+    // SKU 336191 is a fixed_price promo in the fixture (value 619, effectiveDiscount 0.37).
+    // At its real base (~983) the sale price is exactly 619 — NOT 983*(1-0.37). This is
+    // the bug that showed 2511 instead of 2499 for the yogurt: reconstructing from the
+    // rounded percentage instead of using the exact `value`.
+    const row = makeRow({ super: 'vea', sku_id: '336191', raw_price: 983 });
     const prisma = makeMockPrisma([row]);
     (fetchSearchPromotions as ReturnType<typeof vi.fn>).mockResolvedValue(promotionsVea);
 
     const enricher = makeEnricher(prisma as never);
     await enricher.enrichSuper('vea');
 
-    // SKU 336191 has effectiveDiscount=0.37 in fixture
-    // offer_price = round(10000 * (1 - 0.37) * 100) / 100 = 6300
-    // discount_pct = round(0.37 * 100) = 37
-    expect(row.offer_price).toBe(6300);
-    expect(row.discount_pct).toBe(37);
+    expect(row.offer_price).toBe(619); // exact value, not 983*(1-0.37)=619.29
+    expect(row.discount_pct).toBe(37); // round((983-619)/983*100)
+  });
+
+  it('does NOT enrich out-of-stock products (no phantom discount on a sold-out item)', async () => {
+    const oos = makeRow({ id: 1, super: 'vea', sku_id: '336191', available: false });
+    const prisma = makeMockPrisma([oos]);
+    (fetchSearchPromotions as ReturnType<typeof vi.fn>).mockResolvedValue(promotionsVea);
+
+    const enricher = makeEnricher(prisma as never);
+    await enricher.enrichSuper('vea');
+
+    // The OOS product is filtered out before enrichment — its SKU is never sent
+    // and its price/discount are left untouched.
+    expect(fetchSearchPromotions).not.toHaveBeenCalled();
+    expect(oos.offer_price).toBeNull();
+    expect(oos.discount_pct).toBe(0);
   });
 
   it('fetches missing sku_ids before calling search-promotions', async () => {

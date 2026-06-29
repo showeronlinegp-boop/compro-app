@@ -20,6 +20,7 @@ function makeMatch(overrides: Partial<SuperMatch> = {}): SuperMatch {
     unit_price: 4940,
     promo_label: null,
     info_badges: [],
+    available: true,
     ...overrides,
   };
 }

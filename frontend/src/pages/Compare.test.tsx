@@ -64,6 +64,7 @@ function makeCompareResult(opportunity: PromoOpportunity | null = null): Compare
             name: 'Oreo DIA',
             price: 800,
             matched_by: 'barcode',
+            available: true,
             unit_price: 1000,
             promo_label: '2do al 80%',
             info_badges: [],

@@ -43,7 +43,9 @@ export default function Cart() {
     const result = new Map<string, HandoffResult>();
     for (const s of compareResult.option_a) {
       const handoffItems: HandoffItem[] = compareResult.items.map((item) => {
-        const m = item.matches.find((x) => x.super === s.super);
+        // Skip out-of-stock matches: never load an item into a super's cart when
+        // that super has no stock for it (sku_id null → excluded, counted partial).
+        const m = item.matches.find((x) => x.super === s.super && x.available !== false);
         return { sku_id: m?.sku_id ?? null, qty: qtyByCartItem.get(item.shopping_id) ?? 1 };
       });
       result.set(
@@ -66,7 +68,7 @@ export default function Cart() {
     for (const b of compareResult.option_b.breakdown) {
       const item = itemMap.get(b.shopping_id);
       if (!item) continue;
-      const m = item.matches.find((x) => x.super === b.best_super);
+      const m = item.matches.find((x) => x.super === b.best_super && x.available !== false);
       const list = bySuper.get(b.best_super) ?? [];
       list.push({ sku_id: m?.sku_id ?? null, qty: qtyByCartItem.get(b.shopping_id) ?? 1 });
       bySuper.set(b.best_super, list);

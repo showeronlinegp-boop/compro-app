@@ -22,6 +22,18 @@ export interface PromoEntry {
   name: string;
   type: string;
   effectiveDiscount: string; // decimal string, e.g. "0.37"
+  /**
+   * VTEX discount kind. When 'fixed_price', the promo sets an absolute sale price
+   * (in `value`) rather than a percentage — and `effectiveDiscount` is a ROUNDED
+   * approximation that must NOT be used to reconstruct the price.
+   */
+  discountType?: string;
+  /**
+   * The promo's numeric payload. For a fixed_price promo this is the exact sale
+   * price (e.g. 2499). For percentage promos it is not a price — only trust it
+   * when discountType === 'fixed_price'.
+   */
+  value?: number;
 }
 
 export interface SearchPromotionsResponse {

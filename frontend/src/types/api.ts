@@ -308,6 +308,12 @@ export interface SuperMatch {
   promo_label: string | null;
   /** Informational 'other' promo labels (never folded into ranking). */
   info_badges: string[];
+  /**
+   * Whether this super has the product in stock. Out-of-stock supers are shown
+   * (with their price, for transparency) but excluded from ranking and cart
+   * building. Only the home super can be false.
+   */
+  available: boolean;
 }
 
 export interface CompareItem {

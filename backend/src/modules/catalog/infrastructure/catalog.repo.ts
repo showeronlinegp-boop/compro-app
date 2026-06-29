@@ -218,11 +218,17 @@ export function makeCatalogRepo(prisma: PrismaLike): CatalogRepo {
       // Fetch all variants for the page's group keys in one query
       const keys = pageGroups.map((g) => g.gkey);
       const keyList = Prisma.join(keys.map((k) => Prisma.sql`${k}`));
+      // Variants of a surfaced group: available rows from every super, PLUS VEA's
+      // out-of-stock rows. Groups themselves are still selected/ranked from
+      // available rows only (the summary query above), so this never surfaces a
+      // VEA-only dead group — it just keeps VEA's "sin stock" price visible on a
+      // card that already exists for its in-stock competitors. Frontend badges it
+      // and excludes it from the best-price pick.
       const rows = await (prisma as PrismaClient).$queryRaw<ProductRow[]>(
         Prisma.sql`
           SELECT * FROM products
           WHERE ${GKEY} IN (${keyList})
-            AND available = true
+            AND (available = true OR super = ${'vea'})
           ORDER BY raw_price ASC
         `,
       );

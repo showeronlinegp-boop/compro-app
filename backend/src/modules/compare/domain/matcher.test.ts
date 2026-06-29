@@ -6,7 +6,7 @@ import { buildCompareResult, calcOptionA, calcOptionB } from './matcher.js';
 
 function makeItem(
   shopping_id: number,
-  matches: Array<{ super: string; price: number; product_id?: number }>,
+  matches: Array<{ super: string; price: number; product_id?: number; available?: boolean }>,
 ): CompareItem {
   return {
     shopping_id,
@@ -26,10 +26,48 @@ function makeItem(
       unit_price: m.price,
       promo_label: null,
       info_badges: [],
+      available: m.available ?? true,
     })),
     opportunity: null,
   };
 }
+
+// ─── out-of-stock exclusion ──────────────────────────────────────────────────
+
+describe('out-of-stock matches are excluded from ranking', () => {
+  it('calcOptionA does not give an OOS super a row nor count it as coverage', () => {
+    const items: CompareItem[] = [
+      makeItem(1, [
+        { super: 'vea', price: 50, available: false }, // cheapest but OOS
+        { super: 'dia', price: 80 },
+      ]),
+    ];
+    const result = calcOptionA(items);
+    // VEA must not appear at all; DIA covers the only item.
+    expect(result.map((r) => r.super)).toEqual(['dia']);
+    expect(result[0]?.total).toBe(80);
+    expect(result[0]?.coverage).toBe(100);
+  });
+
+  it('calcOptionB picks the cheapest IN-STOCK super, skipping a cheaper OOS one', () => {
+    const items: CompareItem[] = [
+      makeItem(1, [
+        { super: 'vea', price: 50, available: false },
+        { super: 'dia', price: 80 },
+        { super: 'carrefour', price: 90 },
+      ]),
+    ];
+    const result = calcOptionB(items);
+    expect(result.breakdown).toEqual([{ shopping_id: 1, best_super: 'dia', price: 80 }]);
+    expect(result.total).toBe(80);
+  });
+
+  it('an item whose only super is OOS contributes to neither option', () => {
+    const items: CompareItem[] = [makeItem(1, [{ super: 'vea', price: 50, available: false }])];
+    expect(calcOptionA(items)).toEqual([]);
+    expect(calcOptionB(items).breakdown).toEqual([]);
+  });
+});
 
 // ─── calcOptionA ─────────────────────────────────────────────────────────────
 

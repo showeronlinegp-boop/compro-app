@@ -41,7 +41,25 @@ export function effectiveDiscount(
   const promo = generic[skuId];
   if (!promo) return null;
 
-  // verbatim from enricher.js line 108:
+  // FIXED-PRICE promo: VTEX states the exact sale price in `value`. Use it directly.
+  // The `effectiveDiscount` field is a ROUNDED fraction (e.g. "0.46"), so
+  // reconstructing the price from it is off by a few pesos — e.g. base 4650 with a
+  // real fixed price of 2499 reconstructs to 4650*(1-0.46)=2511. Trust `value`.
+  if (promo.discountType === 'fixed_price' && typeof promo.value === 'number' && promo.value > 0) {
+    const offerPrice = Math.round(promo.value * 100) / 100;
+    if (offerPrice >= rawPrice) return null;
+    const discount = (rawPrice - offerPrice) / rawPrice;
+    // Same stale-base guard as the percentage path (reject absurd >80% discounts).
+    if (discount > 0.8) return null;
+    return {
+      sku_id: skuId,
+      offer_price: offerPrice,
+      discount_pct: Math.round(discount * 100),
+      name: promo.name,
+    };
+  }
+
+  // PERCENTAGE promo: reconstruct from effectiveDiscount (verbatim from enricher.js).
   const discount = Number.parseFloat(promo.effectiveDiscount);
   if (!discount || discount <= 0 || discount > 0.8) return null;
 

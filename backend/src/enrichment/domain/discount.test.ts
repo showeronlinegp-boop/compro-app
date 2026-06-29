@@ -71,12 +71,49 @@ describe('TS enricher — Strategy A (search-promotions) characterization', () =
     expect(effectiveDiscount('test-sku', 0, promo)).toBeNull();
   });
 
-  it('real fixture sku 336191 — effectiveDiscount=0.37 → discount_pct=37 (snapshot)', () => {
+  it('real fixture sku 336191 — fixed_price uses exact value 619 (not reconstructed)', () => {
+    // 336191 is a fixed_price promo (value 619, effectiveDiscount 0.37). At its real
+    // base (~983) the exact sale price is 619; the old code reconstructed it from the
+    // rounded 0.37 and got it wrong. Use a realistic base so the fixed_price path applies.
     const generic = promotionsVea.promotions.generic?.promotions ?? {};
-    const result = effectiveDiscount('336191', 10000, generic);
-    expect(result).not.toBeNull();
-    expect(result?.discount_pct).toBe(37);
-    expect(result).toMatchSnapshot();
+    const result = effectiveDiscount('336191', 983, generic);
+    expect(result?.offer_price).toBe(619); // exact value, not 983*(1-0.37)=619.29
+    expect(result?.discount_pct).toBe(37); // round((983-619)/983*100)
+  });
+
+  describe('fixed_price promos use the exact `value`, not the rounded effectiveDiscount', () => {
+    it('uses value (2499) directly instead of reconstructing 4650*(1-0.46)=2511', () => {
+      const promo = {
+        '3082542': {
+          ref_id: '590801',
+          name: 'OFERTA YOG LS | Ofertas Trafico',
+          type: 'regular',
+          discountType: 'fixed_price',
+          value: 2499,
+          effectiveDiscount: '0.46', // rounded — would give 2511 if trusted
+        },
+      };
+      const result = effectiveDiscount('3082542', 4650, promo);
+      expect(result?.offer_price).toBe(2499);
+      expect(result?.discount_pct).toBe(46); // round((4650-2499)/4650*100)
+    });
+
+    it('rejects a fixed_price whose value is not below the base price', () => {
+      const promo = {
+        sku: { ref_id: '', name: 'x', type: 'regular', discountType: 'fixed_price', value: 5000, effectiveDiscount: '0.1' },
+      };
+      expect(effectiveDiscount('sku', 4650, promo)).toBeNull();
+    });
+
+    it('falls back to effectiveDiscount when discountType is not fixed_price', () => {
+      // value present but it is NOT a price for a percentage promo → must be ignored.
+      const promo = {
+        sku: { ref_id: '', name: 'x', type: 'regular', discountType: 'percentual', value: 46, effectiveDiscount: '0.40' },
+      };
+      const result = effectiveDiscount('sku', 1000, promo);
+      expect(result?.offer_price).toBe(600); // 1000*(1-0.40), value:46 ignored
+      expect(result?.discount_pct).toBe(40);
+    });
   });
 });
 

@@ -3,7 +3,7 @@
  * silent-drop guard. The page fetcher is injected so no network is hit.
  */
 import { describe, expect, it, vi } from 'vitest';
-import { fetchPageWithEmptyRetry } from './crawler.service.js';
+import { fetchPageWithEmptyRetry, shouldMarkOutOfStock } from './crawler.service.js';
 
 const NO_DELAY = { maxEmptyRetries: 3, emptyRetryDelayMs: 0 };
 
@@ -59,5 +59,24 @@ describe('fetchPageWithEmptyRetry', () => {
     const res = await fetchPageWithEmptyRetry(fetchPage, 'Almacén', 5, NO_DELAY);
     expect(res.dropped).toBe(true);
     expect(fetchPage).toHaveBeenCalledTimes(4);
+  });
+});
+
+describe('shouldMarkOutOfStock', () => {
+  it('marks out of stock when availableQty is 0 and price is usable', () => {
+    expect(shouldMarkOutOfStock({ price: 4107.19, availableQty: 0 })).toBe(true);
+  });
+
+  it('does NOT mark when the product is in stock (delete is left to the next crawl)', () => {
+    expect(shouldMarkOutOfStock({ price: 4107.19, availableQty: 3 })).toBe(false);
+  });
+
+  it('does NOT mark a delisted product (null offer)', () => {
+    expect(shouldMarkOutOfStock(null)).toBe(false);
+  });
+
+  it('does NOT mark when the price is not usable (0 or negative)', () => {
+    expect(shouldMarkOutOfStock({ price: 0, availableQty: 0 })).toBe(false);
+    expect(shouldMarkOutOfStock({ price: -1, availableQty: 0 })).toBe(false);
   });
 });

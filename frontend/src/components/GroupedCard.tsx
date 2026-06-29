@@ -56,6 +56,9 @@ function promoUnitPrice(
 
 /** Price used to rank/compare a variant: the promo per-unit when it applies, else the shelf price. */
 function comparePrice(v: Product): number | null {
+  // Out of stock → rank by the plain shelf price (no promo/offer), matching what
+  // the card actually shows. OOS variants never win best anyway.
+  if (!v.available) return v.raw_price;
   return promoUnitPrice(v)?.perUnit ?? v.offer_price ?? v.raw_price;
 }
 
@@ -72,13 +75,19 @@ export default function GroupedCard({
   // Sort ascending by comparable price (promo counts for ranking).
   const sorted = [...variants].sort((a, b) => (comparePrice(a) ?? 0) - (comparePrice(b) ?? 0));
 
-  // Guard sorted[0] for noUncheckedIndexedAccess — unreachable at runtime
-  // because variants.length > 0 is already checked, but TS needs the narrowing.
-  const target = sorted[0];
+  // Best price and the cart/interest target consider ONLY in-stock variants.
+  // An out-of-stock row (e.g. VEA) is shown for transparency but must never win
+  // the ✓ nor be the variant the action buttons operate on.
+  const availableSorted = sorted.filter((v) => v.available);
+
+  // Guard for noUncheckedIndexedAccess. Groups only surface when at least one
+  // super has the product in stock, so availableSorted[0] is the real target;
+  // sorted[0] is a defensive fallback that never hits in practice.
+  const target = availableSorted[0] ?? sorted[0];
   if (!target) return null;
 
   const isComparison = sorted.length > 1;
-  const bestPrice = comparePrice(target);
+  const bestPrice = availableSorted[0] ? comparePrice(availableSorted[0]) : null;
 
   const isInterest = interestIds?.has(target.id) ?? false;
 
@@ -102,12 +111,15 @@ export default function GroupedCard({
       <div className="px-3 pb-2 flex flex-col gap-1 mt-1 flex-1">
         {sorted.map((v) => {
           const cfg = superCfg(v.super);
-          const price = v.offer_price ?? v.raw_price;
-          const promo = promoUnitPrice(v);
+          const isOos = !v.available;
+          // Out of stock → show the shelf price exactly as the super's page shows it.
+          // Never surface a discount (offer_price/strike) that no longer applies.
+          const price = isOos ? v.raw_price : (v.offer_price ?? v.raw_price);
+          const promo = isOos ? null : promoUnitPrice(v);
           // Label-only promos (e.g. VEA's "2do al 50%" from marketing collections):
           // shown as informational badges, never as a computed per-unit price.
-          const infoPromos = (v.promotions ?? []).filter((pr) => pr.type === 'other');
-          const isBest = isComparison && comparePrice(v) === bestPrice;
+          const infoPromos = isOos ? [] : (v.promotions ?? []).filter((pr) => pr.type === 'other');
+          const isBest = !isOos && isComparison && bestPrice != null && comparePrice(v) === bestPrice;
           // VTEX product_url can be relative ("/slug/p") → resolve to the super's
           // storefront origin so the link opens the super, not our own app.
           const href = resolveStoreUrl(v.product_url, v.super);
@@ -122,11 +134,13 @@ export default function GroupedCard({
                 {cfg.label}
               </span>
               <div className="flex items-center gap-1.5 whitespace-nowrap">
-                {v.offer_price && (
+                {!isOos && v.offer_price && (
                   <span className="text-gray-400 line-through">{pesos(v.raw_price)}</span>
                 )}
                 <span
-                  className={`font-bold ${isBest && !promo ? 'text-green-700' : 'text-gray-800'}`}
+                  className={`font-bold ${
+                    isOos ? 'text-gray-400' : isBest && !promo ? 'text-green-700' : 'text-gray-800'
+                  }`}
                 >
                   {pesos(price)}
                 </span>
@@ -156,7 +170,11 @@ export default function GroupedCard({
             <div
               key={`${v.super}-${v.product_id}`}
               className={`rounded-xl border px-2.5 py-1.5 text-xs ${
-                isBest ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-100'
+                isBest
+                  ? 'bg-green-50 border-green-200'
+                  : isOos
+                    ? 'border-dashed border-gray-200 bg-gray-50/60'
+                    : 'bg-gray-50 border-gray-100'
               }`}
             >
               {/* Precio real de góndola (1 unidad) — siempre honesto.
@@ -209,9 +227,16 @@ export default function GroupedCard({
                 </div>
               )}
 
-              {/* Disclaimer por super (p. ej. variación de precio por zona en VEA) */}
-              {cfg.note && (
-                <p className="mt-1 text-[9px] leading-tight text-gray-400">{cfg.note}</p>
+              {/* Aviso de sin stock — VEA muestra el precio en su web pero el producto
+                  no se puede comprar. Reemplaza el disclaimer de zona cuando aplica. */}
+              {isOos ? (
+                <p className="mt-1 text-[9px] font-semibold leading-tight text-amber-600">
+                  Sin stock en {cfg.label} — precio de referencia de su web
+                </p>
+              ) : (
+                cfg.note && (
+                  <p className="mt-1 text-[9px] leading-tight text-gray-400">{cfg.note}</p>
+                )
               )}
             </div>
           );

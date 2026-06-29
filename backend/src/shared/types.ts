@@ -350,6 +350,14 @@ export interface SuperMatch {
   promo_label: string | null;
   /** Informational 'other' promo labels (never folded into ranking). */
   info_badges: string[];
+  /**
+   * Whether this super actually has the product in stock. An out-of-stock super
+   * is still shown (with its price, for transparency) but is EXCLUDED from
+   * ranking and cart-building — the user is never sent to build a cart there for
+   * an item that has no stock. Only the home super can be false here: external
+   * matches are filtered to in-stock rows at query time.
+   */
+  available: boolean;
 }
 
 export interface CompareItem {

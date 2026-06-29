@@ -81,6 +81,20 @@ async function loadBrandRulesFromPrisma(prisma: PrismaClient): Promise<Map<strin
 export interface SyncRepo {
   /** Upsert a batch of products for a given superKey (chunked transactions). */
   upsertProducts: (superKey: string, items: NormalizedCrawlItem[]) => Promise<void>;
+  /**
+   * Rows for superKey not seen in the current sync (synced_at < started_at) —
+   * the candidates for stale-delete or out-of-stock rescue.
+   */
+  getStaleProducts: (
+    superKey: string,
+    logId: number,
+  ) => Promise<Array<{ id: number; product_id: string }>>;
+  /**
+   * Mark a product as out of stock: keep it visible with VEA's current public
+   * price, drop any (now-invalid) promo, and bump synced_at so the subsequent
+   * stale-delete does NOT remove it.
+   */
+  markOutOfStock: (id: number, price: number) => Promise<void>;
   /** Delete rows for superKey that were last synced before the given sync started_at. */
   deleteStaleForSuper: (superKey: string, logId: number) => Promise<number>;
   /** Insert a new sync_log row and return its id. */
@@ -153,6 +167,30 @@ export function makeSyncRepo(prisma: PrismaClient): SyncRepo {
           { timeout: 60_000, maxWait: 10_000 },
         );
       }
+    },
+
+    async getStaleProducts(superKey, logId) {
+      const rows = await prisma.$queryRaw<Array<{ id: number; product_id: string }>>(Prisma.sql`
+        SELECT id, product_id
+        FROM products
+        WHERE super = ${superKey}
+          AND synced_at < (SELECT started_at FROM sync_log WHERE id = ${logId})
+      `);
+      return rows.map((r) => ({ id: Number(r.id), product_id: String(r.product_id) }));
+    },
+
+    async markOutOfStock(id, price) {
+      await prisma.products.update({
+        where: { id },
+        data: {
+          available: false,
+          raw_price: price,
+          offer_price: null,
+          discount_pct: 0,
+          promotions: [],
+          synced_at: new Date(),
+        },
+      });
     },
 
     async deleteStaleForSuper(superKey, logId) {

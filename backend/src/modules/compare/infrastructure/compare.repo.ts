@@ -60,6 +60,7 @@ interface ProductBaseRow {
   // Guaranteed non-null by the COALESCE(...) IS NOT NULL SQL filter.
   home_price: number;
   home_promotions: unknown[] | null;
+  home_available: boolean;
 }
 
 interface MatchRow {
@@ -121,7 +122,8 @@ export function makeCompareRepo(prisma: PrismaClient): CompareRepo {
           p.category_key,
           p.sku_id AS home_sku_id,
           COALESCE(p.offer_price, p.raw_price) AS home_price,
-          p.promotions AS home_promotions
+          p.promotions AS home_promotions,
+          p.available AS home_available
         FROM products p
         WHERE p.id IN (${Prisma.join(productIds)})
           AND COALESCE(p.offer_price, p.raw_price) IS NOT NULL
@@ -215,6 +217,8 @@ export function makeCompareRepo(prisma: PrismaClient): CompareRepo {
           price: Number(m.match_price), // shelf UNIT price — effective computed after dedup
           matched_by: m.matched_by,
           _promotions: parsePromotions(tryParse<unknown>(m.match_promotions)),
+          // External matches are filtered to in-stock rows at query time (p2.available = true).
+          available: true,
           // new SuperMatch fields — filled in during per-source loop below
           unit_price: 0,
           promo_label: null,
@@ -246,6 +250,7 @@ export function makeCompareRepo(prisma: PrismaClient): CompareRepo {
           price: unitHomePrice, // shelf UNIT price — effective computed after dedup
           matched_by: 'barcode',
           _promotions: homePromos,
+          available: base.home_available,
           unit_price: 0,
           promo_label: null,
           info_badges: [],
@@ -269,12 +274,16 @@ export function makeCompareRepo(prisma: PrismaClient): CompareRepo {
         // NOTE: _promotions is NOT forwarded to the public SuperMatch shape in dedupedMatches below,
         // so it MUST be read here before that mapping drops it from the working type.
         // One candidate per surviving super: shelfUnit = deduped shelf price, promotions from _promotions.
-        const opportunityCandidates = [...bySuperMap.values()].map((m) => ({
-          super: m.super,
-          product_id: m.product_id,
-          shelfUnit: m.price,
-          promotions: m._promotions,
-        }));
+        // Out-of-stock supers are excluded — we never nudge the user toward a promo
+        // at a super that has no stock for the item.
+        const opportunityCandidates = [...bySuperMap.values()]
+          .filter((m) => m.available)
+          .map((m) => ({
+            super: m.super,
+            product_id: m.product_id,
+            shelfUnit: m.price,
+            promotions: m._promotions,
+          }));
         const rawOpportunity = computePromoOpportunity(opportunityCandidates, qty);
 
         // After dedup: compute effective line total per surviving super (ADR-1).
@@ -293,6 +302,7 @@ export function makeCompareRepo(prisma: PrismaClient): CompareRepo {
             unit_price: round2(shelfUnit * qty), // shelf total (strike-through baseline)
             promo_label: best?.label ?? null,
             info_badges: collectInfoBadges(m._promotions),
+            available: m.available,
           };
         });
 

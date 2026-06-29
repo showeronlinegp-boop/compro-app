@@ -878,4 +878,41 @@ describe('makeCompareRepo', () => {
       expect(parsePromotions(raw)).toEqual([]);
     });
   });
+
+  describe('out-of-stock home product', () => {
+    it('marks the home super match available=false while in-stock matches stay true', async () => {
+      await withRollback(async (tx) => {
+        const prismaLike = tx as unknown as Parameters<typeof makeCompareRepo>[0];
+        const barcode = `oos-${Date.now()}`;
+        // Home product (VEA) is out of stock; a DIA row of the same barcode is in stock.
+        const homeId = await seedProduct(tx, {
+          super_key: 'vea',
+          product_id: `home-oos-${Date.now()}`,
+          name: 'Tapas Para Tarta',
+          barcode,
+          raw_price: 1689.5,
+          available: false,
+        });
+        await seedProduct(tx, {
+          super_key: 'dia',
+          product_id: `dia-${Date.now()}`,
+          name: 'Tapas Para Tarta',
+          barcode,
+          raw_price: 2735,
+          available: true,
+        });
+
+        const repo = makeCompareRepo(prismaLike);
+        const [item] = await repo.buildCompareItemsFromSource([
+          { item_id: 1, product_id: homeId, quantity: 1 },
+        ]);
+
+        const vea = item?.matches.find((m) => m.super === 'vea');
+        const dia = item?.matches.find((m) => m.super === 'dia');
+        // VEA is still surfaced (transparency) but flagged out of stock; DIA is in stock.
+        expect(vea?.available).toBe(false);
+        expect(dia?.available).toBe(true);
+      });
+    });
+  });
 });

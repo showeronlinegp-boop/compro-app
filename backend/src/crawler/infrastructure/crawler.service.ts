@@ -25,7 +25,7 @@
 import type { PrismaClient } from '@prisma/client';
 import { SUPERS, resolveCrawlConfig } from '../../config/supers.js';
 import { CRAWLER_IS_SAFE_MAX, CRAWLER_PAGE_SIZE } from '../../config/throttles.js';
-import { getCatalogTree, searchPage } from '../../infrastructure/vtex/is-client.js';
+import { fetchProductOffer, getCatalogTree, searchPage } from '../../infrastructure/vtex/is-client.js';
 import { buildNormalizer } from '../../infrastructure/vtex/normalizer.js';
 import { fetchWithRetry } from '../../shared/fetch.js';
 import { runPool } from '../../shared/pool.js';
@@ -131,6 +131,35 @@ export async function fetchPageWithEmptyRetry(
     await sleep(delayMs * (attempt + 1));
   }
 }
+
+// ---------------------------------------------------------------------------
+// Out-of-stock rescue (VEA)
+// ---------------------------------------------------------------------------
+
+/**
+ * Decide whether a re-fetched offer means "out of stock but still listed", in
+ * which case we keep the product visible with this price instead of deleting it.
+ *
+ * Only a confirmed AvailableQuantity 0 with a usable price qualifies. A null
+ * offer (delisted product) or an in-stock result does NOT — those are left to
+ * the normal stale-delete / next crawl. Pure — exported for testing.
+ */
+export function shouldMarkOutOfStock(
+  offer: { price: number; availableQty: number } | null,
+): offer is { price: number; availableQty: number } {
+  return offer != null && offer.availableQty === 0 && offer.price > 0;
+}
+
+/**
+ * Max number of dropped products the OOS rescue will process. Above this, the
+ * drop is almost certainly a REGION SWITCH (or a broken source), not genuine
+ * out-of-stock churn — re-checking thousands one-by-one is slow AND wrong, because
+ * catalog_system reports AvailableQuantity 0 for products simply NOT SOLD in the
+ * new region, which would get kept as phantom "sin stock" rows. When exceeded we
+ * skip the rescue entirely and let the normal stale-delete purge the old region's
+ * catalog. Steady-state OOS churn is far below this.
+ */
+export const RESCUE_MAX_STALE = 1000;
 
 // ---------------------------------------------------------------------------
 // Slice 2 — buildProbeCounts (parallel probes via runPool)
@@ -368,6 +397,17 @@ export function makeCrawlerService(deps: CrawlerServiceDeps): CrawlerService {
     // Resolve concurrency config: static defaults < env vars < per-super overrides
     const crawlCfg = resolveCrawlConfig(superKey);
 
+    // VEA has no VTEX pickup-points, so its region is resolved separately (SEPA +
+    // /regions) and can silently come back null. Crawling VEA without a region
+    // yields DEFAULT-region (CABA/national) prices and stock — wrong for any other
+    // zone. Make that loud instead of letting it pass unnoticed.
+    if (superKey === 'vea' && !regionId) {
+      console.warn(
+        '[sync:vea] ⚠ Crawleando VEA SIN regionId → precios y stock de la región DEFAULT (CABA), ' +
+          'no de la sucursal del usuario. Revisá region_ids.vea en el perfil (re-guardá la ubicación).',
+      );
+    }
+
     markRunning(superKey);
 
     const logId = await repo.insertSyncLog(superKey);
@@ -474,6 +514,44 @@ export function makeCrawlerService(deps: CrawlerServiceDeps): CrawlerService {
       // the delete keeps valid-but-unseen products instead of wrongly purging them;
       // they get pruned on the next clean run.
       if (crawlComplete) {
+        // VEA out-of-stock rescue: products that dropped out of the in-stock crawl
+        // may be out of stock rather than delisted. Re-fetch each one's public-PDP
+        // offer; when it confirms AvailableQuantity 0, keep it visible (marked
+        // unavailable, with VEA's current price) instead of letting the stale-delete
+        // remove it. Delisted/in-stock-elsewhere products fall through to the delete.
+        if (superKey === 'vea') {
+          const stale = await repo.getStaleProducts(superKey, logId);
+          if (stale.length > RESCUE_MAX_STALE) {
+            // Region switch / broken source — NOT genuine OOS. Skip the rescue and
+            // let the stale-delete below purge the old region's catalog, instead of
+            // marking thousands of not-sold-here products as phantom "sin stock".
+            console.warn(
+              `[sync:${superKey}] Rescue SKIPPED: ${stale.length} dropped products (> ${RESCUE_MAX_STALE}) — likely a region change. Letting stale-delete purge them.`,
+            );
+          } else if (stale.length > 0) {
+            console.log(`[sync:${superKey}] Rescue: re-checking ${stale.length} dropped products...`);
+            let rescued = 0;
+            await runPool(stale, crawlCfg.pageConc, async (row) => {
+              try {
+                // Pass the crawl region so the OOS check reads the user's zone
+                // (price + stock), not the default region.
+                const offer = await fetchWithRetry(() =>
+                  fetchProductOffer(cfg, row.product_id, regionId),
+                );
+                if (shouldMarkOutOfStock(offer)) {
+                  await repo.markOutOfStock(row.id, offer.price);
+                  rescued++;
+                }
+              } catch {
+                // Leave for stale-delete: a failed re-fetch must not keep a phantom row.
+              }
+            });
+            if (rescued > 0) {
+              console.log(`[sync:${superKey}] Rescue: marked ${rescued} products out of stock`);
+            }
+          }
+        }
+
         const deleted = await repo.deleteStaleForSuper(superKey, logId);
         if (deleted > 0) {
           console.log(`[sync:${superKey}] Deleted ${deleted} stale products from previous sync`);

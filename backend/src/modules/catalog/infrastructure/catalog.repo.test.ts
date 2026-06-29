@@ -316,6 +316,38 @@ describe('makeCatalogRepo', () => {
       });
     });
 
+    it('surfaces an out-of-stock VEA variant within a group kept alive by an in-stock competitor', async () => {
+      await withRollback(async (tx) => {
+        // Group exists because Carrefour has it in stock; VEA's row is out of stock
+        // but must still appear as a variant (transparency) carrying available=false.
+        await seedProduct(tx, {
+          super_key: 'carrefour',
+          product_id: 'cf',
+          barcode: 'BC_OOS',
+          raw_price: 2735,
+          available: true,
+        });
+        await seedProduct(tx, {
+          super_key: 'vea',
+          product_id: 'vea-oos',
+          barcode: 'BC_OOS',
+          raw_price: 4107.19,
+          available: false,
+        });
+        const repo = makeCatalogRepo(tx);
+        const result = await repo.getGroups({});
+        expect(result.total).toBe(1);
+        // super_count is driven by in-stock rows only → 1.
+        expect(result.data[0]?.super_count).toBe(1);
+        // But both variants are returned, including the OOS VEA row.
+        const variants = result.data[0]?.variants ?? [];
+        expect(variants).toHaveLength(2);
+        const vea = variants.find((v) => v.super === 'vea');
+        expect(vea?.available).toBe(false);
+        expect(vea?.raw_price).toBe(4107.19);
+      });
+    });
+
     it('comparable groups sort before singletons (super_count DESC)', async () => {
       await withRollback(async (tx) => {
         await seedProduct(tx, { super_key: 'vea', product_id: 's1', name: 'Zzz Single', barcode: 'BCS' });

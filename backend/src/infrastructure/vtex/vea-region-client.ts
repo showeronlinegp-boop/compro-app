@@ -61,22 +61,65 @@ export async function getVeaSellerMap(
   return map;
 }
 
+/** Number of attempts for each flaky external step (SEPA, /regions). */
+const RESOLVE_ATTEMPTS = 3;
+const RESOLVE_DELAY_MS = 600;
+
+const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Call `fn` up to `attempts` times until `ok(result)` holds, with a linear backoff.
+ * Used to ride out transient failures of the flaky SEPA / /regions endpoints
+ * (rate-limit HTML pages, 5xx) that otherwise return null/empty on the first try.
+ */
+async function retryUntil<T>(fn: () => Promise<T>, ok: (v: T) => boolean): Promise<T> {
+  let result = await fn();
+  for (let attempt = 1; attempt < RESOLVE_ATTEMPTS && !ok(result); attempt++) {
+    await sleep(RESOLVE_DELAY_MS * attempt);
+    result = await fn();
+  }
+  return result;
+}
+
 /**
  * Resolve the VEA region for a location: nearest VEA sucursal (SEPA) → seller
- * slug (regions) → regionId. Returns null when no VEA store is near or the
- * seller cannot be matched, so callers leave region_ids.vea null (default region).
+ * slug (regions) → regionId. Returns null when no VEA store is near or the seller
+ * cannot be matched, so callers leave region_ids.vea null (default region).
+ *
+ * Both external steps (SEPA, /regions) are flaky and previously failed SILENTLY:
+ * a single transient failure left region_ids.vea null forever (resolution runs
+ * once at location-set time and is then persisted). We now RETRY each step and
+ * WARN with the exact failing step on a definitive null, so the failure is visible
+ * instead of silently degrading VEA to the default (CABA) region.
  */
 export async function resolveVeaRegion(
   baseUrl: string,
   geo: GeoPoint,
   postalCode = '1000',
 ): Promise<{ regionId: string; store: StoreLocation } | null> {
-  const sucursal = await getVeaSucursalNear(geo);
-  if (!sucursal) return null;
+  const sucursal = await retryUntil(() => getVeaSucursalNear(geo), (s) => s != null);
+  if (!sucursal) {
+    console.warn(
+      `[vea-region] SEPA no devolvió una sucursal VEA cerca de (${geo.lat},${geo.lng}) tras ${RESOLVE_ATTEMPTS} intentos — VEA quedará en la región DEFAULT. Reintentá guardar la ubicación.`,
+    );
+    return null;
+  }
 
-  const map = await getVeaSellerMap(baseUrl, postalCode);
+  const map = await retryUntil(() => getVeaSellerMap(baseUrl, postalCode), (m) => m.size > 0);
+  if (map.size === 0) {
+    console.warn(
+      `[vea-region] /regions devolvió un mapa de sellers vacío tras ${RESOLVE_ATTEMPTS} intentos — VEA quedará en la región DEFAULT. Reintentá guardar la ubicación.`,
+    );
+    return null;
+  }
+
   const slug = map.get(Number(sucursal.storeNumber));
-  if (!slug) return null;
+  if (!slug) {
+    console.warn(
+      `[vea-region] La sucursal VEA ${sucursal.storeNumber} (${sucursal.city ?? '?'}) no matchea ningún seller (mapa de ${map.size}) — VEA quedará en la región DEFAULT.`,
+    );
+    return null;
+  }
 
   const regionId = regionIdForSellers([slug]);
   if (!regionId) return null;
