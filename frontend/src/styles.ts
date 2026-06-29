@@ -20,3 +20,11 @@ export const FOCUS_RING =
  */
 export const PRIMARY_CTA =
   'inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors';
+
+/**
+ * Focus-visible ring for text inputs and selects.
+ * Uses focus-visible so mouse users never see an outline.
+ * Slightly tighter offset than FOCUS_RING to stay inside the input border.
+ */
+export const FOCUS_RING_INPUT =
+  'focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1';

@@ -1,4 +1,5 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CartItemEntry, CompareResult } from '../types/api';
 
@@ -7,6 +8,7 @@ import type { CartItemEntry, CompareResult } from '../types/api';
 const mockClear = vi.fn<() => Promise<void>>();
 const mockUpdateQty = vi.fn<(id: number, qty: number) => Promise<void>>();
 const mockRemoveItem = vi.fn<(id: number) => Promise<void>>();
+const mockOpenCart = vi.fn();
 
 // Mutable so individual tests can override items / itemCount
 let mockItems: CartItemEntry[] = [];
@@ -16,9 +18,12 @@ vi.mock('../contexts/CartContext', () => ({
   useCart: () => ({
     items: mockItems,
     itemCount: mockItemCount,
+    isOpen: false,
     clear: mockClear,
     updateQty: mockUpdateQty,
     removeItem: mockRemoveItem,
+    openCart: mockOpenCart,
+    closeCart: vi.fn(),
   }),
 }));
 
@@ -110,12 +115,21 @@ import Cart from './Cart';
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function renderCart() {
-  return render(<Cart />);
+  return render(
+    <MemoryRouter>
+      <Cart />
+    </MemoryRouter>,
+  );
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
-describe('Cart compare tab behavior', () => {
+/**
+ * Previously the Cart page had Editar/Comparar tabs. Now /cart is the comparison-only
+ * view. Compare loads on mount (no tab click required). The edit functionality moved
+ * to CartDrawer (opened from the navbar cart icon).
+ */
+describe('Cart comparison view — loads on mount', () => {
   afterEach(() => {
     cleanup();
   });
@@ -127,26 +141,23 @@ describe('Cart compare tab behavior', () => {
     mockItemCount = 1;
   });
 
-  it('clicking Comparar triggers api.cart.compare once and renders Option A section', async () => {
+  it('calls api.cart.compare on mount and renders Option A section', async () => {
     mockCompare.mockResolvedValue(makeCompareResult());
 
     renderCart();
-
-    // Default tab is Editar — compare not called yet
-    expect(mockCompare).not.toHaveBeenCalled();
-
-    const comparar = screen.getByRole('button', { name: 'Comparar' });
-    act(() => {
-      fireEvent.click(comparar);
-    });
 
     await waitFor(() => expect(mockCompare).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(screen.getByText('Opción A — Todo en un super')).toBeDefined());
   });
 
-  it('default Editar tab does not call api.cart.compare', () => {
+  it('does not call compare when cart is empty (shows empty state instead)', () => {
+    mockItems = [];
+    mockItemCount = 0;
+
     renderCart();
+
     expect(mockCompare).not.toHaveBeenCalled();
+    expect(screen.getByText('Tu carrito está vacío')).toBeDefined();
   });
 
   it('empty compare result shows empty state message and no Option A/B tables', async () => {
@@ -159,11 +170,6 @@ describe('Cart compare tab behavior', () => {
     );
 
     renderCart();
-
-    const comparar = screen.getByRole('button', { name: 'Comparar' });
-    act(() => {
-      fireEvent.click(comparar);
-    });
 
     await waitFor(() => expect(screen.getByText('Sin resultados para comparar')).toBeDefined());
 
@@ -232,65 +238,59 @@ describe('Cart compare tab behavior', () => {
 
     renderCart();
 
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
-    });
-
     await waitFor(() => expect(screen.getByText('Comparamos 1 de 2 productos')).toBeDefined());
   });
 
-  it('stale guard: changed signature triggers a second fetch on re-activation', async () => {
+  it('stale guard: changed signature triggers a second fetch on re-render', async () => {
     mockCompare.mockResolvedValue(makeCompareResult());
 
     const { rerender } = renderCart();
 
-    // First activation → fetch #1
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
-    });
+    // First mount → fetch #1
     await waitFor(() => expect(mockCompare).toHaveBeenCalledTimes(1));
 
-    // Switch back to Editar
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
-    });
-
     // Mutate mockItems (different quantity → different sig) then re-render
-    // so the component picks up the new items before we re-activate Comparar.
     mockItems = [makeItem({ cart_item_id: 1, quantity: 3 })];
     mockItemCount = 3;
     rerender(<Cart />);
 
-    // Re-activate Comparar → sig changed → fetch #2
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
-    });
+    // Sig changed → fetch #2
     await waitFor(() => expect(mockCompare).toHaveBeenCalledTimes(2));
   });
 
-  it('no needless refetch: unchanged cart does not trigger a second fetch', async () => {
+  it('no needless refetch: unchanged cart does not trigger a second fetch on state update', async () => {
+    mockCompare.mockResolvedValue(makeCompareResult());
+
+    const { rerender } = renderCart();
+
+    // Mount → fetch #1
+    await waitFor(() => expect(mockCompare).toHaveBeenCalledTimes(1));
+
+    // Re-render with the same items (same sig) wrapped correctly
+    rerender(
+      <MemoryRouter>
+        <Cart />
+      </MemoryRouter>,
+    );
+
+    // Same sig → guard must skip the fetch; wait a tick to confirm no second call
+    await waitFor(() => expect(mockCompare).toHaveBeenCalledTimes(1));
+  });
+
+  it('"Editar carrito" button calls openCart', async () => {
     mockCompare.mockResolvedValue(makeCompareResult());
 
     renderCart();
 
-    // Open Comparar → fetch #1
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
-    });
-    await waitFor(() => expect(mockCompare).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Editar carrito' })).toBeDefined(),
+    );
 
-    // Switch to Editar (cart unchanged)
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
+      screen.getByRole('button', { name: 'Editar carrito' }).click();
     });
 
-    // Back to Comparar — same sig → guard must skip the fetch
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
-    });
-
-    // Still exactly one call
-    await waitFor(() => expect(mockCompare).toHaveBeenCalledTimes(1));
+    expect(mockOpenCart).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -375,11 +375,8 @@ describe('Cart Oportunidades section', () => {
     mockCompare.mockResolvedValue(makeCompareResultWithOpportunity(opp));
 
     renderCart();
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
-    });
 
-    // Wait for the Oportunidades section root to appear
+    // Wait for the Oportunidades section root to appear (compare loads on mount)
     await waitFor(() => expect(screen.getByTestId('opportunities-section')).toBeDefined());
 
     const section = screen.getByTestId('opportunities-section');
@@ -408,13 +405,14 @@ describe('Cart Oportunidades section', () => {
   it('uses non-redundant promo-only copy when the cheapest super does not change', async () => {
     // best_super === current_best_super → showing "te conviene VEA vs VEA" is
     // redundant; the nudge must only announce that the promo activates.
-    const opp = makeOpportunity({ best_super: 'vea', current_best_super: 'vea', flips_super: false });
+    const opp = makeOpportunity({
+      best_super: 'vea',
+      current_best_super: 'vea',
+      flips_super: false,
+    });
     mockCompare.mockResolvedValue(makeCompareResultWithOpportunity(opp));
 
     renderCart();
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
-    });
 
     await waitFor(() => expect(screen.getByTestId('opportunities-section')).toBeDefined());
     const section = screen.getByTestId('opportunities-section');
@@ -439,18 +437,17 @@ describe('Cart Oportunidades section', () => {
     mockCompare.mockResolvedValue(makeCompareResultWithOpportunity(opp));
 
     const { rerender } = renderCart();
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
-    });
 
-    await waitFor(() => expect(screen.getByRole('button', { name: /Agregar 1 para la promo/i })).toBeDefined());
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Agregar 1 para la promo/i })).toBeDefined(),
+    );
     expect(mockCompare).toHaveBeenCalledTimes(1);
 
     const btn = screen.getByRole('button', { name: /Agregar 1 para la promo/i });
 
     // Click to start the call
     act(() => {
-      fireEvent.click(btn);
+      btn.click();
     });
 
     // Button should be disabled while promise is in flight
@@ -480,21 +477,20 @@ describe('Cart Oportunidades section', () => {
     mockCompare.mockResolvedValue(makeCompareResultWithOpportunity(opp));
 
     renderCart();
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
-    });
 
-    await waitFor(() => expect(screen.getByRole('button', { name: /Agregar 1 para la promo/i })).toBeDefined());
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Agregar 1 para la promo/i })).toBeDefined(),
+    );
 
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: /Agregar 1 para la promo/i }));
+      screen.getByRole('button', { name: /Agregar 1 para la promo/i }).click();
     });
 
     // After the rejection settles the button must be re-enabled (no loading state)
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: /Agregar 1 para la promo/i }).hasAttribute('disabled')).toBe(
-        false,
-      ),
+      expect(
+        screen.getByRole('button', { name: /Agregar 1 para la promo/i }).hasAttribute('disabled'),
+      ).toBe(false),
     );
   });
 
@@ -564,9 +560,6 @@ describe('Cart Oportunidades section', () => {
     mockCompare.mockResolvedValue(result);
 
     renderCart();
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
-    });
 
     await waitFor(() => expect(screen.getByTestId('opportunities-section')).toBeDefined());
 
@@ -583,9 +576,6 @@ describe('Cart Oportunidades section', () => {
     mockCompare.mockResolvedValue(makeCompareResultWithOpportunity(null));
 
     renderCart();
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
-    });
 
     await waitFor(() => expect(screen.getByText('Opción A — Todo en un super')).toBeDefined());
 
@@ -650,9 +640,7 @@ function makeHandoffCompareResult(overrides: Partial<CompareResult> = {}): Compa
         opportunity: null,
       },
     ],
-    option_a: [
-      { super: 'carrefour', total: 1930, coverage: 100, missing_items: 0 },
-    ],
+    option_a: [{ super: 'carrefour', total: 1930, coverage: 100, missing_items: 0 }],
     option_b: {
       total: 1930,
       by_super: [{ super: 'carrefour', total: 1930, coverage: 100, missing_items: 0 }],
@@ -763,11 +751,8 @@ describe('Cart handoff buttons', () => {
     mockCompare.mockResolvedValue(result);
 
     renderCart();
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
-    });
 
-    // Both supers must get a button
+    // Both supers must get a button — compare loads on mount
     await waitFor(() => expect(screen.getByTestId('handoff-option-a-carrefour')).toBeDefined());
     expect(screen.getByTestId('handoff-option-a-dia')).toBeDefined();
 
@@ -834,9 +819,6 @@ describe('Cart handoff buttons', () => {
     mockCompare.mockResolvedValue(result);
 
     renderCart();
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
-    });
 
     await waitFor(() => expect(screen.getByTestId('handoff-option-a-dia')).toBeDefined());
 
@@ -881,9 +863,6 @@ describe('Cart handoff buttons', () => {
     mockCompare.mockResolvedValue(result);
 
     renderCart();
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
-    });
 
     await waitFor(() => expect(screen.getByTestId('handoff-option-a-carrefour')).toBeDefined());
 
@@ -961,9 +940,6 @@ describe('Cart handoff buttons', () => {
     mockCompare.mockResolvedValue(result);
 
     renderCart();
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
-    });
 
     await waitFor(() => expect(screen.getByTestId('handoff-option-b-carrefour')).toBeDefined());
 
@@ -1044,9 +1020,6 @@ describe('Cart handoff buttons', () => {
     mockCompare.mockResolvedValue(result);
 
     renderCart();
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
-    });
 
     await waitFor(() => expect(screen.getByTestId('handoff-option-b-carrefour')).toBeDefined());
 
@@ -1064,9 +1037,6 @@ describe('Cart handoff buttons', () => {
     mockCompare.mockResolvedValue(makeHandoffCompareResult());
 
     renderCart();
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
-    });
 
     await waitFor(() => expect(screen.getByTestId('handoff-option-a-carrefour')).toBeDefined());
 
@@ -1171,9 +1141,6 @@ describe('Cart handoff buttons', () => {
     mockCompare.mockResolvedValue(result);
 
     renderCart();
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
-    });
 
     await waitFor(() => expect(screen.getByTestId('handoff-option-a-carrefour')).toBeDefined());
 
@@ -1186,9 +1153,6 @@ describe('Cart handoff buttons', () => {
     mockCompare.mockResolvedValue(makeHandoffCompareResult());
 
     renderCart();
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
-    });
 
     await waitFor(() => expect(screen.getByTestId('handoff-option-a-carrefour')).toBeDefined());
 
@@ -1237,9 +1201,6 @@ describe('Cart handoff buttons', () => {
     mockCompare.mockResolvedValue(result);
 
     renderCart();
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
-    });
 
     await waitFor(() => expect(screen.getByTestId('handoff-option-a-vea')).toBeDefined());
 
@@ -1327,9 +1288,6 @@ describe('Cart handoff buttons', () => {
     mockCompare.mockResolvedValue(result);
 
     renderCart();
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Comparar' }));
-    });
 
     await waitFor(() => expect(screen.getByTestId('handoff-option-a-carrefour')).toBeDefined());
 

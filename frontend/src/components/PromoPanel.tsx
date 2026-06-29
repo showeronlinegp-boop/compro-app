@@ -55,7 +55,7 @@ export default function PromoPanel({ offers }: PromoPanelProps) {
           by the PageContainer padding. Negative margins pull to the page edge;
           matching padding restores the visual gutter for the first card. */}
       <div
-        className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
+        className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 xl:-mx-12 xl:px-12 2xl:-mx-16 2xl:px-16"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         {filtered.map((offer) => {
@@ -69,12 +69,12 @@ export default function PromoPanel({ offers }: PromoPanelProps) {
                 href={offer.sourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-shrink-0 snap-start relative rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 w-48"
+                className="flex-shrink-0 snap-start relative rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 w-56 h-56"
               >
                 <img
                   src={offer.imageUrl}
                   alt={`Promo ${cfg.label}`}
-                  className="w-full h-36 object-contain bg-white"
+                  className="w-full h-full object-contain bg-white"
                 />
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
                   <span
@@ -104,7 +104,7 @@ export default function PromoPanel({ offers }: PromoPanelProps) {
               href={offer.sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-shrink-0 snap-start rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 bg-white w-52 flex flex-col overflow-hidden"
+              className="flex-shrink-0 snap-start rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 bg-white w-56 h-56 flex flex-col overflow-hidden"
             >
               {/* Bank logo or colored header */}
               <div className="h-14 flex items-center justify-center bg-gray-50 px-3 border-b border-gray-100">

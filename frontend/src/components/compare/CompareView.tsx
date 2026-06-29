@@ -220,7 +220,11 @@ export function CompareView({
   const detailCard = (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
       <h2 className="font-bold text-gray-900 mb-4">Precios por producto y super</h2>
-      <ItemMatchTable items={result.items} priceMode={priceMode} />
+      {/* Cap the table width so the per-super columns stay close together and a
+          row is easy to scan, instead of spreading across the full fluid width. */}
+      <div className="max-w-4xl">
+        <ItemMatchTable items={result.items} priceMode={priceMode} />
+      </div>
     </div>
   );
 

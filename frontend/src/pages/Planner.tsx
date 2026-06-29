@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
-import RecommendationBanner from '../components/RecommendationBanner';
 import { EmptyState } from '../components/EmptyState';
+import RecommendationBanner from '../components/RecommendationBanner';
 import { PageContainer } from '../components/layout/PageContainer';
 import { FOCUS_RING, PRIMARY_CTA } from '../styles';
 import { CATEGORY_LABEL, FREQ_OPTIONS, pesos, superCfg } from '../supers';
@@ -69,7 +69,9 @@ function SwapModal({ item, onSwap, onClose }: SwapModalProps) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div className="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[85vh]">
         {/* Header */}
@@ -103,43 +105,80 @@ function SwapModal({ item, onSwap, onClose }: SwapModalProps) {
 
         {/* Results */}
         <div className="overflow-y-auto flex-1 px-4 py-2">
-          {loading && (
-            <p className="text-center text-sm text-gray-400 py-6">Buscando…</p>
-          )}
+          {loading && <p className="text-center text-sm text-gray-400 py-6">Buscando…</p>}
           {!loading && results.length === 0 && (
             <p className="text-center text-sm text-gray-400 py-6">Sin resultados</p>
           )}
-          {!loading && results.map((p) => {
-            const price = p.offer_price ?? p.raw_price;
-            const cfg = superCfg(p.super);
-            return (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => handleSwap(p)}
-                disabled={swapping === p.id}
-                className="w-full flex items-center gap-3 py-2.5 border-b border-gray-50 hover:bg-indigo-50 rounded-xl px-2 transition-colors text-left disabled:opacity-50"
-              >
-                <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden">
-                  {p.image_url
-                    ? <img src={p.image_url} alt={p.name} className="w-full h-full object-contain" />
-                    : <span className="text-gray-200 text-sm">🛒</span>}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-800 truncate leading-snug">{p.name}</p>
-                  <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}>
-                    {cfg.label}
+          {!loading &&
+            results.map((p) => {
+              const price = p.offer_price ?? p.raw_price;
+              const cfg = superCfg(p.super);
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => handleSwap(p)}
+                  disabled={swapping === p.id}
+                  className="w-full flex items-center gap-3 py-2.5 border-b border-gray-50 hover:bg-indigo-50 rounded-xl px-2 transition-colors text-left disabled:opacity-50"
+                >
+                  <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden">
+                    {p.image_url ? (
+                      <img
+                        src={p.image_url}
+                        alt={p.name}
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <span className="text-gray-200 text-sm">🛒</span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-800 truncate leading-snug">{p.name}</p>
+                    <span
+                      className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}
+                    >
+                      {cfg.label}
+                    </span>
+                  </div>
+                  <span className="text-sm font-semibold text-gray-900 flex-shrink-0">
+                    {pesos(price)}
                   </span>
-                </div>
-                <span className="text-sm font-semibold text-gray-900 flex-shrink-0">
-                  {pesos(price)}
-                </span>
-              </button>
-            );
-          })}
+                </button>
+              );
+            })}
         </div>
       </div>
     </div>
+  );
+}
+
+// ─── CategoryNav (lg+ sidebar) ────────────────────────────────────────────────
+
+interface CategoryNavProps {
+  groups: Array<{ catKey: string | null; meta: { label: string; icon: string }; count: number }>;
+}
+
+function CategoryNav({ groups }: CategoryNavProps) {
+  return (
+    <nav aria-label="Categorías de la lista" className="flex flex-col gap-1">
+      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-2">
+        Categorías
+      </p>
+      {groups.map(({ catKey, meta, count }) => {
+        const id = `cat-${catKey ?? 'otros'}`;
+        return (
+          <a
+            key={catKey ?? 'otros'}
+            href={`#${id}`}
+            className={`flex items-center gap-2 px-2 py-1.5 rounded-xl text-sm text-gray-600 hover:bg-indigo-50 hover:text-indigo-700 transition-colors ${FOCUS_RING}`}
+          >
+            <span className="text-base leading-none">{meta.icon}</span>
+            <span className="flex-1 truncate font-medium">{meta.label}</span>
+            <span className="text-xs text-gray-400 tabular-nums">{count}</span>
+          </a>
+        );
+      })}
+    </nav>
   );
 }
 
@@ -171,10 +210,7 @@ function ListTab({ list, onMarkBought, onChangeFreq, onRemove, onSwap }: ListTab
         title="La lista está vacía"
         description='Desde "Mis Intereses" agregá productos con su frecuencia de compra'
         action={
-          <Link
-            to="/intereses"
-            className={`${PRIMARY_CTA} ${FOCUS_RING}`}
-          >
+          <Link to="/intereses" className={`${PRIMARY_CTA} ${FOCUS_RING}`}>
             Ir a Intereses
           </Link>
         }
@@ -190,124 +226,149 @@ function ListTab({ list, onMarkBought, onChangeFreq, onRemove, onSwap }: ListTab
     groups.get(key)!.push(item);
   }
 
-  return (
-    <>
-      <div className="flex flex-col gap-6">
-        {Array.from(groups.entries()).map(([catKey, items]) => {
-          const meta = catMeta(catKey);
-          return (
-            <div key={catKey ?? 'otros'}>
-              {/* Category header */}
-              <div className="flex items-center gap-2 mb-2 px-1">
-                <span className="text-base">{meta.icon}</span>
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  {meta.label}
-                </span>
-                <span className="text-xs text-gray-300">({items.length})</span>
-              </div>
+  // Build nav group metadata for the sticky sidebar
+  const navGroups = Array.from(groups.entries()).map(([catKey, items]) => ({
+    catKey,
+    meta: catMeta(catKey),
+    count: items.length,
+  }));
 
-              <div className="flex flex-col gap-2">
-                {items.map((item) => {
-                  const cfg = superCfg(item.super);
-                  const price = item.offer_price ?? item.raw_price;
-                  const due = isDue(item);
+  const groupedList = (
+    <div className="flex flex-col gap-6">
+      {Array.from(groups.entries()).map(([catKey, items]) => {
+        const meta = catMeta(catKey);
+        const sectionId = `cat-${catKey ?? 'otros'}`;
+        return (
+          <div key={catKey ?? 'otros'} id={sectionId}>
+            {/* Category header */}
+            <div className="flex items-center gap-2 mb-2 px-1">
+              <span className="text-base">{meta.icon}</span>
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                {meta.label}
+              </span>
+              <span className="text-xs text-gray-300">({items.length})</span>
+            </div>
 
-                  return (
-                    <div
-                      key={item.shopping_id}
-                      className={`bg-white rounded-2xl border shadow-sm p-3 flex items-center gap-3 ${due ? 'border-indigo-200' : 'border-gray-100'}`}
-                    >
-                      {/* Img */}
-                      <div className="w-12 h-12 flex-shrink-0 rounded-xl bg-gray-50 flex items-center justify-center overflow-hidden">
-                        {item.image_url ? (
-                          <img src={item.image_url} alt={item.name} className="w-full h-full object-contain" />
-                        ) : (
-                          <span className="text-xl text-gray-200">🛒</span>
+            <div className="flex flex-col gap-2">
+              {items.map((item) => {
+                const cfg = superCfg(item.super);
+                const price = item.offer_price ?? item.raw_price;
+                const due = isDue(item);
+
+                return (
+                  <div
+                    key={item.shopping_id}
+                    className={`bg-white rounded-2xl border shadow-sm p-3 flex items-center gap-3 ${due ? 'border-indigo-200' : 'border-gray-100'}`}
+                  >
+                    {/* Img */}
+                    <div className="w-12 h-12 flex-shrink-0 rounded-xl bg-gray-50 flex items-center justify-center overflow-hidden">
+                      {item.image_url ? (
+                        <img
+                          src={item.image_url}
+                          alt={item.name}
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <span className="text-xl text-gray-200">🛒</span>
+                      )}
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span
+                          className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}
+                        >
+                          {cfg.label}
+                        </span>
+                        {due && (
+                          <span className="text-xs text-indigo-600 font-semibold">
+                            ● Toca comprar
+                          </span>
                         )}
                       </div>
-
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 mb-0.5">
-                          <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}>
-                            {cfg.label}
-                          </span>
-                          {due && (
-                            <span className="text-xs text-indigo-600 font-semibold">● Toca comprar</span>
-                          )}
-                        </div>
-                        <p className="text-sm font-medium text-gray-800 truncate">{item.name}</p>
-                        <div className="flex items-center gap-3 mt-0.5">
-                          <span className="text-xs text-gray-500">{pesos(price)}</span>
-                          <span className="text-xs text-gray-400">
-                            {item.last_bought
-                              ? `Último: ${item.last_bought}`
-                              : 'Nunca comprado'}
-                          </span>
-                          {item.notes && (
-                            <span className="text-xs text-gray-400">{item.notes}</span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Controls */}
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <select
-                          value={item.frequency_days}
-                          onChange={(e) => onChangeFreq(item, e.target.value)}
-                          className="text-xs py-1 px-2 rounded-lg border border-gray-200 bg-gray-50 text-gray-600 focus:outline-none"
-                        >
-                          {FREQ_OPTIONS.map((o) => (
-                            <option key={o.days} value={o.days}>{o.label}</option>
-                          ))}
-                        </select>
-
-                        <button
-                          type="button"
-                          onClick={() => setSwapItem(item)}
-                          aria-label="Reemplazar por otro producto"
-                          title="Reemplazar por otro producto"
-                          className={`text-xs px-2.5 py-1.5 rounded-xl bg-indigo-50 text-indigo-500 border border-indigo-200 hover:bg-indigo-100 font-medium ${FOCUS_RING}`}
-                        >
-                          ⇄
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => onMarkBought(item)}
-                          aria-label="Marcar como comprado hoy"
-                          title="Marcar como comprado hoy"
-                          className={`text-xs px-2.5 py-1.5 rounded-xl bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 font-medium ${FOCUS_RING}`}
-                        >
-                          ✓
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => onRemove(item)}
-                          aria-label="Quitar de la lista"
-                          title="Quitar de la lista"
-                          className={`text-xs px-2.5 py-1.5 rounded-xl bg-gray-50 text-gray-400 border border-gray-200 hover:bg-red-50 hover:text-red-400 hover:border-red-200 ${FOCUS_RING}`}
-                        >
-                          ✕
-                        </button>
+                      <p className="text-sm font-medium text-gray-800 truncate">{item.name}</p>
+                      <div className="flex items-center gap-3 mt-0.5">
+                        <span className="text-xs text-gray-500">{pesos(price)}</span>
+                        <span className="text-xs text-gray-400">
+                          {item.last_bought ? `Último: ${item.last_bought}` : 'Nunca comprado'}
+                        </span>
+                        {item.notes && <span className="text-xs text-gray-400">{item.notes}</span>}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+
+                    {/* Controls */}
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <select
+                        value={item.frequency_days}
+                        onChange={(e) => onChangeFreq(item, e.target.value)}
+                        className="text-xs py-1 px-2 rounded-lg border border-gray-200 bg-gray-50 text-gray-600 focus:outline-none"
+                      >
+                        {FREQ_OPTIONS.map((o) => (
+                          <option key={o.days} value={o.days}>
+                            {o.label}
+                          </option>
+                        ))}
+                      </select>
+
+                      <button
+                        type="button"
+                        onClick={() => setSwapItem(item)}
+                        aria-label="Reemplazar por otro producto"
+                        title="Reemplazar por otro producto"
+                        className={`text-xs px-2.5 py-1.5 rounded-xl bg-indigo-50 text-indigo-500 border border-indigo-200 hover:bg-indigo-100 font-medium ${FOCUS_RING}`}
+                      >
+                        ⇄
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => onMarkBought(item)}
+                        aria-label="Marcar como comprado hoy"
+                        title="Marcar como comprado hoy"
+                        className={`text-xs px-2.5 py-1.5 rounded-xl bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 font-medium ${FOCUS_RING}`}
+                      >
+                        ✓
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => onRemove(item)}
+                        aria-label="Quitar de la lista"
+                        title="Quitar de la lista"
+                        className={`text-xs px-2.5 py-1.5 rounded-xl bg-gray-50 text-gray-400 border border-gray-200 hover:bg-red-50 hover:text-red-400 hover:border-red-200 ${FOCUS_RING}`}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  return (
+    <>
+      {/* lg+: two-column layout — sticky category nav on the left */}
+      <div className="lg:grid lg:grid-cols-[13rem_1fr] lg:gap-6">
+        {/* Category nav — hidden on mobile, sticky on lg+ */}
+        <aside className="hidden lg:block lg:self-start">
+          <div className="lg:sticky lg:top-[4.5rem]">
+            <CategoryNav groups={navGroups} />
+          </div>
+        </aside>
+
+        {/* Grouped list — full width on mobile, right column on lg+.
+            Capped width keeps each row scannable (item info next to its controls)
+            instead of stretching controls to the far edge on wide screens. */}
+        <div className="max-w-4xl">{groupedList}</div>
       </div>
 
-      {swapItem && (
-        <SwapModal
-          item={swapItem}
-          onSwap={onSwap}
-          onClose={() => setSwapItem(null)}
-        />
-      )}
+      {swapItem && <SwapModal item={swapItem} onSwap={onSwap} onClose={() => setSwapItem(null)} />}
     </>
   );
 }
@@ -323,11 +384,11 @@ export interface WeeklyTabProps {
 function WeeklyTab({ groups, total, onMarkBought }: WeeklyTabProps) {
   if (groups.length === 0) {
     return (
-      <div className="text-center py-16 text-gray-400">
-        <p className="text-4xl mb-3">✅</p>
-        <p className="font-medium">Todo al día</p>
-        <p className="text-sm mt-1">No hay productos que comprar esta semana</p>
-      </div>
+      <EmptyState
+        icon="✅"
+        title="Todo al día"
+        description="No hay productos que comprar esta semana"
+      />
     );
   }
 
@@ -341,10 +402,15 @@ function WeeklyTab({ groups, total, onMarkBought }: WeeklyTabProps) {
       {groups.map((group) => {
         const cfg = superCfg(group.super);
         return (
-          <div key={group.super} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div
+            key={group.super}
+            className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+          >
             <div className={`px-4 py-2.5 flex justify-between items-center ${cfg.bg}`}>
               <span className={`font-bold text-sm ${cfg.text}`}>{cfg.label}</span>
-              <span className={`text-sm font-semibold ${cfg.text} opacity-90`}>{pesos(group.total)}</span>
+              <span className={`text-sm font-semibold ${cfg.text} opacity-90`}>
+                {pesos(group.total)}
+              </span>
             </div>
             <div className="divide-y divide-gray-50">
               {group.items.map((item) => {
@@ -353,13 +419,19 @@ function WeeklyTab({ groups, total, onMarkBought }: WeeklyTabProps) {
                   <div key={item.shopping_id} className="flex items-center gap-3 px-4 py-2.5">
                     <div className="w-9 h-9 flex-shrink-0 rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden">
                       {item.image_url ? (
-                        <img src={item.image_url} alt={item.name} className="w-full h-full object-contain" />
+                        <img
+                          src={item.image_url}
+                          alt={item.name}
+                          className="w-full h-full object-contain"
+                        />
                       ) : (
                         <span className="text-sm text-gray-200">🛒</span>
                       )}
                     </div>
                     <p className="flex-1 text-sm text-gray-800 truncate">{item.name}</p>
-                    <span className="text-sm font-semibold text-gray-900 flex-shrink-0">{pesos(price)}</span>
+                    <span className="text-sm font-semibold text-gray-900 flex-shrink-0">
+                      {pesos(price)}
+                    </span>
                     <button
                       type="button"
                       onClick={() => onMarkBought(item)}
@@ -376,6 +448,42 @@ function WeeklyTab({ groups, total, onMarkBought }: WeeklyTabProps) {
         );
       })}
     </div>
+  );
+}
+
+// ─── Loading skeleton ─────────────────────────────────────────────────────────
+
+function PlannerSkeleton() {
+  return (
+    <PageContainer>
+      <div className="animate-pulse space-y-4">
+        {/* Tab bar placeholder */}
+        <div className="flex gap-2">
+          <div className="h-9 w-28 rounded-2xl bg-gray-200" />
+          <div className="h-9 w-36 rounded-2xl bg-gray-100" />
+        </div>
+        {/* Item rows placeholder */}
+        {[...Array(4)].map((_, i) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholder has no stable key
+          <div
+            key={i}
+            className="bg-white rounded-2xl border border-gray-100 p-3 flex items-center gap-3 shadow-sm"
+          >
+            <div className="w-12 h-12 rounded-xl bg-gray-200 flex-shrink-0" />
+            <div className="flex-1 space-y-2">
+              <div className="h-3 w-1/4 rounded bg-gray-200" />
+              <div className="h-3 w-3/4 rounded bg-gray-200" />
+              <div className="h-3 w-1/3 rounded bg-gray-100" />
+            </div>
+            <div className="flex gap-1.5 flex-shrink-0">
+              <div className="h-7 w-8 rounded-xl bg-gray-100" />
+              <div className="h-7 w-8 rounded-xl bg-gray-100" />
+              <div className="h-7 w-8 rounded-xl bg-gray-100" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </PageContainer>
   );
 }
 
@@ -426,11 +534,7 @@ export default function Planner() {
   const totalWeekly = weekly.reduce((acc, g) => acc + (g.total ?? 0), 0);
 
   if (loading) {
-    return (
-      <PageContainer>
-        <div className="py-12 text-center text-gray-400 text-sm">Cargando…</div>
-      </PageContainer>
-    );
+    return <PlannerSkeleton />;
   }
 
   return (

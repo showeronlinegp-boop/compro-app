@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import FreqModal from '../components/FreqModal';
 import { EmptyState } from '../components/EmptyState';
+import FreqModal from '../components/FreqModal';
 import { PageContainer } from '../components/layout/PageContainer';
 import { FOCUS_RING, PRIMARY_CTA } from '../styles';
 import { pesos, superCfg } from '../supers';
@@ -36,11 +36,8 @@ export default function Intereses({
           title="No tenés intereses guardados"
           description='Buscá productos en "Explorar" y guardá los que te interesan'
           action={
-            <Link
-              to="/"
-              className={`${PRIMARY_CTA} ${FOCUS_RING}`}
-            >
-              Ir a Explorar
+            <Link to="/" className={`${PRIMARY_CTA} ${FOCUS_RING}`}>
+              Explorar productos
             </Link>
           }
         />
@@ -53,8 +50,7 @@ export default function Intereses({
       <h1 className="sr-only">Mis Intereses</h1>
       <p className="text-xs text-gray-400 mb-4">{interests.length} productos guardados</p>
 
-      {/* Cap list width so rows don't span the full 7xl container (void avoidance) */}
-      <div className="max-w-3xl flex flex-col gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-3">
         {interests.map((item) => {
           const cfg = superCfg(item.super);
           const price = item.offer_price ?? item.raw_price;
@@ -63,24 +59,25 @@ export default function Intereses({
           return (
             <div
               key={item.interest_id}
-              className="bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3 p-3 hover:shadow-md transition-shadow"
+              className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col hover:shadow-md transition-shadow"
             >
-              {/* Imagen */}
-              <div className="w-14 h-14 flex-shrink-0 rounded-xl bg-gray-50 flex items-center justify-center overflow-hidden">
+              {/* Image area */}
+              <div className="w-full aspect-square max-h-40 rounded-t-2xl bg-gray-50 flex items-center justify-center overflow-hidden">
                 {item.image_url ? (
                   <img
                     src={item.image_url}
                     alt={item.name}
-                    className="w-full h-full object-contain"
+                    className="w-full h-full object-contain p-3"
                   />
                 ) : (
-                  <span className="text-2xl text-gray-200">🛒</span>
+                  <span className="text-4xl text-gray-200">🛒</span>
                 )}
               </div>
 
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-0.5">
+              {/* Card body */}
+              <div className="flex flex-col flex-1 p-3 gap-2">
+                {/* Super badge + discount */}
+                <div className="flex items-center gap-1.5">
                   <span
                     className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}
                   >
@@ -90,8 +87,12 @@ export default function Intereses({
                     <span className="text-xs font-bold text-red-500">-{item.discount_pct}%</span>
                   )}
                 </div>
-                <p className="text-sm font-medium text-gray-800 truncate">{item.name}</p>
-                <div className="flex items-center gap-1.5 mt-0.5">
+
+                {/* Product name */}
+                <p className="text-sm font-medium text-gray-800 line-clamp-2 flex-1">{item.name}</p>
+
+                {/* Price row */}
+                <div className="flex items-center gap-1.5">
                   <span className="text-sm font-bold text-gray-900">{pesos(price)}</span>
                   {item.offer_price && (
                     <span className="text-xs text-gray-400 line-through">
@@ -99,30 +100,30 @@ export default function Intereses({
                     </span>
                   )}
                 </div>
-              </div>
 
-              {/* Acciones */}
-              <div className="flex flex-col gap-1.5 flex-shrink-0">
-                {!inList ? (
+                {/* Actions */}
+                <div className="flex gap-1.5 mt-auto">
+                  {!inList ? (
+                    <button
+                      type="button"
+                      onClick={() => setFreqTarget(item)}
+                      className={`flex-1 text-xs px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 font-medium transition-colors ${FOCUS_RING}`}
+                    >
+                      + Lista
+                    </button>
+                  ) : (
+                    <span className="flex-1 text-xs px-3 py-1.5 rounded-xl bg-green-50 text-green-600 border border-green-200 font-medium text-center">
+                      ✓ En lista
+                    </span>
+                  )}
                   <button
                     type="button"
-                    onClick={() => setFreqTarget(item)}
-                    className="text-xs px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 font-medium transition-colors"
+                    onClick={() => onToggleInterest(item)}
+                    className={`text-xs px-3 py-1.5 rounded-xl bg-gray-50 text-gray-500 border border-gray-200 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors ${FOCUS_RING}`}
                   >
-                    + Lista
+                    Quitar
                   </button>
-                ) : (
-                  <span className="text-xs px-3 py-1.5 rounded-xl bg-green-50 text-green-600 border border-green-200 font-medium text-center">
-                    ✓ En lista
-                  </span>
-                )}
-                <button
-                  type="button"
-                  onClick={() => onToggleInterest(item)}
-                  className="text-xs px-3 py-1.5 rounded-xl bg-gray-50 text-gray-500 border border-gray-200 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors"
-                >
-                  Quitar
-                </button>
+                </div>
               </div>
             </div>
           );

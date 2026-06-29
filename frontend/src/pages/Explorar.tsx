@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../api';
+import { EmptyState } from '../components/EmptyState';
 import FreqModal from '../components/FreqModal';
 import GroupedCard from '../components/GroupedCard';
 import PromoPanel from '../components/PromoPanel';
 import { PageContainer } from '../components/layout/PageContainer';
-import { FOCUS_RING } from '../styles';
+import { FOCUS_RING, FOCUS_RING_INPUT, PRIMARY_CTA } from '../styles';
 import type {
   EnrichStatus,
   GroupsResult,
@@ -18,12 +19,131 @@ import type {
 
 const SKELETON_KEYS = Array.from({ length: 12 }, (_, i) => `sk-${i}`) as string[];
 
+// ─── FilterSidebar ────────────────────────────────────────────────────────────
+// Module-level so React never unmounts/remounts it on Explorar re-renders.
+
+interface FilterSidebarProps {
+  categories: TaxonomyEntry[];
+  category: string;
+  onSelectCategory: (slug: string) => void;
+  discount: boolean;
+  onToggleDiscount: () => void;
+  sort: SortKey;
+  onChangeSort: (s: SortKey) => void;
+}
+
+/** Desktop sidebar: vertical category list + filter controls. Hidden on <lg. */
+function FilterSidebar({
+  categories,
+  category,
+  onSelectCategory,
+  discount,
+  onToggleDiscount,
+  sort,
+  onChangeSort,
+}: FilterSidebarProps) {
+  return (
+    <aside aria-label="Filtros" className="hidden lg:block lg:self-start">
+      {/* Sticky wrapper — sticks to viewport as the grid scrolls. */}
+      <div className="lg:sticky lg:top-[4.5rem] space-y-6">
+        {/* Categorías section */}
+        <section aria-labelledby="sidebar-cats-heading">
+          <h2
+            id="sidebar-cats-heading"
+            className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2"
+          >
+            Categorías
+          </h2>
+          <ul className="space-y-0.5">
+            <li>
+              <button
+                type="button"
+                onClick={() => onSelectCategory('')}
+                className={`w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-colors ${FOCUS_RING} ${
+                  !category ? 'bg-gray-800 text-white' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                Todo
+              </button>
+            </li>
+            {categories.map((cat) => (
+              <li key={cat.slug}>
+                <button
+                  type="button"
+                  onClick={() => onSelectCategory(cat.slug)}
+                  className={`w-full text-left flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${FOCUS_RING} ${
+                    category === cat.slug
+                      ? 'bg-indigo-600 text-white'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <span aria-hidden="true">{cat.icon}</span>
+                  <span>{cat.label}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        {/* Filtros section */}
+        <section aria-labelledby="sidebar-filters-heading">
+          <h2
+            id="sidebar-filters-heading"
+            className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2"
+          >
+            Filtros
+          </h2>
+          <div className="space-y-4">
+            {/* Discount toggle */}
+            <button
+              type="button"
+              onClick={onToggleDiscount}
+              className={`w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-colors ${FOCUS_RING} ${
+                discount ? 'bg-red-500 text-white' : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              🔥 Con descuento
+            </button>
+
+            {/* Sort */}
+            <div>
+              <label htmlFor="sidebar-sort" className="block text-xs text-gray-500 mb-1.5">
+                Ordenar
+              </label>
+              <select
+                id="sidebar-sort"
+                value={sort}
+                onChange={(e) => onChangeSort(e.target.value as SortKey)}
+                className={`w-full text-sm font-medium text-gray-700 px-3 py-2 rounded-xl border border-gray-200 bg-white shadow-sm cursor-pointer ${FOCUS_RING_INPUT}`}
+              >
+                {SORT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </section>
+      </div>
+    </aside>
+  );
+}
+
 const SORT_OPTIONS: ReadonlyArray<{ value: SortKey; label: string }> = [
   { value: 'relevance', label: 'Relevancia' },
   { value: 'price_asc', label: 'Precio: menor a mayor' },
   { value: 'price_desc', label: 'Precio: mayor a menor' },
   { value: 'discount_desc', label: 'Mayor descuento' },
 ];
+
+/**
+ * Grid column classes shared by the skeleton and the real grid.
+ * Mobile/sm: fixed 2–3 columns. lg+: fluid auto-fill so the grid fills the full
+ * viewport width with comfortably-sized cards (more columns on wider screens)
+ * instead of a fixed column count that leaves dead horizontal space.
+ */
+const GRID_COLS = 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-[repeat(auto-fill,minmax(14rem,1fr))]';
 
 export interface ExplorarProps {
   interests: Interest[];
@@ -130,9 +250,19 @@ export default function Explorar({
     setFreqTarget(null);
   }
 
+  /** True when any filter is active (so the EmptyState can offer a reset). */
+  const hasActiveFilters = Boolean(q || category || discount);
+
+  function clearFilters() {
+    setQ('');
+    setCategory('');
+    setDiscount(false);
+  }
+
   return (
     <PageContainer>
       <h1 className="sr-only">Explorar productos</h1>
+
       {/* Banner sincronización en vivo */}
       {isSyncing &&
         syncStatus
@@ -215,20 +345,20 @@ export default function Explorar({
       {/* Promo offers panel */}
       <PromoPanel offers={promos} />
 
-      {/* Buscador */}
+      {/* Buscador — always visible at all breakpoints */}
       <div className="relative mb-4">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">🔍</span>
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Buscar producto…"
-          className="w-full pl-10 pr-4 py-3 rounded-2xl border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 text-sm"
+          className={`w-full pl-10 pr-4 py-3 rounded-2xl border border-gray-200 bg-white shadow-sm text-sm ${FOCUS_RING_INPUT}`}
         />
       </div>
 
-      {/* Categorías — edge-bleed so last chip isn't clipped by container padding */}
+      {/* ── Mobile-only: horizontal category chips + filter row (<lg) ───────── */}
       {categories.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+        <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide -mx-4 px-4 sm:-mx-6 sm:px-6 lg:hidden">
           <button
             type="button"
             onClick={() => setCategory('')}
@@ -258,8 +388,8 @@ export default function Explorar({
         </div>
       )}
 
-      {/* Filtros */}
-      <div className="flex flex-wrap items-center gap-2 mb-6">
+      {/* Mobile-only filter row (<lg) */}
+      <div className="flex flex-wrap items-center gap-2 mb-6 lg:hidden">
         <button
           type="button"
           onClick={() => setDiscount((d) => !d)}
@@ -273,11 +403,11 @@ export default function Explorar({
         </button>
 
         <label className="ml-auto flex items-center gap-1.5 text-xs text-gray-500">
-          <span className="hidden sm:inline">Ordenar:</span>
+          <span className="sr-only sm:not-sr-only">Ordenar:</span>
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as SortKey)}
-            className="text-xs font-semibold text-gray-700 px-3 py-1.5 rounded-full border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 cursor-pointer"
+            className={`text-xs font-semibold text-gray-700 px-3 py-1.5 rounded-full border border-gray-200 bg-white shadow-sm cursor-pointer ${FOCUS_RING_INPUT}`}
           >
             {SORT_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -288,65 +418,93 @@ export default function Explorar({
         </label>
       </div>
 
-      {/* Contador */}
-      {!loading && (
-        <p className="text-xs text-gray-400 mb-4">{total.toLocaleString('es-AR')} productos</p>
-      )}
+      {/* ── Two-column layout on lg+: [sidebar | grid] ───────────────────────── */}
+      <div className="lg:grid lg:grid-cols-[13rem_1fr] lg:gap-6">
+        {/* Left sidebar — desktop only */}
+        <FilterSidebar
+          categories={categories}
+          category={category}
+          onSelectCategory={(slug) => setCategory((c) => (c === slug ? '' : slug))}
+          discount={discount}
+          onToggleDiscount={() => setDiscount((d) => !d)}
+          sort={sort}
+          onChangeSort={setSort}
+        />
 
-      {/* Grid */}
-      {loading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-          {SKELETON_KEYS.map((sk) => (
-            <div
-              key={sk}
-              className="bg-white rounded-2xl h-64 animate-pulse border border-gray-100"
-            />
-          ))}
-        </div>
-      ) : groups.length === 0 ? (
-        <div className="text-center py-24 text-gray-400">
-          <p className="text-4xl mb-3">🛒</p>
-          <p className="font-medium">Sin resultados</p>
-          <p className="text-sm mt-1">Probá otros filtros o sincronizá los precios primero</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-          {groups.map((g) => (
-            <GroupedCard
-              key={g.key}
-              group={g}
-              interestIds={interestIds}
-              onToggleInterest={onToggleInterest}
-              onAddToShopping={handleAddToShopping}
-            />
-          ))}
-        </div>
-      )}
+        {/* Main content column */}
+        <div className="min-w-0">
+          {/* Contador */}
+          {!loading && (
+            <p className="text-xs text-gray-400 mb-4">{total.toLocaleString('es-AR')} productos</p>
+          )}
 
-      {/* Paginación */}
-      {pages > 1 && (
-        <div className="flex justify-center items-center gap-3 mt-8">
-          <button
-            type="button"
-            disabled={page <= 1}
-            onClick={() => load(page - 1)}
-            className={`px-4 py-2 rounded-xl border border-gray-200 text-sm disabled:opacity-40 hover:bg-gray-50 ${FOCUS_RING}`}
-          >
-            ← Anterior
-          </button>
-          <span className="text-sm text-gray-500">
-            {page} / {pages}
-          </span>
-          <button
-            type="button"
-            disabled={page >= pages}
-            onClick={() => load(page + 1)}
-            className={`px-4 py-2 rounded-xl border border-gray-200 text-sm disabled:opacity-40 hover:bg-gray-50 ${FOCUS_RING}`}
-          >
-            Siguiente →
-          </button>
+          {/* Grid */}
+          {loading ? (
+            <div className={`grid ${GRID_COLS} gap-3`}>
+              {SKELETON_KEYS.map((sk) => (
+                <div
+                  key={sk}
+                  className="bg-white rounded-2xl h-64 animate-pulse border border-gray-100"
+                />
+              ))}
+            </div>
+          ) : groups.length === 0 ? (
+            <EmptyState
+              icon="🛒"
+              title="Sin resultados"
+              description="Probá otros filtros o sincronizá los precios primero"
+              action={
+                hasActiveFilters ? (
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className={`${PRIMARY_CTA} ${FOCUS_RING}`}
+                  >
+                    Limpiar filtros
+                  </button>
+                ) : undefined
+              }
+            />
+          ) : (
+            <div className={`grid ${GRID_COLS} gap-3`}>
+              {groups.map((g) => (
+                <GroupedCard
+                  key={g.key}
+                  group={g}
+                  interestIds={interestIds}
+                  onToggleInterest={onToggleInterest}
+                  onAddToShopping={handleAddToShopping}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Paginación */}
+          {pages > 1 && (
+            <div className="flex justify-center items-center gap-3 mt-8">
+              <button
+                type="button"
+                disabled={page <= 1}
+                onClick={() => load(page - 1)}
+                className={`px-4 py-2 rounded-xl border border-gray-200 text-sm disabled:opacity-40 hover:bg-gray-50 ${FOCUS_RING}`}
+              >
+                ← Anterior
+              </button>
+              <span className="text-sm text-gray-500">
+                {page} / {pages}
+              </span>
+              <button
+                type="button"
+                disabled={page >= pages}
+                onClick={() => load(page + 1)}
+                className={`px-4 py-2 rounded-xl border border-gray-200 text-sm disabled:opacity-40 hover:bg-gray-50 ${FOCUS_RING}`}
+              >
+                Siguiente →
+              </button>
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       {freqTarget && (
         <FreqModal

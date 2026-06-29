@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { api } from './api';
-import { FOCUS_RING } from './styles';
+import { CartDrawer } from './components/CartDrawer';
 import { LocationSelector } from './components/LocationSelector';
 import { CartProvider, useCart } from './contexts/CartContext';
 import Cart from './pages/Cart';
@@ -10,6 +10,7 @@ import Explorar from './pages/Explorar';
 import Intereses from './pages/Intereses';
 import Onboarding from './pages/Onboarding';
 import Planner from './pages/Planner';
+import { FOCUS_RING } from './styles';
 import type {
   EnrichStatus,
   Interest,
@@ -164,7 +165,7 @@ function SyncPanel({
 function AppShell() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { itemCount } = useCart();
+  const { itemCount, openCart } = useCart();
   const [interests, setInterests] = useState<Interest[]>([]);
   const [shopping, setShopping] = useState<ShoppingItem[]>([]);
   const [syncStatus, setSyncStatus] = useState<SyncLog[]>([]);
@@ -312,11 +313,18 @@ function AppShell() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Navbar */}
-      <nav className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center h-14 gap-6">
-          <span className="font-bold text-gray-900 text-base tracking-tight">🛒 COMPRO</span>
+      <nav
+        aria-label="Principal"
+        className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-40"
+      >
+        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 flex items-center h-14 gap-3 sm:gap-6">
+          <span className="font-bold text-gray-900 text-base tracking-tight flex-shrink-0">
+            🛒 COMPRO
+          </span>
 
-          <div className="flex gap-1 flex-1">
+          {/* Primary nav: inline on lg+. On smaller screens it moves to a bottom
+              tab bar (see BottomNav) so the top bar never overflows the viewport. */}
+          <div className="hidden lg:flex gap-1 flex-1">
             {[
               { to: '/', label: 'Explorar' },
               {
@@ -335,7 +343,7 @@ function AppShell() {
                   to={to}
                   end={to === '/'}
                   className={({ isActive }) =>
-                    `text-sm font-medium px-3 py-1.5 rounded-xl transition-colors ${FOCUS_RING} ${
+                    `flex-shrink-0 text-sm font-medium px-3 py-1.5 rounded-xl transition-colors ${FOCUS_RING} ${
                       isActive
                         ? 'bg-indigo-50 text-indigo-700'
                         : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'
@@ -347,17 +355,16 @@ function AppShell() {
               ))}
           </div>
 
-          {/* Cart — primary action, top-right with item-count badge */}
-          <NavLink
-            to="/cart"
+          {/* Spacer pushes the right-side controls to the edge on mobile, where the
+              inline nav links are hidden (they live in the bottom tab bar instead). */}
+          <div className="flex-1 lg:hidden" aria-hidden="true" />
+
+          {/* Cart — opens the cart drawer */}
+          <button
+            type="button"
             aria-label={cartLabel}
-            className={({ isActive }) =>
-              `relative inline-flex items-center justify-center w-9 h-9 rounded-xl transition-colors ${FOCUS_RING} ${
-                isActive
-                  ? 'bg-indigo-50 text-indigo-700'
-                  : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'
-              }`
-            }
+            onClick={openCart}
+            className={`relative inline-flex items-center justify-center w-9 h-9 rounded-xl transition-colors ${FOCUS_RING} text-gray-500 hover:text-gray-800 hover:bg-gray-50`}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -379,7 +386,7 @@ function AppShell() {
                 {itemCount}
               </span>
             )}
-          </NavLink>
+          </button>
 
           {/* Location selector */}
           <LocationSelector
@@ -400,8 +407,8 @@ function AppShell() {
         </div>
       </nav>
 
-      {/* Content */}
-      <main className="flex-1">
+      {/* Content — bottom padding on mobile clears the fixed bottom tab bar */}
+      <main className="flex-1 pb-16 lg:pb-0">
         <Routes>
           <Route
             path="/"
@@ -444,6 +451,44 @@ function AppShell() {
           />
         </Routes>
       </main>
+
+      {/* Cart drawer — overlays all routes */}
+      <CartDrawer />
+
+      {/* Bottom tab bar — primary navigation on small screens (the inline top-bar
+          links are hidden < lg). Keeps the top bar from overflowing the viewport. */}
+      <nav
+        aria-label="Navegación inferior"
+        className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-gray-100"
+      >
+        <div className="flex items-stretch">
+          {[
+            { to: '/', label: 'Explorar', icon: '🔍' },
+            { to: '/intereses', label: 'Intereses', icon: '❤️' },
+            { to: '/planner', label: 'Planner', icon: '📋' },
+          ]
+            .concat(
+              profile?.onboarding_done ? [{ to: '/compare', label: 'Comparar', icon: '📊' }] : [],
+            )
+            .map(({ to, label, icon }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={to === '/'}
+                className={({ isActive }) =>
+                  `flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium transition-colors ${FOCUS_RING} ${
+                    isActive ? 'text-indigo-700' : 'text-gray-500'
+                  }`
+                }
+              >
+                <span className="text-lg leading-none" aria-hidden="true">
+                  {icon}
+                </span>
+                {label}
+              </NavLink>
+            ))}
+        </div>
+      </nav>
     </div>
   );
 }
