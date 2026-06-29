@@ -72,12 +72,13 @@ export function CartDrawer() {
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click is supplementary; Esc key is the keyboard equivalent */}
       <div className="fixed inset-0 z-40 bg-black/40" aria-hidden="true" onClick={closeCart} />
 
-      {/* Drawer panel */}
-      <dialog
+      {/* Drawer panel — plain div (NOT native <dialog>, whose UA styles force
+          margin:auto/inset-inline and break the right-edge pinning). */}
+      <div
+        role="dialog"
         aria-modal="true"
         aria-label="Carrito"
-        open={isOpen}
-        className="fixed inset-y-0 right-0 z-50 m-0 h-full w-full max-w-md bg-white shadow-xl flex flex-col transition-transform p-0 border-0"
+        className="fixed inset-y-0 right-0 z-50 h-full w-full max-w-md bg-white shadow-xl flex flex-col"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 shrink-0">
@@ -220,7 +221,7 @@ export function CartDrawer() {
             </div>
           </div>
         )}
-      </dialog>
+      </div>
     </>
   );
 }
