@@ -193,6 +193,16 @@ function AppShell() {
   const [capturingPromos, setCapturingPromos] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null | undefined>(undefined);
 
+  // Remember the last Explorar URL (incl. its search/filter query string) so
+  // switching tabs and coming back restores the search instead of resetting to
+  // a bare "/". A ref avoids re-rendering the shell on every keystroke.
+  const explorarTo = useRef('/');
+  useEffect(() => {
+    if (location.pathname === '/') {
+      explorarTo.current = location.pathname + location.search;
+    }
+  }, [location]);
+
   // Runs once on mount to load data and redirect to onboarding if needed.
   // Deps are intentionally empty: adding location.pathname/navigate would re-run
   // this on every navigation, causing an infinite redirect loop.
@@ -326,22 +336,30 @@ function AppShell() {
               tab bar (see BottomNav) so the top bar never overflows the viewport. */}
           <div className="hidden lg:flex gap-1 flex-1">
             {[
-              { to: '/', label: 'Explorar' },
+              { id: 'explorar', to: explorarTo.current, label: 'Explorar', end: true },
               {
+                id: 'intereses',
                 to: '/intereses',
                 label: `Intereses ${interests.length ? `(${interests.length})` : ''}`,
+                end: false,
               },
               {
+                id: 'planner',
                 to: '/planner',
                 label: `Planner ${shopping.length ? `(${shopping.length})` : ''}`,
+                end: false,
               },
             ]
-              .concat(profile?.onboarding_done ? [{ to: '/compare', label: '📊 Comparar' }] : [])
-              .map(({ to, label }) => (
+              .concat(
+                profile?.onboarding_done
+                  ? [{ id: 'compare', to: '/compare', label: '📊 Comparar', end: false }]
+                  : [],
+              )
+              .map(({ id, to, label, end }) => (
                 <NavLink
-                  key={to}
+                  key={id}
                   to={to}
-                  end={to === '/'}
+                  end={end}
                   className={({ isActive }) =>
                     `flex-shrink-0 text-sm font-medium px-3 py-1.5 rounded-xl transition-colors ${FOCUS_RING} ${
                       isActive
@@ -463,18 +481,20 @@ function AppShell() {
       >
         <div className="flex items-stretch">
           {[
-            { to: '/', label: 'Explorar', icon: '🔍' },
-            { to: '/intereses', label: 'Intereses', icon: '❤️' },
-            { to: '/planner', label: 'Planner', icon: '📋' },
+            { id: 'explorar', to: explorarTo.current, label: 'Explorar', icon: '🔍', end: true },
+            { id: 'intereses', to: '/intereses', label: 'Intereses', icon: '❤️', end: false },
+            { id: 'planner', to: '/planner', label: 'Planner', icon: '📋', end: false },
           ]
             .concat(
-              profile?.onboarding_done ? [{ to: '/compare', label: 'Comparar', icon: '📊' }] : [],
+              profile?.onboarding_done
+                ? [{ id: 'compare', to: '/compare', label: 'Comparar', icon: '📊', end: false }]
+                : [],
             )
-            .map(({ to, label, icon }) => (
+            .map(({ id, to, label, icon, end }) => (
               <NavLink
-                key={to}
+                key={id}
                 to={to}
-                end={to === '/'}
+                end={end}
                 className={({ isActive }) =>
                   `flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium transition-colors ${FOCUS_RING} ${
                     isActive ? 'text-indigo-700' : 'text-gray-500'

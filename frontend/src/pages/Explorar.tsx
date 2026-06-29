@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '../api';
 import { EmptyState } from '../components/EmptyState';
 import FreqModal from '../components/FreqModal';
@@ -167,15 +168,40 @@ export default function Explorar({
 }: ExplorarProps) {
   const [groups, setGroups] = useState<GroupsResult['data']>([]);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const [loading, setLoading] = useState(false);
-
   const [categories, setCategories] = useState<TaxonomyEntry[]>([]);
-  const [q, setQ] = useState('');
-  const [category, setCategory] = useState('');
-  const [discount, setDiscount] = useState(false);
-  const [sort, setSort] = useState<SortKey>('relevance');
+
+  // URL is the single source of truth for the search/filter state. This makes
+  // every search shareable (deep-linkable) and restores it on back/forward with
+  // no extra store. The text input keeps a local mirror (qInput) so typing stays
+  // snappy while we debounce writes into the URL.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const q = searchParams.get('q') ?? '';
+  const category = searchParams.get('cat') ?? '';
+  const discount = searchParams.get('discount') === '1';
+  const sort = (searchParams.get('sort') as SortKey) || 'relevance';
+  const page = Math.max(1, Number(searchParams.get('page')) || 1);
+
+  const [qInput, setQInput] = useState(q);
+
+  // Patch a subset of params; empty/null values are removed to keep URLs clean.
+  const update = useCallback(
+    (patch: Record<string, string | null>, opts?: { replace?: boolean }) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          for (const [k, v] of Object.entries(patch)) {
+            if (v == null || v === '') next.delete(k);
+            else next.set(k, v);
+          }
+          return next;
+        },
+        { replace: opts?.replace },
+      );
+    },
+    [setSearchParams],
+  );
 
   const [freqTarget, setFreqTarget] = useState<Product | null>(null);
 
@@ -183,60 +209,71 @@ export default function Explorar({
     api.products.categories().then(setCategories).catch(console.error);
   }, []);
 
+  // Reflect external URL changes (back/forward, deep link) into the input.
+  useEffect(() => {
+    setQInput(q);
+  }, [q]);
+
+  // Debounce input → URL so we don't push a history entry per keystroke. A new
+  // search resets pagination; replace keeps back/forward clean of typing noise.
+  useEffect(() => {
+    if (qInput === q) return;
+    const id = setTimeout(() => {
+      update({ q: qInput || null, page: null }, { replace: true });
+    }, 300);
+    return () => clearTimeout(id);
+  }, [qInput, q, update]);
+
   const isSyncing = syncStatus.some((s) => s.status === 'running');
   const isEnriching = Object.values(enrichStatus).some((s) => s.running);
   const enrichEntries = Object.entries(enrichStatus);
 
   const reqIdRef = useRef(0);
 
-  const load = useCallback(
-    async (p = 1) => {
-      const reqId = ++reqIdRef.current;
-      setLoading(true);
-      setGroups([]);
-      try {
-        const params: Record<string, string> = {
-          page: String(p),
-          limit: '24',
-        };
-        if (q) params.q = q;
-        if (category) params.category = category;
-        if (discount) params.discount = '1';
-        if (sort !== 'relevance') params.sort = sort;
+  const load = useCallback(async () => {
+    const reqId = ++reqIdRef.current;
+    setLoading(true);
+    setGroups([]);
+    try {
+      const params: Record<string, string> = {
+        page: String(page),
+        limit: '24',
+      };
+      if (q) params.q = q;
+      if (category) params.category = category;
+      if (discount) params.discount = '1';
+      if (sort !== 'relevance') params.sort = sort;
 
-        const res = await api.products.groups(params);
-        if (reqId !== reqIdRef.current) return;
+      const res = await api.products.groups(params);
+      if (reqId !== reqIdRef.current) return;
 
-        setGroups(res.data);
-        setTotal(res.total);
-        setPage(res.page);
-        setPages(res.pages);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [q, category, discount, sort],
-  );
+      setGroups(res.data);
+      setTotal(res.total);
+      setPages(res.pages);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }, [q, category, discount, sort, page]);
 
   useEffect(() => {
-    load(1);
+    load();
   }, [load]);
 
   // Auto-refresh every 8s while sync is running to show live products.
   useEffect(() => {
     if (!isSyncing) return;
-    const id = setInterval(() => load(page), 8000);
+    const id = setInterval(() => load(), 8000);
     return () => clearInterval(id);
-  }, [isSyncing, load, page]);
+  }, [isSyncing, load]);
 
   // Refresh products when enrichment finishes to show updated prices.
   const wasEnriching = useRef(false);
   useEffect(() => {
-    if (wasEnriching.current && !isEnriching) load(page);
+    if (wasEnriching.current && !isEnriching) load();
     wasEnriching.current = isEnriching;
-  }, [isEnriching, load, page]);
+  }, [isEnriching, load]);
 
   const interestIds = new Set(interests.map((i) => i.id));
 
@@ -254,9 +291,8 @@ export default function Explorar({
   const hasActiveFilters = Boolean(q || category || discount);
 
   function clearFilters() {
-    setQ('');
-    setCategory('');
-    setDiscount(false);
+    setQInput('');
+    update({ q: null, cat: null, discount: null, page: null });
   }
 
   return (
@@ -349,8 +385,8 @@ export default function Explorar({
       <div className="relative mb-4">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">🔍</span>
         <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
+          value={qInput}
+          onChange={(e) => setQInput(e.target.value)}
           placeholder="Buscar producto…"
           className={`w-full pl-10 pr-4 py-3 rounded-2xl border border-gray-200 bg-white shadow-sm text-sm ${FOCUS_RING_INPUT}`}
         />
@@ -361,7 +397,7 @@ export default function Explorar({
         <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide -mx-4 px-4 sm:-mx-6 sm:px-6 lg:hidden">
           <button
             type="button"
-            onClick={() => setCategory('')}
+            onClick={() => update({ cat: null, page: null })}
             className={`flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${FOCUS_RING} ${
               !category
                 ? 'bg-gray-800 text-white border-gray-800'
@@ -374,7 +410,9 @@ export default function Explorar({
             <button
               key={cat.slug}
               type="button"
-              onClick={() => setCategory((c) => (c === cat.slug ? '' : cat.slug))}
+              onClick={() =>
+                update({ cat: category === cat.slug ? null : cat.slug, page: null })
+              }
               className={`flex-shrink-0 flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${FOCUS_RING} ${
                 category === cat.slug
                   ? 'bg-indigo-600 text-white border-indigo-600'
@@ -392,7 +430,7 @@ export default function Explorar({
       <div className="flex flex-wrap items-center gap-2 mb-6 lg:hidden">
         <button
           type="button"
-          onClick={() => setDiscount((d) => !d)}
+          onClick={() => update({ discount: discount ? null : '1', page: null })}
           className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${FOCUS_RING} ${
             discount
               ? 'bg-red-500 text-white border-red-500'
@@ -406,7 +444,9 @@ export default function Explorar({
           <span className="sr-only sm:not-sr-only">Ordenar:</span>
           <select
             value={sort}
-            onChange={(e) => setSort(e.target.value as SortKey)}
+            onChange={(e) =>
+              update({ sort: e.target.value === 'relevance' ? null : e.target.value, page: null })
+            }
             className={`text-xs font-semibold text-gray-700 px-3 py-1.5 rounded-full border border-gray-200 bg-white shadow-sm cursor-pointer ${FOCUS_RING_INPUT}`}
           >
             {SORT_OPTIONS.map((opt) => (
@@ -424,11 +464,13 @@ export default function Explorar({
         <FilterSidebar
           categories={categories}
           category={category}
-          onSelectCategory={(slug) => setCategory((c) => (c === slug ? '' : slug))}
+          onSelectCategory={(slug) =>
+            update({ cat: category === slug ? null : slug || null, page: null })
+          }
           discount={discount}
-          onToggleDiscount={() => setDiscount((d) => !d)}
+          onToggleDiscount={() => update({ discount: discount ? null : '1', page: null })}
           sort={sort}
-          onChangeSort={setSort}
+          onChangeSort={(s) => update({ sort: s === 'relevance' ? null : s, page: null })}
         />
 
         {/* Main content column */}
@@ -485,7 +527,7 @@ export default function Explorar({
               <button
                 type="button"
                 disabled={page <= 1}
-                onClick={() => load(page - 1)}
+                onClick={() => update({ page: page - 1 <= 1 ? null : String(page - 1) })}
                 className={`px-4 py-2 rounded-xl border border-gray-200 text-sm disabled:opacity-40 hover:bg-gray-50 ${FOCUS_RING}`}
               >
                 ← Anterior
@@ -496,7 +538,7 @@ export default function Explorar({
               <button
                 type="button"
                 disabled={page >= pages}
-                onClick={() => load(page + 1)}
+                onClick={() => update({ page: String(page + 1) })}
                 className={`px-4 py-2 rounded-xl border border-gray-200 text-sm disabled:opacity-40 hover:bg-gray-50 ${FOCUS_RING}`}
               >
                 Siguiente →
