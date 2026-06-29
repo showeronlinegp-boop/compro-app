@@ -21,12 +21,16 @@ vi.mock('../../infrastructure/vtex/promotions-client.js', () => ({
   fetchSearchPromotions: vi.fn(),
   fetchPromoPrice: vi.fn(),
 }));
+vi.mock('../../infrastructure/vtex/simulation-client.js', () => ({
+  fetchSimulationPromos: vi.fn(),
+}));
 
 import { fetchSkuId } from '../../infrastructure/vtex/catalog-client.js';
 import {
   fetchPromoPrice,
   fetchSearchPromotions,
 } from '../../infrastructure/vtex/promotions-client.js';
+import { fetchSimulationPromos } from '../../infrastructure/vtex/simulation-client.js';
 
 // ── Prisma mock factory ───────────────────────────────────────────────────────
 
@@ -328,6 +332,94 @@ describe("enricher.service — Strategy 'none' (carrefour)", () => {
     // The mock store values must remain unchanged (update was never called)
     expect(row.offer_price).toBe(4000);
     expect(row.discount_pct).toBe(20);
+    expect(prisma.products.update).not.toHaveBeenCalled();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('enricher.service — Strategy C (checkout simulation / masonline)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('dispatches to fetchSimulationPromos (Strategy C) for masonline', async () => {
+    const prisma = makeMockPrisma([
+      makeRow({ super: 'masonline', sku_id: '134066', raw_price: 2779 }),
+    ]);
+    (fetchSimulationPromos as ReturnType<typeof vi.fn>).mockResolvedValue({
+      kind: 'found',
+      result: { unitPrice: 549, listPrice: 549, benefitNames: [] },
+    });
+
+    const enricher = makeEnricher(prisma as never);
+    await enricher.enrichSuper('masonline');
+
+    expect(fetchSimulationPromos).toHaveBeenCalled();
+    expect(fetchSearchPromotions).not.toHaveBeenCalled();
+    expect(fetchPromoPrice).not.toHaveBeenCalled();
+  });
+
+  it('writes the nth_unit PromoVolumen promo and clears offer_price', async () => {
+    const row = makeRow({ super: 'masonline', id: 1, sku_id: '134066', raw_price: 5000 });
+    const prisma = makeMockPrisma([row]);
+    (fetchSimulationPromos as ReturnType<typeof vi.fn>).mockResolvedValue({
+      kind: 'found',
+      result: { unitPrice: 1500, listPrice: 1500, benefitNames: ['2da al 70%'] },
+    });
+
+    const enricher = makeEnricher(prisma as never);
+    await enricher.enrichSuper('masonline');
+
+    expect(prisma.products.update).toHaveBeenCalledWith({
+      where: { id: 1 },
+      data: {
+        offer_price: null,
+        discount_pct: 0,
+        promotions: [{ label: '2da al 70%', type: 'nth_unit', min_qty: 2, discount_pct: 70 }],
+      },
+    });
+  });
+
+  it('does NOT apply the simulation flat price — leaves the region-accurate crawl value (regression)', async () => {
+    // Bug: seller "1"/sc=1 simulation returns a non-selected zone's price ($549),
+    // overwriting Pergamino's region-accurate raw_price ($2.779). With no nth_unit
+    // promo, the simulation must NOT touch the row.
+    const row = makeRow({
+      super: 'masonline',
+      id: 1,
+      sku_id: '134066',
+      raw_price: 2779,
+      offer_price: null,
+      discount_pct: 0,
+    });
+    const prisma = makeMockPrisma([row]);
+    (fetchSimulationPromos as ReturnType<typeof vi.fn>).mockResolvedValue({
+      kind: 'found',
+      result: { unitPrice: 549, listPrice: 549, benefitNames: [] },
+    });
+
+    const enricher = makeEnricher(prisma as never);
+    await enricher.enrichSuper('masonline');
+
+    expect(prisma.products.update).not.toHaveBeenCalled();
+    expect(row.offer_price).toBeNull();
+    expect(row.discount_pct).toBe(0);
+
+    const st = enricher.getStatus();
+    expect(st.masonline?.updated).toBe(0);
+    expect(st.masonline?.done).toBe(1);
+  });
+
+  it('skips rows with no sku_id and never calls the simulation for them', async () => {
+    const prisma = makeMockPrisma([
+      makeRow({ super: 'masonline', id: 1, sku_id: null, raw_price: 2779 }),
+    ]);
+
+    const enricher = makeEnricher(prisma as never);
+    await enricher.enrichSuper('masonline');
+
+    expect(fetchSimulationPromos).not.toHaveBeenCalled();
     expect(prisma.products.update).not.toHaveBeenCalled();
   });
 });

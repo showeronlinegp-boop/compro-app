@@ -12,9 +12,11 @@ export const SUPERS: Record<SuperKey, SuperConfig> = {
   vea: { baseUrl: 'https://www.vea.com.ar', promoSeller: 'jumboargentinav700cordoba700' },
   // masonline hides its quantity promos ("2da al 70%") from BOTH the IS-API teasers
   // and search-promotions (404) — they only materialize in the checkout simulation
-  // as "PromoVolumen" benefits. The 'simulation' strategy reads them (and the flat
-  // ListPrice discount) per SKU. seller "1" is required: regional sellers return
-  // price=null. trustListPrice still feeds the crawl-time flat discount.
+  // as "PromoVolumen" benefits. The 'simulation' strategy reads ONLY those nth_unit
+  // promos per SKU. seller "1" is required: regional sellers return price=null. The
+  // simulation is region-blind (it returns the national sc=1/seller-1 price, NOT the
+  // selected zone's), so its flat price is ignored — the region-accurate flat
+  // discount comes from the crawl via trustListPrice.
   masonline: {
     baseUrl: 'https://www.masonline.com.ar',
     trustListPrice: true,

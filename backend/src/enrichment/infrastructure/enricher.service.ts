@@ -195,14 +195,17 @@ async function enrichViaHtmlScraping(
  *
  * The only path that surfaces VTEX "PromoVolumen" quantity promos (e.g. "2da al
  * 70%") for stores that expose them neither in the IS-API teasers nor in
- * search-promotions (confirmed for masonline). A single simulation at qty N yields
- * BOTH signals, kept separable:
- *   - nth_unit promo: parsed from the benefit identifier names via conditionalPromo()
- *     (same path as VEA's search-promotions). When present it wins — offer_price is
- *     cleared and the per-unit price is computed downstream from raw_price + min_qty.
- *   - flat discount:  items[0].price (unconditional unit) vs listPrice, via offerPrice()
- *     (same math as the JSON-LD strategy it replaces). Used only when there is no
- *     nth_unit promo, so the strike-through stays honest.
+ * search-promotions (confirmed for masonline). We read ONLY the nth_unit promo
+ * from the simulation: the benefit identifier names are parsed via
+ * conditionalPromo() (same path as VEA's search-promotions). When a promo is
+ * present, offer_price is cleared and the per-unit price is computed downstream
+ * from raw_price + min_qty.
+ *
+ * The simulation's flat unit price (items[0].price/listPrice) is intentionally
+ * NOT used: the checkout simulation runs region-blind (seller "1", sc=1) and
+ * returns the national price, so trusting it overwrote the region-accurate flat
+ * discount the crawl already captures via trustListPrice (the bug where MAS showed
+ * a non-selected zone's price, e.g. $549 instead of Pergamino's $2.779).
  */
 async function enrichViaSimulation(
   superKey: string,
@@ -231,29 +234,29 @@ async function enrichViaSimulation(
     }
     fetched_ok++;
 
-    const { benefitNames, unitPrice, listPrice } = outcome.result;
+    const { benefitNames } = outcome.result;
 
-    // nth_unit promo (e.g. "2da al 70%") takes precedence — mirrors enrichViaPromos.
+    // The nth_unit PromoVolumen benefit (e.g. "2da al 70%") is the ONLY signal we
+    // take from the simulation — it is the sole source for masonline's quantity
+    // promos (hidden from the IS teasers and from search-promotions). We
+    // deliberately ignore the simulation's flat unit price: the checkout
+    // simulation runs region-blind (seller "1", sc=1) and returns the national
+    // price, which would overwrite the region-accurate flat discount the crawl
+    // already captured via trustListPrice. Products with no nth_unit promo keep
+    // the crawl value as-is (the crawl resets offer_price/discount_pct/promotions
+    // on every sync, so stale promos never linger).
     let promo = null;
     for (const name of benefitNames) {
       promo = conditionalPromo(name);
       if (promo) break;
     }
 
-    let data: { offer_price: number | null; discount_pct: number; promotions: object[] } | null =
-      null;
     if (promo) {
-      data = { offer_price: null, discount_pct: 0, promotions: [promo] };
+      await prisma.products.update({
+        where: { id: p.id },
+        data: { offer_price: null, discount_pct: 0, promotions: [promo] as object[] },
+      });
       nth_unit++;
-    } else if (unitPrice != null && listPrice != null) {
-      const flat = offerPrice(p.raw_price, { promoPrice: unitPrice, listPrice });
-      data = flat
-        ? { offer_price: flat.offer_price, discount_pct: flat.discount_pct, promotions: [] }
-        : { offer_price: null, discount_pct: 0, promotions: [] };
-    }
-
-    if (data) {
-      await prisma.products.update({ where: { id: p.id }, data });
       st.updated++;
     }
 
