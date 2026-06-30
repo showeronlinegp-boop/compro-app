@@ -1,6 +1,8 @@
 /**
  * shopping.repo.test.ts — Integration tests for makeShoppingRepo (Postgres + Prisma).
  * Uses withRollback() for per-test isolation.
+ *
+ * PR2: factory now requires userId — each test provisions a real users row.
  */
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -10,8 +12,17 @@ import { makeShoppingRepo } from './shopping.repo.js';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+type Tx = Parameters<Parameters<typeof testPrisma.$transaction>[0]>[0];
+
+async function seedUser(tx: Tx): Promise<number> {
+  const result = await tx.users.create({
+    data: { clerk_user_id: `test_${Date.now()}_${Math.random()}` },
+  });
+  return result.id;
+}
+
 async function seedProduct(
-  tx: Parameters<Parameters<typeof testPrisma.$transaction>[0]>[0],
+  tx: Tx,
   overrides: Partial<{ super_key: string; product_id: string; name: string }> = {},
 ): Promise<number> {
   const result = await tx.products.create({
@@ -42,8 +53,9 @@ describe('makeShoppingRepo', () => {
   describe('create → list → update → remove round-trip', () => {
     it('creates a shopping item, lists it, then removes it', async () => {
       await withRollback(async (tx) => {
+        const userId = await seedUser(tx);
         const productId = await seedProduct(tx);
-        const repo = makeShoppingRepo(tx);
+        const repo = makeShoppingRepo(tx, userId);
 
         // create
         const created = await repo.create({ product_id: productId });
@@ -81,8 +93,9 @@ describe('makeShoppingRepo', () => {
 
     it('returns already:true when item already exists in shopping list', async () => {
       await withRollback(async (tx) => {
+        const userId = await seedUser(tx);
         const productId = await seedProduct(tx);
-        const repo = makeShoppingRepo(tx);
+        const repo = makeShoppingRepo(tx, userId);
 
         const first = await repo.create({ product_id: productId });
         const second = await repo.create({ product_id: productId });
@@ -94,8 +107,9 @@ describe('makeShoppingRepo', () => {
 
     it('respects custom frequency_days and notes on create', async () => {
       await withRollback(async (tx) => {
+        const userId = await seedUser(tx);
         const productId = await seedProduct(tx);
-        const repo = makeShoppingRepo(tx);
+        const repo = makeShoppingRepo(tx, userId);
 
         const created = await repo.create({ product_id: productId, frequency_days: 30, notes: 'extra' });
         expect(created.frequency_days).toBe(30);
@@ -107,8 +121,9 @@ describe('makeShoppingRepo', () => {
 
     it('update sets last_bought', async () => {
       await withRollback(async (tx) => {
+        const userId = await seedUser(tx);
         const productId = await seedProduct(tx);
-        const repo = makeShoppingRepo(tx);
+        const repo = makeShoppingRepo(tx, userId);
         const created = await repo.create({ product_id: productId });
 
         await repo.update(created.id, { last_bought: '2024-01-15' });
@@ -123,9 +138,10 @@ describe('makeShoppingRepo', () => {
   describe('listWeekly', () => {
     it('returns only due items (last_bought IS NULL counts as due)', async () => {
       await withRollback(async (tx) => {
+        const userId = await seedUser(tx);
         const p1 = await seedProduct(tx, { product_id: 'p1', name: 'Milk', super_key: 'vea' });
         const p2 = await seedProduct(tx, { product_id: 'p2', name: 'Bread', super_key: 'vea' });
-        const repo = makeShoppingRepo(tx);
+        const repo = makeShoppingRepo(tx, userId);
 
         // p1: last_bought = NULL → always due
         await repo.create({ product_id: p1, frequency_days: 7 });
@@ -144,8 +160,9 @@ describe('makeShoppingRepo', () => {
 
     it('excludes items bought recently (not yet due)', async () => {
       await withRollback(async (tx) => {
+        const userId = await seedUser(tx);
         const p1 = await seedProduct(tx, { product_id: 'pRecent', name: 'Fresh', super_key: 'vea' });
-        const repo = makeShoppingRepo(tx);
+        const repo = makeShoppingRepo(tx, userId);
 
         const created = await repo.create({ product_id: p1, frequency_days: 365 });
         // Set last_bought to today (not due for another year)
@@ -160,12 +177,13 @@ describe('makeShoppingRepo', () => {
 
     it('groups results by super and sums price', async () => {
       await withRollback(async (tx) => {
+        const userId = await seedUser(tx);
         const pVea = await seedProduct(tx, { product_id: 'pv1', super_key: 'vea' });
         const pCarre = await seedProduct(tx, { product_id: 'pc1', super_key: 'carrefour' });
         await tx.products.update({ where: { id: pVea }, data: { raw_price: 100 } });
         await tx.products.update({ where: { id: pCarre }, data: { raw_price: 200 } });
 
-        const repo = makeShoppingRepo(tx);
+        const repo = makeShoppingRepo(tx, userId);
         await repo.create({ product_id: pVea });
         await repo.create({ product_id: pCarre });
 
@@ -185,22 +203,25 @@ describe('makeShoppingRepo', () => {
   describe('error cases', () => {
     it('throws 404 when creating for non-existent product', async () => {
       await withRollback(async (tx) => {
-        const repo = makeShoppingRepo(tx);
+        const userId = await seedUser(tx);
+        const repo = makeShoppingRepo(tx, userId);
         await expect(repo.create({ product_id: 99999 })).rejects.toThrow('Producto no encontrado');
       });
     });
 
     it('throws 404 when updating non-existent item', async () => {
       await withRollback(async (tx) => {
-        const repo = makeShoppingRepo(tx);
+        const userId = await seedUser(tx);
+        const repo = makeShoppingRepo(tx, userId);
         await expect(repo.update(99999, { frequency_days: 7 })).rejects.toThrow('No encontrado');
       });
     });
 
     it('throws 400 when updating with no fields', async () => {
       await withRollback(async (tx) => {
+        const userId = await seedUser(tx);
         const productId = await seedProduct(tx);
-        const repo = makeShoppingRepo(tx);
+        const repo = makeShoppingRepo(tx, userId);
         const created = await repo.create({ product_id: productId });
         await expect(repo.update(created.id, {})).rejects.toThrow('Nada que actualizar');
       });
@@ -208,7 +229,8 @@ describe('makeShoppingRepo', () => {
 
     it('throws 404 when removing non-existent item', async () => {
       await withRollback(async (tx) => {
-        const repo = makeShoppingRepo(tx);
+        const userId = await seedUser(tx);
+        const repo = makeShoppingRepo(tx, userId);
         await expect(repo.remove(99999)).rejects.toThrow('No encontrado');
       });
     });
@@ -217,12 +239,13 @@ describe('makeShoppingRepo', () => {
   describe('parsed row shape', () => {
     it('categories is returned as parsed array (jsonb)', async () => {
       await withRollback(async (tx) => {
+        const userId = await seedUser(tx);
         const productId = await seedProduct(tx);
         await tx.products.update({
           where: { id: productId },
           data: { categories: ['Lácteos', 'Yogur'] },
         });
-        const repo = makeShoppingRepo(tx);
+        const repo = makeShoppingRepo(tx, userId);
         await repo.create({ product_id: productId });
 
         const [item] = await repo.list();
@@ -232,9 +255,10 @@ describe('makeShoppingRepo', () => {
 
     it('available is boolean', async () => {
       await withRollback(async (tx) => {
+        const userId = await seedUser(tx);
         const productId = await seedProduct(tx);
         await tx.products.update({ where: { id: productId }, data: { available: false } });
-        const repo = makeShoppingRepo(tx);
+        const repo = makeShoppingRepo(tx, userId);
         await repo.create({ product_id: productId });
 
         const [item] = await repo.list();

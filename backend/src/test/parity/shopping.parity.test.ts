@@ -5,6 +5,8 @@
  *   - Items due today (last_bought 7 days ago, frequency_days=7)
  *   - Items with null last_bought always included
  *   - Postgres interval date arithmetic parity with SQLite julianday semantics
+ *
+ * PR2: factory now requires userId — each test provisions a real users row.
  */
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -51,7 +53,7 @@ describe('Shopping parity: date arithmetic + null last_bought', () => {
         data: { last_bought: sevenDaysAgo },
       });
 
-      const repo = makeShoppingRepo(tx);
+      const repo = makeShoppingRepo(tx, userId);
       const weekly = await repo.listWeekly();
       const allItems = weekly.flatMap((g) => g.items);
       expect(allItems.map((i) => i.shopping_id)).toContain(item.id);
@@ -68,7 +70,7 @@ describe('Shopping parity: date arithmetic + null last_bought', () => {
         data: { product_id: product.id, frequency_days: 30, last_bought: null, user_id: userId },
       });
 
-      const repo = makeShoppingRepo(tx);
+      const repo = makeShoppingRepo(tx, userId);
       const weekly = await repo.listWeekly();
       const allItems = weekly.flatMap((g) => g.items);
       expect(allItems.map((i) => i.product_id)).toContain('sp2');
@@ -93,7 +95,7 @@ describe('Shopping parity: date arithmetic + null last_bought', () => {
         data: { last_bought: threeDaysAgo },
       });
 
-      const repo = makeShoppingRepo(tx);
+      const repo = makeShoppingRepo(tx, userId);
       const weekly = await repo.listWeekly();
       const allItems = weekly.flatMap((g) => g.items);
       expect(allItems.map((i) => i.product_id)).not.toContain('sp3');
