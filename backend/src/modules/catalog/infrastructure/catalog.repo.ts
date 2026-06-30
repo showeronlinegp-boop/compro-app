@@ -74,7 +74,8 @@ type PrismaLike = Pick<
 export function makeCatalogRepo(prisma: PrismaLike): CatalogRepo {
   return {
     async search(params) {
-      const pageNum = Math.max(1, Number.parseInt(params.page ?? '1') || 1);
+      // Cap page to prevent giant OFFSET scans (?page=999999 → O(n) table skip).
+      const pageNum = Math.min(1000, Math.max(1, Number.parseInt(params.page ?? '1') || 1));
       const limitNum = Math.min(100, Number.parseInt(params.limit ?? '48') || 48);
       const offset = (pageNum - 1) * limitNum;
 
@@ -137,7 +138,8 @@ export function makeCatalogRepo(prisma: PrismaLike): CatalogRepo {
     },
 
     async getGroups(params) {
-      const pageNum = Math.max(1, Number.parseInt(params.page ?? '1') || 1);
+      // Cap page to prevent giant OFFSET scans (?page=999999 → O(n) table skip).
+      const pageNum = Math.min(1000, Math.max(1, Number.parseInt(params.page ?? '1') || 1));
       const limitNum = Math.min(100, Number.parseInt(params.limit ?? '24') || 24);
       const offset = (pageNum - 1) * limitNum;
 
