@@ -1,11 +1,14 @@
 /**
  * sync.e2e.test.ts — HTTP parity tests for CrawlerController.
  *
+ * PR2 removed all operational POST triggers from HTTP. Only GET /api/sync/status
+ * remains. The POST endpoints (/api/sync/all, /api/sync/:super) now return 404
+ * because the routes were deleted.
+ *
  * Spec coverage (critical regression guard):
  *   - GET /api/sync/status → 200 + Array.isArray(body) === true (NOT an object)
- *   - POST /api/sync/all → immediate 200/202 ack (fire-and-forget)
- *   - POST /api/sync/:super → immediate 200/202 ack
- *   - POST /api/sync/all (second call) → 409 if still running
+ *   - POST /api/sync/all → 404 (endpoint removed; use ops CLI)
+ *   - POST /api/sync/:super → 404 (endpoint removed; use ops CLI)
  *
  * The /api/sync/status ARRAY assertion is the white-screen regression guard.
  * The previous Express implementation returned {} (an empty object) which caused
@@ -58,53 +61,20 @@ describe('GET /api/sync/status — REGRESSION GUARD', () => {
   });
 });
 
-describe('POST /api/sync/all', () => {
-  it('responds immediately with 200 ack or 409 (fire-and-forget)', async () => {
-    const start = Date.now();
+describe('POST /api/sync/all — REMOVED in PR2', () => {
+  it('returns 404 (operational HTTP trigger removed; use ops CLI)', async () => {
     const res = await request(app.getHttpServer())
       .post('/api/sync/all')
       .set('Content-Type', 'application/json');
-    const elapsed = Date.now() - start;
-
-    // Explicit 200 for ack (res.status(200).json(...)) or 409 if already running
-    expect([200, 409]).toContain(res.status);
-    // Must respond quickly (fire-and-forget — not waiting for background crawl)
-    expect(elapsed).toBeLessThan(5000);
-  });
-
-  it('returns 409 on a second concurrent call when busy', async () => {
-    // First call to kick off sync (may or may not succeed depending on state)
-    const first = await request(app.getHttpServer())
-      .post('/api/sync/all')
-      .set('Content-Type', 'application/json');
-
-    if (first.status === 200) {
-      // Second call while first is still running → 409
-      const second = await request(app.getHttpServer())
-        .post('/api/sync/all')
-        .set('Content-Type', 'application/json');
-      expect([409, 200]).toContain(second.status);
-      // If it returned 409, verify the error shape
-      if (second.status === 409) {
-        expect(second.body).toHaveProperty('error');
-      }
-    } else {
-      // Already running (409) from a previous test — that's also valid
-      expect(first.status).toBe(409);
-    }
+    expect(res.status).toBe(404);
   });
 });
 
-describe('POST /api/sync/:super', () => {
-  it('responds immediately with 200 ack or 409 for a known super', async () => {
-    const start = Date.now();
+describe('POST /api/sync/:super — REMOVED in PR2', () => {
+  it('returns 404 for any super (operational HTTP trigger removed; use ops CLI)', async () => {
     const res = await request(app.getHttpServer())
       .post('/api/sync/vea')
       .set('Content-Type', 'application/json');
-    const elapsed = Date.now() - start;
-
-    // Explicit 200 for ack (res.status(200).json(...)) or 409 if already running
-    expect([200, 409]).toContain(res.status);
-    expect(elapsed).toBeLessThan(5000);
+    expect(res.status).toBe(404);
   });
 });
