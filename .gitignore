@@ -16,9 +16,17 @@ frontend/dist/
 backend/dist/
 
 # Variables de entorno
+# Root-level patterns do NOT match subdirectory files in git, so we list them
+# explicitly to ensure backend/.env and frontend/.env are never committed.
 .env
 .env.local
 .env.*.local
+backend/.env
+backend/.env.local
+backend/.env.*.local
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
 
 # Logs
 *.log
