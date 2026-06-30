@@ -69,10 +69,12 @@ type PrismaLike = Pick<PrismaClient, '$queryRaw' | '$executeRaw'> & {
 // Ensures exactly one cart row exists (id = 1). The upsert is idempotent:
 // concurrent calls hit the same primary key and the DB serialises them safely.
 
+// TODO(PR2): Replace this singleton with per-user cart.upsert({ where: { user_id }, ... }).
+// user_id: 1 is a placeholder that keeps the schema valid until scoped repos are wired.
 async function resolveCart(prisma: PrismaLike): Promise<{ id: number }> {
   return prisma.cart.upsert({
-    where: { id: 1 },
-    create: { id: 1 },
+    where: { user_id: 1 },
+    create: { user_id: 1 },
     update: {},
   });
 }

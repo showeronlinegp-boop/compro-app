@@ -12,6 +12,15 @@ import { testPrisma } from '../helpers/test-client.js';
 import { withRollback } from '../helpers/with-rollback.js';
 import { makeShoppingRepo } from '../../modules/shopping/infrastructure/shopping.repo.js';
 
+type Tx = Parameters<Parameters<typeof testPrisma.$transaction>[0]>[0];
+
+async function seedUser(tx: Tx): Promise<number> {
+  const result = await tx.users.create({
+    data: { clerk_user_id: `test_${Date.now()}_${Math.random()}` },
+  });
+  return result.id;
+}
+
 beforeAll(async () => {
   await testPrisma.$queryRaw`SELECT 1`;
 });
@@ -23,11 +32,12 @@ afterAll(async () => {
 describe('Shopping parity: date arithmetic + null last_bought', () => {
   it('item with last_bought exactly frequency_days ago is due', async () => {
     await withRollback(async (tx) => {
+      const userId = await seedUser(tx);
       const product = await tx.products.create({
         data: { super: 'vea', product_id: 'sp1', name: 'Milk', available: true, categories: [] },
       });
       const item = await tx.shopping.create({
-        data: { product_id: product.id, frequency_days: 7 },
+        data: { product_id: product.id, frequency_days: 7, user_id: userId },
       });
 
       // Set last_bought to 7 days + 1 hour ago to ensure the condition
@@ -50,11 +60,12 @@ describe('Shopping parity: date arithmetic + null last_bought', () => {
 
   it('item with null last_bought is always included', async () => {
     await withRollback(async (tx) => {
+      const userId = await seedUser(tx);
       const product = await tx.products.create({
         data: { super: 'vea', product_id: 'sp2', name: 'Bread', available: true, categories: [] },
       });
       await tx.shopping.create({
-        data: { product_id: product.id, frequency_days: 30, last_bought: null },
+        data: { product_id: product.id, frequency_days: 30, last_bought: null, user_id: userId },
       });
 
       const repo = makeShoppingRepo(tx);
@@ -66,11 +77,12 @@ describe('Shopping parity: date arithmetic + null last_bought', () => {
 
   it('item bought recently (< frequency_days) is NOT included', async () => {
     await withRollback(async (tx) => {
+      const userId = await seedUser(tx);
       const product = await tx.products.create({
         data: { super: 'vea', product_id: 'sp3', name: 'Cheese', available: true, categories: [] },
       });
       const item = await tx.shopping.create({
-        data: { product_id: product.id, frequency_days: 14 },
+        data: { product_id: product.id, frequency_days: 14, user_id: userId },
       });
 
       // Set last_bought to 3 days ago (not due for another 11 days)

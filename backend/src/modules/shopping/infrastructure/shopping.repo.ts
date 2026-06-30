@@ -171,8 +171,9 @@ export function makeShoppingRepo(prisma: PrismaLike): ShoppingRepo {
         return { id: existing.id, product_id, frequency_days, already: true };
       }
 
+      // TODO(PR2): user_id injected from CurrentUserService closure; 1 is a placeholder.
       const created = await prisma.shopping.create({
-        data: { product_id, frequency_days, notes },
+        data: { product_id, frequency_days, notes, user_id: 1 },
       });
       return { id: created.id, product_id, frequency_days };
     },

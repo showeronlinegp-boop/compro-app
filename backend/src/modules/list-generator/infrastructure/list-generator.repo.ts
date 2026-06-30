@@ -127,6 +127,7 @@ export function makeListGeneratorRepo(prisma: PrismaLike): ListGeneratorRepo {
 
       if (toInsert.length === 0) return 0;
 
+      // TODO(PR2): user_id injected from CurrentUserService closure; 1 is a placeholder.
       await (prisma as PrismaClient).$transaction(
         toInsert.map((item) =>
           prisma.shopping.create({
@@ -135,6 +136,7 @@ export function makeListGeneratorRepo(prisma: PrismaLike): ListGeneratorRepo {
               frequency_days: item.frequency_days,
               notes: item.notes,
               generated: true,
+              user_id: 1,
             },
           }),
         ),
