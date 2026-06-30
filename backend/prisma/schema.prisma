@@ -11,6 +11,25 @@ datasource db {
 }
 
 // ---------------------------------------------------------------------------
+// users — identity anchor; keyed by Clerk user ID (JIT-provisioned on first
+// authenticated request). No passwords or credential data stored here.
+// ---------------------------------------------------------------------------
+model users {
+  id            Int      @id @default(autoincrement())
+  clerk_user_id String   @unique @db.Text
+  email         String?  @db.Text
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime @updatedAt @db.Timestamptz(6)
+
+  cart          cart?
+  shopping      shopping[]
+  interests     interests[]
+  profile       user_profiles?
+
+  @@map("users")
+}
+
+// ---------------------------------------------------------------------------
 // products
 // ---------------------------------------------------------------------------
 model products {
@@ -51,11 +70,15 @@ model products {
 model interests {
   id         Int      @id @default(autoincrement())
   product_id Int
+  user_id    Int
   added_at   DateTime @default(now()) @db.Timestamptz(6)
 
   product products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  user    users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
+  @@unique([user_id, product_id])
   @@index([product_id])
+  @@index([user_id])
   @@map("interests")
 }
 
@@ -65,6 +88,7 @@ model interests {
 model shopping {
   id             Int       @id @default(autoincrement())
   product_id     Int
+  user_id        Int
   frequency_days Int       @default(7)
   last_bought    DateTime? @db.Timestamptz(6)
   notes          String?   @db.Text
@@ -72,8 +96,11 @@ model shopping {
   created_at     DateTime  @default(now()) @db.Timestamptz(6)
 
   product products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  user    users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
+  @@unique([user_id, product_id])
   @@index([product_id])
+  @@index([user_id])
   @@map("shopping")
 }
 
@@ -82,9 +109,12 @@ model shopping {
 // ---------------------------------------------------------------------------
 model cart {
   id         Int          @id @default(autoincrement())
+  user_id    Int          @unique
   created_at DateTime     @default(now()) @db.Timestamptz(6)
   updated_at DateTime     @updatedAt @db.Timestamptz(6)
   items      cart_items[]
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("cart")
 }
@@ -167,6 +197,7 @@ model list_templates {
 // ---------------------------------------------------------------------------
 model user_profiles {
   id                    Int      @id @default(autoincrement())
+  user_id               Int      @unique
   nombre                String   @db.Text
   edad                  Int?     @db.SmallInt
   genero                String?  @db.Text
@@ -185,6 +216,9 @@ model user_profiles {
   created_at            DateTime @default(now()) @db.Timestamptz(6)
   updated_at            DateTime @default(now()) @db.Timestamptz(6)
 
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
   @@map("user_profiles")
 }
 
