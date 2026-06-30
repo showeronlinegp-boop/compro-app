@@ -1,5 +1,5 @@
 import { verifyToken } from '@clerk/backend';
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import type { CanActivate, ExecutionContext } from '@nestjs/common';
 // biome-ignore lint/style/useImportType: NestJS emitDecoratorMetadata requires value import for DI
 import { Reflector } from '@nestjs/core';
@@ -7,8 +7,7 @@ import type { Request } from 'express';
 import { CLERK_ISSUER, CLERK_SECRET_KEY } from '../../config/env.js';
 // biome-ignore lint/style/useImportType: NestJS emitDecoratorMetadata requires value import for DI
 import { PrismaService } from '../../prisma/prisma.service.js';
-// biome-ignore lint/style/useImportType: NestJS emitDecoratorMetadata requires value import for DI
-import { CurrentUserService } from './current-user.service.js';
+import type { RequestWithAuth } from './current-user.service.js';
 import { IS_PUBLIC_KEY } from './public.decorator.js';
 
 /**
@@ -19,7 +18,12 @@ import { IS_PUBLIC_KEY } from './public.decorator.js';
  *   1. Verifies the JWT via @clerk/backend verifyToken (caches JWKS internally).
  *   2. Asserts iss === CLERK_ISSUER.
  *   3. JIT-upserts the local `users` row keyed by clerk_user_id.
- *   4. Populates CurrentUserService with { clerkUserId, userId }.
+ *   4. Writes { clerkUserId, userId } onto request.auth for CurrentUserService.
+ *
+ * Scope: SINGLETON (default). Injecting only Reflector + PrismaService (both
+ * singleton) keeps this guard at singleton scope so Reflector resolves correctly
+ * when registered as APP_GUARD. CurrentUserService (request-scoped) is NOT
+ * injected here — the guard writes to the Express request object instead.
  *
  * Fail-closed guarantees:
  *   - Missing env at boot → env.ts throws before the app starts (not here).
@@ -36,9 +40,10 @@ export class ClerkAuthGuard implements CanActivate {
   private readonly logger = new Logger(ClerkAuthGuard.name);
 
   constructor(
-    private readonly reflector: Reflector,
-    private readonly currentUser: CurrentUserService,
-    private readonly prisma: PrismaService,
+    // @Inject with explicit token so the DI container resolves Reflector even in
+    // test environments that use esbuild (which strips emitDecoratorMetadata).
+    @Inject(Reflector) private readonly reflector: Reflector,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -90,8 +95,9 @@ export class ClerkAuthGuard implements CanActivate {
       select: { id: true },
     });
 
-    // Attach resolved identity to the request-scoped CurrentUserService.
-    this.currentUser.set({ clerkUserId, userId: user.id });
+    // Write resolved identity onto the request object. CurrentUserService
+    // (request-scoped) reads from here — no circular scope dependency.
+    (request as RequestWithAuth).auth = { clerkUserId, userId: user.id };
 
     return true;
   }

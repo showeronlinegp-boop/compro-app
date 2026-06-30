@@ -14,7 +14,7 @@ import { makeCartRepo } from './cart.repo.js';
       provide: CART_REPO,
       scope: Scope.REQUEST,
       useFactory: (prisma: PrismaService, compareRepo: CompareRepo, currentUser: CurrentUserService) =>
-        makeCartRepo(prisma, compareRepo, currentUser.userId),
+        makeCartRepo(prisma, compareRepo, () => currentUser.userId),
       inject: [PrismaService, COMPARE_REPO, CurrentUserService],
     },
   ],

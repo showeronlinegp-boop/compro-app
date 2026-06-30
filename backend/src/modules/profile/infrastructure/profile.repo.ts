@@ -66,10 +66,16 @@ function parseProfile(row: {
  * upsert is implemented via prisma.user_profiles.upsert({ where: { user_id }, ... })
  * using the unique user_id constraint added in the multi-tenancy migration.
  */
-export function makeProfileRepo(prisma: PrismaLike, userId: number): ProfileRepo {
+/**
+ * makeProfileRepo accepts either a plain number or a getter function for userId.
+ * Pass a getter from request-scoped module factories to defer resolution until
+ * method execution (after guards have populated request.auth).
+ */
+export function makeProfileRepo(prisma: PrismaLike, userId: number | (() => number)): ProfileRepo {
+  const uid = () => (typeof userId === 'function' ? userId() : userId);
   return {
     async get() {
-      const row = await prisma.user_profiles.findUnique({ where: { user_id: userId } });
+      const row = await prisma.user_profiles.findUnique({ where: { user_id: uid() } });
       return row ? parseProfile(row) : null;
     },
 
@@ -91,8 +97,8 @@ export function makeProfileRepo(prisma: PrismaLike, userId: number): ProfileRepo
       };
 
       const row = await prisma.user_profiles.upsert({
-        where: { user_id: userId },
-        create: { ...payload, user_id: userId },
+        where: { user_id: uid() },
+        create: { ...payload, user_id: uid() },
         update: payload,
       });
 
@@ -100,10 +106,10 @@ export function makeProfileRepo(prisma: PrismaLike, userId: number): ProfileRepo
     },
 
     async setLocation(locationName, regionIds, stores) {
-      const existing = await prisma.user_profiles.findUnique({ where: { user_id: userId } });
+      const existing = await prisma.user_profiles.findUnique({ where: { user_id: uid() } });
       if (!existing) return null;
       const row = await prisma.user_profiles.update({
-        where: { user_id: userId },
+        where: { user_id: uid() },
         data: {
           postal_code: locationName,
           region_ids: regionIds as object,
@@ -116,7 +122,7 @@ export function makeProfileRepo(prisma: PrismaLike, userId: number): ProfileRepo
 
     async clear() {
       // Only clears the current user's profile row.
-      await prisma.user_profiles.deleteMany({ where: { user_id: userId } });
+      await prisma.user_profiles.deleteMany({ where: { user_id: uid() } });
     },
   };
 }

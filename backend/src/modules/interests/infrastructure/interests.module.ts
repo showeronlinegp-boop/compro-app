@@ -11,7 +11,7 @@ import { makeInterestsRepo } from './interests.repo.js';
       provide: INTERESTS_REPO,
       scope: Scope.REQUEST,
       useFactory: (prisma: PrismaService, currentUser: CurrentUserService) =>
-        makeInterestsRepo(prisma, currentUser.userId),
+        makeInterestsRepo(prisma, () => currentUser.userId),
       inject: [PrismaService, CurrentUserService],
     },
   ],

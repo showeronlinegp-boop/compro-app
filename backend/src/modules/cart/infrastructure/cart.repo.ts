@@ -105,10 +105,16 @@ async function hydrateCart(prisma: PrismaLike, cart_id: number): Promise<CartRes
 
 // ─── Factory ──────────────────────────────────────────────────────────────────
 
-export function makeCartRepo(prisma: PrismaLike, compareRepo: CompareRepo, userId: number): CartRepo {
+/**
+ * makeCartRepo accepts either a plain number or a getter function for userId.
+ * Pass a getter from request-scoped module factories to defer resolution until
+ * method execution (after guards have populated request.auth).
+ */
+export function makeCartRepo(prisma: PrismaLike, compareRepo: CompareRepo, userId: number | (() => number)): CartRepo {
+  const uid = () => (typeof userId === 'function' ? userId() : userId);
   return {
     async getOrCreate() {
-      const cart = await resolveCart(prisma, userId);
+      const cart = await resolveCart(prisma, uid());
       return hydrateCart(prisma, cart.id);
     },
 
@@ -120,7 +126,7 @@ export function makeCartRepo(prisma: PrismaLike, compareRepo: CompareRepo, userI
 
       clampQty(quantity);
 
-      const cart = await resolveCart(prisma, userId);
+      const cart = await resolveCart(prisma, uid());
 
       await prisma.cart_items.upsert({
         where: {
@@ -138,7 +144,7 @@ export function makeCartRepo(prisma: PrismaLike, compareRepo: CompareRepo, userI
 
       // Verify ownership: the cart_item must belong to this user's cart.
       const item = await prisma.cart_items.findFirst({
-        where: { id: cart_item_id, cart: { user_id: userId } },
+        where: { id: cart_item_id, cart: { user_id: uid() } },
       });
       if (!item) {
         throw Object.assign(new Error('Item no encontrado'), { statusCode: 404 });
@@ -155,7 +161,7 @@ export function makeCartRepo(prisma: PrismaLike, compareRepo: CompareRepo, userI
     async removeItem(cart_item_id) {
       // Verify ownership: the cart_item must belong to this user's cart.
       const item = await prisma.cart_items.findFirst({
-        where: { id: cart_item_id, cart: { user_id: userId } },
+        where: { id: cart_item_id, cart: { user_id: uid() } },
       });
       if (!item) {
         throw Object.assign(new Error('Item no encontrado'), { statusCode: 404 });
@@ -167,13 +173,13 @@ export function makeCartRepo(prisma: PrismaLike, compareRepo: CompareRepo, userI
     },
 
     async clear() {
-      const cart = await resolveCart(prisma, userId);
+      const cart = await resolveCart(prisma, uid());
       await prisma.cart_items.deleteMany({ where: { cart_id: cart.id } });
       return hydrateCart(prisma, cart.id);
     },
 
     async compareCart(): Promise<CompareResult> {
-      const cart = await resolveCart(prisma, userId);
+      const cart = await resolveCart(prisma, uid());
       const cartResult = await hydrateCart(prisma, cart.id);
 
       // Guard: refuse to compare carts with more than 100 distinct products

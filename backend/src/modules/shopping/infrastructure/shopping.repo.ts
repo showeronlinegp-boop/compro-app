@@ -89,7 +89,16 @@ type PrismaLike = Pick<PrismaClient, '$queryRaw' | '$executeRaw'> & {
   products: PrismaClient['products'];
 };
 
-export function makeShoppingRepo(prisma: PrismaLike, userId: number): ShoppingRepo {
+/**
+ * makeShoppingRepo accepts either a plain number or a getter function for userId.
+ * Pass a getter (() => currentUser.userId) from request-scoped module factories
+ * to defer resolution until the method executes (after guards have populated
+ * request.auth). Pass a plain number in tests.
+ */
+export function makeShoppingRepo(prisma: PrismaLike, userId: number | (() => number)): ShoppingRepo {
+  // Lazily resolve userId so factories can pass a getter without calling it
+  // at construction time (before the auth guard has run for the request).
+  const uid = () => (typeof userId === 'function' ? userId() : userId);
   return {
     async list() {
       const rows = await (prisma as PrismaClient).$queryRaw<ShoppingRow[]>(Prisma.sql`
@@ -98,7 +107,7 @@ export function makeShoppingRepo(prisma: PrismaLike, userId: number): ShoppingRe
                p.*
         FROM shopping s
         JOIN products p ON s.product_id = p.id
-        WHERE s.user_id = ${userId}
+        WHERE s.user_id = ${uid()}
         ORDER BY p.name
       `);
       return rows.map(parseRow);
@@ -113,7 +122,7 @@ export function makeShoppingRepo(prisma: PrismaLike, userId: number): ShoppingRe
                p.*
         FROM shopping s
         JOIN products p ON s.product_id = p.id
-        WHERE s.user_id = ${userId}
+        WHERE s.user_id = ${uid()}
           AND (s.last_bought IS NULL
            OR (NOW() - s.last_bought) >= (s.frequency_days * INTERVAL '1 day'))
         ORDER BY p.super, p.name
@@ -148,7 +157,7 @@ export function makeShoppingRepo(prisma: PrismaLike, userId: number): ShoppingRe
                )) / 86400.0 AS days_until_due
         FROM shopping s
         JOIN products p ON s.product_id = p.id
-        WHERE s.user_id = ${userId}
+        WHERE s.user_id = ${uid()}
           AND s.last_bought IS NOT NULL
           AND (s.last_bought + (s.frequency_days * INTERVAL '1 day')) - NOW() <= INTERVAL '5 days'
           AND (s.last_bought + (s.frequency_days * INTERVAL '1 day')) > NOW()
@@ -170,20 +179,20 @@ export function makeShoppingRepo(prisma: PrismaLike, userId: number): ShoppingRe
       }
 
       // Dedup is per-user: user A and user B can each have the same product.
-      const existing = await prisma.shopping.findFirst({ where: { product_id, user_id: userId } });
+      const existing = await prisma.shopping.findFirst({ where: { product_id, user_id: uid() } });
       if (existing) {
         return { id: existing.id, product_id, frequency_days, already: true };
       }
 
       const created = await prisma.shopping.create({
-        data: { product_id, frequency_days, notes, user_id: userId },
+        data: { product_id, frequency_days, notes, user_id: uid() },
       });
       return { id: created.id, product_id, frequency_days };
     },
 
     async update(id, data) {
       // Ownership check: user may only update their own shopping items.
-      const item = await prisma.shopping.findFirst({ where: { id, user_id: userId } });
+      const item = await prisma.shopping.findFirst({ where: { id, user_id: uid() } });
       if (!item) {
         throw Object.assign(new Error('No encontrado'), { statusCode: 404 });
       }
@@ -224,7 +233,7 @@ export function makeShoppingRepo(prisma: PrismaLike, userId: number): ShoppingRe
 
     async remove(id) {
       // Ownership check: user may only remove their own shopping items.
-      const item = await prisma.shopping.findFirst({ where: { id, user_id: userId } });
+      const item = await prisma.shopping.findFirst({ where: { id, user_id: uid() } });
       if (!item) {
         throw Object.assign(new Error('No encontrado'), { statusCode: 404 });
       }

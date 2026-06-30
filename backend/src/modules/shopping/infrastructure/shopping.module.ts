@@ -11,7 +11,7 @@ import { makeShoppingRepo } from './shopping.repo.js';
       provide: SHOPPING_REPO,
       scope: Scope.REQUEST,
       useFactory: (prisma: PrismaService, currentUser: CurrentUserService) =>
-        makeShoppingRepo(prisma, currentUser.userId),
+        makeShoppingRepo(prisma, () => currentUser.userId),
       inject: [PrismaService, CurrentUserService],
     },
   ],

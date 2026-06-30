@@ -13,7 +13,7 @@ export type { ListGeneratorService } from './list-generator.service.js';
       provide: LIST_GEN_SERVICE,
       scope: Scope.REQUEST,
       useFactory: (prisma: PrismaService, currentUser: CurrentUserService) => {
-        const repo = makeListGeneratorRepo(prisma, currentUser.userId);
+        const repo = makeListGeneratorRepo(prisma, () => currentUser.userId);
         return makeListGeneratorService(repo);
       },
       inject: [PrismaService, CurrentUserService],

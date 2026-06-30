@@ -4,12 +4,15 @@
  * All external dependencies are mocked:
  *   - @clerk/backend verifyToken: mocked to resolve or reject
  *   - PrismaService: mocked (no real DB connection)
- *   - CurrentUserService: real instance (it's a simple holder, no I/O)
+ *
+ * ClerkAuthGuard is now singleton: constructor takes only Reflector + PrismaService.
+ * On success it writes { clerkUserId, userId } to request.auth (RequestWithAuth).
+ * CurrentUserService (request-scoped) reads from request.auth — not tested here.
  *
  * Scenarios covered:
  *   (a) Missing Authorization header → throws UnauthorizedException
  *   (b) Invalid/expired token (verifyToken rejects) → throws UnauthorizedException
- *   (c) Valid token + issuer match → resolves user, sets CurrentUserService, returns true
+ *   (c) Valid token + issuer match → upserts user, writes request.auth, returns true
  *   (d) @Public() route → bypasses guard, returns true without verifyToken call
  *   (e) Token with wrong issuer → throws UnauthorizedException
  */
@@ -19,7 +22,7 @@ import { UnauthorizedException } from '@nestjs/common';
 import type { Reflector } from '@nestjs/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ClerkAuthGuard } from './clerk-auth.guard.js';
-import { CurrentUserService } from './current-user.service.js';
+import type { RequestWithAuth } from './current-user.service.js';
 
 // ---------------------------------------------------------------------------
 // Mock @clerk/backend verifyToken
@@ -45,23 +48,24 @@ import { verifyToken } from '@clerk/backend';
 // ---------------------------------------------------------------------------
 
 /** Build a minimal mock ExecutionContext with an in-memory request. */
-function buildContext(headers: Record<string, string> = {}, isPublic = false): ExecutionContext {
-  const request = { headers };
+function buildContext(headers: Record<string, string> = {}): { ctx: ExecutionContext; request: RequestWithAuth } {
+  const request: RequestWithAuth = { headers } as unknown as RequestWithAuth;
 
   const mockHandler = () => {};
   const mockClass = class {};
 
-  return {
+  const ctx = {
     switchToHttp: () => ({
       getRequest: () => request,
     }),
     getHandler: () => mockHandler,
     getClass: () => mockClass,
-    _isPublic: isPublic, // carry the flag so Reflector mock can read it
   } as unknown as ExecutionContext;
+
+  return { ctx, request };
 }
 
-/** Build a Reflector that respects the IS_PUBLIC flag on our test context. */
+/** Build a Reflector that returns the given isPublic value. */
 function buildReflector(isPublic: boolean): Reflector {
   return {
     getAllAndOverride: (_key: string) => (isPublic ? true : undefined),
@@ -87,26 +91,24 @@ function buildPayload(sub: string, iss = 'https://clerk.example.com') {
 // ---------------------------------------------------------------------------
 
 describe('ClerkAuthGuard', () => {
-  let currentUser: CurrentUserService;
   let prisma: ReturnType<typeof buildPrisma>;
 
   beforeEach(() => {
-    currentUser = new CurrentUserService();
     prisma = buildPrisma();
     vi.mocked(verifyToken).mockReset();
   });
 
   it('(a) missing Authorization header → throws UnauthorizedException', async () => {
-    const guard = new ClerkAuthGuard(buildReflector(false), currentUser, prisma);
-    const ctx = buildContext({}); // no Authorization header
+    const guard = new ClerkAuthGuard(buildReflector(false), prisma);
+    const { ctx } = buildContext({}); // no Authorization header
 
     await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
     expect(verifyToken).not.toHaveBeenCalled();
   });
 
   it('(a) Authorization header present but not Bearer format → throws UnauthorizedException', async () => {
-    const guard = new ClerkAuthGuard(buildReflector(false), currentUser, prisma);
-    const ctx = buildContext({ authorization: 'Basic abc123' });
+    const guard = new ClerkAuthGuard(buildReflector(false), prisma);
+    const { ctx } = buildContext({ authorization: 'Basic abc123' });
 
     await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
     expect(verifyToken).not.toHaveBeenCalled();
@@ -114,19 +116,19 @@ describe('ClerkAuthGuard', () => {
 
   it('(b) invalid/expired token (verifyToken rejects) → throws UnauthorizedException', async () => {
     vi.mocked(verifyToken).mockRejectedValue(new Error('Token expired'));
-    const guard = new ClerkAuthGuard(buildReflector(false), currentUser, prisma);
-    const ctx = buildContext({ authorization: 'Bearer invalid.token.here' });
+    const guard = new ClerkAuthGuard(buildReflector(false), prisma);
+    const { ctx } = buildContext({ authorization: 'Bearer invalid.token.here' });
 
     await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
     expect(verifyToken).toHaveBeenCalledOnce();
   });
 
-  it('(c) valid token → upserts user, sets CurrentUserService, returns true', async () => {
+  it('(c) valid token → upserts user, writes request.auth, returns true', async () => {
     const clerkUserId = 'user_abc123';
     vi.mocked(verifyToken).mockResolvedValue(buildPayload(clerkUserId) as never);
 
-    const guard = new ClerkAuthGuard(buildReflector(false), currentUser, prisma);
-    const ctx = buildContext({ authorization: 'Bearer valid.jwt.token' });
+    const guard = new ClerkAuthGuard(buildReflector(false), prisma);
+    const { ctx, request } = buildContext({ authorization: 'Bearer valid.jwt.token' });
 
     const result = await guard.canActivate(ctx);
 
@@ -139,27 +141,29 @@ describe('ClerkAuthGuard', () => {
         where: { clerk_user_id: clerkUserId },
       }),
     );
-    expect(currentUser.userId).toBe(42);
-    expect(currentUser.clerkUserId).toBe(clerkUserId);
+    // Identity is written directly onto the request object
+    expect(request.auth).toEqual({ clerkUserId, userId: 42 });
   });
 
   it('(d) @Public() route → bypasses guard entirely, returns true', async () => {
-    const guard = new ClerkAuthGuard(buildReflector(true), currentUser, prisma);
-    const ctx = buildContext({}); // no token at all
+    const guard = new ClerkAuthGuard(buildReflector(true), prisma);
+    const { ctx, request } = buildContext({}); // no token at all
 
     const result = await guard.canActivate(ctx);
 
     expect(result).toBe(true);
     expect(verifyToken).not.toHaveBeenCalled();
     expect(prisma.users.upsert).not.toHaveBeenCalled();
+    // request.auth must remain unset on public routes
+    expect(request.auth).toBeUndefined();
   });
 
   it('(e) token with wrong issuer → throws UnauthorizedException', async () => {
     vi.mocked(verifyToken).mockResolvedValue(
       buildPayload('user_xyz', 'https://evil.example.com') as never,
     );
-    const guard = new ClerkAuthGuard(buildReflector(false), currentUser, prisma);
-    const ctx = buildContext({ authorization: 'Bearer token.wrong.issuer' });
+    const guard = new ClerkAuthGuard(buildReflector(false), prisma);
+    const { ctx } = buildContext({ authorization: 'Bearer token.wrong.issuer' });
 
     await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
     // Upsert must NOT run on issuer mismatch

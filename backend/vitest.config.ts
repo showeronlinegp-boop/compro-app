@@ -15,6 +15,7 @@ export default defineConfig({
     globals: false,
     forbidOnly: true,
     environment: 'node',
+    setupFiles: ['src/test/setup-env.ts'],
     globalSetup: ['src/test/global-setup.ts'],
   },
 });

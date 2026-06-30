@@ -13,7 +13,7 @@ import { makeProfileRepo } from './profile.repo.js';
       provide: PROFILE_REPO,
       scope: Scope.REQUEST,
       useFactory: (prisma: PrismaService, currentUser: CurrentUserService) =>
-        makeProfileRepo(prisma, currentUser.userId),
+        makeProfileRepo(prisma, () => currentUser.userId),
       inject: [PrismaService, CurrentUserService],
     },
   ],
