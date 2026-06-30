@@ -12,6 +12,7 @@
     "dev:only": "tsx watch src/main.ts",
     "migrate:etl": "tsx scripts/migrate-sqlite-to-pg.ts",
     "sync": "tsx scripts/sync.ts",
+    "ops": "tsx scripts/ops.ts",
     "build": "prisma generate && tsup",
     "start": "node dist/main.js",
     "postinstall": "prisma generate",
