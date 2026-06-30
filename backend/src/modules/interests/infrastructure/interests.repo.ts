@@ -51,13 +51,14 @@ type PrismaLike = Pick<PrismaClient, '$queryRaw'> & {
   products: PrismaClient['products'];
 };
 
-export function makeInterestsRepo(prisma: PrismaLike): InterestsRepo {
+export function makeInterestsRepo(prisma: PrismaLike, userId: number): InterestsRepo {
   return {
     async list() {
       const rows = await (prisma as PrismaClient).$queryRaw<InterestRow[]>(Prisma.sql`
         SELECT i.id as interest_id, i.added_at, p.*
         FROM interests i
         JOIN products p ON i.product_id = p.id
+        WHERE i.user_id = ${userId}
         ORDER BY i.added_at DESC
       `);
       return rows.map(parseRow);
@@ -70,19 +71,19 @@ export function makeInterestsRepo(prisma: PrismaLike): InterestsRepo {
         throw Object.assign(new Error('Producto no encontrado'), { statusCode: 404 });
       }
 
-      // Check for existing interest
-      const existing = await prisma.interests.findFirst({ where: { product_id } });
+      // Dedup is per-user: user A and user B can each have the same product.
+      const existing = await prisma.interests.findFirst({ where: { product_id, user_id: userId } });
       if (existing) {
         return { id: existing.id, product_id, already: true };
       }
 
-      // TODO(PR2): user_id injected from CurrentUserService closure; 1 is a placeholder.
-      const created = await prisma.interests.create({ data: { product_id, user_id: 1 } });
+      const created = await prisma.interests.create({ data: { product_id, user_id: userId } });
       return { id: created.id, product_id };
     },
 
     async remove(id) {
-      const existing = await prisma.interests.findUnique({ where: { id } });
+      // Ownership check: user may only remove their own interests.
+      const existing = await prisma.interests.findFirst({ where: { id, user_id: userId } });
       if (!existing) {
         throw Object.assign(new Error('No encontrado'), { statusCode: 404 });
       }

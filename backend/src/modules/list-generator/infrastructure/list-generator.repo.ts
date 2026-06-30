@@ -23,6 +23,7 @@ export interface ListGeneratorRepo {
 
 type PrismaLike = Pick<PrismaClient, '$queryRaw' | '$transaction' | 'list_templates' | 'shopping' | 'products'>;
 
+
 function toStringArray(value: unknown): string[] {
   return Array.isArray(value) ? (value as string[]) : [];
 }
@@ -39,7 +40,7 @@ function normalizeKeyword(txt: string): string {
     .replace(/[óò]/g, 'o').replace(/[úùü]/g, 'u').replace(/ñ/g, 'n');
 }
 
-export function makeListGeneratorRepo(prisma: PrismaLike): ListGeneratorRepo {
+export function makeListGeneratorRepo(prisma: PrismaLike, userId: number): ListGeneratorRepo {
   return {
     async getTemplateItems(perfilHogar) {
       const rows = await prisma.list_templates.findMany({
@@ -111,15 +112,17 @@ export function makeListGeneratorRepo(prisma: PrismaLike): ListGeneratorRepo {
     },
 
     async clearGeneratedItems() {
-      const result = await prisma.shopping.deleteMany({ where: { generated: true } });
+      // Only clears the current user's generated items.
+      const result = await prisma.shopping.deleteMany({ where: { generated: true, user_id: userId } });
       return result.count;
     },
 
     async bulkAddToShopping(items) {
       if (items.length === 0) return 0;
 
+      // Dedup is per-user: check only this user's existing shopping items.
       const existingRows = await prisma.shopping.findMany({
-        where: { product_id: { in: items.map((i) => i.product_id) } },
+        where: { product_id: { in: items.map((i) => i.product_id) }, user_id: userId },
         select: { product_id: true },
       });
       const existingIds = new Set(existingRows.map((r) => r.product_id));
@@ -127,7 +130,6 @@ export function makeListGeneratorRepo(prisma: PrismaLike): ListGeneratorRepo {
 
       if (toInsert.length === 0) return 0;
 
-      // TODO(PR2): user_id injected from CurrentUserService closure; 1 is a placeholder.
       await (prisma as PrismaClient).$transaction(
         toInsert.map((item) =>
           prisma.shopping.create({
@@ -136,7 +138,7 @@ export function makeListGeneratorRepo(prisma: PrismaLike): ListGeneratorRepo {
               frequency_days: item.frequency_days,
               notes: item.notes,
               generated: true,
-              user_id: 1,
+              user_id: userId,
             },
           }),
         ),

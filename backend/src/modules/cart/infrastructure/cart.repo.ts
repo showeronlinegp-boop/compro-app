@@ -65,16 +65,14 @@ type PrismaLike = Pick<PrismaClient, '$queryRaw' | '$executeRaw'> & {
   products: PrismaClient['products'];
 };
 
-// ─── Atomic single-cart resolver ──────────────────────────────────────────────
-// Ensures exactly one cart row exists (id = 1). The upsert is idempotent:
-// concurrent calls hit the same primary key and the DB serialises them safely.
-
-// TODO(PR2): Replace this singleton with per-user cart.upsert({ where: { user_id }, ... }).
-// user_id: 1 is a placeholder that keeps the schema valid until scoped repos are wired.
-async function resolveCart(prisma: PrismaLike): Promise<{ id: number }> {
+// ─── Atomic per-user cart resolver ───────────────────────────────────────────
+// Each user owns exactly one cart, keyed by user_id (unique constraint).
+// The upsert is idempotent: concurrent calls hit the same unique key and the
+// DB serialises them safely.
+async function resolveCart(prisma: PrismaLike, userId: number): Promise<{ id: number }> {
   return prisma.cart.upsert({
-    where: { user_id: 1 },
-    create: { user_id: 1 },
+    where: { user_id: userId },
+    create: { user_id: userId },
     update: {},
   });
 }
@@ -107,10 +105,10 @@ async function hydrateCart(prisma: PrismaLike, cart_id: number): Promise<CartRes
 
 // ─── Factory ──────────────────────────────────────────────────────────────────
 
-export function makeCartRepo(prisma: PrismaLike, compareRepo: CompareRepo): CartRepo {
+export function makeCartRepo(prisma: PrismaLike, compareRepo: CompareRepo, userId: number): CartRepo {
   return {
     async getOrCreate() {
-      const cart = await resolveCart(prisma);
+      const cart = await resolveCart(prisma, userId);
       return hydrateCart(prisma, cart.id);
     },
 
@@ -122,7 +120,7 @@ export function makeCartRepo(prisma: PrismaLike, compareRepo: CompareRepo): Cart
 
       clampQty(quantity);
 
-      const cart = await resolveCart(prisma);
+      const cart = await resolveCart(prisma, userId);
 
       await prisma.cart_items.upsert({
         where: {
@@ -138,7 +136,10 @@ export function makeCartRepo(prisma: PrismaLike, compareRepo: CompareRepo): Cart
     async updateQty(cart_item_id, quantity) {
       clampQty(quantity);
 
-      const item = await prisma.cart_items.findUnique({ where: { id: cart_item_id } });
+      // Verify ownership: the cart_item must belong to this user's cart.
+      const item = await prisma.cart_items.findFirst({
+        where: { id: cart_item_id, cart: { user_id: userId } },
+      });
       if (!item) {
         throw Object.assign(new Error('Item no encontrado'), { statusCode: 404 });
       }
@@ -152,7 +153,10 @@ export function makeCartRepo(prisma: PrismaLike, compareRepo: CompareRepo): Cart
     },
 
     async removeItem(cart_item_id) {
-      const item = await prisma.cart_items.findUnique({ where: { id: cart_item_id } });
+      // Verify ownership: the cart_item must belong to this user's cart.
+      const item = await prisma.cart_items.findFirst({
+        where: { id: cart_item_id, cart: { user_id: userId } },
+      });
       if (!item) {
         throw Object.assign(new Error('Item no encontrado'), { statusCode: 404 });
       }
@@ -163,13 +167,13 @@ export function makeCartRepo(prisma: PrismaLike, compareRepo: CompareRepo): Cart
     },
 
     async clear() {
-      const cart = await resolveCart(prisma);
+      const cart = await resolveCart(prisma, userId);
       await prisma.cart_items.deleteMany({ where: { cart_id: cart.id } });
       return hydrateCart(prisma, cart.id);
     },
 
     async compareCart(): Promise<CompareResult> {
-      const cart = await resolveCart(prisma);
+      const cart = await resolveCart(prisma, userId);
       const cartResult = await hydrateCart(prisma, cart.id);
 
       // Guard: refuse to compare carts with more than 100 distinct products

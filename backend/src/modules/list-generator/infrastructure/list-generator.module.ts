@@ -1,5 +1,6 @@
-import { Module } from '@nestjs/common';
+import { Module, Scope } from '@nestjs/common';
 import { LIST_GEN_SERVICE } from '../../../common/tokens.js';
+import { CurrentUserService } from '../../../common/auth/current-user.service.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { makeListGeneratorRepo } from './list-generator.repo.js';
 import { makeListGeneratorService } from './list-generator.service.js';
@@ -10,11 +11,12 @@ export type { ListGeneratorService } from './list-generator.service.js';
   providers: [
     {
       provide: LIST_GEN_SERVICE,
-      useFactory: (prisma: PrismaService) => {
-        const repo = makeListGeneratorRepo(prisma);
+      scope: Scope.REQUEST,
+      useFactory: (prisma: PrismaService, currentUser: CurrentUserService) => {
+        const repo = makeListGeneratorRepo(prisma, currentUser.userId);
         return makeListGeneratorService(repo);
       },
-      inject: [PrismaService],
+      inject: [PrismaService, CurrentUserService],
     },
   ],
   exports: [LIST_GEN_SERVICE],
