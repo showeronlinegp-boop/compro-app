@@ -1,6 +1,7 @@
 import { Controller, Get, Inject, Param, Post, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { CRAWLER_SERVICE, PROFILE_REPO } from '../../common/tokens.js';
+import { Public } from '../../common/auth/public.decorator.js';
 import { SUPERS } from '../../config/supers.js';
 import type { ProfileRepo } from '../../modules/profile/infrastructure/profile.repo.js';
 import type { RegionIds } from '../../shared/types.js';
@@ -25,6 +26,7 @@ export class CrawlerController {
   }
 
   // GET /status — returns ARRAY (critical regression guard vs the old {} bug)
+  @Public()
   @Get('status')
   async getStatus() {
     return this.service.getSyncStatus();

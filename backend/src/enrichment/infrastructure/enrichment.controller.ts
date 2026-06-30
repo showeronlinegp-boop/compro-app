@@ -1,6 +1,7 @@
 import { Controller, Get, Inject, Param, Post, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { ENRICH_SERVICE } from '../../common/tokens.js';
+import { Public } from '../../common/auth/public.decorator.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import type { EnrichService } from './enricher.service.js';
 
@@ -12,6 +13,7 @@ export class EnrichmentController {
   ) {}
 
   // GET /status — returns all super statuses (in-memory object)
+  @Public()
   @Get('status')
   getStatus() {
     return this.enricher.getStatus();

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
+import { AuthModule } from './common/auth/auth.module.js';
 import { CrawlerModule } from './crawler/infrastructure/crawler.module.js';
 import { EnrichmentModule } from './enrichment/infrastructure/enrichment.module.js';
 import { CartModule } from './modules/cart/infrastructure/cart.module.js';
@@ -15,6 +16,8 @@ import { SchedulerModule } from './scheduler/scheduler.module.js';
 @Module({
   imports: [
     PrismaModule,
+    // AuthModule must come before feature modules so APP_GUARD is registered first.
+    AuthModule,
     ScheduleModule.forRoot(),
     CatalogModule,
     InterestsModule,

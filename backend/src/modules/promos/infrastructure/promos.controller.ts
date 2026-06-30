@@ -1,6 +1,7 @@
 import { Controller, Get, Inject, Param, Post, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { PROMO_CAPTURE_SERVICE, PROMOS_REPO } from '../../../common/tokens.js';
+import { Public } from '../../../common/auth/public.decorator.js';
 import type { PromoCaptureService } from './promo-capture.service.js';
 import { PROMO_TARGETS } from './promo-targets.js';
 import type { PromosRepo } from './promos.repo.js';
@@ -12,6 +13,7 @@ export class PromosController {
     @Inject(PROMO_CAPTURE_SERVICE) private readonly captureService: PromoCaptureService,
   ) {}
 
+  @Public()
   @Get()
   async list() {
     const rows = await this.repo.listAll();
