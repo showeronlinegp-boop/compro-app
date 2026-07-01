@@ -1,5 +1,6 @@
 import { Controller, Get, Inject, Query } from '@nestjs/common';
 import { CATALOG_REPO } from '../../../common/tokens.js';
+import { Public } from '../../../common/auth/public.decorator.js';
 import { getVtexStrings, TAXONOMY } from '../../taxonomy/domain/taxonomy.js';
 import type { CatalogRepo } from './catalog.repo.js';
 
@@ -15,6 +16,8 @@ interface CatalogQueryParams {
   limit?: string;
 }
 
+// All catalog browse routes are public — read-only, non-owned data.
+@Public()
 @Controller('api/products')
 export class CatalogController {
   constructor(@Inject(CATALOG_REPO) private readonly repo: CatalogRepo) {}

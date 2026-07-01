@@ -96,9 +96,10 @@ export function makeProfileRepo(prisma: PrismaLike): ProfileRepo {
         updated_at: new Date(),
       };
 
+      // TODO(PR2): user_id injected from CurrentUserService closure; 1 is a placeholder.
       const row = existing
         ? await prisma.user_profiles.update({ where: { id: existing.id }, data: payload })
-        : await prisma.user_profiles.create({ data: payload });
+        : await prisma.user_profiles.create({ data: { ...payload, user_id: 1 } });
 
       return parseProfile(row);
     },

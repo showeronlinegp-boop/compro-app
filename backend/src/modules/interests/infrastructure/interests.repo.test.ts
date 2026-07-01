@@ -10,8 +10,17 @@ import { makeInterestsRepo } from './interests.repo.js';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+type Tx = Parameters<Parameters<typeof testPrisma.$transaction>[0]>[0];
+
+async function seedUser(tx: Tx): Promise<number> {
+  const result = await tx.users.create({
+    data: { clerk_user_id: `test_${Date.now()}_${Math.random()}` },
+  });
+  return result.id;
+}
+
 async function seedProduct(
-  tx: Parameters<Parameters<typeof testPrisma.$transaction>[0]>[0],
+  tx: Tx,
   overrides: Partial<{ super_key: string; product_id: string; name: string }> = {},
 ): Promise<number> {
   const result = await tx.products.create({
@@ -85,12 +94,13 @@ describe('makeInterestsRepo', () => {
 
     it('list returns interests ordered by added_at DESC', async () => {
       await withRollback(async (tx) => {
+        const userId = await seedUser(tx);
         const p1 = await seedProduct(tx, { product_id: 'p1' });
         const p2 = await seedProduct(tx, { product_id: 'p2' });
 
         // Insert with explicit timestamps
-        await tx.interests.create({ data: { product_id: p1, added_at: new Date('2024-01-01') } });
-        await tx.interests.create({ data: { product_id: p2, added_at: new Date('2024-01-02') } });
+        await tx.interests.create({ data: { product_id: p1, user_id: userId, added_at: new Date('2024-01-01') } });
+        await tx.interests.create({ data: { product_id: p2, user_id: userId, added_at: new Date('2024-01-02') } });
 
         const repo = makeInterestsRepo(tx);
         const list = await repo.list();

@@ -76,7 +76,8 @@ export function makeInterestsRepo(prisma: PrismaLike): InterestsRepo {
         return { id: existing.id, product_id, already: true };
       }
 
-      const created = await prisma.interests.create({ data: { product_id } });
+      // TODO(PR2): user_id injected from CurrentUserService closure; 1 is a placeholder.
+      const created = await prisma.interests.create({ data: { product_id, user_id: 1 } });
       return { id: created.id, product_id };
     },
 

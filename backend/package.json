@@ -21,6 +21,7 @@
     "format": "biome format --write ."
   },
   "dependencies": {
+    "@clerk/backend": "^3.9.0",
     "@nestjs/common": "^11.1.26",
     "@nestjs/core": "^11.1.26",
     "@nestjs/platform-express": "^11.1.26",
