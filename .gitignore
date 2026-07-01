@@ -42,3 +42,6 @@ Thumbs.db
 
 # IA local config
 .atl
+.claude
+.agents
+skills-lock.json
