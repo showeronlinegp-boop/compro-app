@@ -19,10 +19,28 @@ import type {
 
 const BASE = '/api';
 
+// ---------------------------------------------------------------------------
+// Auth token bridge — populated by <AuthTokenBridge> via setApiToken().
+// Storing the token in a module-level variable avoids React re-renders on
+// every token refresh (vercel-react `rerender-use-ref-transient-values`).
+// Clerk hooks MUST NOT be called here (api.ts is not a React component).
+// ---------------------------------------------------------------------------
+
+let _authToken: string | null = null;
+
+/** Called once by <AuthTokenBridge> after the user signs in. */
+export function setApiToken(token: string | null): void {
+  _authToken = token;
+}
+
+function authHeaders(): Record<string, string> {
+  return _authToken ? { Authorization: `Bearer ${_authToken}` } : {};
+}
+
 // Single declared trust boundary: res.json() returns unknown; we assert T here only.
 async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
   const res = await fetch(BASE + path, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     ...opts,
   });
   if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
@@ -33,7 +51,7 @@ async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
 // Throws on any other non-ok status so callers get real errors surfaced.
 async function reqOptional<T>(path: string, opts: RequestInit = {}): Promise<T | null> {
   const res = await fetch(BASE + path, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     ...opts,
   });
   if (res.status === 404 || res.status === 204) return null;

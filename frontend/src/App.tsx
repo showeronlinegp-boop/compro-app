@@ -1,6 +1,8 @@
+import { RedirectToSignIn, SignedIn, SignedOut, UserButton } from '@clerk/clerk-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { api } from './api';
+import { AuthTokenBridge } from './components/AuthTokenBridge';
 import { CartDrawer } from './components/CartDrawer';
 import { LocationSelector } from './components/LocationSelector';
 import { CartProvider, useCart } from './contexts/CartContext';
@@ -10,6 +12,8 @@ import Explorar from './pages/Explorar';
 import Intereses from './pages/Intereses';
 import Onboarding from './pages/Onboarding';
 import Planner from './pages/Planner';
+import SignInPage from './pages/SignInPage';
+import SignUpPage from './pages/SignUpPage';
 import { FOCUS_RING } from './styles';
 import type {
   EnrichStatus,
@@ -310,6 +314,9 @@ function AppShell() {
 
           {/* Sync status panel (read-only; triggers moved to ops CLI) */}
           <SyncPanel status={syncStatus} />
+
+          {/* User account menu (sign-out, profile, etc.) */}
+          <UserButton afterSignOutUrl="/sign-in" />
         </div>
       </nav>
 
@@ -405,8 +412,32 @@ function AppShell() {
 
 export default function App() {
   return (
-    <CartProvider>
-      <AppShell />
-    </CartProvider>
+    <>
+      {/* AuthTokenBridge syncs the Clerk token into api.ts on every sign-in/refresh.
+          It renders null and must live inside <ClerkProvider> (set in main.tsx). */}
+      <AuthTokenBridge />
+      <Routes>
+        {/* Clerk-hosted auth routes */}
+        <Route path="/sign-in/*" element={<SignInPage />} />
+        <Route path="/sign-up/*" element={<SignUpPage />} />
+
+        {/* All other routes require authentication */}
+        <Route
+          path="/*"
+          element={
+            <>
+              <SignedIn>
+                <CartProvider>
+                  <AppShell />
+                </CartProvider>
+              </SignedIn>
+              <SignedOut>
+                <RedirectToSignIn />
+              </SignedOut>
+            </>
+          }
+        />
+      </Routes>
+    </>
   );
 }

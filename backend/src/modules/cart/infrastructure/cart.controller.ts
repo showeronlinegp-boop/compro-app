@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, Inject, Param, Post, Put, Res } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { CART_REPO } from '../../../common/tokens.js';
 import type { CartRepo } from './cart.repo.js';
@@ -54,6 +55,8 @@ export class CartController {
     return this.repo.getOrCreate();
   }
 
+  // pg_trgm similarity is expensive — stricter rate limit than the global 100/min.
+  @Throttle({ global: { ttl: 60_000, limit: 20 } })
   @Get('compare')
   compareCart() {
     return this.repo.compareCart();
