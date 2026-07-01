@@ -26,21 +26,29 @@ const BASE = '/api';
 // Clerk hooks MUST NOT be called here (api.ts is not a React component).
 // ---------------------------------------------------------------------------
 
-let _authToken: string | null = null;
+type TokenGetter = () => Promise<string | null>;
+let _tokenGetter: TokenGetter | null = null;
 
-/** Called once by <AuthTokenBridge> after the user signs in. */
-export function setApiToken(token: string | null): void {
-  _authToken = token;
+/**
+ * Registered once by <AuthTokenBridge>. Called per-request so every fetch
+ * carries a fresh token with no mount-time race. Clerk's getToken() caches and
+ * refreshes internally, and returns null when there is no active session (so
+ * public requests simply carry no Authorization header).
+ */
+export function setTokenGetter(getter: TokenGetter | null): void {
+  _tokenGetter = getter;
 }
 
-function authHeaders(): Record<string, string> {
-  return _authToken ? { Authorization: `Bearer ${_authToken}` } : {};
+async function authHeaders(): Promise<Record<string, string>> {
+  if (!_tokenGetter) return {};
+  const token = await _tokenGetter();
+  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 // Single declared trust boundary: res.json() returns unknown; we assert T here only.
 async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
   const res = await fetch(BASE + path, {
-    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
     ...opts,
   });
   if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
@@ -51,7 +59,7 @@ async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
 // Throws on any other non-ok status so callers get real errors surfaced.
 async function reqOptional<T>(path: string, opts: RequestInit = {}): Promise<T | null> {
   const res = await fetch(BASE + path, {
-    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
     ...opts,
   });
   if (res.status === 404 || res.status === 204) return null;

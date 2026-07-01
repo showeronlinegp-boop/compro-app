@@ -1,5 +1,12 @@
-import { RedirectToSignIn, SignedIn, SignedOut, UserButton } from '@clerk/clerk-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  RedirectToSignIn,
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  UserButton,
+  useAuth,
+} from '@clerk/clerk-react';
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { api } from './api';
 import { AuthTokenBridge } from './components/AuthTokenBridge';
@@ -117,6 +124,7 @@ function SyncPanel({ status }: SyncPanelProps) {
 function AppShell() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isSignedIn } = useAuth();
   const { itemCount, openCart } = useCart();
   const [interests, setInterests] = useState<Interest[]>([]);
   const [shopping, setShopping] = useState<ShoppingItem[]>([]);
@@ -153,16 +161,28 @@ function AppShell() {
     }
   }, [location]);
 
-  // Runs once on mount to load data and redirect to onboarding if needed.
-  // Deps are intentionally empty: adding location.pathname/navigate would re-run
-  // this on every navigation, causing an infinite redirect loop.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional once-on-mount effect (see above)
+  // Public data — loaded for everyone, signed in or not (these endpoints are
+  // @Public() on the backend). Runs once on mount.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional once-on-mount effect
   useEffect(() => {
-    api.interests.list().then(setInterests).catch(console.error);
-    api.shopping.list().then(setShopping).catch(console.error);
     api.sync.status().then(setSyncStatus).catch(console.error);
     api.enrich.status().then(applyEnrichStatus).catch(console.error);
     api.promos.list().then(setPromos).catch(console.error);
+  }, []);
+
+  // User-specific data — only fetched when a session exists. Fetching these
+  // while signed out would hit protected routes and 401 (that was the console
+  // spam). Re-runs when auth state flips (sign-in / sign-out).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: onboarding redirect is a one-time-on-load concern, not a nav dep
+  useEffect(() => {
+    if (!isSignedIn) {
+      setInterests([]);
+      setShopping([]);
+      setProfile(undefined);
+      return;
+    }
+    api.interests.list().then(setInterests).catch(console.error);
+    api.shopping.list().then(setShopping).catch(console.error);
     api.profile.get().then((p) => {
       setProfile(p);
       // Onboarding is an optional welcome: redirect new users to it once so they
@@ -173,7 +193,7 @@ function AppShell() {
         navigate('/onboarding', { replace: true });
       }
     });
-  }, []);
+  }, [isSignedIn]);
 
   // Auto-poll while a sync is running (scheduler-initiated syncs show progress).
   useEffect(() => {
@@ -198,6 +218,11 @@ function AppShell() {
   }, [enrichStatus, applyEnrichStatus]);
 
   async function toggleInterest(product: Product) {
+    // User-specific action: browsing is public, but saving requires an account.
+    if (!isSignedIn) {
+      navigate('/sign-in');
+      return;
+    }
     const existing = interests.find((i) => i.id === product.id);
     if (existing) {
       await api.interests.remove(existing.interest_id);
@@ -211,6 +236,10 @@ function AppShell() {
   }
 
   async function addToShopping(product: Product, frequency_days: number) {
+    if (!isSignedIn) {
+      navigate('/sign-in');
+      return;
+    }
     await api.shopping.add({ product_id: product.id, frequency_days });
     const fresh = await api.shopping.list();
     setShopping(fresh);
@@ -315,8 +344,21 @@ function AppShell() {
           {/* Sync status panel (read-only; triggers moved to ops CLI) */}
           <SyncPanel status={syncStatus} />
 
-          {/* User account menu (sign-out, profile, etc.) */}
-          <UserButton afterSignOutUrl="/sign-in" />
+          {/* User account menu when signed in; a sign-in button otherwise.
+              Browsing is public — auth only gates user-specific features. */}
+          <SignedIn>
+            <UserButton afterSignOutUrl="/" />
+          </SignedIn>
+          <SignedOut>
+            <SignInButton mode="modal">
+              <button
+                type="button"
+                className={`text-xs font-medium px-3 py-1.5 rounded-xl bg-indigo-600 text-white hover:bg-indigo-500 transition-colors ${FOCUS_RING}`}
+              >
+                Ingresar
+              </button>
+            </SignInButton>
+          </SignedOut>
         </div>
       </nav>
 
@@ -340,26 +382,51 @@ function AppShell() {
           <Route
             path="/intereses"
             element={
-              <Intereses
-                interests={interests}
-                onToggleInterest={toggleInterest}
-                onAddToShopping={addToShopping}
-                shoppingIds={shoppingIds}
-              />
+              <RequireAuth>
+                <Intereses
+                  interests={interests}
+                  onToggleInterest={toggleInterest}
+                  onAddToShopping={addToShopping}
+                  shoppingIds={shoppingIds}
+                />
+              </RequireAuth>
             }
           />
-          <Route path="/planner" element={<Planner />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/compare" element={<Compare />} />
+          <Route
+            path="/planner"
+            element={
+              <RequireAuth>
+                <Planner />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/cart"
+            element={
+              <RequireAuth>
+                <Cart />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/compare"
+            element={
+              <RequireAuth>
+                <Compare />
+              </RequireAuth>
+            }
+          />
           <Route
             path="/onboarding"
             element={
-              <Onboarding
-                onComplete={(p) => {
-                  setProfile(p);
-                  navigate('/planner', { replace: true });
-                }}
-              />
+              <RequireAuth>
+                <Onboarding
+                  onComplete={(p) => {
+                    setProfile(p);
+                    navigate('/planner', { replace: true });
+                  }}
+                />
+              </RequireAuth>
             }
           />
         </Routes>
@@ -410,10 +477,26 @@ function AppShell() {
 
 // ─── App — provides CartContext, then renders AppShell inside it ──────────────
 
+/**
+ * Gates a single route: renders its children when signed in, otherwise sends
+ * the user to Clerk's sign-in. Used only for user-specific pages — browsing
+ * the catalog is public and never wrapped in this.
+ */
+function RequireAuth({ children }: { children: ReactNode }) {
+  return (
+    <>
+      <SignedIn>{children}</SignedIn>
+      <SignedOut>
+        <RedirectToSignIn />
+      </SignedOut>
+    </>
+  );
+}
+
 export default function App() {
   return (
     <>
-      {/* AuthTokenBridge syncs the Clerk token into api.ts on every sign-in/refresh.
+      {/* AuthTokenBridge registers Clerk's getToken with api.ts.
           It renders null and must live inside <ClerkProvider> (set in main.tsx). */}
       <AuthTokenBridge />
       <Routes>
@@ -421,20 +504,14 @@ export default function App() {
         <Route path="/sign-in/*" element={<SignInPage />} />
         <Route path="/sign-up/*" element={<SignUpPage />} />
 
-        {/* All other routes require authentication */}
+        {/* Everything else renders for everyone — browsing the catalog is public.
+            User-specific pages are gated individually inside AppShell (RequireAuth). */}
         <Route
           path="/*"
           element={
-            <>
-              <SignedIn>
-                <CartProvider>
-                  <AppShell />
-                </CartProvider>
-              </SignedIn>
-              <SignedOut>
-                <RedirectToSignIn />
-              </SignedOut>
-            </>
+            <CartProvider>
+              <AppShell />
+            </CartProvider>
           }
         />
       </Routes>

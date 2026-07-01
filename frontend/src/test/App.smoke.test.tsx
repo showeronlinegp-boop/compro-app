@@ -15,7 +15,9 @@ vi.mock('@clerk/clerk-react', () => ({
   SignedOut: (_props: { children: ReactNode }) => null,
   RedirectToSignIn: () => null,
   UserButton: () => null,
+  SignInButton: ({ children }: { children: ReactNode }) => children,
   useAuth: () => ({ isSignedIn: true, getToken: async () => 'test-token' }),
+  useClerk: () => ({ redirectToSignIn: () => Promise.resolve() }),
   SignIn: () => null,
   SignUp: () => null,
 }));
