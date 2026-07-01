@@ -1,5 +1,6 @@
-import { Module } from '@nestjs/common';
+import { Module, Scope } from '@nestjs/common';
 import { SHOPPING_REPO } from '../../../common/tokens.js';
+import { CurrentUserService } from '../../../common/auth/current-user.service.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { ShoppingController } from './shopping.controller.js';
 import { makeShoppingRepo } from './shopping.repo.js';
@@ -8,8 +9,10 @@ import { makeShoppingRepo } from './shopping.repo.js';
   providers: [
     {
       provide: SHOPPING_REPO,
-      useFactory: (prisma: PrismaService) => makeShoppingRepo(prisma),
-      inject: [PrismaService],
+      scope: Scope.REQUEST,
+      useFactory: (prisma: PrismaService, currentUser: CurrentUserService) =>
+        makeShoppingRepo(prisma, () => currentUser.userId),
+      inject: [PrismaService, CurrentUserService],
     },
   ],
   controllers: [ShoppingController],

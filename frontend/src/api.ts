@@ -11,7 +11,6 @@ import type {
   ShoppingItem,
   ShoppingRecommendation,
   StoresResolveResult,
-  SuperKey,
   SyncLog,
   TaxonomyEntry,
   UserProfile,
@@ -94,21 +93,16 @@ export const api = {
     clear: () => req<{ ok: boolean }>('/profile', { method: 'DELETE' }),
   },
   sync: {
+    // POST /sync/* removed (Decision 5): use `npm run ops sync [super]` for manual triggers.
     status: () => req<SyncLog[]>('/sync/status'),
-    trigger: (s: SuperKey) =>
-      req<{ ok: boolean; message: string }>(`/sync/${s}`, { method: 'POST' }),
-    triggerAll: () => req<{ ok: boolean; message: string }>('/sync/all', { method: 'POST' }),
   },
   enrich: {
+    // POST /enrich/* removed (Decision 5): use `npm run ops enrich [super]` for manual triggers.
     status: () => req<Record<string, EnrichStatus>>('/enrich/status'),
-    trigger: (s: SuperKey) =>
-      req<{ ok: boolean; message: string }>(`/enrich/${s}`, { method: 'POST' }),
-    triggerAll: () =>
-      req<{ ok: boolean; message: string; supers: string[] }>('/enrich', { method: 'POST' }),
   },
   promos: {
     list: () => req<PromoOffer[]>('/promos'),
-    capture: () => req<{ ok: boolean; message: string }>('/promos/capture', { method: 'POST' }),
+    // POST /promos/capture removed (Decision 5): use `npm run ops promos` for manual triggers.
   },
   cart: {
     get: () => req<CartResult>('/cart'),

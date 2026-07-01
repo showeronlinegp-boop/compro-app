@@ -1,5 +1,6 @@
-import { Module } from '@nestjs/common';
+import { Module, Scope } from '@nestjs/common';
 import { CART_REPO, COMPARE_REPO } from '../../../common/tokens.js';
+import { CurrentUserService } from '../../../common/auth/current-user.service.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { CompareModule } from '../../compare/infrastructure/compare.module.js';
 import type { CompareRepo } from '../../compare/infrastructure/compare.repo.js';
@@ -11,9 +12,10 @@ import { makeCartRepo } from './cart.repo.js';
   providers: [
     {
       provide: CART_REPO,
-      useFactory: (prisma: PrismaService, compareRepo: CompareRepo) =>
-        makeCartRepo(prisma, compareRepo),
-      inject: [PrismaService, COMPARE_REPO],
+      scope: Scope.REQUEST,
+      useFactory: (prisma: PrismaService, compareRepo: CompareRepo, currentUser: CurrentUserService) =>
+        makeCartRepo(prisma, compareRepo, () => currentUser.userId),
+      inject: [PrismaService, COMPARE_REPO, CurrentUserService],
     },
   ],
   controllers: [CartController],
