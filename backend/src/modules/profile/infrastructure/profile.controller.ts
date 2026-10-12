@@ -1,5 +1,6 @@
 import { BadRequestException, Body, Controller, Delete, Get, Inject, NotFoundException, Post, Put, Query, Res } from '@nestjs/common';
 import type { Response } from 'express';
+import { Public } from '../../../common/auth/public.decorator.js';
 import { LIST_GEN_SERVICE, PROFILE_REPO } from '../../../common/tokens.js';
 import { SUPERS } from '../../../config/supers.js';
 import { geocodeAddress, geocodePostalCode, reverseGeocode } from '../../../infrastructure/geocode.js';
@@ -36,6 +37,9 @@ export class ProfileController {
     return this.repo.upsert(data);
   }
 
+  // Public: geocoding lookup only — no user data. Lets logged-out visitors pick
+  // a zone (needed for browsing regional prices without an account).
+  @Public()
   @Get('location/search')
   async searchLocations(@Query('q') q?: string) {
     if (!q || q.trim().length < 2) {
@@ -47,6 +51,8 @@ export class ProfileController {
   // Resolve coordinates or postal code to nearby physical stores per super (does NOT persist).
   // The frontend shows these so the user can confirm/change before saving.
   // Carrefour/DIA/MAS return stores; VEA returns [] (Cencosud exposes none).
+  // Public: stateless resolution, no user data — usable before login.
+  @Public()
   @Get('location/stores')
   async resolveStores(
     @Query('postal_code') postalCode?: string,

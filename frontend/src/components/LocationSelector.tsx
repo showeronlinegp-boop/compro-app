@@ -1,5 +1,7 @@
+import { useAuth } from '@clerk/clerk-react';
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../api';
+import { type StoredZone, getStoredZone, setStoredZone } from '../lib/zone';
 import type { GeoSuggestion, UserProfile } from '../types/api';
 
 interface Props {
@@ -8,12 +10,16 @@ interface Props {
 }
 
 export function LocationSelector({ location, onSaved }: Props) {
+  const { isSignedIn } = useAuth();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<GeoSuggestion[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Zone chosen by a logged-out visitor (persisted in localStorage). When signed
+  // in, the zone comes from the profile via the `location` prop instead.
+  const [localZone, setLocalZone] = useState<StoredZone | null>(() => getStoredZone());
   const panelRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -55,7 +61,19 @@ export function LocationSelector({ location, onSaved }: Props) {
     setSaving(true);
     setError(null);
     try {
-      onSaved(await api.profile.setLocation(geo.lat, geo.lng, geo.display_name));
+      if (isSignedIn) {
+        // Signed in: persist to the user's profile (server-side, source of truth).
+        onSaved(await api.profile.setLocation(geo.lat, geo.lng, geo.display_name));
+      } else {
+        // Logged out: keep the zone client-side so it survives reloads.
+        const zone: StoredZone = {
+          location_name: geo.display_name,
+          lat: geo.lat,
+          lng: geo.lng,
+        };
+        setStoredZone(zone);
+        setLocalZone(zone);
+      }
       setOpen(false);
     } catch {
       setError('No pudimos guardar la ubicación');
@@ -73,10 +91,17 @@ export function LocationSelector({ location, onSaved }: Props) {
     setError(null);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
+        const { latitude: lat, longitude: lng } = pos.coords;
         try {
-          onSaved(
-            await api.profile.setLocation(pos.coords.latitude, pos.coords.longitude),
-          );
+          if (isSignedIn) {
+            onSaved(await api.profile.setLocation(lat, lng));
+          } else {
+            // Resolve a human-readable name via the public endpoint, then store client-side.
+            const resolved = await api.profile.resolveStores(lat, lng);
+            const zone: StoredZone = { location_name: resolved.location_name, lat, lng };
+            setStoredZone(zone);
+            setLocalZone(zone);
+          }
           setOpen(false);
         } catch {
           setError('No pudimos guardar la ubicación');
@@ -91,10 +116,13 @@ export function LocationSelector({ location, onSaved }: Props) {
     );
   }
 
-  const displayLabel = location
-    ? location.length > 22
-      ? location.slice(0, 22) + '…'
-      : location
+  // Signed in → zone comes from the profile (`location` prop). Logged out → from
+  // the localStorage zone the visitor picked.
+  const activeZoneName = isSignedIn ? location : (localZone?.location_name ?? null);
+  const displayLabel = activeZoneName
+    ? activeZoneName.length > 22
+      ? activeZoneName.slice(0, 22) + '…'
+      : activeZoneName
     : null;
 
   return (

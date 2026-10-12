@@ -1,17 +1,19 @@
-import { Controller, Get, Inject, Param, Post, Res } from '@nestjs/common';
-import type { Response } from 'express';
-import { PROMO_CAPTURE_SERVICE, PROMOS_REPO } from '../../../common/tokens.js';
-import type { PromoCaptureService } from './promo-capture.service.js';
-import { PROMO_TARGETS } from './promo-targets.js';
+import { Controller, Get, Inject } from '@nestjs/common';
+import { PROMOS_REPO } from '../../../common/tokens.js';
+import { Public } from '../../../common/auth/public.decorator.js';
 import type { PromosRepo } from './promos.repo.js';
+
+// POST /api/promos/capture/* removed in PR2 (Decision 5): operational triggers are now ops CLI only.
+// The scheduler (scheduler.service.ts) still calls PromoCaptureService.captureAll() directly.
+// The ops CLI (scripts/ops.ts) provides manual promo triggers.
 
 @Controller('api/promos')
 export class PromosController {
   constructor(
     @Inject(PROMOS_REPO) private readonly repo: PromosRepo,
-    @Inject(PROMO_CAPTURE_SERVICE) private readonly captureService: PromoCaptureService,
   ) {}
 
+  @Public()
   @Get()
   async list() {
     const rows = await this.repo.listAll();
@@ -30,38 +32,5 @@ export class PromosController {
       capturedAt: r.captured_at,
       sourceUrl: r.source_url,
     }));
-  }
-
-  // POST /capture — fire-and-forget all supers; 409 if any already capturing
-  // Declared before /capture/:super so Nest matches the static path first
-  @Post('capture')
-  captureAll(@Res() res: Response): void {
-    const knownSupers = Object.keys(PROMO_TARGETS);
-    const busy = knownSupers.some((k) => this.captureService.isCapturing(k));
-    if (busy) {
-      res.status(409).json({ error: 'Capture already in progress' });
-      return;
-    }
-
-    res.status(200).json({ ok: true, message: 'Promo capture started for all supers' });
-
-    this.captureService
-      .captureAll()
-      .catch((err: Error) => console.error('[promo:captureAll] Error:', err.message));
-  }
-
-  // POST /capture/:super — fire-and-forget single super
-  @Post('capture/:super')
-  captureOne(@Param('super') key: string, @Res() res: Response): void {
-    if (this.captureService.isCapturing(key)) {
-      res.status(409).json({ error: `Capture for ${key} already in progress` });
-      return;
-    }
-
-    res.status(200).json({ ok: true, message: `Promo capture started for ${key}` });
-
-    this.captureService
-      .captureSuper(key)
-      .catch((err: Error) => console.error(`[promo:${key}] Error:`, err.message));
   }
 }

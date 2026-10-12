@@ -62,24 +62,24 @@ function parseProfile(row: {
 }
 
 /**
- * Single-user assumption: user_profiles holds exactly one row.
- * upsert is implemented as findFirst + create/update (not a native Prisma upsert)
- * because there is no unique business key to upsert on beyond the auto-increment id.
- * A race between two concurrent upsert calls could create a second row, but this
- * app has a single user with no concurrent writes to the profile, so the risk is
- * accepted. If multi-user support is ever added, add a unique constraint and
- * migrate to prisma.user_profiles.upsert().
+ * Per-user profile: each user has at most one user_profiles row, keyed by user_id (unique).
+ * upsert is implemented via prisma.user_profiles.upsert({ where: { user_id }, ... })
+ * using the unique user_id constraint added in the multi-tenancy migration.
  */
-export function makeProfileRepo(prisma: PrismaLike): ProfileRepo {
+/**
+ * makeProfileRepo accepts either a plain number or a getter function for userId.
+ * Pass a getter from request-scoped module factories to defer resolution until
+ * method execution (after guards have populated request.auth).
+ */
+export function makeProfileRepo(prisma: PrismaLike, userId: number | (() => number)): ProfileRepo {
+  const uid = () => (typeof userId === 'function' ? userId() : userId);
   return {
     async get() {
-      const row = await prisma.user_profiles.findFirst({ orderBy: { id: 'asc' } });
+      const row = await prisma.user_profiles.findUnique({ where: { user_id: uid() } });
       return row ? parseProfile(row) : null;
     },
 
     async upsert(data) {
-      const existing = await prisma.user_profiles.findFirst({ orderBy: { id: 'asc' } });
-
       const payload = {
         nombre: data.nombre,
         edad: data.edad ?? null,
@@ -96,18 +96,20 @@ export function makeProfileRepo(prisma: PrismaLike): ProfileRepo {
         updated_at: new Date(),
       };
 
-      const row = existing
-        ? await prisma.user_profiles.update({ where: { id: existing.id }, data: payload })
-        : await prisma.user_profiles.create({ data: payload });
+      const row = await prisma.user_profiles.upsert({
+        where: { user_id: uid() },
+        create: { ...payload, user_id: uid() },
+        update: payload,
+      });
 
       return parseProfile(row);
     },
 
     async setLocation(locationName, regionIds, stores) {
-      const existing = await prisma.user_profiles.findFirst({ orderBy: { id: 'asc' } });
+      const existing = await prisma.user_profiles.findUnique({ where: { user_id: uid() } });
       if (!existing) return null;
       const row = await prisma.user_profiles.update({
-        where: { id: existing.id },
+        where: { user_id: uid() },
         data: {
           postal_code: locationName,
           region_ids: regionIds as object,
@@ -119,7 +121,8 @@ export function makeProfileRepo(prisma: PrismaLike): ProfileRepo {
     },
 
     async clear() {
-      await prisma.user_profiles.deleteMany({});
+      // Only clears the current user's profile row.
+      await prisma.user_profiles.deleteMany({ where: { user_id: uid() } });
     },
   };
 }

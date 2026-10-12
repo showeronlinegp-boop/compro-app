@@ -1,16 +1,38 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
+import * as express from 'express';
+import helmet from 'helmet';
 import * as nodePath from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { AppModule } from './app.module.js';
 import { AllExceptionsFilter } from './common/all-exceptions.filter.js';
+import { CORS_ORIGIN } from './config/env.js';
 import { PORT } from './config/env.js';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  app.enableCors();
+  // Security headers — CSP disabled initially to avoid breaking the static SPA
+  // bundle (script-src, style-src hashes not yet configured). Tighten in a
+  // follow-up once a proper nonce/hash CSP policy is established.
+  // TODO: enable contentSecurityPolicy once SPA asset hashes are pinned.
+  app.use(helmet({ contentSecurityPolicy: false }));
+
+  // Body size limits — owned payloads are tiny; 100 KB prevents large-payload DoS.
+  app.use(express.json({ limit: '100kb' }));
+  app.use(express.urlencoded({ extended: true, limit: '100kb' }));
+
+  // CORS: scoped to the declared origin(s); fails closed — no wildcard allowed.
+  // CORS_ORIGIN is comma-separated in env to support local + staging together.
+  const corsOrigins = CORS_ORIGIN.split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+  app.enableCors({
+    origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins,
+    credentials: true,
+  });
+
   app.useGlobalFilters(new AllExceptionsFilter());
   app.enableShutdownHooks();
 

@@ -11,7 +11,6 @@ import type {
   ShoppingItem,
   ShoppingRecommendation,
   StoresResolveResult,
-  SuperKey,
   SyncLog,
   TaxonomyEntry,
   UserProfile,
@@ -20,10 +19,36 @@ import type {
 
 const BASE = '/api';
 
+// ---------------------------------------------------------------------------
+// Auth token bridge — populated by <AuthTokenBridge> via setApiToken().
+// Storing the token in a module-level variable avoids React re-renders on
+// every token refresh (vercel-react `rerender-use-ref-transient-values`).
+// Clerk hooks MUST NOT be called here (api.ts is not a React component).
+// ---------------------------------------------------------------------------
+
+type TokenGetter = () => Promise<string | null>;
+let _tokenGetter: TokenGetter | null = null;
+
+/**
+ * Registered once by <AuthTokenBridge>. Called per-request so every fetch
+ * carries a fresh token with no mount-time race. Clerk's getToken() caches and
+ * refreshes internally, and returns null when there is no active session (so
+ * public requests simply carry no Authorization header).
+ */
+export function setTokenGetter(getter: TokenGetter | null): void {
+  _tokenGetter = getter;
+}
+
+async function authHeaders(): Promise<Record<string, string>> {
+  if (!_tokenGetter) return {};
+  const token = await _tokenGetter();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 // Single declared trust boundary: res.json() returns unknown; we assert T here only.
 async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
   const res = await fetch(BASE + path, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
     ...opts,
   });
   if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
@@ -34,7 +59,7 @@ async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
 // Throws on any other non-ok status so callers get real errors surfaced.
 async function reqOptional<T>(path: string, opts: RequestInit = {}): Promise<T | null> {
   const res = await fetch(BASE + path, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
     ...opts,
   });
   if (res.status === 404 || res.status === 204) return null;
@@ -94,21 +119,16 @@ export const api = {
     clear: () => req<{ ok: boolean }>('/profile', { method: 'DELETE' }),
   },
   sync: {
+    // POST /sync/* removed (Decision 5): use `npm run ops sync [super]` for manual triggers.
     status: () => req<SyncLog[]>('/sync/status'),
-    trigger: (s: SuperKey) =>
-      req<{ ok: boolean; message: string }>(`/sync/${s}`, { method: 'POST' }),
-    triggerAll: () => req<{ ok: boolean; message: string }>('/sync/all', { method: 'POST' }),
   },
   enrich: {
+    // POST /enrich/* removed (Decision 5): use `npm run ops enrich [super]` for manual triggers.
     status: () => req<Record<string, EnrichStatus>>('/enrich/status'),
-    trigger: (s: SuperKey) =>
-      req<{ ok: boolean; message: string }>(`/enrich/${s}`, { method: 'POST' }),
-    triggerAll: () =>
-      req<{ ok: boolean; message: string; supers: string[] }>('/enrich', { method: 'POST' }),
   },
   promos: {
     list: () => req<PromoOffer[]>('/promos'),
-    capture: () => req<{ ok: boolean; message: string }>('/promos/capture', { method: 'POST' }),
+    // POST /promos/capture removed (Decision 5): use `npm run ops promos` for manual triggers.
   },
   cart: {
     get: () => req<CartResult>('/cart'),

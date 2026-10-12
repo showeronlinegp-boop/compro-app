@@ -1,3 +1,4 @@
+import { useAuth, useClerk } from '@clerk/clerk-react';
 import { type ReactNode, createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { api } from '../api';
 import type { CartItemEntry, CartResult } from '../types/api';
@@ -29,16 +30,31 @@ const CartDispatchContext = createContext<CartDispatch | null>(null);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartResult | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const { isSignedIn } = useAuth();
+  const { redirectToSignIn } = useClerk();
 
-  // Load cart once on mount
+  // The cart is user-owned (protected route). Only load it when signed in;
+  // clear it on sign-out. Fetching while signed out would 401.
   useEffect(() => {
+    if (!isSignedIn) {
+      setCart(null);
+      return;
+    }
     api.cart.get().then(setCart).catch(console.error);
-  }, []);
+  }, [isSignedIn]);
 
-  const addItem = useCallback(async (product_id: number, quantity = 1) => {
-    const result = await api.cart.addItem(product_id, quantity);
-    setCart(result);
-  }, []);
+  const addItem = useCallback(
+    async (product_id: number, quantity = 1) => {
+      // Browsing is public, but a cart needs an account — prompt sign-in.
+      if (!isSignedIn) {
+        void redirectToSignIn();
+        return;
+      }
+      const result = await api.cart.addItem(product_id, quantity);
+      setCart(result);
+    },
+    [isSignedIn, redirectToSignIn],
+  );
 
   const updateQty = useCallback(async (cart_item_id: number, quantity: number) => {
     const result = await api.cart.updateQty(cart_item_id, quantity);

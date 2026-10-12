@@ -23,6 +23,12 @@ vi.mock('../api', () => ({
   },
 }));
 
+// CartProvider reads Clerk auth state; mock it as signed-in so the cart loads.
+vi.mock('@clerk/clerk-react', () => ({
+  useAuth: () => ({ isSignedIn: true }),
+  useClerk: () => ({ redirectToSignIn: () => Promise.resolve() }),
+}));
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function makeCart(overrides: Partial<CartResult> = {}): CartResult {

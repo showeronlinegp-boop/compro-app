@@ -1,6 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  RedirectToSignIn,
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  UserButton,
+  useAuth,
+} from '@clerk/clerk-react';
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { api } from './api';
+import { AuthTokenBridge } from './components/AuthTokenBridge';
 import { CartDrawer } from './components/CartDrawer';
 import { LocationSelector } from './components/LocationSelector';
 import { CartProvider, useCart } from './contexts/CartContext';
@@ -10,6 +19,8 @@ import Explorar from './pages/Explorar';
 import Intereses from './pages/Intereses';
 import Onboarding from './pages/Onboarding';
 import Planner from './pages/Planner';
+import SignInPage from './pages/SignInPage';
+import SignUpPage from './pages/SignUpPage';
 import { FOCUS_RING } from './styles';
 import type {
   EnrichStatus,
@@ -23,32 +34,17 @@ import type {
 } from './types/api';
 
 // ─── SyncPanel ────────────────────────────────────────────────────────────────
+// Read-only status panel. POST triggers removed in PR2 (Decision 5).
+// Manual sync/enrich/promo triggers are now ops CLI: `npm run ops <sync|enrich|promos>`.
 
 interface SyncPanelProps {
   status: SyncLog[];
-  syncing: string;
-  onSync: (key: SuperKey) => Promise<void>;
-  onSyncAll: () => Promise<void>;
-  capturingPromos: boolean;
-  onCapturePromos: () => Promise<void>;
-  locationSet: boolean;
 }
 
-function SyncPanel({
-  status,
-  syncing,
-  onSync,
-  onSyncAll,
-  capturingPromos,
-  onCapturePromos,
-  locationSet,
-}: SyncPanelProps) {
+function SyncPanel({ status }: SyncPanelProps) {
   const [open, setOpen] = useState(false);
   const SYNC_KEYS: SuperKey[] = ['vea', 'carrefour', 'dia', 'masonline'];
-  const anyRunning = status.some((s) => s.status === 'running') || !!syncing;
-  // Sync is a test-only manual trigger; require a location so it crawls the
-  // user's region instead of pulling every region's prices.
-  const blocked = anyRunning || !locationSet;
+  const anyRunning = status.some((s) => s.status === 'running');
 
   return (
     <div className="relative">
@@ -61,34 +57,18 @@ function SyncPanel({
             : 'border-gray-200 text-gray-600 hover:bg-gray-50'
         }`}
       >
-        {anyRunning ? '⏳ Sincronizando…' : '⚡ Sync'}
+        {anyRunning ? '⏳ Sincronizando…' : '⚡ Estado'}
       </button>
 
       {open && (
         <div className="absolute right-0 top-full mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 p-3 w-72 z-50">
-          <p className="text-xs font-semibold text-gray-500 mb-3 px-1">Sincronizar precios</p>
-
-          {!locationSet && (
-            <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-2.5 py-1.5 mb-3 leading-snug">
-              📍 Cargá tu ubicación antes de sincronizar — el sync trae precios de tu zona.
-            </p>
-          )}
-
-          <button
-            type="button"
-            onClick={() => {
-              onSyncAll();
-              setOpen(false);
-            }}
-            disabled={blocked}
-            className="w-full mb-3 text-xs font-medium px-3 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            {anyRunning ? 'Sincronizando…' : '⚡ Sincronizar todos'}
-          </button>
+          <p className="text-xs font-semibold text-gray-500 mb-3 px-1">Estado de sincronización</p>
+          <p className="text-[11px] text-gray-400 mb-3 px-1">
+            Para sincronizar precios usá el CLI: <code className="font-mono bg-gray-50 px-1 rounded">npm run ops sync</code>
+          </p>
 
           {SYNC_KEYS.map((key) => {
             const s = status.find((x) => x.super === key);
-            const isRunning = syncing === key || s?.status === 'running';
             const pct =
               s && s.total_leaves > 0 ? Math.round((s.progress_leaf / s.total_leaves) * 100) : null;
 
@@ -96,17 +76,6 @@ function SyncPanel({
               <div key={key} className="py-2 px-1 border-b border-gray-50 last:border-0">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-semibold text-gray-700 uppercase">{key}</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onSync(key);
-                      setOpen(false);
-                    }}
-                    disabled={blocked}
-                    className="text-xs px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 disabled:opacity-40 font-medium"
-                  >
-                    {isRunning ? 'Corriendo' : 'Sync'}
-                  </button>
                 </div>
 
                 {/* Info / progress bar */}
@@ -138,22 +107,12 @@ function SyncPanel({
                 {s?.status === 'error' && (
                   <p className="text-xs text-red-500">✕ {s.error?.slice(0, 40)}</p>
                 )}
+                {!s && (
+                  <p className="text-xs text-gray-400">Sin datos</p>
+                )}
               </div>
             );
           })}
-
-          {/* Bank promos */}
-          <div className="mt-3 pt-3 border-t border-gray-100">
-            <p className="text-xs font-semibold text-gray-500 mb-2 px-1">Promos bancarias</p>
-            <button
-              type="button"
-              onClick={() => onCapturePromos()}
-              disabled={capturingPromos}
-              className="w-full text-xs font-medium px-3 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              {capturingPromos ? 'Recolectando promos…' : '🏦 Actualizar promos bancarias'}
-            </button>
-          </div>
         </div>
       )}
     </div>
@@ -165,11 +124,11 @@ function SyncPanel({
 function AppShell() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isSignedIn } = useAuth();
   const { itemCount, openCart } = useCart();
   const [interests, setInterests] = useState<Interest[]>([]);
   const [shopping, setShopping] = useState<ShoppingItem[]>([]);
   const [syncStatus, setSyncStatus] = useState<SyncLog[]>([]);
-  const [syncing, setSyncing] = useState('');
   const [enrichStatus, setEnrichStatus] = useState<Record<string, EnrichStatus>>({});
   // Supers seen running this session, and those that completed this session.
   // The success banner is transient: it shows only on an observed running→done
@@ -190,7 +149,6 @@ function AppShell() {
     }
   }, []);
   const [promos, setPromos] = useState<PromoOffer[]>([]);
-  const [capturingPromos, setCapturingPromos] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null | undefined>(undefined);
 
   // Remember the last Explorar URL (incl. its search/filter query string) so
@@ -203,16 +161,28 @@ function AppShell() {
     }
   }, [location]);
 
-  // Runs once on mount to load data and redirect to onboarding if needed.
-  // Deps are intentionally empty: adding location.pathname/navigate would re-run
-  // this on every navigation, causing an infinite redirect loop.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional once-on-mount effect (see above)
+  // Public data — loaded for everyone, signed in or not (these endpoints are
+  // @Public() on the backend). Runs once on mount.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional once-on-mount effect
   useEffect(() => {
-    api.interests.list().then(setInterests).catch(console.error);
-    api.shopping.list().then(setShopping).catch(console.error);
     api.sync.status().then(setSyncStatus).catch(console.error);
     api.enrich.status().then(applyEnrichStatus).catch(console.error);
     api.promos.list().then(setPromos).catch(console.error);
+  }, []);
+
+  // User-specific data — only fetched when a session exists. Fetching these
+  // while signed out would hit protected routes and 401 (that was the console
+  // spam). Re-runs when auth state flips (sign-in / sign-out).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: onboarding redirect is a one-time-on-load concern, not a nav dep
+  useEffect(() => {
+    if (!isSignedIn) {
+      setInterests([]);
+      setShopping([]);
+      setProfile(undefined);
+      return;
+    }
+    api.interests.list().then(setInterests).catch(console.error);
+    api.shopping.list().then(setShopping).catch(console.error);
     api.profile.get().then((p) => {
       setProfile(p);
       // Onboarding is an optional welcome: redirect new users to it once so they
@@ -223,22 +193,18 @@ function AppShell() {
         navigate('/onboarding', { replace: true });
       }
     });
-  }, []);
+  }, [isSignedIn]);
 
-  // Auto-poll while a sync is running.
+  // Auto-poll while a sync is running (scheduler-initiated syncs show progress).
   useEffect(() => {
-    const hasRunning = syncStatus.some((s) => s.status === 'running') || !!syncing;
+    const hasRunning = syncStatus.some((s) => s.status === 'running');
     if (!hasRunning) return;
     const id = setInterval(async () => {
       const fresh = await api.sync.status().catch(() => null);
-      if (!fresh) return;
-      setSyncStatus(fresh);
-      if (!fresh.some((s) => s.status === 'running')) {
-        setSyncing('');
-      }
+      if (fresh) setSyncStatus(fresh);
     }, 3000);
     return () => clearInterval(id);
-  }, [syncStatus, syncing]);
+  }, [syncStatus]);
 
   // Auto-poll while enrichment is running.
   useEffect(() => {
@@ -252,6 +218,11 @@ function AppShell() {
   }, [enrichStatus, applyEnrichStatus]);
 
   async function toggleInterest(product: Product) {
+    // User-specific action: browsing is public, but saving requires an account.
+    if (!isSignedIn) {
+      navigate('/sign-in');
+      return;
+    }
     const existing = interests.find((i) => i.id === product.id);
     if (existing) {
       await api.interests.remove(existing.interest_id);
@@ -265,55 +236,13 @@ function AppShell() {
   }
 
   async function addToShopping(product: Product, frequency_days: number) {
+    if (!isSignedIn) {
+      navigate('/sign-in');
+      return;
+    }
     await api.shopping.add({ product_id: product.id, frequency_days });
     const fresh = await api.shopping.list();
     setShopping(fresh);
-  }
-
-  async function triggerSync(superKey: SuperKey) {
-    setSyncing(superKey);
-    try {
-      await api.sync.trigger(superKey);
-      const fresh = await api.sync.status();
-      setSyncStatus(fresh);
-    } catch {
-      setSyncing('');
-    }
-  }
-
-  async function triggerSyncAll() {
-    setSyncing('all');
-    try {
-      await api.sync.triggerAll();
-      const fresh = await api.sync.status();
-      setSyncStatus(fresh);
-    } catch {
-      setSyncing('');
-    }
-  }
-
-  // Capture is fire-and-forget (Playwright renders 4 sites, ~30-60s) with no
-  // status endpoint, so we poll GET /promos for a bounded window and refresh
-  // the panel as offers land, then stop.
-  async function triggerCapturePromos() {
-    if (capturingPromos) return;
-    setCapturingPromos(true);
-    try {
-      await api.promos.capture();
-    } catch {
-      setCapturingPromos(false);
-      return;
-    }
-    let tries = 0;
-    const id = setInterval(async () => {
-      tries += 1;
-      const fresh = await api.promos.list().catch(() => null);
-      if (fresh) setPromos(fresh);
-      if (tries >= 20) {
-        clearInterval(id);
-        setCapturingPromos(false);
-      }
-    }, 4000);
   }
 
   const shoppingIds = new Set(shopping.map((s) => s.id));
@@ -412,16 +341,24 @@ function AppShell() {
             onSaved={(p) => setProfile(p)}
           />
 
-          {/* Sync panel */}
-          <SyncPanel
-            status={syncStatus}
-            syncing={syncing}
-            onSync={triggerSync}
-            onSyncAll={triggerSyncAll}
-            capturingPromos={capturingPromos}
-            onCapturePromos={triggerCapturePromos}
-            locationSet={!!profile?.postal_code}
-          />
+          {/* Sync status panel (read-only; triggers moved to ops CLI) */}
+          <SyncPanel status={syncStatus} />
+
+          {/* User account menu when signed in; a sign-in button otherwise.
+              Browsing is public — auth only gates user-specific features. */}
+          <SignedIn>
+            <UserButton afterSignOutUrl="/" />
+          </SignedIn>
+          <SignedOut>
+            <SignInButton mode="modal">
+              <button
+                type="button"
+                className={`text-xs font-medium px-3 py-1.5 rounded-xl bg-indigo-600 text-white hover:bg-indigo-500 transition-colors ${FOCUS_RING}`}
+              >
+                Ingresar
+              </button>
+            </SignInButton>
+          </SignedOut>
         </div>
       </nav>
 
@@ -445,26 +382,51 @@ function AppShell() {
           <Route
             path="/intereses"
             element={
-              <Intereses
-                interests={interests}
-                onToggleInterest={toggleInterest}
-                onAddToShopping={addToShopping}
-                shoppingIds={shoppingIds}
-              />
+              <RequireAuth>
+                <Intereses
+                  interests={interests}
+                  onToggleInterest={toggleInterest}
+                  onAddToShopping={addToShopping}
+                  shoppingIds={shoppingIds}
+                />
+              </RequireAuth>
             }
           />
-          <Route path="/planner" element={<Planner />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/compare" element={<Compare />} />
+          <Route
+            path="/planner"
+            element={
+              <RequireAuth>
+                <Planner />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/cart"
+            element={
+              <RequireAuth>
+                <Cart />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/compare"
+            element={
+              <RequireAuth>
+                <Compare />
+              </RequireAuth>
+            }
+          />
           <Route
             path="/onboarding"
             element={
-              <Onboarding
-                onComplete={(p) => {
-                  setProfile(p);
-                  navigate('/planner', { replace: true });
-                }}
-              />
+              <RequireAuth>
+                <Onboarding
+                  onComplete={(p) => {
+                    setProfile(p);
+                    navigate('/planner', { replace: true });
+                  }}
+                />
+              </RequireAuth>
             }
           />
         </Routes>
@@ -515,10 +477,44 @@ function AppShell() {
 
 // ─── App — provides CartContext, then renders AppShell inside it ──────────────
 
+/**
+ * Gates a single route: renders its children when signed in, otherwise sends
+ * the user to Clerk's sign-in. Used only for user-specific pages — browsing
+ * the catalog is public and never wrapped in this.
+ */
+function RequireAuth({ children }: { children: ReactNode }) {
+  return (
+    <>
+      <SignedIn>{children}</SignedIn>
+      <SignedOut>
+        <RedirectToSignIn />
+      </SignedOut>
+    </>
+  );
+}
+
 export default function App() {
   return (
-    <CartProvider>
-      <AppShell />
-    </CartProvider>
+    <>
+      {/* AuthTokenBridge registers Clerk's getToken with api.ts.
+          It renders null and must live inside <ClerkProvider> (set in main.tsx). */}
+      <AuthTokenBridge />
+      <Routes>
+        {/* Clerk-hosted auth routes */}
+        <Route path="/sign-in/*" element={<SignInPage />} />
+        <Route path="/sign-up/*" element={<SignUpPage />} />
+
+        {/* Everything else renders for everyone — browsing the catalog is public.
+            User-specific pages are gated individually inside AppShell (RequireAuth). */}
+        <Route
+          path="/*"
+          element={
+            <CartProvider>
+              <AppShell />
+            </CartProvider>
+          }
+        />
+      </Routes>
+    </>
   );
 }

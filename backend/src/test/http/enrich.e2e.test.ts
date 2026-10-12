@@ -1,10 +1,14 @@
 /**
  * enrich.e2e.test.ts — HTTP parity tests for EnrichmentController.
  *
+ * PR2 removed all operational POST triggers from HTTP. Only GET /api/enrich/status
+ * remains. The POST endpoints (/api/enrich/:super, /api/enrich/) now return 404
+ * because the routes were deleted.
+ *
  * Spec coverage:
  *   - GET /api/enrich/status → 200, object (in-memory status map)
- *   - POST /api/enrich/:super → immediate 200/202 ack (fire-and-forget)
- *   - POST /api/enrich/ → hybrid: responds with product list, fires background enrichment
+ *   - POST /api/enrich/:super → 404 (endpoint removed; use ops CLI)
+ *   - POST /api/enrich/ → 404 (endpoint removed; use ops CLI)
  *
  * Uses @nestjs/testing + supertest against the full AppModule.
  * DATABASE_URL is set to compro_test by global-setup before modules load.
@@ -44,37 +48,20 @@ describe('GET /api/enrich/status', () => {
   });
 });
 
-describe('POST /api/enrich/:super', () => {
-  it('responds immediately with 200 ack or 409 for a known super (fire-and-forget)', async () => {
-    const start = Date.now();
+describe('POST /api/enrich/:super — REMOVED in PR2', () => {
+  it('returns 404 (operational HTTP trigger removed; use ops CLI)', async () => {
     const res = await request(app.getHttpServer())
       .post('/api/enrich/vea')
       .set('Content-Type', 'application/json');
-    const elapsed = Date.now() - start;
-
-    // Explicit 200 for ack (res.status(200).json(...)) or 409 if already running
-    expect([200, 409]).toContain(res.status);
-    // Fire-and-forget — must not wait for the enrichment to complete
-    expect(elapsed).toBeLessThan(5000);
+    expect(res.status).toBe(404);
   });
 });
 
-describe('POST /api/enrich/', () => {
-  it('responds with 200 and hybrid response shape', async () => {
-    const start = Date.now();
+describe('POST /api/enrich/ — REMOVED in PR2', () => {
+  it('returns 404 (operational HTTP trigger removed; use ops CLI)', async () => {
     const res = await request(app.getHttpServer())
       .post('/api/enrich/')
       .set('Content-Type', 'application/json');
-    const elapsed = Date.now() - start;
-
-    // Explicit 200 for ack (res.status(200).json(...)) or 500 if DB query fails
-    expect([200, 500]).toContain(res.status);
-    if (res.status === 200) {
-      expect(res.body).toHaveProperty('ok');
-      expect(res.body).toHaveProperty('supers');
-      expect(Array.isArray(res.body.supers)).toBe(true);
-    }
-    // Hybrid: must respond before enrichment finishes (not fire-and-forget — awaits findMany first)
-    expect(elapsed).toBeLessThan(10_000);
+    expect(res.status).toBe(404);
   });
 });

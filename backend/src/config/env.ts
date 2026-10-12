@@ -31,6 +31,37 @@ export const NODE_ENV: string = process.env.NODE_ENV ?? 'development';
 export const IS_PRODUCTION: boolean = NODE_ENV === 'production';
 
 // ---------------------------------------------------------------------------
+// Clerk auth — required in all environments; fail-closed on missing (same
+// pattern as DATABASE_URL above).
+// ---------------------------------------------------------------------------
+
+const rawClerkSecretKey = process.env.CLERK_SECRET_KEY;
+if (!rawClerkSecretKey) {
+  throw new Error(
+    '[env] CLERK_SECRET_KEY is required — set it in backend/.env (see .env.example)',
+  );
+}
+export const CLERK_SECRET_KEY: string = rawClerkSecretKey;
+
+const rawClerkIssuer = process.env.CLERK_ISSUER;
+if (!rawClerkIssuer) {
+  throw new Error(
+    '[env] CLERK_ISSUER is required — set it in backend/.env (see .env.example)',
+  );
+}
+export const CLERK_ISSUER: string = rawClerkIssuer;
+
+// CORS_ORIGIN is required in production; optional in development (falls back
+// to localhost). Comma-separated list of allowed origins.
+const rawCorsOrigin = process.env.CORS_ORIGIN;
+if (!rawCorsOrigin && IS_PRODUCTION) {
+  throw new Error(
+    '[env] CORS_ORIGIN is required in production — set it in backend/.env (see .env.example)',
+  );
+}
+export const CORS_ORIGIN: string = rawCorsOrigin ?? 'http://localhost:5173';
+
+// ---------------------------------------------------------------------------
 // Crawler runtime config — resolved from env with static defaults as fallback.
 // Missing or non-numeric values fall back to the static default (never throw).
 // ---------------------------------------------------------------------------

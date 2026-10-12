@@ -348,6 +348,9 @@ async function loadInterests(prisma: PrismaClient, sqlite: Database.Database): P
     const data = chunk.map((r) => ({
       id: r.id,
       product_id: r.product_id,
+      // user_id: legacy SQLite data predates multi-tenancy; assigned to sentinel user 1.
+      // TODO(PR2): historical data migration requires a real user if backfill is needed.
+      user_id: 1,
       added_at: parseDateTime(r.added_at) ?? new Date(),
     }));
     await prisma.interests.createMany({ data, skipDuplicates: true });
@@ -363,6 +366,8 @@ async function loadShopping(prisma: PrismaClient, sqlite: Database.Database): Pr
     const data = chunk.map((r) => ({
       id: r.id,
       product_id: r.product_id,
+      // user_id: legacy SQLite data predates multi-tenancy; assigned to sentinel user 1.
+      user_id: 1,
       frequency_days: r.frequency_days ?? 7,
       last_bought: parseDateTime(r.last_bought),
       notes: r.notes ?? null,

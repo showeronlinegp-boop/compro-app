@@ -12,6 +12,7 @@
     "dev:only": "tsx watch src/main.ts",
     "migrate:etl": "tsx scripts/migrate-sqlite-to-pg.ts",
     "sync": "tsx scripts/sync.ts",
+    "ops": "tsx scripts/ops.ts",
     "build": "prisma generate && tsup",
     "start": "node dist/main.js",
     "postinstall": "prisma generate",
@@ -21,13 +22,16 @@
     "format": "biome format --write ."
   },
   "dependencies": {
+    "@clerk/backend": "^3.9.0",
     "@nestjs/common": "^11.1.26",
     "@nestjs/core": "^11.1.26",
     "@nestjs/platform-express": "^11.1.26",
     "@nestjs/schedule": "^5.0.1",
+    "@nestjs/throttler": "^6.5.0",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "express": "^4.18.3",
+    "helmet": "^8.2.0",
     "playwright": "^1.60.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"

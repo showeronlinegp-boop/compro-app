@@ -139,10 +139,13 @@ describe('makeCompareRepo', () => {
           raw_price: 480,
         });
 
-        // Seed a shopping row pointing to homeId so buildCompareItems can see it
+        // Seed a user and shopping row pointing to homeId so buildCompareItems can see it
+        const user = await tx.users.create({
+          data: { clerk_user_id: `test_${Date.now()}_${Math.random()}` },
+        });
         await tx.$executeRaw`
-          INSERT INTO shopping (product_id, frequency_days)
-          VALUES (${homeId}, 7)
+          INSERT INTO shopping (product_id, frequency_days, user_id)
+          VALUES (${homeId}, 7, ${user.id})
         `;
 
         const repo = makeCompareRepo(prismaLike);

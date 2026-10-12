@@ -1,6 +1,8 @@
 /**
  * interests.repo.test.ts — Integration tests for makeInterestsRepo (Postgres + Prisma).
  * Uses withRollback() for per-test isolation.
+ *
+ * PR2: factory now requires userId — each test provisions a real users row.
  */
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -10,8 +12,17 @@ import { makeInterestsRepo } from './interests.repo.js';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+type Tx = Parameters<Parameters<typeof testPrisma.$transaction>[0]>[0];
+
+async function seedUser(tx: Tx): Promise<number> {
+  const result = await tx.users.create({
+    data: { clerk_user_id: `test_${Date.now()}_${Math.random()}` },
+  });
+  return result.id;
+}
+
 async function seedProduct(
-  tx: Parameters<Parameters<typeof testPrisma.$transaction>[0]>[0],
+  tx: Tx,
   overrides: Partial<{ super_key: string; product_id: string; name: string }> = {},
 ): Promise<number> {
   const result = await tx.products.create({
@@ -42,8 +53,9 @@ describe('makeInterestsRepo', () => {
   describe('create → list → remove round-trip', () => {
     it('creates an interest, lists it, then removes it', async () => {
       await withRollback(async (tx) => {
+        const userId = await seedUser(tx);
         const productId = await seedProduct(tx);
-        const repo = makeInterestsRepo(tx);
+        const repo = makeInterestsRepo(tx, userId);
 
         // create
         const created = await repo.create(productId);
@@ -72,8 +84,9 @@ describe('makeInterestsRepo', () => {
 
     it('returns already:true when interest already exists', async () => {
       await withRollback(async (tx) => {
+        const userId = await seedUser(tx);
         const productId = await seedProduct(tx);
-        const repo = makeInterestsRepo(tx);
+        const repo = makeInterestsRepo(tx, userId);
 
         const first = await repo.create(productId);
         const second = await repo.create(productId);
@@ -85,14 +98,15 @@ describe('makeInterestsRepo', () => {
 
     it('list returns interests ordered by added_at DESC', async () => {
       await withRollback(async (tx) => {
+        const userId = await seedUser(tx);
         const p1 = await seedProduct(tx, { product_id: 'p1' });
         const p2 = await seedProduct(tx, { product_id: 'p2' });
 
         // Insert with explicit timestamps
-        await tx.interests.create({ data: { product_id: p1, added_at: new Date('2024-01-01') } });
-        await tx.interests.create({ data: { product_id: p2, added_at: new Date('2024-01-02') } });
+        await tx.interests.create({ data: { product_id: p1, user_id: userId, added_at: new Date('2024-01-01') } });
+        await tx.interests.create({ data: { product_id: p2, user_id: userId, added_at: new Date('2024-01-02') } });
 
-        const repo = makeInterestsRepo(tx);
+        const repo = makeInterestsRepo(tx, userId);
         const list = await repo.list();
         expect(list).toHaveLength(2);
         // p2 was added later, should be first (DESC order)
@@ -105,14 +119,16 @@ describe('makeInterestsRepo', () => {
   describe('error cases', () => {
     it('throws 404 when creating interest for non-existent product', async () => {
       await withRollback(async (tx) => {
-        const repo = makeInterestsRepo(tx);
+        const userId = await seedUser(tx);
+        const repo = makeInterestsRepo(tx, userId);
         await expect(repo.create(99999)).rejects.toThrow('Producto no encontrado');
       });
     });
 
     it('throws 404 with statusCode when creating interest for non-existent product', async () => {
       await withRollback(async (tx) => {
-        const repo = makeInterestsRepo(tx);
+        const userId = await seedUser(tx);
+        const repo = makeInterestsRepo(tx, userId);
         try {
           await repo.create(99999);
           expect.fail('should have thrown');
@@ -125,14 +141,16 @@ describe('makeInterestsRepo', () => {
 
     it('throws 404 when removing non-existent interest', async () => {
       await withRollback(async (tx) => {
-        const repo = makeInterestsRepo(tx);
+        const userId = await seedUser(tx);
+        const repo = makeInterestsRepo(tx, userId);
         await expect(repo.remove(99999)).rejects.toThrow('No encontrado');
       });
     });
 
     it('throws 404 with statusCode when removing non-existent interest', async () => {
       await withRollback(async (tx) => {
-        const repo = makeInterestsRepo(tx);
+        const userId = await seedUser(tx);
+        const repo = makeInterestsRepo(tx, userId);
         try {
           await repo.remove(99999);
           expect.fail('should have thrown');
@@ -145,8 +163,9 @@ describe('makeInterestsRepo', () => {
 
     it('CASCADE: deleting a product removes its interest', async () => {
       await withRollback(async (tx) => {
+        const userId = await seedUser(tx);
         const productId = await seedProduct(tx);
-        const repo = makeInterestsRepo(tx);
+        const repo = makeInterestsRepo(tx, userId);
 
         const created = await repo.create(productId);
         expect(created.id).toBeTypeOf('number');
@@ -166,12 +185,13 @@ describe('makeInterestsRepo', () => {
   describe('list returns parsed row shape', () => {
     it('categories is returned as array (jsonb)', async () => {
       await withRollback(async (tx) => {
+        const userId = await seedUser(tx);
         const productId = await seedProduct(tx);
         await tx.products.update({
           where: { id: productId },
           data: { categories: ['Lácteos', 'Yogur'] },
         });
-        const repo = makeInterestsRepo(tx);
+        const repo = makeInterestsRepo(tx, userId);
         await repo.create(productId);
 
         const [interest] = await repo.list();
@@ -181,9 +201,10 @@ describe('makeInterestsRepo', () => {
 
     it('available is boolean true', async () => {
       await withRollback(async (tx) => {
+        const userId = await seedUser(tx);
         const productId = await seedProduct(tx);
         await tx.products.update({ where: { id: productId }, data: { available: false } });
-        const repo = makeInterestsRepo(tx);
+        const repo = makeInterestsRepo(tx, userId);
         await repo.create(productId);
 
         const [interest] = await repo.list();
