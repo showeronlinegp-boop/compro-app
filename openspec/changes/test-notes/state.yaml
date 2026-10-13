@@ -7,7 +7,7 @@ phases:
   spec: done
   design: done
   tasks: done
-  apply: pending
+  apply: in_progress
   verify: pending
   archive: pending
 artifacts:
@@ -65,4 +65,14 @@ tasks_per_commit:
   commit-6: 6
   total: 32
   manual: [3.4, 6.5, 6.6]
+apply_progress:
+  commit-1: done  # modelo test_notes + migracion 20261013010000_add_test_notes + dominio (parseCreate/parsePatch)
+  commit-2: pending
+  commit-3: pending
+  commit-4: pending
+  commit-5: pending
+  commit-6: pending
+  notes:
+    - "migracion renombrada a 20261013010000_add_test_notes: main ya tiene 20261013000000_add_fiado (mismo timestamp)"
+    - "tests del back corridos contra una DB de test propia (compro_test_notes) para no tocar compro_test de la otra sesion"
 next_phase: apply  # sdd-apply por commit; P1-P5 cerradas

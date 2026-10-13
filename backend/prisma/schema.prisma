@@ -31,6 +31,8 @@ model users {
   fiado_recordatorios fiado_recordatorios[]
   fiado_ajustes       fiado_ajustes?
 
+  test_notes test_notes[]
+
   @@map("users")
 }
 
@@ -337,4 +339,38 @@ model fiado_ajustes {
   user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("fiado_ajustes")
+}
+
+// ---------------------------------------------------------------------------
+// test_notes — notas de prueba (herramienta solo de desarrollo local; las rutas
+// existen únicamente con TEST_NOTES_ENABLED=1). Notas COMPARTIDAS entre cuentas:
+// user_id es solo el AUTOR (se fija al crear). tipo/estado son VARCHAR con CHECK
+// en el SQL de la migración (Prisma no los modela); la fuente de verdad de los
+// valores válidos es modules/test-notes/domain/test-note.ts.
+// ---------------------------------------------------------------------------
+model test_notes {
+  id          Int       @id @default(autoincrement())
+  user_id     Int
+  tipo        String    @default("error") @db.VarChar(20)
+  estado      String    @default("abierta") @db.VarChar(20)
+  texto       String    @db.Text
+  ruta        String    @db.VarChar(500)
+  pantalla    String?   @db.VarChar(200)
+  selector    String?   @db.Text
+  elemento    String?   @db.Text
+  pos_x       Float?    @db.DoublePrecision // fracción del ancho de <main>
+  pos_y       Int? // px desde el tope del contenido de <main>
+  viewport_w  Int? // ancho de la ventana (dato informativo)
+  contexto    Json?
+  modo        String[]  @default([])
+  respuesta   String?   @db.Text
+  resuelta_at DateTime? @db.Timestamptz(6)
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime  @updatedAt @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade) // autor
+
+  @@index([estado, created_at])
+  @@index([ruta])
+  @@map("test_notes")
 }

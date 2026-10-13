@@ -4,10 +4,10 @@
 
 ## Commit 1 — `feat(backend): modelo test_notes y dominio de notas de prueba`
 
-- [ ] 1.1 `prisma/schema.prisma`: `model test_notes` según el design + `test_notes test_notes[]` en `users` (A2–A6)
-- [ ] 1.2 `prisma/migrations/20261013000000_add_test_notes/migration.sql`: tabla, `CHECK` de `tipo`/`estado`, índices `(estado, created_at)` y `(ruta)`, FK cascade al autor; `prisma generate` + `db:test:setup`
-- [ ] 1.3 `modules/test-notes/domain/test-note.ts`: constantes, tipos, `parseCreate`, `parsePatch` (recortes, defaults, `modo` filtrado/ordenado, `contexto` ≤ 50 000, `resuelta_at`) (A2, A4)
-- [ ] 1.4 `domain/test-note.test.ts`: escenarios "Alta completa", "Texto vacío", "Contexto excedido", patch inválido/vacío, `resuelta_at` (A2, A4). Verif: `VB`
+- [x] 1.1 `prisma/schema.prisma`: `model test_notes` según el design + `test_notes test_notes[]` en `users` (A2–A6)
+- [x] 1.2 `prisma/migrations/20261013000000_add_test_notes/migration.sql`: tabla, `CHECK` de `tipo`/`estado`, índices `(estado, created_at)` y `(ruta)`, FK cascade al autor; `prisma generate` + `db:test:setup`
+- [x] 1.3 `modules/test-notes/domain/test-note.ts`: constantes, tipos, `parseCreate`, `parsePatch` (recortes, defaults, `modo` filtrado/ordenado, `contexto` ≤ 50 000, `resuelta_at`) (A2, A4)
+- [x] 1.4 `domain/test-note.test.ts`: escenarios "Alta completa", "Texto vacío", "Contexto excedido", patch inválido/vacío, `resuelta_at` (A2, A4). Verif: `VB`
 
 ## Commit 2 — `feat(backend): API /api/test-notes detrás de TEST_NOTES_ENABLED`
 
