@@ -67,7 +67,7 @@ tasks_per_commit:
   manual: [3.4, 6.5, 6.6]
 apply_progress:
   commit-1: done  # modelo test_notes + migracion 20261013010000_add_test_notes + dominio (parseCreate/parsePatch)
-  commit-2: pending
+  commit-2: done  # flag TEST_NOTES_ENABLED (fail-fast en prod), repo compartido + admin, controller, modulo condicional, e2e (A1-A6)
   commit-3: pending
   commit-4: pending
   commit-5: pending

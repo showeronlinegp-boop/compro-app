@@ -65,3 +65,29 @@ describe('DATABASE_URL env config', () => {
     );
   });
 });
+
+describe('resolveTestNotesFlag (test-notes A1)', () => {
+  it('sin flag → false', async () => {
+    const { resolveTestNotesFlag } = await import('./env.js');
+    expect(resolveTestNotesFlag(undefined, false)).toBe(false);
+    expect(resolveTestNotesFlag('', false)).toBe(false);
+    expect(resolveTestNotesFlag('0', false)).toBe(false);
+    expect(resolveTestNotesFlag('true', false)).toBe(false);
+  });
+
+  it("'1' fuera de producción → true", async () => {
+    const { resolveTestNotesFlag } = await import('./env.js');
+    expect(resolveTestNotesFlag('1', false)).toBe(true);
+    expect(resolveTestNotesFlag(' 1 ', false)).toBe(true);
+  });
+
+  it("Flag en producción: '1' + prod → error que nombra TEST_NOTES_ENABLED", async () => {
+    const { resolveTestNotesFlag } = await import('./env.js');
+    expect(() => resolveTestNotesFlag('1', true)).toThrow(/TEST_NOTES_ENABLED/);
+  });
+
+  it('sin flag en producción → false (no lanza)', async () => {
+    const { resolveTestNotesFlag } = await import('./env.js');
+    expect(resolveTestNotesFlag(undefined, true)).toBe(false);
+  });
+});

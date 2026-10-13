@@ -3,7 +3,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './common/auth/auth.module.js';
-import { ENABLE_COMPARADOR } from './config/env.js';
+import { ENABLE_COMPARADOR, TEST_NOTES_ENABLED } from './config/env.js';
 import { CrawlerModule } from './crawler/infrastructure/crawler.module.js';
 import { EnrichmentModule } from './enrichment/infrastructure/enrichment.module.js';
 import { HealthModule } from './health/health.module.js';
@@ -15,6 +15,7 @@ import { InterestsModule } from './modules/interests/infrastructure/interests.mo
 import { ProfileModule } from './modules/profile/infrastructure/profile.module.js';
 import { PromosModule } from './modules/promos/infrastructure/promos.module.js';
 import { ShoppingModule } from './modules/shopping/infrastructure/shopping.module.js';
+import { TestNotesModule } from './modules/test-notes/infrastructure/test-notes.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { SchedulerModule } from './scheduler/scheduler.module.js';
 
@@ -35,8 +36,11 @@ export const COMPARADOR_MODULES = [
   SchedulerModule,
 ];
 
-/** Imports del AppModule; exportado para testear el arranque sin compras. */
-export function appImports(comparador: boolean) {
+/**
+ * Imports del AppModule; exportado para testear el arranque sin compras.
+ * Las notas de prueba sólo existen con TEST_NOTES_ENABLED (nunca en producción).
+ */
+export function appImports(comparador: boolean, testNotes = false) {
   return [
     // Global rate-limiting: 100 requests per 60 s per IP.
     // Heavy-read endpoints override this with a stricter @Throttle() decorator.
@@ -48,11 +52,12 @@ export function appImports(comparador: boolean) {
     HealthModule,
     FiadoModule,
     ...(comparador ? COMPARADOR_MODULES : []),
+    ...(testNotes ? [TestNotesModule] : []),
   ];
 }
 
 @Module({
-  imports: appImports(ENABLE_COMPARADOR),
+  imports: appImports(ENABLE_COMPARADOR, TEST_NOTES_ENABLED),
   providers: [
     // ThrottlerGuard registered as APP_GUARD alongside ClerkAuthGuard (in AuthModule).
     // Both guards run; order within APP_GUARD array follows registration order.

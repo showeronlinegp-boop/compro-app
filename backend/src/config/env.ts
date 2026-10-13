@@ -77,6 +77,34 @@ if (!rawCorsOrigin && IS_PRODUCTION) {
 export const CORS_ORIGIN: string = rawCorsOrigin ?? 'http://localhost:5173';
 
 // ---------------------------------------------------------------------------
+// Notas de prueba (cambio test-notes) — herramienta SOLO de desarrollo local.
+// Sin TEST_NOTES_ENABLED=1 el módulo no se registra (/api/test-notes → 404).
+// Con la flag en producción el arranque falla (decisión P2: nunca en prod).
+// ---------------------------------------------------------------------------
+
+/**
+ * Resuelve la flag de notas de prueba. Solo `'1'` la activa; `'1'` con
+ * `isProd` lanza un error que nombra la flag (fail-closed, como el resto de env).
+ */
+export function resolveTestNotesFlag(raw: string | undefined, isProd: boolean): boolean {
+  if (raw?.trim() !== '1') return false;
+  if (isProd) {
+    throw new Error(
+      '[env] TEST_NOTES_ENABLED=1 no está permitido con NODE_ENV=production — las notas de prueba son solo para desarrollo local',
+    );
+  }
+  return true;
+}
+
+export const TEST_NOTES_ENABLED: boolean = resolveTestNotesFlag(
+  process.env.TEST_NOTES_ENABLED,
+  IS_PRODUCTION,
+);
+
+/** URL local del front que el CLI de notas usa para armar el link de cada nota. */
+export const TEST_NOTES_APP_URL: string = process.env.TEST_NOTES_APP_URL ?? 'http://localhost:5173';
+
+// ---------------------------------------------------------------------------
 // Crawler runtime config — resolved from env with static defaults as fallback.
 // Missing or non-numeric values fall back to the static default (never throw).
 // ---------------------------------------------------------------------------

@@ -11,14 +11,14 @@
 
 ## Commit 2 — `feat(backend): API /api/test-notes detrás de TEST_NOTES_ENABLED`
 
-- [ ] 2.1 `config/env.ts`: `resolveTestNotesFlag`, `TEST_NOTES_ENABLED`, `TEST_NOTES_APP_URL`; casos en `env.test.ts` (sin flag, `'1'`, `'1'` + prod → error) (A1)
-- [ ] 2.2 `common/tokens.ts`: `TEST_NOTES_REPO`, `TEST_NOTES_ADMIN_REPO`
-- [ ] 2.3 `infrastructure/test-notes.repo.ts`: `makeTestNotesRepo(prisma, getUserId)` (list `$queryRaw` de todas las cuentas, sin `WHERE user_id`, vivas primero + `autor` = email o `#<user_id>`, LIMIT 500; `create` con `user_id = getUserId()`; `updateMany`/`deleteMany` por `{ id }` → 404 si `count === 0`; nunca toca `user_id`) y `makeTestNotesAdminRepo(prisma)` compartiendo el SQL de lectura (A3–A6)
-- [ ] 2.4 `test-notes.repo.test.ts` con `withRollback`: orden, filtros, `resuelta_at`, 404 inexistente, repo de B lista/actualiza la nota de A sin cambiar `user_id`, `autor` con y sin email, admin `listVivas`/`get`/`setEstado` (A3–A6). Verif: `VB`
-- [ ] 2.5 `test-notes.controller.ts` (`GET`, `POST` 201, `PATCH /:id`, `DELETE /:id`; id inválido → 400) + `test-notes.module.ts` (repo `Scope.REQUEST`) (A2–A5)
-- [ ] 2.6 `app.module.ts`: `...(TEST_NOTES_ENABLED ? [TestNotesModule] : [])` (A1)
-- [ ] 2.7 `test/http/test-notes.e2e.test.ts`: módulo con flag (401, 201, 400, PATCH, DELETE, 404) + `AppModule` sin flag → 404 (A1–A5)
-- [ ] 2.8 `test/http/test-notes.e2e.test.ts`: escenarios A6 "Otra cuenta ve la nota" (B lista la nota de A con `autor` de A) y "Otra cuenta la opera" (PATCH de B → 200, autor sigue A). `cross-user.isolation.test.ts` NO se toca (notas compartidas por diseño). Verif: `VB`
+- [x] 2.1 `config/env.ts`: `resolveTestNotesFlag`, `TEST_NOTES_ENABLED`, `TEST_NOTES_APP_URL`; casos en `env.test.ts` (sin flag, `'1'`, `'1'` + prod → error) (A1)
+- [x] 2.2 `common/tokens.ts`: `TEST_NOTES_REPO`, `TEST_NOTES_ADMIN_REPO`
+- [x] 2.3 `infrastructure/test-notes.repo.ts`: `makeTestNotesRepo(prisma, getUserId)` (list `$queryRaw` de todas las cuentas, sin `WHERE user_id`, vivas primero + `autor` = email o `#<user_id>`, LIMIT 500; `create` con `user_id = getUserId()`; `updateMany`/`deleteMany` por `{ id }` → 404 si `count === 0`; nunca toca `user_id`) y `makeTestNotesAdminRepo(prisma)` compartiendo el SQL de lectura (A3–A6)
+- [x] 2.4 `test-notes.repo.test.ts` con `withRollback`: orden, filtros, `resuelta_at`, 404 inexistente, repo de B lista/actualiza la nota de A sin cambiar `user_id`, `autor` con y sin email, admin `listVivas`/`get`/`setEstado` (A3–A6). Verif: `VB`
+- [x] 2.5 `test-notes.controller.ts` (`GET`, `POST` 201, `PATCH /:id`, `DELETE /:id`; id inválido → 400) + `test-notes.module.ts` (repo `Scope.REQUEST`) (A2–A5)
+- [x] 2.6 `app.module.ts`: `...(TEST_NOTES_ENABLED ? [TestNotesModule] : [])` (A1)
+- [x] 2.7 `test/http/test-notes.e2e.test.ts`: módulo con flag (401, 201, 400, PATCH, DELETE, 404) + `AppModule` sin flag → 404 (A1–A5)
+- [x] 2.8 `test/http/test-notes.e2e.test.ts`: escenarios A6 "Otra cuenta ve la nota" (B lista la nota de A con `autor` de A) y "Otra cuenta la opera" (PATCH de B → 200, autor sigue A). `cross-user.isolation.test.ts` NO se toca (notas compartidas por diseño). Verif: `VB`
 
 ## Commit 3 — `feat(backend): CLI de notas de prueba (npm run notes)`
 
