@@ -120,3 +120,19 @@ Cada PR deja `typecheck` y `test` verdes en CI y se mergea con squash.
 3. **Deshacer:** sí, pero como **corrección visible** (libro append-only, ver Enfoque). Nada se borra.
 4. **Offline:** etapa 2. La etapa 1 es online, con un mensaje claro cuando no hay conexión.
 5. **Marca:** la app pasa a llamarse **Neggo**. El rebranding visible entra en `feat/design-system`. Renombrar el repo y los paquetes npm queda fuera de este change.
+
+## Estado (2026-10-14)
+
+| PR | Estado |
+|---|---|
+| #34 `feat/design-system` | Mergeado |
+| #35 `feat/fiado-backend` | Mergeado |
+| #36 `feat/fiado-clientes` | Mergeado (incluye fix del redirect a onboarding del comparador) |
+| #37 `feat/fiado-movimientos` | Mergeado |
+| #38 `feat/fiado-whatsapp` | Mergeado |
+| `chore/fiado-qa` | Revisión de la checklist de la guía en el código; ajuste de los botones de la ficha a 320 px |
+
+**Pendiente de verificación manual en el navegador** (`npm run dev`, DevTools en 320 y 390 px, con sesión de Clerk): Inicio, Clientes, Ficha, Anotar, Pago, Listo, Recordar, Ajustes y "Más". La sesión de QA no pudo usar el navegador (extensión de Chrome desconectada).
+
+**Etapa 2:** offline con cola, PIN local, videos de ayuda, editar cliente desde la ficha y migración del comparador al nuevo diseño (guía §7.1).
+
