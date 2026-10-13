@@ -1,12 +1,12 @@
 # Design: test-notes — notas de prueba con "Marcar en pantalla"
 
 > Specs: `specs/test-notes-api/spec.md` (A1–A7), `specs/test-notes-tool/spec.md` (T1–T9), `specs/app-shell/spec.md` (delta H7).
-> Decisiones provisionales P1–P4 en `proposal.md`; P5 quedó resuelta con el merge del design-system (#34, `b4287ef`).
+> Decisiones P1–P4 cerradas por el usuario (ver `proposal.md`); P5 quedó resuelta con el merge del design-system (#34, `b4287ef`).
 > Nota de tamaño: supera el presupuesto de 800 palabras porque incluye contratos, schema y mapa de archivos completos (igual que `app-shell`).
 
 ## Enfoque técnico
 
-Port fiel de neggo partido en tres piezas independientes. (1) **Back**: `TestNotesModule` con el patrón de `cart` (`domain/` puro + `infrastructure/` con repo factory `Scope.REQUEST` sobre `user_id`), registrado en `AppModule` solo con `TEST_NOTES_ENABLED`. (2) **CLI**: `scripts/test-notes.ts`, fino, sobre un contexto Nest mínimo y formateadores puros en `domain/`. (3) **Front**: `src/devtools/test-notes/`, autocontenido, cargado en diferido desde `host/tools.tsx` dentro de una rama que en build de producción es código muerto. Se monta **dentro de la columna del host** y usa los **tokens del design-system**.
+Port fiel de neggo partido en tres piezas independientes. (1) **Back**: `TestNotesModule` con el patrón de `cart` (`domain/` puro + `infrastructure/` con repo factory `Scope.REQUEST`; el usuario de la request se usa **solo como autor al crear**: las notas son compartidas entre cuentas, P1), registrado en `AppModule` solo con `TEST_NOTES_ENABLED`. (2) **CLI**: `scripts/test-notes.ts`, fino, sobre un contexto Nest mínimo y formateadores puros en `domain/`. (3) **Front**: `src/devtools/test-notes/`, autocontenido, cargado en diferido desde `host/tools.tsx` dentro de una rama que en build de producción es código muerto. Se monta **dentro de la columna del host** y usa los **tokens del design-system**.
 
 ## Layout real del host (main, post #34)
 
@@ -38,11 +38,12 @@ La ventana no scrollea; la barra inferior no es `fixed`; no hay header global ni
 | Estilos | **Tokens del design-system** (`bg-surface`, `text-ink`, `border-line`, `bg-danger`, `text-micro`, `rounded-m`, …) + `FOCUS_RING*` de `host/ui/styles.ts`; sin breakpoints, sombras, degradados, emoji ni texto < 12 px | Paleta default de Tailwind (ex-P5) | Los tokens ya están en `main`; `screens: {}` anula `sm:`/`lg:` |
 | Lint de diseño | **Extender** `host/ui/design-lint.test.ts` con `'../../devtools/**/*.{ts,tsx}'` (+ su `!**/*.test.*`) | Lint propio en `devtools/` / sin lint | Es el mecanismo documentado (guía §7.5: "cada módulo nuevo suma su carpeta"); duplicar `RULES` divergiría. Costo: segundo archivo del host tocado (dos líneas de glob) |
 | Gate del back | Import condicional en `AppModule` | Guard que devuelve 404 | Ruta inexistente = 404 natural; cero código vivo por request |
-| Flag en prod | `resolveTestNotesFlag()` lanza si `=1` y `IS_PRODUCTION` (P2) | Ignorar con warning | Mismo estilo fail-closed de `env.ts` |
+| Flag en prod | `resolveTestNotesFlag()` lanza si `=1` y `IS_PRODUCTION` (P2, cerrada: nunca en producción) | Ignorar con warning | Mismo estilo fail-closed de `env.ts` |
 | Tabla | Migración Prisma normal; la tabla existe (vacía) en todos los entornos | DDL en runtime (neggo) / schema aparte | Un único camino de schema, cliente tipado, sin drift. Aceptado |
 | `tipo` / `estado` | `VARCHAR(20)` + `CHECK` en el SQL; constantes en `domain/` como fuente de verdad | Enums de Postgres/Prisma | Agregar un estado = editar un `CHECK` (sin `ALTER TYPE`) |
 | `pos_x` | `DOUBLE PRECISION` (`Float`), fracción del **ancho de `main`** | Fracción del viewport (neggo) | En desktop el viewport ≠ columna; el ancho de `main` es el espacio real |
-| Scoping | Repo por `user_id` (P1); `autor` = `users.email` | Notas globales | Mismo contrato que el resto de la API y que `cross-user.isolation` |
+| Visibilidad | Notas **compartidas** (P1): lecturas y escrituras sin filtro de `user_id`; `user_id` = autor, fijado al crear; `autor` = `users.email` o `#<user_id>` | Scoping por `user_id` | Ambiente de pruebas: todas las cuentas son de prueba y el valor está en ver lo que anotó cualquiera (como neggo) |
+| Borrado | Cualquier usuario autenticado borra cualquier nota (con confirmación en la UI) | `DELETE` solo del autor | Restringir exige exponer `es_mia` en el DTO (el front no conoce `users.id`) y ramificar la tarjeta; no protege nada real entre cuentas de prueba |
 | CLI | Contexto Nest mínimo (`PrismaModule` + repo admin sin scope) | `createApplicationContext(AppModule)` como `ops.ts` | No levanta scheduler/crawler |
 | Selector | Anclas estables primero (`data-testid` → id usable → `aria-label` único → `nth-of-type`) | Solo path `nth-of-type` | Sobrevive a reordenamientos de la UI |
 | Captura | `installCapture({ ignore })` idempotente al cargar la tool | Instalar en `main.tsx` | No tocar `main.tsx`; se pierden errores previos a la carga del chunk (milisegundos) |
@@ -66,11 +67,11 @@ backend/
     │   ├── domain/test-note.ts (+test)          constantes, tipos, parseCreate, parsePatch, resueltaAtFor
     │   ├── domain/cli.ts (+test)                parseCliArgs, formatLista, formatVer, MODO_TEXTO
     │   └── infrastructure/
-    │       ├── test-notes.repo.ts (+test)       makeTestNotesRepo(prisma, uid), makeTestNotesAdminRepo(prisma)
+    │       ├── test-notes.repo.ts (+test)       makeTestNotesRepo(prisma, getUserId), makeTestNotesAdminRepo(prisma)
     │       ├── test-notes.controller.ts         @Controller('api/test-notes')
     │       ├── test-notes.module.ts             repo Scope.REQUEST
     │       └── test-notes-cli.module.ts         PrismaModule + admin repo
-    └── test/http/test-notes.e2e.test.ts, test/isolation/cross-user.isolation.test.ts (+describe)
+    └── test/http/test-notes.e2e.test.ts           (incluye "B ve la nota de A"; sin describe en cross-user.isolation)
 
 frontend/src/
 ├── host/tools.tsx (+test)                       registro con gate + Suspense por tool
@@ -112,9 +113,9 @@ model test_notes {
   resuelta_at DateTime? @db.Timestamptz(6)
   created_at  DateTime  @default(now()) @db.Timestamptz(6)
   updated_at  DateTime  @updatedAt @db.Timestamptz(6)
-  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  @@index([user_id, estado])
-  @@index([user_id, ruta])
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade) // autor
+  @@index([estado, created_at])
+  @@index([ruta])
   @@map("test_notes")
 }
 ```
@@ -132,11 +133,11 @@ export type Parsed<T> = { ok: true; value: T } | { ok: false; error: string };
 export function parseCreate(body: unknown): Parsed<NewNote>;   // recortes y defaults de A2
 export function parsePatch(body: unknown): Parsed<NotePatch>;  // A4; incluye resuelta_at derivado
 // infrastructure/test-notes.repo.ts
-export interface TestNotesRepo {
-  list(f: { estado?: Estado; ruta?: string }): Promise<TestNoteDto[]>; // vivas primero, LIMIT 500
-  create(n: NewNote): Promise<TestNoteDto>;
-  update(id: number, p: NotePatch): Promise<TestNoteDto>;   // statusCode 404 si no es del usuario
-  remove(id: number): Promise<{ id: number }>;
+export interface TestNotesRepo {                            // sin scope de lectura/escritura (P1)
+  list(f: { estado?: Estado; ruta?: string }): Promise<TestNoteDto[]>; // todas las cuentas, vivas primero, LIMIT 500
+  create(n: NewNote): Promise<TestNoteDto>;                 // user_id = getUserId() (autor)
+  update(id: number, p: NotePatch): Promise<TestNoteDto>;   // statusCode 404 si no existe; nunca toca user_id
+  remove(id: number): Promise<{ id: number }>;              // 404 si no existe
 }
 export interface TestNotesAdminRepo {                       // CLI, sin scope
   listVivas(): Promise<TestNoteDto[]>;
@@ -144,7 +145,7 @@ export interface TestNotesAdminRepo {                       // CLI, sin scope
   setEstado(id: number, estado: Estado, respuesta?: string): Promise<void>;
 }
 ```
-`TestNoteDto` = columnas + `autor` (email), fechas en ISO. El listado usa `$queryRaw` (`ORDER BY (estado = ANY(${VIVAS})) DESC, created_at DESC`, `LEFT JOIN users`). Las escrituras usan `updateMany/deleteMany where { id, user_id }`; `count === 0` → 404. El controller mapea `statusCode` 400/404 igual que `CartController`.
+`TestNoteDto` = columnas + `autor` (`COALESCE(users.email, '#' || user_id)`), fechas en ISO. El listado usa `$queryRaw` (`ORDER BY (estado = ANY(${VIVAS})) DESC, created_at DESC`, `LEFT JOIN users`), **sin `WHERE user_id`**. Las escrituras usan `updateMany/deleteMany where { id }`; `count === 0` → 404. `parsePatch` no acepta `user_id`, así que el autor no cambia. El factory recibe `() => currentUser.userId` (como `cart`) y solo lo lee en `create`. La consulta de lectura es la misma que usa el admin repo del CLI (se comparte el SQL). El controller mapea `statusCode` 400/404 igual que `CartController`.
 
 ```ts
 // config/env.ts
@@ -241,9 +242,9 @@ sequenceDiagram
 | Capa | Qué | Cómo |
 |---|---|---|
 | Unit back | `parseCreate`/`parsePatch`, `resolveTestNotesFlag`, `parseCliArgs`, `formatLista`, `formatVer` (directo / con modos, delimitadores DATO) | Vitest puro |
-| Repo | orden vivas primero, `resuelta_at`, 404 por id ajeno, admin `listVivas`/`get`/`setEstado` | `withRollback` + `testPrisma` |
-| HTTP | Módulo con flag: 401, 201, 400, PATCH, DELETE, 404. `AppModule` en CI (sin flag) → `GET /api/test-notes` 404 | `Test.createTestingModule` + `setupClerkMock` + supertest |
-| Aislamiento back | A/B en `cross-user.isolation.test.ts` | patrón existente |
+| Repo | orden vivas primero, `resuelta_at`, 404 por id inexistente, repo de B lista y actualiza la nota de A sin cambiar `user_id`, `autor` con y sin email, admin `listVivas`/`get`/`setEstado` | `withRollback` + `testPrisma` |
+| HTTP | Módulo con flag: 401, 201, 400, PATCH, DELETE, 404; **usuario B ve (GET) y opera (PATCH) la nota creada por A** (A6). `AppModule` en CI (sin flag) → `GET /api/test-notes` 404 | `Test.createTestingModule` + `setupClerkMock` + supertest |
+| Aislamiento back | **No aplica** a notas (compartidas por diseño, P1): `cross-user.isolation.test.ts` no se toca | — |
 | Unit front | `mark` (port de neggo + anclas, `pantallaLabel` con módulo/null/`/mas`), `capture`, `geometry` (raíz `main` y documento, `pinPosition` exacto/aproximado/fuera de banda/null, `fabBottom` con región a 90 y 20 px y sin región), `apiErrorMessage` | Vitest + jsdom; `getBoundingClientRect` y `elementsFromPoint` stubbeados |
 | Integración front | `HostApp` real con módulo falso (`/demo`, `/demo/anotar` `chrome:'task'`) y `tools=[{ Component: TestNotes }]`: T1–T7; la raíz `[data-test-notes]` es hija de la columna (mismo padre que `main`) | `MemoryRouter`, mock de Clerk y de `./api` |
 | Host | H7 delta en `tools.test.tsx`; `design-lint.test.ts` escanea `devtools/` | Vitest |
@@ -267,4 +268,4 @@ sequenceDiagram
 
 ## Preguntas abiertas
 
-- [ ] P1–P4 (provisionales; ninguna bloquea el diseño).
+Ninguna. P1–P4 cerradas por el usuario (ver `proposal.md`).

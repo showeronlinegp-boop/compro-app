@@ -10,17 +10,17 @@ Persistencia y operación de las notas de prueba: API REST `/api/test-notes` (so
 |---|---|---|
 | A1 | Gate por entorno | MUST |
 | A2 | Crear nota con validación y recortes | MUST |
-| A3 | Listar notas del usuario | MUST |
+| A3 | Listar notas (de todas las cuentas) | MUST |
 | A4 | Actualizar estado, tipo, texto, respuesta y modo | MUST |
 | A5 | Borrar nota | MUST |
-| A6 | Aislamiento entre usuarios | MUST |
+| A6 | Notas compartidas entre cuentas, con autor | MUST |
 | A7 | CLI de operación | MUST |
 
 Valores válidos: `tipo` ∈ {`error`, `mejora`, `duda`} (default `error`); `estado` ∈ {`abierta`, `en_curso`, `consulta`, `para_revisar`, `corregida`, `descartada`} (default `abierta`); `modo` ⊆ {`debatir`, `investigar`, `consultas`}. "Vivas" = `abierta`, `en_curso`, `consulta`, `para_revisar`.
 
 ### Requirement: A1 — Gate por entorno
 
-El backend MUST registrar las rutas `/api/test-notes` solo si `TEST_NOTES_ENABLED=1`. Sin la flag, cualquier método sobre `/api/test-notes*` MUST responder 404. Con `TEST_NOTES_ENABLED=1` y `NODE_ENV=production` el arranque MUST fallar con un error explícito (decisión provisional P2).
+El backend MUST registrar las rutas `/api/test-notes` solo si `TEST_NOTES_ENABLED=1`. Sin la flag, cualquier método sobre `/api/test-notes*` MUST responder 404. Con `TEST_NOTES_ENABLED=1` y `NODE_ENV=production` el arranque MUST fallar con un error explícito (decisión P2: la herramienta nunca es para producción).
 
 #### Scenario: Flag ausente
 - GIVEN el backend arrancado sin `TEST_NOTES_ENABLED`
@@ -39,7 +39,7 @@ El backend MUST registrar las rutas `/api/test-notes` solo si `TEST_NOTES_ENABLE
 
 ### Requirement: A2 — Crear nota
 
-`POST /api/test-notes` MUST crear la nota del usuario autenticado y devolver 201 con la nota completa (incluye `id`, `estado`, `created_at`, `autor`). `texto` (≤ 5000) y `ruta` (≤ 500) son obligatorios tras recortar espacios; si faltan MUST responder 400 `{ error }`. Opcionales recortados: `pantalla` 200, `selector` 2000, `elemento` 300. `tipo` inválido MUST caer en `error`. `modo` MUST filtrarse a valores conocidos, sin repetidos y en orden fijo. `contexto` MUST guardarse solo si es un objeto cuyo JSON mide ≤ 50 000 caracteres; si no, `null`. `pos_x`, `pos_y`, `viewport_w` no numéricos MUST quedar `null`.
+`POST /api/test-notes` MUST crear la nota con el usuario autenticado como autor (`user_id`) y devolver 201 con la nota completa (incluye `id`, `estado`, `created_at`, `autor`). `texto` (≤ 5000) y `ruta` (≤ 500) son obligatorios tras recortar espacios; si faltan MUST responder 400 `{ error }`. Opcionales recortados: `pantalla` 200, `selector` 2000, `elemento` 300. `tipo` inválido MUST caer en `error`. `modo` MUST filtrarse a valores conocidos, sin repetidos y en orden fijo. `contexto` MUST guardarse solo si es un objeto cuyo JSON mide ≤ 50 000 caracteres; si no, `null`. `pos_x`, `pos_y`, `viewport_w` no numéricos MUST quedar `null`.
 
 #### Scenario: Alta completa
 - GIVEN un usuario autenticado
@@ -58,7 +58,7 @@ El backend MUST registrar las rutas `/api/test-notes` solo si `TEST_NOTES_ENABLE
 
 ### Requirement: A3 — Listar
 
-`GET /api/test-notes` MUST devolver un array con las notas del usuario, vivas primero y luego por `created_at` descendente, máximo 500. MAY filtrar por `estado` (ignorado si es inválido) y `ruta`.
+`GET /api/test-notes` MUST devolver un array con las notas de **todas** las cuentas (sin filtrar por usuario), vivas primero y luego por `created_at` descendente, máximo 500. MAY filtrar por `estado` (ignorado si es inválido) y `ruta`.
 
 #### Scenario: Orden
 - GIVEN una nota `corregida` reciente y una `abierta` vieja
@@ -79,18 +79,28 @@ El backend MUST registrar las rutas `/api/test-notes` solo si `TEST_NOTES_ENABLE
 `DELETE /api/test-notes/:id` MUST borrar la nota y devolver `{ id }`; inexistente MUST dar 404.
 
 #### Scenario: Borrado
-- GIVEN una nota del usuario
-- WHEN la borra
+- GIVEN una nota existente (de cualquier autor)
+- WHEN un usuario autenticado la borra
 - THEN un `GET` posterior no la incluye
 
-### Requirement: A6 — Aislamiento entre usuarios
+### Requirement: A6 — Notas compartidas entre cuentas, con autor
 
-Listar, actualizar y borrar MUST operar solo sobre notas del usuario autenticado (decisión provisional P1). Una nota ajena MUST tratarse como inexistente (404) y no modificarse.
+Las notas son compartidas entre todas las cuentas (decisión P1: en el ambiente de pruebas todos son usuarios de prueba). Listar, actualizar y borrar MUST operar sobre cualquier nota, sin filtrar por `user_id`; cualquier usuario autenticado MAY borrar o descartar cualquier nota. `user_id` MUST guardarse al crear como autor y MUST NOT modificarse después (un `PATCH` de otro usuario no cambia el autor). Cada nota MUST incluir `autor`: el `email` del usuario autor, o `#<user_id>` si no tiene email.
 
-#### Scenario: Nota ajena
-- GIVEN una nota del usuario B
-- WHEN el usuario A hace `PATCH` o `DELETE` sobre su id
-- THEN recibe 404 y la nota de B sigue igual
+#### Scenario: Otra cuenta ve la nota
+- GIVEN una nota creada por el usuario A
+- WHEN el usuario B hace `GET /api/test-notes`
+- THEN la lista incluye la nota con `autor` = email de A
+
+#### Scenario: Otra cuenta la opera
+- GIVEN una nota `abierta` creada por el usuario A
+- WHEN el usuario B hace `PATCH { estado: 'en_curso' }`
+- THEN recibe 200, la nota queda `en_curso` y su autor sigue siendo A
+
+#### Scenario: Autor sin email
+- GIVEN un usuario autor sin `email`
+- WHEN se lista su nota
+- THEN `autor` es `#<user_id>`
 
 ### Requirement: A7 — CLI
 

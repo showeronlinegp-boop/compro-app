@@ -21,7 +21,7 @@ Herramienta global del host para anotar errores, mejoras y dudas mientras se pru
 
 ### Requirement: T1 — Gate de build y sesión
 
-La tool MUST incluirse solo si `import.meta.env.DEV` es verdadero y `VITE_TEST_NOTES === '1'`. En un build de producción el código de la tool MUST NOT estar en ningún archivo de `dist/`. Sin sesión de Clerk MUST NOT renderizar UI (decisión provisional P3).
+La tool MUST incluirse solo si `import.meta.env.DEV` es verdadero y `VITE_TEST_NOTES === '1'`. En un build de producción el código de la tool MUST NOT estar en ningún archivo de `dist/`. Sin sesión de Clerk MUST NOT renderizar UI (decisión P3).
 
 #### Scenario: Flag apagada
 - GIVEN `VITE_TEST_NOTES` sin definir
@@ -105,7 +105,7 @@ Cada nota viva de la ruta actual con marca MUST mostrar un pin con su `#id` junt
 
 ### Requirement: T7 — Panel
 
-El panel MUST ser una hoja inferior de ancho completo dentro de la columna (sin drawer lateral) y MUST mostrar pantalla actual y total pendiente, filtros con contador (Pendientes = `abierta|en_curso|consulta`; Para revisar; Corregidas; Descartadas) y "Solo esta pantalla" (activo por defecto). Acciones por estado: `para_revisar` → Confirmar (`corregida`) / Sigue mal (`abierta`); `abierta|en_curso|consulta` → Descartar y checklist de modo editable; `corregida|descartada` → Reabrir; siempre Borrar con confirmación. La respuesta de Claude MUST verse como "Pregunta de Claude" en `consulta` y "Respuesta de Claude" en otros estados. "Ir a la nota" MUST navegar a su ruta y llevar la vista al pin. El panel MUST recargar cada 60 s.
+El panel MUST ser una hoja inferior de ancho completo dentro de la columna (sin drawer lateral) y MUST mostrar pantalla actual y total pendiente, filtros con contador (Pendientes = `abierta|en_curso|consulta`; Para revisar; Corregidas; Descartadas) y "Solo esta pantalla" (activo por defecto). Acciones por estado: `para_revisar` → Confirmar (`corregida`) / Sigue mal (`abierta`); `abierta|en_curso|consulta` → Descartar y checklist de modo editable; `corregida|descartada` → Reabrir; siempre Borrar con confirmación. Cada tarjeta MUST mostrar el autor (`autor`), porque las notas son compartidas entre cuentas (P1). La respuesta de Claude MUST verse como "Pregunta de Claude" en `consulta` y "Respuesta de Claude" en otros estados. "Ir a la nota" MUST navegar a su ruta y llevar la vista al pin. El panel MUST recargar cada 60 s.
 
 #### Scenario: Confirmar corrección
 - GIVEN una nota `para_revisar`

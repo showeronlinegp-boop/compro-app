@@ -1,11 +1,11 @@
 # Tasks: test-notes — notas de prueba con "Marcar en pantalla"
 
-> `VB` = `cd backend && npm run typecheck && npm test` (con Postgres de test y `npm run db:test:setup` tras la migración). `VF` = `cd frontend && npm run typecheck && npm test`. Cada tarea y cada commit cierran en verde. Sin build. 🖐 = verificación manual del usuario. Commitear SIEMPRE con pathspec. Layout de referencia: `main` post design-system (#34), ver design §"Layout real del host".
+> `VB` = `cd backend && npm run typecheck && npm test` (con Postgres de test y `npm run db:test:setup` tras la migración). `VF` = `cd frontend && npm run typecheck && npm test`. Cada tarea y cada commit cierran en verde. Sin build. 🖐 = verificación manual del usuario. Commitear SIEMPRE con pathspec. Layout de referencia: `main` post design-system (#34), ver design §"Layout real del host". Decisiones P1–P4 cerradas (notas compartidas entre cuentas; `user_id` = autor).
 
 ## Commit 1 — `feat(backend): modelo test_notes y dominio de notas de prueba`
 
 - [ ] 1.1 `prisma/schema.prisma`: `model test_notes` según el design + `test_notes test_notes[]` en `users` (A2–A6)
-- [ ] 1.2 `prisma/migrations/20261013000000_add_test_notes/migration.sql`: tabla, `CHECK` de `tipo`/`estado`, índices `(user_id, estado)` y `(user_id, ruta)`, FK cascade; `prisma generate` + `db:test:setup`
+- [ ] 1.2 `prisma/migrations/20261013000000_add_test_notes/migration.sql`: tabla, `CHECK` de `tipo`/`estado`, índices `(estado, created_at)` y `(ruta)`, FK cascade al autor; `prisma generate` + `db:test:setup`
 - [ ] 1.3 `modules/test-notes/domain/test-note.ts`: constantes, tipos, `parseCreate`, `parsePatch` (recortes, defaults, `modo` filtrado/ordenado, `contexto` ≤ 50 000, `resuelta_at`) (A2, A4)
 - [ ] 1.4 `domain/test-note.test.ts`: escenarios "Alta completa", "Texto vacío", "Contexto excedido", patch inválido/vacío, `resuelta_at` (A2, A4). Verif: `VB`
 
@@ -13,12 +13,12 @@
 
 - [ ] 2.1 `config/env.ts`: `resolveTestNotesFlag`, `TEST_NOTES_ENABLED`, `TEST_NOTES_APP_URL`; casos en `env.test.ts` (sin flag, `'1'`, `'1'` + prod → error) (A1)
 - [ ] 2.2 `common/tokens.ts`: `TEST_NOTES_REPO`, `TEST_NOTES_ADMIN_REPO`
-- [ ] 2.3 `infrastructure/test-notes.repo.ts`: `makeTestNotesRepo(prisma, uid)` (list `$queryRaw` vivas primero + `autor`, LIMIT 500; `updateMany`/`deleteMany` por `{id, user_id}` → 404) y `makeTestNotesAdminRepo(prisma)` (A3–A6)
-- [ ] 2.4 `test-notes.repo.test.ts` con `withRollback`: orden, filtros, `resuelta_at`, 404 ajeno, admin `listVivas`/`get`/`setEstado` (A3–A6). Verif: `VB`
+- [ ] 2.3 `infrastructure/test-notes.repo.ts`: `makeTestNotesRepo(prisma, getUserId)` (list `$queryRaw` de todas las cuentas, sin `WHERE user_id`, vivas primero + `autor` = email o `#<user_id>`, LIMIT 500; `create` con `user_id = getUserId()`; `updateMany`/`deleteMany` por `{ id }` → 404 si `count === 0`; nunca toca `user_id`) y `makeTestNotesAdminRepo(prisma)` compartiendo el SQL de lectura (A3–A6)
+- [ ] 2.4 `test-notes.repo.test.ts` con `withRollback`: orden, filtros, `resuelta_at`, 404 inexistente, repo de B lista/actualiza la nota de A sin cambiar `user_id`, `autor` con y sin email, admin `listVivas`/`get`/`setEstado` (A3–A6). Verif: `VB`
 - [ ] 2.5 `test-notes.controller.ts` (`GET`, `POST` 201, `PATCH /:id`, `DELETE /:id`; id inválido → 400) + `test-notes.module.ts` (repo `Scope.REQUEST`) (A2–A5)
 - [ ] 2.6 `app.module.ts`: `...(TEST_NOTES_ENABLED ? [TestNotesModule] : [])` (A1)
 - [ ] 2.7 `test/http/test-notes.e2e.test.ts`: módulo con flag (401, 201, 400, PATCH, DELETE, 404) + `AppModule` sin flag → 404 (A1–A5)
-- [ ] 2.8 `cross-user.isolation.test.ts`: describe "Test notes isolation" (A6). Verif: `VB`
+- [ ] 2.8 `test/http/test-notes.e2e.test.ts`: escenarios A6 "Otra cuenta ve la nota" (B lista la nota de A con `autor` de A) y "Otra cuenta la opera" (PATCH de B → 200, autor sigue A). `cross-user.isolation.test.ts` NO se toca (notas compartidas por diseño). Verif: `VB`
 
 ## Commit 3 — `feat(backend): CLI de notas de prueba (npm run notes)`
 
@@ -38,7 +38,7 @@
 ## Commit 5 — `feat(frontend): herramienta Notas de prueba`
 
 - [ ] 5.1 `components/{MiniButton,ModoChecklist,Fabs,MarkLayer,Highlights,Pins}.tsx` con tokens del design-system + `FOCUS_RING*` (clases por tipo/estado en `constants.ts`); sin breakpoints, sombras, emoji ni texto < 12 px; `absolute` dentro de la raíz de la tool (T2, T3, T6, T10)
-- [ ] 5.2 `components/{DraftForm,NoteCard,Sheet}.tsx`: hoja inferior de ancho completo (`absolute inset-x-0 bottom-0 max-h-[85%]`) (T5, T7, T10)
+- [ ] 5.2 `components/{DraftForm,NoteCard,Sheet}.tsx`: hoja inferior de ancho completo (`absolute inset-x-0 bottom-0 max-h-[85%]`); `NoteCard` muestra `autor` (T5, T7, T10)
 - [ ] 5.3 `TestNotes.tsx` (raíz `[data-test-notes]` `absolute inset-0 z-[60] pointer-events-none` en la columna, sin portal; `column = ref.parentElement`; pantalla con `useActiveModule().location`; FABs con `fabBottom` recalculado por `location`/`resize`; polling 60 s, recálculo de pines, Esc, ir a la nota, `null` sin sesión, `installCapture` al montar) + `index.tsx` (T1–T8)
 - [ ] 5.4 `TestNotes.test.tsx` con `HostApp` + módulo falso: "Sin sesión", "Ruta de tarea", "Clic sobre un botón de la app", "Escape", "Nota sin marcar", "Elemento desaparecido", "Confirmar corrección", "Borrado con confirmación", "Montaje en la columna", error conserva borrador (T1–T7, T10). Verif: `VF`
 - [ ] 5.5 `host/ui/design-lint.test.ts`: sumar `../../devtools/**/*.{ts,tsx}` (y su exclusión de tests) al glob + `toContain('../../devtools/test-notes/TestNotes.tsx')` (T10). Verif: `VF`
