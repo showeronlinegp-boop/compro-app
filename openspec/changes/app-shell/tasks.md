@@ -42,5 +42,5 @@
 
 ## Commit 5 — `test(frontend): cobertura de ComparadorProvider y manifest`
 
-- [ ] 5.1 `modules/comparador/manifest.test.ts`: paths + `auth` vs H1; `resolveLocation('/compare', [comparador])` (C1, H6). Verif: `V`
-- [ ] 5.2 `ComparadorProvider.test.tsx`: redirect con `replace`, skip, ya en `/onboarding` (C3); Comparar y contadores, `?q=` (C2); acción sin sesión → `/sign-in` (C4); fake timers + unmount → `vi.getTimerCount() === 0` (C5). Verif: `V`
+- [x] 5.1 `modules/comparador/manifest.test.ts`: paths + `auth` vs H1; `resolveLocation('/compare', [comparador])` (C1, H6). Verif: `V`
+- [x] 5.2 `ComparadorProvider.test.tsx`: redirect con `replace`, skip, ya en `/onboarding` (C3); Comparar y contadores, `?q=` (C2); acción sin sesión → `/sign-in` (C4); fake timers + unmount → `vi.getTimerCount() === 0` (C5). Verif: `V`
