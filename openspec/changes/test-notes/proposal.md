@@ -28,7 +28,8 @@ Probar COMPRO a mano hoy no deja rastro: los problemas se anotan afuera, sin pan
 | Ubicación/pantalla | `useActiveModule().location` (misma resolución que `useHostLocation()`) → `módulo › título de ruta` |
 | HTTP | cliente sobre `host/http.ts` (`req`) |
 | Estilos | Tokens del design-system + `FOCUS_RING*` de `host/ui/styles.ts`; `devtools/**` entra al `design-lint` |
-| Back | `TestNotesModule` patrón `cart` (repo factory `Scope.REQUEST` + `user_id`), import condicional en `AppModule` |
+| Back | `TestNotesModule` patrón `cart` (repo factory `Scope.REQUEST`; `user_id` solo como **autor** al crear), import condicional en `AppModule` |
+| Visibilidad | Notas **compartidas** entre todas las cuentas (P1): cualquiera lista, edita, cambia estado y borra |
 | Tabla | migración Prisma normal: existe vacía en todos los entornos (aceptado; ver design) |
 
 ## Áreas afectadas
@@ -61,16 +62,19 @@ Rama `feat/test-notes`, commits por capa. Post-merge: `git revert` del squash y 
 - [ ] Typecheck + tests en verde en front y back.
 - [ ] Sin flags: `hostTools` vacío, `/api/test-notes` → 404, build de prod sin rastro de `test-notes`.
 - [ ] Con flags: marcar, guardar, ver pin, cambiar estado y borrar funcionan en rutas `'full'` y `'task'`.
+- [ ] Una nota creada con la cuenta A la ve (y la puede operar) la cuenta B, con A como autor.
 - [ ] `npm run notes -- ver <id>` muestra nota, modo, errores y API capturados.
 - [ ] El host solo cambia en `host/tools.tsx` (+ test) y el glob de `host/ui/design-lint.test.ts`.
 
-## Decisiones provisionales — validar con el usuario
+## Decisiones cerradas por el usuario
 
-| # | Decisión elegida | Alternativa |
+| # | Decisión | Descartado |
 |---|---|---|
-| P1 | Notas **por usuario** (`user_id` scoping, como el resto de la API); el CLI ve todas | Compartidas entre cuentas de prueba (como neggo) |
-| P2 | `TEST_NOTES_ENABLED=1` con `NODE_ENV=production` **aborta el arranque** | Ignorar la flag con warning |
-| P3 | Sin sesión de Clerk la tool **no se muestra** | Mostrarla deshabilitada |
-| P4 | CLI `npm run notes` con comandos en castellano (compatibles con `notaPrueba.js`) + `--json` | Otro nombre / solo texto |
+| P1 | Notas **compartidas** entre todas las cuentas ("en el ambiente de pruebas todos son usuarios de prueba", como neggo). Cualquier usuario autenticado lista, ve, edita, cambia estado y **borra** cualquier nota. `user_id` queda solo como **autor** (se guarda al crear; la tarjeta muestra `autor`). El CLI ve todas | Notas por usuario (`user_id` scoping) |
+| P2 | `TEST_NOTES_ENABLED=1` con `NODE_ENV=production` **aborta el arranque** con error que nombra la flag: la herramienta nunca es para producción | Ignorar la flag con warning |
+| P3 | Sin sesión de Clerk la tool **no aparece** | Mostrarla deshabilitada |
+| P4 | CLI `npm run notes -- lista \| ver \| estado \| responder` en castellano (compatible con `notaPrueba.js`) + `--json` | Otro nombre / solo texto |
+
+**Borrado (P1)**: cualquiera puede borrar o descartar. Restringir `DELETE` al autor no es trivial del lado del front (no conoce el `users.id` interno: habría que exponer un `es_mia` en el DTO y ramificar la tarjeta) y en un ambiente de solo cuentas de prueba no protege nada real; el borrado ya pide confirmación (T7).
 
 **P5 resuelta** (design-system mergeado en #34): se usan los tokens del design-system desde el primer commit y `src/devtools/**` entra al escaneo de `design-lint.test.ts`.
