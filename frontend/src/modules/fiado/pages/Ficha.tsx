@@ -91,6 +91,9 @@ export default function Ficha() {
           <AccionesMovimiento
             compacto
             onAnotar={(tipo) => navigate(RUTAS.anotar(tipo, clienteId))}
+            onRecordar={
+              carga.data.cliente.saldo > 0 ? () => navigate(RUTAS.recordar(clienteId)) : undefined
+            }
           />
 
           <Section title="Historial">

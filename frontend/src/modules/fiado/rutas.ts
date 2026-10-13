@@ -26,6 +26,8 @@ export const RUTAS = {
       cliente: clienteId ? String(clienteId) : undefined,
     }),
   listo: `${BASE}/listo`,
+  recordar: (clienteId: number) => `${BASE}/recordar/${clienteId}`,
+  ajustes: `${BASE}/ajustes`,
 } as const;
 
 /** Agrega `cliente=<id>` a una ruta de Anotar (respeta la query existente). */

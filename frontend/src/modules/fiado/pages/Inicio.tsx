@@ -5,7 +5,7 @@ import {
   AccionesMovimiento,
   Cargando,
   ErrorCarga,
-  FilaCliente,
+  FilaCobro,
   FilaMovimiento,
   TarjetaNeggo,
   TarjetaTeDeben,
@@ -59,7 +59,12 @@ export default function Inicio() {
                 </li>
               ) : (
                 resumen.para_cobrar.map((c) => (
-                  <FilaCliente key={c.id} cliente={c} onClick={() => navigate(RUTAS.ficha(c.id))} />
+                  <FilaCobro
+                    key={c.id}
+                    cobro={c}
+                    onAbrir={() => navigate(RUTAS.ficha(c.id))}
+                    onRecordar={() => navigate(RUTAS.recordar(c.id))}
+                  />
                 ))
               )}
             </List>
