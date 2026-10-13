@@ -55,7 +55,8 @@ gaps_to_validate:  # el resto queda para feat/design-system
   - "Toast global del host (offset segun chrome) -> feat/design-system"
 next_phase: apply
 apply_progress:
-  done: [commit-1]
-  pending: [commit-2, commit-3, commit-4, commit-5]
+  done: [commit-1, commit-2]
+  pending: [commit-3, commit-4, commit-5]
   log:
     - "commit 1 (1.1-1.4): git mv segun el mapa + especificadores; lista real de archivos = la del design, sin desvios. typecheck OK, tests 10 files / 66 passed"
+    - "commit 2 (2.1-2.2): host/http.ts con BASE (no exportado), setTokenGetter, req, reqOptional (exportados) movidos literal; api.ts importa de ../../host/http; AuthTokenBridge importa de ../http (fin de la violacion transitoria). typecheck OK, tests 10 files / 66 passed"

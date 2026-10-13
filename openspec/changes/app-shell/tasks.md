@@ -11,8 +11,8 @@
 
 ## Commit 2 — `refactor(frontend): extraer núcleo HTTP a host/http` (H5)
 
-- [ ] 2.1 Crear `host/http.ts` (BASE, `setTokenGetter`, `req`, `reqOptional`) extraído de `modules/comparador/api.ts`; el módulo importa de `../../host/http` (H5). Verif: `V`
-- [ ] 2.2 `host/auth/AuthTokenBridge.tsx` importa `setTokenGetter` de `../http` (cierra la violación transitoria) (H5). Verif: `V`
+- [x] 2.1 Crear `host/http.ts` (BASE, `setTokenGetter`, `req`, `reqOptional`) extraído de `modules/comparador/api.ts`; el módulo importa de `../../host/http` (H5). Verif: `V`
+- [x] 2.2 `host/auth/AuthTokenBridge.tsx` importa `setTokenGetter` de `../http` (cierra la violación transitoria) (H5). Verif: `V`
 
 ## Commit 3 — `refactor(frontend): contrato AppModule y HostApp genérico` (`App.tsx` sin cambios)
 
