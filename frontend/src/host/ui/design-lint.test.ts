@@ -38,24 +38,33 @@ function findDesignViolations(files: Record<string, string>): string[] {
   return out.sort();
 }
 
-// Archivos de producción (no tests) del host. El comparador queda fuera hasta su migración.
+// Archivos de producción (no tests) del host y de Fiado. El comparador queda fuera hasta su migración.
 const scanned = Object.fromEntries(
   Object.entries(
-    import.meta.glob<string>(['../**/*.{ts,tsx}', '!../**/*.test.{ts,tsx}'], {
-      query: '?raw',
-      import: 'default',
-      eager: true,
-    }),
+    import.meta.glob<string>(
+      [
+        '../**/*.{ts,tsx}',
+        '../../modules/fiado/**/*.{ts,tsx}',
+        '!../**/*.test.{ts,tsx}',
+        '!../../modules/**/*.test.{ts,tsx}',
+      ],
+      {
+        query: '?raw',
+        import: 'default',
+        eager: true,
+      },
+    ),
   ),
 );
 
 describe('lint de diseño', () => {
-  it('escanea el host', () => {
+  it('escanea el host y Fiado', () => {
     expect(Object.keys(scanned)).toContain('../HostLayout.tsx');
+    expect(Object.keys(scanned)).toContain('../../modules/fiado/pages/Inicio.tsx');
     expect(Object.keys(scanned)).toContain('./Button.tsx');
   });
 
-  it('el host usa sólo tokens del sistema de diseño', () => {
+  it('el host y Fiado usan sólo tokens del sistema de diseño', () => {
     expect(findDesignViolations(scanned)).toEqual([]);
   });
 

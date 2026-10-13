@@ -47,6 +47,13 @@ export interface ComparadorContextValue {
 
 const ComparadorContext = createContext<ComparadorContextValue | null>(null);
 
+/**
+ * Rutas del comparador donde corre la redirección a onboarding. Con varios
+ * módulos montados, el Provider vive sobre TODAS las rutas: sin este filtro,
+ * entrar a otro módulo (p. ej. /fiado) mandaba al onboarding del comparador.
+ */
+const ONBOARDING_REDIRECT_FROM = new Set(['/', '/intereses', '/planner', '/cart', '/compare']);
+
 function ComparadorStateProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -114,7 +121,7 @@ function ComparadorStateProvider({ children }: { children: ReactNode }) {
       // can discover it, but skip the redirect if they already opted out (the
       // "Saltar por ahora" button persists this flag locally).
       const skipped = localStorage.getItem('onboarding_skipped') === '1';
-      if (!p?.onboarding_done && !skipped && location.pathname !== '/onboarding') {
+      if (!p?.onboarding_done && !skipped && ONBOARDING_REDIRECT_FROM.has(location.pathname)) {
         navigate('/onboarding', { replace: true });
       }
     });

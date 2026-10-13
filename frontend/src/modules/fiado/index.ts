@@ -1,0 +1,38 @@
+import { createElement } from 'react';
+import type { AppModule, NavItem } from '../../host/contract';
+import { IconClients, IconHome } from '../../host/ui/icons';
+import Clientes from './pages/Clientes';
+import Ficha from './pages/Ficha';
+import Inicio from './pages/Inicio';
+import NuevoCliente from './pages/NuevoCliente';
+import { BASE, RUTAS } from './rutas';
+
+const nav: NavItem[] = [
+  { id: 'inicio', to: RUTAS.inicio, label: 'Inicio', icon: createElement(IconHome), end: true },
+  { id: 'clientes', to: RUTAS.clientes, label: 'Clientes', icon: createElement(IconClients) },
+];
+
+/**
+ * Manifest de Fiado: libreta de fiado del comercio (openspec/changes/fiado).
+ * Sin `headerActions`: cada pantalla trae su propio encabezado (guía §3.1).
+ * Todas las rutas piden sesión: los datos son del comercio.
+ */
+export const fiado: AppModule = {
+  id: 'fiado',
+  label: 'Fiado',
+  basePath: BASE,
+  routes: [
+    { id: 'inicio', path: '', component: Inicio, auth: 'required', title: 'Inicio' },
+    { id: 'clientes', path: 'clientes', component: Clientes, auth: 'required', title: 'Clientes' },
+    {
+      id: 'nuevo-cliente',
+      path: 'clientes/nuevo',
+      component: NuevoCliente,
+      auth: 'required',
+      title: 'Nuevo cliente',
+      chrome: 'task',
+    },
+    { id: 'ficha', path: 'clientes/:id', component: Ficha, auth: 'required', title: 'Cliente' },
+  ],
+  useNav: () => nav,
+};

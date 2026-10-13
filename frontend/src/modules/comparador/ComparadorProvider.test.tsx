@@ -193,6 +193,14 @@ describe('C3 — redirección a onboarding', () => {
     expect(screen.getByTestId('nav-type').textContent).toBe('POP');
   });
 
+  it('en una ruta de otro módulo (/fiado) no redirige', async () => {
+    m.profileGet.mockResolvedValue(profile(false));
+    renderProvider(['/fiado/clientes']);
+    await flush();
+    expect(where()).toBe('/fiado/clientes');
+    expect(screen.getByTestId('nav-type').textContent).toBe('POP');
+  });
+
   it('profile null (sin perfil todavía) también redirige', async () => {
     m.profileGet.mockResolvedValue(null);
     renderProvider(['/planner']);
