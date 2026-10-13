@@ -31,12 +31,12 @@
 
 ## Commit 4 — `refactor(frontend): comparador como módulo del host`
 
-- [ ] 4.1 `modules/comparador/ComparadorProvider.tsx`: estado, refs, efectos y acciones literales de `AppShell` + `useComparador()` (C3, C4, C5)
-- [ ] 4.2 `modules/comparador/useNav.ts` (Comparar condicionado, badges, `explorarTo`) (C2)
-- [ ] 4.3 `modules/comparador/routes.tsx`: `ExplorarRoute`, `InteresesRoute`, `OnboardingRoute` (C1, C3)
-- [ ] 4.4 `components/{HeaderActions,CartButton,SyncPanel,LocationSlot}.tsx` (C4)
-- [ ] 4.5 `modules/comparador/index.ts` (manifest) + `host/registry.ts` (C1, H2)
-- [ ] 4.6 `App.tsx` reducido a `<AuthTokenBridge/>` + `<HostApp modules={registry}/>`; borrar `AppShell`, `SyncPanel`, `RequireAuth` (H1, H5). Verif: `V` (smoke sin cambios)
+- [x] 4.1 `modules/comparador/ComparadorProvider.tsx`: estado, refs, efectos y acciones literales de `AppShell` + `useComparador()` (C3, C4, C5)
+- [x] 4.2 `modules/comparador/useNav.ts` (Comparar condicionado, badges, `explorarTo`) (C2)
+- [x] 4.3 `modules/comparador/routes.tsx`: `ExplorarRoute`, `InteresesRoute`, `OnboardingRoute` (C1, C3)
+- [x] 4.4 `components/{HeaderActions,CartButton,SyncPanel,LocationSlot}.tsx` (C4)
+- [x] 4.5 `modules/comparador/index.ts` (manifest) + `host/registry.ts` (C1, H2)
+- [x] 4.6 `App.tsx` reducido a `<AuthTokenBridge/>` + `<HostApp modules={registry}/>`; borrar `AppShell`, `SyncPanel`, `RequireAuth` (H1, H5). Verif: `V` (smoke sin cambios)
 - [ ] 4.7 🖐 Nav top (`lg+`) y bottom (`<lg`): textos, íconos, contadores, activo, Comparar condicionado; header en orden marca/carrito/ubicación/sync/cuenta; la barra inferior aparece en TODAS las rutas del comparador (ninguna declara `chrome`) (H3, H8, C2, C4)
 - [ ] 4.8 🖐 Usuario nuevo sin skip → redirige a `/onboarding` sin historial; completar → `/planner`; `/planner` sin sesión → sign-in (C3, H1)
 
