@@ -23,13 +23,7 @@ describe('EmptyState', () => {
   });
 
   it('does not render an action slot when action prop is omitted', () => {
-    render(
-      <EmptyState
-        icon="🔍"
-        title="Sin resultados"
-        description="No hay nada por aquí"
-      />,
-    );
+    render(<EmptyState icon="🔍" title="Sin resultados" description="No hay nada por aquí" />);
 
     // No button or link should be present
     expect(screen.queryByRole('button')).toBeNull();

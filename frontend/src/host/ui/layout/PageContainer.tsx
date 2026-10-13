@@ -3,35 +3,17 @@ import type { ReactNode } from 'react';
 interface PageContainerProps {
   children: ReactNode;
   /**
-   * size='default' → full-viewport-width fluid layout with responsive gutters
-   *                  (all non-Onboarding pages). Uses the whole screen; the grid
-   *                  density adapts via auto-fill, so wide screens show more
-   *                  columns instead of leaving empty side margins.
-   * size='narrow'  → max-w-lg centered card (reserved for Onboarding / wizard flows).
+   * Se mantiene por compatibilidad con el comparador: en la columna mobile de
+   * 480 px 'default' y 'narrow' se ven igual.
    */
   size?: 'default' | 'narrow';
   className?: string;
 }
 
 /**
- * Unified page-width wrapper. The default size is FLUID (full width) — it
- * intentionally has no max-width cap so large displays use all available space
- * instead of a centered 1280px column with dead side gutters. Responsive
- * gutters: px-4 (mobile) → sm:px-6 (≥640px) → lg:px-8 (≥1024px).
- *
- * Onboarding keeps its own narrow layout and must NOT use this component.
- *
- * Gutters grow on larger screens (px-4 → 2xl:px-16) so content keeps a little
- * breathing room from the viewport edge instead of running to the very limit.
+ * Padding estándar de una pantalla (guía §3): 24 px arriba y abajo, gutter de
+ * 16 px a los costados. El ancho máximo lo pone el HostLayout.
  */
-export function PageContainer({ children, size = 'default', className }: PageContainerProps) {
-  const widthClass = size === 'narrow' ? 'max-w-lg mx-auto' : 'w-full';
-
-  return (
-    <div
-      className={`${widthClass} px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-6 ${className ?? ''}`}
-    >
-      {children}
-    </div>
-  );
+export function PageContainer({ children, className }: PageContainerProps) {
+  return <div className={`w-full px-4 py-6 ${className ?? ''}`}>{children}</div>;
 }

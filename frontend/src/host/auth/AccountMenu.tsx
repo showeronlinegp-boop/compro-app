@@ -15,7 +15,7 @@ export function AccountMenu() {
         <SignInButton mode="modal">
           <button
             type="button"
-            className={`text-xs font-medium px-3 py-1.5 rounded-xl bg-indigo-600 text-white hover:bg-indigo-500 transition-colors ${FOCUS_RING}`}
+            className={`pressable min-h-touch px-3 rounded-m bg-ink text-surface text-body-s font-bold ${FOCUS_RING}`}
           >
             Ingresar
           </button>

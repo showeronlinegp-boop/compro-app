@@ -1,10 +1,11 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { type ReactNode, createContext, useContext, useEffect } from 'react';
-import { MemoryRouter } from 'react-router-dom';
+import { Link, MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HostApp } from './HostApp';
 import type { AppModule, HostTool, NavItem } from './contract';
 import { useHostLocation } from './location';
+import { useToast } from './ui/Toast';
 
 // ---------------------------------------------------------------------------
 // Clerk mockeado como en el smoke test, con la sesión conmutable por test.
@@ -62,6 +63,7 @@ const AnotarPage = () => (
   <>
     <h1>Anotar</h1>
     <LocationProbe />
+    <Link to="/demo">Ir a demo</Link>
   </>
 );
 const PrivadaPage = () => <h1>Privada</h1>;
@@ -69,13 +71,7 @@ const PrivadaPage = () => <h1>Privada</h1>;
 const demoNav: NavItem[] = [
   { id: 'demo', to: '/demo', label: 'Demo', icon: '🧪', end: true },
   { id: 'privada', to: '/demo/privada?tab=1', label: 'Privada', icon: '🔒', badge: 2 },
-  {
-    id: 'svg',
-    to: '/demo/svg',
-    label: 'Svg',
-    icon: <svg data-testid="svg-icon" />,
-    iconInTop: true,
-  },
+  { id: 'svg', to: '/demo/svg', label: 'Svg', icon: <svg data-testid="svg-icon" /> },
 ];
 
 const demo: AppModule = {
@@ -108,6 +104,29 @@ const bare: AppModule = {
   routes: [{ id: 'home', path: '', component: () => <h1>Bare</h1>, auth: 'public', title: 'Bare' }],
 };
 
+/** Módulo con 4 items: el 4.º va a "Más". */
+const wide: AppModule = {
+  id: 'wide',
+  label: 'Ancho',
+  basePath: '/wide',
+  routes: [
+    { id: 'uno', path: '', component: () => <h1>Uno</h1>, auth: 'public', title: 'Uno' },
+    {
+      id: 'cuatro',
+      path: 'cuatro',
+      component: () => <h1>Cuatro</h1>,
+      auth: 'public',
+      title: 'Cuatro',
+    },
+  ],
+  useNav: () => [
+    { id: 'uno', to: '/wide', label: 'Uno', end: true },
+    { id: 'dos', to: '/wide/dos', label: 'Dos' },
+    { id: 'tres', to: '/wide/tres', label: 'Tres' },
+    { id: 'cuatro', to: '/wide/cuatro', label: 'Cuatro' },
+  ],
+};
+
 const Tool = () => <div data-testid="host-tool" />;
 const enabledTool: HostTool = { id: 'tool', enabled: true, Component: Tool };
 
@@ -120,7 +139,10 @@ function renderAt(path: string, modules: AppModule[] = [demo, bare], tools?: Hos
 }
 
 const bottomNav = () => screen.queryByRole('navigation', { name: 'Navegación inferior' });
-const topNav = () => screen.getByRole('navigation', { name: 'Principal' });
+const hrefs = (el: HTMLElement) =>
+  within(el)
+    .getAllByRole('link')
+    .map((a) => a.getAttribute('href'));
 
 describe('HostApp', () => {
   beforeEach(() => {
@@ -140,40 +162,69 @@ describe('HostApp', () => {
   it('H1: las rutas de Clerk quedan fuera del layout', () => {
     renderAt('/sign-in/factor-one');
     expect(screen.getByTestId('clerk-sign-in')).toBeDefined();
-    expect(screen.queryByRole('navigation', { name: 'Principal' })).toBeNull();
+    expect(bottomNav()).toBeNull();
+    expect(screen.queryByRole('main')).toBeNull();
   });
 
-  it('H3: un módulo sin useNav no aporta items y no rompe', () => {
+  it('H3: un módulo sin useNav no aporta items: la barra sólo tiene "Más"', () => {
     renderAt('/bare', [bare]);
     expect(screen.getByRole('heading', { name: 'Bare' })).toBeDefined();
-    expect(within(topNav()).queryAllByRole('link')).toHaveLength(0);
-    const bottom = bottomNav();
-    expect(bottom).not.toBeNull();
-    expect(within(bottom as HTMLElement).queryAllByRole('link')).toHaveLength(0);
+    expect(hrefs(bottomNav() as HTMLElement)).toEqual(['/mas']);
   });
 
-  it('H3: top y bottom muestran los mismos items, en el mismo orden y con los mismos to', () => {
+  it('H3: la barra muestra los items del módulo activo, en orden, más "Más"', () => {
     renderAt('/demo');
-    const hrefs = (el: HTMLElement) =>
-      within(el)
-        .getAllByRole('link')
-        .map((a) => a.getAttribute('href'));
-    const top = hrefs(topNav());
-    expect(top).toEqual(['/demo', '/demo/privada?tab=1', '/demo/svg']);
-    expect(hrefs(bottomNav() as HTMLElement)).toEqual(top);
+    expect(hrefs(bottomNav() as HTMLElement)).toEqual([
+      '/demo',
+      '/demo/privada?tab=1',
+      '/demo/svg',
+      '/mas',
+    ]);
   });
 
-  it('H3: texto top con topLabel y bottom con ícono + label; ícono no-string en span aria-hidden', () => {
+  it('H3: en una ruta de otro módulo la barra no mezcla items de demo', () => {
+    renderAt('/bare');
+    expect(hrefs(bottomNav() as HTMLElement)).toEqual(['/mas']);
+  });
+
+  it('H3: ícono en span aria-hidden y contador accesible en el texto', () => {
     renderAt('/demo');
-    const topLinks = within(topNav()).getAllByRole('link');
-    expect(topLinks.map((a) => a.textContent)).toEqual(['Demo', 'Privada (2)', 'Svg']);
-    const svgSpan = within(topNav()).getByTestId('svg-icon').parentElement;
+    const nav = bottomNav() as HTMLElement;
+    const svgSpan = within(nav).getByTestId('svg-icon').parentElement;
     expect(svgSpan?.tagName).toBe('SPAN');
     expect(svgSpan?.getAttribute('aria-hidden')).toBe('true');
+    expect(within(nav).getByRole('link', { name: /Privada \(2\)/ })).toBeDefined();
+    expect(within(nav).getByRole('link', { name: 'Más' })).toBeDefined();
+  });
 
-    const bottomLinks = within(bottomNav() as HTMLElement).getAllByRole('link');
-    expect(bottomLinks[0]?.textContent).toBe('🧪Demo');
-    expect(bottomLinks[1]?.textContent).toBe('🔒Privada');
+  it('nav: con 4 items van 3 a la barra y el 4.º aparece en "Más"', () => {
+    renderAt('/wide', [wide]);
+    expect(hrefs(bottomNav() as HTMLElement)).toEqual(['/wide', '/wide/dos', '/wide/tres', '/mas']);
+
+    fireEvent.click(within(bottomNav() as HTMLElement).getByRole('link', { name: 'Más' }));
+    expect(screen.getByRole('heading', { name: 'Más' })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Cuatro' }));
+    expect(screen.getByRole('heading', { name: 'Cuatro' })).toBeDefined();
+  });
+
+  it('Más: con varios módulos lista las herramientas y marca la activa', () => {
+    renderAt('/demo');
+    fireEvent.click(within(bottomNav() as HTMLElement).getByRole('link', { name: 'Más' }));
+    const tools = screen.getByRole('heading', { name: 'Herramientas' }).closest('section');
+    expect(
+      within(tools as HTMLElement).getByRole('button', { name: /Demo/ }).textContent,
+    ).toContain('Estás acá');
+    // La barra sigue mostrando el módulo de donde vino el usuario.
+    expect(hrefs(bottomNav() as HTMLElement)).toContain('/demo/svg');
+
+    fireEvent.click(within(tools as HTMLElement).getByRole('button', { name: 'Bare' }));
+    expect(screen.getByRole('heading', { name: 'Bare' })).toBeDefined();
+  });
+
+  it('Más: sin sesión ofrece Ingresar', () => {
+    auth.signedIn = false;
+    renderAt('/mas');
+    expect(screen.getByRole('button', { name: 'Ingresar' })).toBeDefined();
   });
 
   it('H1: ruta required sin sesión → RedirectToSignIn', () => {
@@ -189,17 +240,27 @@ describe('HostApp', () => {
     expect(screen.queryByTestId('redirect-sign-in')).toBeNull();
   });
 
-  it('H4: los slots se renderizan dentro del Provider del módulo', () => {
+  it('H4: headerActions sólo en rutas de su módulo y dentro de su Provider', () => {
+    renderAt('/demo');
+    const banner = screen.getByRole('banner');
+    expect(within(banner).getByText('Neggo')).toBeDefined();
+    expect(within(banner).getByTestId('slot').textContent).toBe('valor-del-provider');
+    cleanup();
+
     renderAt('/bare');
-    expect(screen.getByTestId('slot').textContent).toBe('valor-del-provider');
+    expect(screen.queryByRole('banner')).toBeNull();
+    expect(screen.queryByTestId('slot')).toBeNull();
+  });
+
+  it('H4: los overlays se montan en todas las rutas', () => {
+    renderAt('/bare');
     expect(screen.getByTestId('overlay')).toBeDefined();
   });
 
-  it('H1: ruta desconocida → layout con main vacío', () => {
+  it('H1: ruta desconocida → layout con main vacío y barra', () => {
     renderAt('/no-existe');
-    expect(topNav()).toBeDefined();
-    const main = screen.getByRole('main');
-    expect(main.innerHTML).toBe('');
+    expect(screen.getByRole('main').innerHTML).toBe('');
+    expect(bottomNav()).not.toBeNull();
   });
 
   it('H6: useHostLocation completa navItem cuyo to (sin search) matchea la ruta', () => {
@@ -212,33 +273,27 @@ describe('HostApp', () => {
     expect(screen.getByTestId('probe').textContent).toBe('sin-nav|sin-nav');
   });
 
-  it('H7: con hostTools vacío no agrega markup después de la barra', () => {
+  it('H7: con hostTools vacío, lo último del shell es la región del toast', () => {
     const { container } = renderAt('/demo');
     const shell = container.firstElementChild as HTMLElement;
-    expect(shell.lastElementChild?.getAttribute('aria-label')).toBe('Navegación inferior');
+    expect(shell.lastElementChild?.getAttribute('data-testid')).toBe('toast-region');
   });
 
   describe('H8: chrome por ruta', () => {
-    it("en /demo/anotar ('task') no hay barra inferior, el header sigue y la tool está montada", () => {
+    it("en /demo/anotar ('task') no hay barra inferior; header, overlays y tool siguen", () => {
       renderAt('/demo/anotar', [demo, bare], [enabledTool]);
       expect(screen.getByRole('heading', { name: 'Anotar' })).toBeDefined();
       expect(bottomNav()).toBeNull();
-      expect(topNav()).toBeDefined();
-      expect(screen.getByText('🛒 COMPRO')).toBeDefined();
+      expect(screen.getByRole('banner')).toBeDefined();
       expect(screen.getByTestId('slot')).toBeDefined();
       expect(screen.getByTestId('overlay')).toBeDefined();
       expect(screen.getByTestId('host-tool')).toBeDefined();
-      expect(screen.getByRole('main').className).toBe('flex-1');
+      // Sin barra, el toast flota a 20 px del borde.
+      expect(screen.getByTestId('toast-region').className).toContain('bottom-5');
     });
 
-    it('en /demo (sin chrome) la barra está y main reserva su espacio', () => {
+    it('en /demo (sin chrome) la barra está', () => {
       renderAt('/demo');
-      expect(bottomNav()).not.toBeNull();
-      expect(screen.getByRole('main').className).toBe('flex-1 pb-16 lg:pb-0');
-    });
-
-    it('en /no-existe la barra está (full)', () => {
-      renderAt('/no-existe');
       expect(bottomNav()).not.toBeNull();
     });
 
@@ -247,11 +302,68 @@ describe('HostApp', () => {
       expect(bottomNav()).toBeNull();
       expect(providerMounts).toHaveBeenCalledTimes(1);
 
-      fireEvent.click(within(topNav()).getByRole('link', { name: 'Demo' }));
+      fireEvent.click(screen.getByRole('link', { name: 'Ir a demo' }));
 
       expect(screen.getByRole('heading', { name: 'Página demo' })).toBeDefined();
       expect(bottomNav()).not.toBeNull();
       expect(providerMounts).toHaveBeenCalledTimes(1);
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Toast global
+// ---------------------------------------------------------------------------
+const undo = vi.fn();
+
+function ToastPage() {
+  const toast = useToast();
+  return (
+    <button
+      type="button"
+      onClick={() =>
+        toast.show('Anotaste $ 4.200', { action: { label: 'Deshacer', onClick: undo } })
+      }
+    >
+      Disparar
+    </button>
+  );
+}
+
+const toastModule: AppModule = {
+  id: 'toast',
+  label: 'Toast',
+  basePath: '/t',
+  routes: [{ id: 'p', path: '', component: ToastPage, auth: 'public', title: 'T' }],
+};
+
+describe('Toast del host', () => {
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
+    undo.mockClear();
+  });
+
+  it('muestra el mensaje, ejecuta la acción y se va solo a los 3 s', () => {
+    vi.useFakeTimers();
+    renderAt('/t', [toastModule]);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Disparar' }));
+    const region = screen.getByTestId('toast-region');
+    expect(screen.getByRole('status')).toBe(region);
+    expect(region.textContent).toContain('Anotaste $ 4.200');
+    // Con barra inferior flota a 90 px del borde.
+    expect(region.className).toContain('bottom-[90px]');
+
+    fireEvent.click(within(region).getByRole('button', { name: 'Deshacer' }));
+    expect(undo).toHaveBeenCalledTimes(1);
+    expect(region.textContent).toBe('');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Disparar' }));
+    expect(region.textContent).toContain('Anotaste');
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
+    expect(region.textContent).toBe('');
   });
 });

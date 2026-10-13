@@ -62,7 +62,7 @@ const hostTree = Object.fromEntries(
 describe('H5: aislamiento host → dominio', () => {
   it('escanea el árbol real de host/', () => {
     expect(Object.keys(hostTree)).toContain('./HostApp.tsx');
-    expect(Object.keys(hostTree)).toContain('./nav/TopNav.tsx');
+    expect(Object.keys(hostTree)).toContain('./nav/BottomNav.tsx');
   });
 
   it('ningún archivo de host/ (salvo registry.ts) importa de modules/', () => {

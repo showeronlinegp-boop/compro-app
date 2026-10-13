@@ -2,9 +2,57 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Tokens del sistema de diseño Neggo — fuente de verdad: docs/design-system.md §2 */
+:root {
+  /* Base */
+  --bg: #eef1f0;
+  --surface: #ffffff;
+  --surface-muted: #f3f5f4;
+  --ink: #15191b;
+  --ink-muted: #4b5459;
+  --ink-disabled: #6b7478;
+  --line: #e3e8e7;
+  --border: #c3cbc9;
+  --border-strong: #d5dbda;
+  --avatar: #e3e8e7;
+  --disabled: #9aa4a2;
+  --on-dark-muted: #c9d2d0;
+  --on-dark-body: #dce3e1;
+  --focus: #1b4fa8;
+
+  /* Estados */
+  --ok: #1e6b45;
+  --ok-bg: #dcefe4;
+  --warn: #6b3a00;
+  --warn-strong: #8a4b00;
+  --warn-bg: #fff1dc;
+  --late: #8a2e0a;
+  --late-bg: #fbe3d6;
+  --danger: #a1261b;
+
+  /* Semánticos de módulo */
+  --fiado: #b4430c;
+  --pago: #1b4fa8;
+  --pago-hover: #133b80;
+  --whatsapp: #1e6b45;
+  --whatsapp-bubble: #dcf3e4;
+
+  /* Tipografía */
+  --font-display: 'Archivo', system-ui, sans-serif;
+  --font-body: 'Atkinson Hyperlegible', system-ui, sans-serif;
+}
+
 @layer base {
   * { box-sizing: border-box; }
-  body { font-family: system-ui, -apple-system, sans-serif; }
+  html,
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    -webkit-tap-highlight-color: transparent;
+  }
 }
 
 /* Respect reduced-motion preference — disable all CSS animations and transitions */
@@ -27,5 +75,9 @@
   }
   .scrollbar-thin::-webkit-scrollbar { width: 4px; }
   .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-  .scrollbar-thin::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+  .pt-safe { padding-top: env(safe-area-inset-top); }
+  /* Estado presionado de todo lo tocable (guía §4): bajar el brillo, sin animación. */
+  .pressable:active:not(:disabled) { filter: brightness(0.92); }
 }

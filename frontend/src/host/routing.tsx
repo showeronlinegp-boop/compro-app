@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import { type ReactNode, Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { RequireAuth } from './auth/RequireAuth';
 import type { AppModule, ModuleRoute, RouteComponent } from './contract';
@@ -44,10 +44,28 @@ export function routeElement(r: ModuleRoute) {
   return el;
 }
 
-/** `<Routes>` internas del layout, generadas sólo desde los módulos (H2). Sin ruta `*` (H1). */
-export function ModuleRoutes({ modules }: { modules: readonly AppModule[] }) {
+/** Ruta propia del host (p. ej. "Más"), montada junto a las de los módulos. */
+export interface HostRoute {
+  path: string;
+  element: ReactNode;
+}
+
+/**
+ * `<Routes>` internas del layout, generadas desde los módulos (H2) más las
+ * rutas propias del host. Sin ruta `*` (H1).
+ */
+export function ModuleRoutes({
+  modules,
+  hostRoutes = [],
+}: {
+  modules: readonly AppModule[];
+  hostRoutes?: readonly HostRoute[];
+}) {
   return (
     <Routes>
+      {hostRoutes.map(({ path, element }) => (
+        <Route key={`host:${path}`} path={path} element={element} />
+      ))}
       {flattenRoutes(modules).map(({ module, route, fullPath }) => (
         <Route key={`${module.id}:${route.id}`} path={fullPath} element={routeElement(route)} />
       ))}
