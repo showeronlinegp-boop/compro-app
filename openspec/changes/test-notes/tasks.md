@@ -22,9 +22,9 @@
 
 ## Commit 3 — `feat(backend): CLI de notas de prueba (npm run notes)`
 
-- [ ] 3.1 `domain/cli.ts`: `parseCliArgs`, `formatLista`, `formatVer` (bloque DATO, modo de trabajo, errores/API), salida `--json` (A7)
-- [ ] 3.2 `domain/cli.test.ts`: escenarios "Estado inválido", "Modo directo en ver", id inválido, `--json` estable (A7)
-- [ ] 3.3 `infrastructure/test-notes-cli.module.ts` + `scripts/test-notes.ts` (gate `TEST_NOTES_ENABLED`, stdin en `responder`, exit ≠ 0 en errores) + script `notes` en `package.json` (A7). Verif: `VB`
+- [x] 3.1 `domain/cli.ts`: `parseCliArgs`, `formatLista`, `formatVer` (bloque DATO, modo de trabajo, errores/API), salida `--json` (A7)
+- [x] 3.2 `domain/cli.test.ts`: escenarios "Estado inválido", "Modo directo en ver", id inválido, `--json` estable (A7)
+- [x] 3.3 `infrastructure/test-notes-cli.module.ts` + `scripts/test-notes.ts` (gate `TEST_NOTES_ENABLED`, stdin en `responder`, exit ≠ 0 en errores) + script `notes` en `package.json` (A7). Verif: `VB`
 - [ ] 3.4 🖐 `echo "Listo" | npm run notes -- responder <id> para_revisar` y `npm run notes -- ver <id>` contra la base local (A7)
 
 ## Commit 4 — `feat(frontend): lógica pura de test-notes`
