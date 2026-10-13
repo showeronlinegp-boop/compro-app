@@ -55,8 +55,9 @@ gaps_to_validate:  # el resto queda para feat/design-system
   - "Toast global del host (offset segun chrome) -> feat/design-system"
 next_phase: apply
 apply_progress:
-  done: [commit-1, commit-2]
-  pending: [commit-3, commit-4, commit-5]
+  done: [commit-1, commit-2, commit-3]
+  pending: [commit-4, commit-5]
   log:
     - "commit 1 (1.1-1.4): git mv segun el mapa + especificadores; lista real de archivos = la del design, sin desvios. typecheck OK, tests 10 files / 66 passed"
     - "commit 2 (2.1-2.2): host/http.ts con BASE (no exportado), setTokenGetter, req, reqOptional (exportados) movidos literal; api.ts importa de ../../host/http; AuthTokenBridge importa de ../http (fin de la violacion transitoria). typecheck OK, tests 10 files / 66 passed"
+    - "commit 3 (3.1-3.12): host/contract.ts (AppModule, ModuleRoute+chrome, NavItem.icon string|ReactNode, HostTool, ResolvedLocation), routing.tsx, auth/{RequireAuth,AccountMenu} copiados literal de App.tsx, nav/{NavItemsProvider,TopNav,BottomNav,labels}, location.ts (resolveLocation pura con matchRoutes, chromeOf, useHostLocation), tools.tsx, ModuleProviders, HostLayout, HostApp. App.tsx sin cambios. Desvios menores: HostApp/HostLayout/HostToolsOutlet aceptan prop opcional tools (default hostTools) para inyectar una HostTool habilitada en tests H8; useHostLocation toma los modulos de NavItemsProvider (todavia no existe registry); isolation.test usa import.meta.glob ?raw con normalize propio (no hay @types/node) y se excluye a si mismo; useNavItems() agregado como helper. typecheck OK, tests 16 files / 113 passed (66 + 47 nuevos)"

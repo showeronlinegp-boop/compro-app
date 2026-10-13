@@ -16,18 +16,18 @@
 
 ## Commit 3 — `refactor(frontend): contrato AppModule y HostApp genérico` (`App.tsx` sin cambios)
 
-- [ ] 3.1 `host/contract.ts`: `AppModule`, `ModuleRoute`, `NavItem` (con `icon?: string | ReactNode`, brecha #7), `HostTool`, `ResolvedLocation` (H2, H3)
-- [ ] 3.2 `host/routing.tsx`: `joinPath`, `flattenRoutes`, `isLazyComponent`, `routeElement`, `ModuleRoutes` (H1, H2)
-- [ ] 3.3 `host/auth/RequireAuth.tsx` y `host/auth/AccountMenu.tsx` copiados literal de `App.tsx` (H1, H5)
-- [ ] 3.4 `host/nav/{NavItemsProvider,TopNav,BottomNav,labels}.tsx|ts` con clases `NavLink` textuales; `topLabel` concatena el ícono sólo si es `string`; `TopNav` (con `iconInTop`) renderiza un ícono no-`string` en `<span aria-hidden>` antes del texto (H3)
-- [ ] 3.5 `host/location.ts`: `resolveLocation(pathname, modules)` pura con `matchRoutes`; `useHostLocation` completa `navItem` (H6)
-- [ ] 3.6 `host/tools.tsx`: `hostTools = []`, `HostToolsOutlet` → `null` si vacío (H7)
-- [ ] 3.7 `host/ModuleProviders.tsx`, `host/HostLayout.tsx`, `host/HostApp.tsx` (`modules` por props) (H1, H4). Verif: `V`
-- [ ] 3.8 Tests unit: `nav/labels.test.ts` (incluye `'Intereses '` y un ícono no-`string` que no se concatena), `routing.test.ts` (`joinPath`), `location.test.ts` (específico, `null`), `tools.test.tsx` (vacío / deshabilitada) (H3, H6, H7). Verif: `V`
-- [ ] 3.9 `HostApp.test.tsx` con módulos falsos: `/demo` (H2), sin `useNav` (H3), top = bottom `to` (H3), `required` + `SignedOut` → `RedirectToSignIn` (H1), slot lee Provider (H4), `/no-existe` → `main` vacío (H1), `useHostLocation` con/sin `navItem` (H6). Verif: `V`
-- [ ] 3.10 `host/isolation.test.ts`: `findViolations` + árbol real `[]` + caso sintético `['x.ts']` (H5). Verif: `V`
-- [ ] 3.11 Chrome por ruta: `RouteChrome` + `ModuleRoute.chrome?` en `contract.ts`; `chromeOf(loc)` en `location.ts` (`null`/omitido → `'full'`); `HostLayout` con `'task'` no renderiza la nav "Navegación inferior" y `<main>` pasa de `flex-1 pb-16 lg:pb-0` a `flex-1`; header, overlays y `HostToolsOutlet` siguen montados (H8). Verif: `V`
-- [ ] 3.12 Tests H8: `location.test.ts` suma `chromeOf` (`null`, sin campo, `'task'`); `HostApp.test.tsx` con módulo falso `/demo` + `/demo/anotar` (`chrome: 'task'`): en `/demo/anotar` no hay "Navegación inferior", el header sigue y una `HostTool` habilitada está montada; en `/demo` y `/no-existe` la barra está; navegar de `/demo/anotar` a `/demo` la restaura sin remontar el Provider (H8). Verif: `V`
+- [x] 3.1 `host/contract.ts`: `AppModule`, `ModuleRoute`, `NavItem` (con `icon?: string | ReactNode`, brecha #7), `HostTool`, `ResolvedLocation` (H2, H3)
+- [x] 3.2 `host/routing.tsx`: `joinPath`, `flattenRoutes`, `isLazyComponent`, `routeElement`, `ModuleRoutes` (H1, H2)
+- [x] 3.3 `host/auth/RequireAuth.tsx` y `host/auth/AccountMenu.tsx` copiados literal de `App.tsx` (H1, H5)
+- [x] 3.4 `host/nav/{NavItemsProvider,TopNav,BottomNav,labels}.tsx|ts` con clases `NavLink` textuales; `topLabel` concatena el ícono sólo si es `string`; `TopNav` (con `iconInTop`) renderiza un ícono no-`string` en `<span aria-hidden>` antes del texto (H3)
+- [x] 3.5 `host/location.ts`: `resolveLocation(pathname, modules)` pura con `matchRoutes`; `useHostLocation` completa `navItem` (H6)
+- [x] 3.6 `host/tools.tsx`: `hostTools = []`, `HostToolsOutlet` → `null` si vacío (H7)
+- [x] 3.7 `host/ModuleProviders.tsx`, `host/HostLayout.tsx`, `host/HostApp.tsx` (`modules` por props) (H1, H4). Verif: `V`
+- [x] 3.8 Tests unit: `nav/labels.test.ts` (incluye `'Intereses '` y un ícono no-`string` que no se concatena), `routing.test.ts` (`joinPath`), `location.test.ts` (específico, `null`), `tools.test.tsx` (vacío / deshabilitada) (H3, H6, H7). Verif: `V`
+- [x] 3.9 `HostApp.test.tsx` con módulos falsos: `/demo` (H2), sin `useNav` (H3), top = bottom `to` (H3), `required` + `SignedOut` → `RedirectToSignIn` (H1), slot lee Provider (H4), `/no-existe` → `main` vacío (H1), `useHostLocation` con/sin `navItem` (H6). Verif: `V`
+- [x] 3.10 `host/isolation.test.ts`: `findViolations` + árbol real `[]` + caso sintético `['x.ts']` (H5). Verif: `V`
+- [x] 3.11 Chrome por ruta: `RouteChrome` + `ModuleRoute.chrome?` en `contract.ts`; `chromeOf(loc)` en `location.ts` (`null`/omitido → `'full'`); `HostLayout` con `'task'` no renderiza la nav "Navegación inferior" y `<main>` pasa de `flex-1 pb-16 lg:pb-0` a `flex-1`; header, overlays y `HostToolsOutlet` siguen montados (H8). Verif: `V`
+- [x] 3.12 Tests H8: `location.test.ts` suma `chromeOf` (`null`, sin campo, `'task'`); `HostApp.test.tsx` con módulo falso `/demo` + `/demo/anotar` (`chrome: 'task'`): en `/demo/anotar` no hay "Navegación inferior", el header sigue y una `HostTool` habilitada está montada; en `/demo` y `/no-existe` la barra está; navegar de `/demo/anotar` a `/demo` la restaura sin remontar el Provider (H8). Verif: `V`
 
 ## Commit 4 — `refactor(frontend): comparador como módulo del host`
 
