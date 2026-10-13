@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Button } from '../../host/ui/Button';
+import { IconPlus } from '../../host/ui/icons';
 import { formatMoney } from '../../host/ui/format';
 import { Avatar, Card, EmptyNote, ListRow, Pill } from '../../host/ui/surfaces';
 import type { Cliente, Movimiento } from './api';
@@ -78,6 +79,32 @@ export function FilaMovimiento({
         </span>
       }
     />
+  );
+}
+
+// ─── Acciones de fiado y pago ─────────────────────────────────────────────────
+
+/**
+ * Botones "Anotar fiado" / "Registrar pago". En el inicio son grandes (76 px);
+ * en la ficha, compactos y con el cliente ya elegido.
+ */
+export function AccionesMovimiento({
+  onAnotar,
+  compacto = false,
+}: {
+  onAnotar: (tipo: 'fiado' | 'pago') => void;
+  compacto?: boolean;
+}) {
+  const size = compacto ? 'l' : 'xl';
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      <Button variant="fiado" size={size} icon={<IconPlus />} onClick={() => onAnotar('fiado')}>
+        {compacto ? 'Fiado' : 'Anotar fiado'}
+      </Button>
+      <Button variant="pago" size={size} icon={<IconPlus />} onClick={() => onAnotar('pago')}>
+        {compacto ? 'Pago' : 'Registrar pago'}
+      </Button>
+    </div>
   );
 }
 
