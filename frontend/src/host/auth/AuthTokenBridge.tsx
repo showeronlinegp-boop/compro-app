@@ -1,6 +1,6 @@
 import { useAuth } from '@clerk/clerk-react';
 import { useEffect } from 'react';
-import { setTokenGetter } from '../api';
+import { setTokenGetter } from '../../modules/comparador/api';
 
 /**
  * AuthTokenBridge — registers Clerk's getToken with api.ts so every fetch can

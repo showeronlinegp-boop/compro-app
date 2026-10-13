@@ -4,10 +4,10 @@
 
 ## Commit 1 — `refactor(frontend): mover dominio a modules/comparador y UI compartida a host` (C6)
 
-- [ ] 1.1 `git mv` de dominio según el mapa del design: `api.ts`, `types/`, `supers*`, `handoff*`, `lib/zone.ts`, `contexts/CartContext*`, `pages/{Cart,Compare,Explorar,Intereses,Onboarding,Planner}*`, `components/*` de dominio (+`compare/`, `onboarding/`) → `src/modules/comparador/` (C6)
-- [ ] 1.2 `git mv` de host: `AuthTokenBridge`, `SignInPage`, `SignUpPage` → `host/auth/`; `styles.ts`, `EmptyState*` → `host/ui/`; `components/layout/*` → `host/ui/layout/` (C6, H5)
-- [ ] 1.3 Ajustar SÓLO especificadores en `App.tsx`, `host/auth/AuthTokenBridge.tsx`, `pages/*`, `components/{CartDrawer,PromoPanel,compare/CompareView}` (`vi.mock` no se tocan) (C6). Verif: `V`
-- [ ] 1.4 Commit y verificar: `git show -M --stat HEAD` = renames + `App.tsx` M; `git show -M HEAD | rg '^[+-][^+-]' | rg -v "from '|import\('"` vacío (C6 "Commit sólo de renombres")
+- [x] 1.1 `git mv` de dominio según el mapa del design: `api.ts`, `types/`, `supers*`, `handoff*`, `lib/zone.ts`, `contexts/CartContext*`, `pages/{Cart,Compare,Explorar,Intereses,Onboarding,Planner}*`, `components/*` de dominio (+`compare/`, `onboarding/`) → `src/modules/comparador/` (C6)
+- [x] 1.2 `git mv` de host: `AuthTokenBridge`, `SignInPage`, `SignUpPage` → `host/auth/`; `styles.ts`, `EmptyState*` → `host/ui/`; `components/layout/*` → `host/ui/layout/` (C6, H5)
+- [x] 1.3 Ajustar SÓLO especificadores en `App.tsx`, `host/auth/AuthTokenBridge.tsx`, `pages/*`, `components/{CartDrawer,PromoPanel,compare/CompareView}` (`vi.mock` no se tocan) (C6). Verif: `V`
+- [x] 1.4 Commit y verificar: `git show -M --stat HEAD` = renames + `App.tsx` M; `git show -M HEAD | rg '^[+-][^+-]' | rg -v "from '|import\('"` vacío (C6 "Commit sólo de renombres")
 
 ## Commit 2 — `refactor(frontend): extraer núcleo HTTP a host/http` (H5)
 

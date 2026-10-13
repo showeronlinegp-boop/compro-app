@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
-import { EmptyState } from '../components/EmptyState';
+import { EmptyState } from '../../../host/ui/EmptyState';
 import { CompareView } from '../components/compare/CompareView';
-import { PageContainer } from '../components/layout/PageContainer';
-import { FOCUS_RING, PRIMARY_CTA } from '../styles';
+import { PageContainer } from '../../../host/ui/layout/PageContainer';
+import { FOCUS_RING, PRIMARY_CTA } from '../../../host/ui/styles';
 import { pesos, superCfg } from '../supers';
 import type { CompareResult } from '../types/api';
 

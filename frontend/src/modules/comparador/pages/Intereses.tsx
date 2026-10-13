@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { EmptyState } from '../components/EmptyState';
+import { EmptyState } from '../../../host/ui/EmptyState';
 import FreqModal from '../components/FreqModal';
-import { PageContainer } from '../components/layout/PageContainer';
-import { FOCUS_RING, PRIMARY_CTA } from '../styles';
+import { PageContainer } from '../../../host/ui/layout/PageContainer';
+import { FOCUS_RING, PRIMARY_CTA } from '../../../host/ui/styles';
 import { pesos, superCfg } from '../supers';
 import type { Interest, Product } from '../types/api';
 

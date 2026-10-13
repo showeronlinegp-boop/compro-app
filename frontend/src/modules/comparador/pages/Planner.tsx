@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
-import { EmptyState } from '../components/EmptyState';
+import { EmptyState } from '../../../host/ui/EmptyState';
 import RecommendationBanner from '../components/RecommendationBanner';
-import { PageContainer } from '../components/layout/PageContainer';
-import { FOCUS_RING, PRIMARY_CTA } from '../styles';
+import { PageContainer } from '../../../host/ui/layout/PageContainer';
+import { FOCUS_RING, PRIMARY_CTA } from '../../../host/ui/styles';
 import { CATEGORY_LABEL, FREQ_OPTIONS, pesos, superCfg } from '../supers';
 import type { Product, ShoppingItem, WeeklyGroup } from '../types/api';
 

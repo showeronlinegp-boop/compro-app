@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
-import { EmptyState } from '../components/EmptyState';
+import { EmptyState } from '../../../host/ui/EmptyState';
 import { PromoNudge } from '../components/compare';
 import { CompareView } from '../components/compare/CompareView';
-import { PageContainer } from '../components/layout/PageContainer';
+import { PageContainer } from '../../../host/ui/layout/PageContainer';
 import { useCart } from '../contexts/CartContext';
 import type { HandoffItem, HandoffResult } from '../handoff';
 import { buildHandoffUrl } from '../handoff';
-import { FOCUS_RING, PRIMARY_CTA } from '../styles';
+import { FOCUS_RING, PRIMARY_CTA } from '../../../host/ui/styles';
 import { superCfg } from '../supers';
 import type { CompareResult } from '../types/api';
 

@@ -8,20 +8,20 @@ import {
 } from '@clerk/clerk-react';
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import { api } from './api';
-import { AuthTokenBridge } from './components/AuthTokenBridge';
-import { CartDrawer } from './components/CartDrawer';
-import { LocationSelector } from './components/LocationSelector';
-import { CartProvider, useCart } from './contexts/CartContext';
-import Cart from './pages/Cart';
-import Compare from './pages/Compare';
-import Explorar from './pages/Explorar';
-import Intereses from './pages/Intereses';
-import Onboarding from './pages/Onboarding';
-import Planner from './pages/Planner';
-import SignInPage from './pages/SignInPage';
-import SignUpPage from './pages/SignUpPage';
-import { FOCUS_RING } from './styles';
+import { api } from './modules/comparador/api';
+import { AuthTokenBridge } from './host/auth/AuthTokenBridge';
+import { CartDrawer } from './modules/comparador/components/CartDrawer';
+import { LocationSelector } from './modules/comparador/components/LocationSelector';
+import { CartProvider, useCart } from './modules/comparador/contexts/CartContext';
+import Cart from './modules/comparador/pages/Cart';
+import Compare from './modules/comparador/pages/Compare';
+import Explorar from './modules/comparador/pages/Explorar';
+import Intereses from './modules/comparador/pages/Intereses';
+import Onboarding from './modules/comparador/pages/Onboarding';
+import Planner from './modules/comparador/pages/Planner';
+import SignInPage from './host/auth/SignInPage';
+import SignUpPage from './host/auth/SignUpPage';
+import { FOCUS_RING } from './host/ui/styles';
 import type {
   EnrichStatus,
   Interest,
@@ -31,7 +31,7 @@ import type {
   SuperKey,
   SyncLog,
   UserProfile,
-} from './types/api';
+} from './modules/comparador/types/api';
 
 // ─── SyncPanel ────────────────────────────────────────────────────────────────
 // Read-only status panel. POST triggers removed in PR2 (Decision 5).

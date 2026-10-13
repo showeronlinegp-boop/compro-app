@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FOCUS_RING } from '../styles';
+import { FOCUS_RING } from '../../../host/ui/styles';
 import { superCfg } from '../supers';
 import type { PromoOffer } from '../types/api';
 
