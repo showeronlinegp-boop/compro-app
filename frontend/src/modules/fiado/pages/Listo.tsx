@@ -5,10 +5,12 @@ import { useGoBack } from '../../../host/ui/ScreenHeader';
 import { useToast } from '../../../host/ui/Toast';
 import { formatMoney } from '../../../host/ui/format';
 import { IconCheck } from '../../../host/ui/icons';
-import { Card, Notice } from '../../../host/ui/surfaces';
+import { Card, Notice, WhatsAppBubble } from '../../../host/ui/surfaces';
 import { fiadoApi, mensajeDeError } from '../api';
+import { abrirWhatsApp, comprobante } from '../mensajes';
 import { RUTAS } from '../rutas';
 import { primerNombre, textoSaldo } from '../textos';
+import { useCarga } from '../useCarga';
 import type { EstadoListo } from './Anotar';
 
 /** Más tiempo que un toast común: tiene que alcanzar para tocar "Deshacer". */
@@ -25,6 +27,7 @@ export default function Listo() {
   const estado = location.state as EstadoListo | null;
   const volver = useGoBack(RUTAS.inicio);
   const toast = useToast();
+  const ajustes = useCarga(() => fiadoApi.ajustes(), []);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: se ofrece una sola vez por movimiento
   useEffect(() => {
@@ -91,8 +94,33 @@ export default function Listo() {
         </Notice>
       )}
 
-      <Button variant="soft" size="l" block onClick={volver}>
-        Terminar
+      {ajustes.data && (
+        <>
+          <WhatsAppBubble
+            label="Comprobante"
+            text={comprobante(tipo, Math.abs(movimiento.monto), cliente, ajustes.data)}
+          />
+          <Button
+            variant="whatsapp"
+            size="l"
+            block
+            className="min-h-[58px]"
+            onClick={() => {
+              if (!ajustes.data) return;
+              abrirWhatsApp(
+                cliente.whatsapp,
+                comprobante(tipo, Math.abs(movimiento.monto), cliente, ajustes.data),
+              );
+              volver();
+            }}
+          >
+            Enviar por WhatsApp
+          </Button>
+        </>
+      )}
+
+      <Button variant="soft" size="m" block onClick={volver}>
+        Ahora no
       </Button>
     </div>
   );

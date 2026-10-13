@@ -1,17 +1,20 @@
 import { createElement } from 'react';
 import type { AppModule, NavItem } from '../../host/contract';
-import { IconClients, IconHome } from '../../host/ui/icons';
+import { IconClients, IconHome, IconSettings } from '../../host/ui/icons';
 import { AnotarFiado, RegistrarPago } from './pages/Anotar';
+import Ajustes from './pages/Ajustes';
 import Clientes from './pages/Clientes';
 import Ficha from './pages/Ficha';
 import Inicio from './pages/Inicio';
 import Listo from './pages/Listo';
 import NuevoCliente from './pages/NuevoCliente';
+import Recordar from './pages/Recordar';
 import { BASE, RUTAS } from './rutas';
 
 const nav: NavItem[] = [
   { id: 'inicio', to: RUTAS.inicio, label: 'Inicio', icon: createElement(IconHome), end: true },
   { id: 'clientes', to: RUTAS.clientes, label: 'Clientes', icon: createElement(IconClients) },
+  { id: 'ajustes', to: RUTAS.ajustes, label: 'Ajustes', icon: createElement(IconSettings) },
 ];
 
 /**
@@ -59,6 +62,15 @@ export const fiado: AppModule = {
       title: 'Listo',
       chrome: 'task',
     },
+    {
+      id: 'recordar',
+      path: 'recordar/:id',
+      component: Recordar,
+      auth: 'required',
+      title: 'Recordar pago',
+      chrome: 'task',
+    },
+    { id: 'ajustes', path: 'ajustes', component: Ajustes, auth: 'required', title: 'Ajustes' },
   ],
   useNav: () => nav,
 };

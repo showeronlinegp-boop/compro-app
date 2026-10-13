@@ -1,0 +1,233 @@
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import type { ReactNode } from 'react';
+import { MemoryRouter, useLocation } from 'react-router-dom';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { HostApp } from '../../host/HostApp';
+import type { Ajustes, Cliente, Resumen } from './api';
+import { fiado } from './index';
+import { comprobante, linkWhatsApp, recordatorio, renderPlantilla } from './mensajes';
+
+vi.mock('@clerk/clerk-react', () => ({
+  SignedIn: ({ children }: { children: ReactNode }) => children,
+  SignedOut: () => null,
+  RedirectToSignIn: () => null,
+  UserButton: () => null,
+  SignInButton: ({ children }: { children: ReactNode }) => children,
+  SignIn: () => null,
+  SignUp: () => null,
+}));
+
+const m = vi.hoisted(() => ({
+  resumen: vi.fn(),
+  ajustes: vi.fn(),
+  ficha: vi.fn(),
+  recordar: vi.fn(),
+  guardarAjustes: vi.fn(),
+}));
+
+vi.mock('./api', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./api')>();
+  return { ...actual, fiadoApi: { ...actual.fiadoApi, ...m } };
+});
+
+const ajustes: Ajustes = {
+  comercio: 'Kiosco Lu',
+  alias: 'kiosco.lu',
+  dias_deuda_vieja: 30,
+  plantilla_fiado:
+    'Hola {nombre}, anoté {monto} en tu cuenta de {comercio}. Tu saldo es {saldo}.\n\nHecho con Neggo',
+  plantilla_pago:
+    'Hola {nombre}, registré tu pago de {monto}. Tu saldo es {saldo}. ¡Gracias!\n\nHecho con Neggo',
+  plantilla_recordatorio:
+    'Hola {nombre}, te recuerdo que tenés un saldo de {saldo} en {comercio}. Podés pagar por transferencia al alias {alias}. ¡Gracias!\n\nHecho con Neggo',
+};
+
+const cliente = (over: Partial<Cliente> = {}): Cliente => ({
+  id: 1,
+  nombre: 'Marta Giménez',
+  telefono: '11 1234-5678',
+  whatsapp: '5491112345678',
+  etiqueta: null,
+  limite: null,
+  proximo_cobro: null,
+  saldo: 42300,
+  dias_sin_pagar: 18,
+  excede_limite: false,
+  ...over,
+});
+
+function Donde() {
+  const loc = useLocation();
+  return <div data-testid="donde">{loc.pathname}</div>;
+}
+
+function renderAt(entries: (string | { pathname: string; state: unknown })[]) {
+  return render(
+    <MemoryRouter initialEntries={entries} initialIndex={entries.length - 1}>
+      <HostApp modules={[fiado]} />
+      <Donde />
+    </MemoryRouter>,
+  );
+}
+
+const donde = () => screen.getByTestId('donde').textContent;
+let open: { mock: { calls: unknown[][] }; mockRestore: () => void };
+
+beforeEach(() => {
+  m.ajustes.mockResolvedValue(ajustes);
+  m.ficha.mockResolvedValue({ cliente: cliente(), historial: [] });
+  open = vi.spyOn(window, 'open').mockImplementation(() => null);
+});
+
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+  open.mockRestore();
+});
+
+describe('mensajes', () => {
+  it('comprobante con primer nombre, monto y saldo', () => {
+    expect(comprobante('fiado', 4200, cliente(), ajustes)).toBe(
+      'Hola Marta, anoté $ 4.200 en tu cuenta de Kiosco Lu. Tu saldo es $ 42.300.\n\nHecho con Neggo',
+    );
+    expect(comprobante('pago', 500, cliente({ saldo: -500 }), ajustes)).toContain(
+      'Tu saldo es $ 500 a favor.',
+    );
+  });
+
+  it('recordatorio con alias; la firma se agrega si la borraron', () => {
+    expect(recordatorio(cliente(), ajustes)).toContain('al alias kiosco.lu');
+    expect(renderPlantilla('Hola {nombre}', { nombre: 'Ana' })).toBe('Hola Ana\n\nHecho con Neggo');
+  });
+
+  it('link de wa.me con y sin número', () => {
+    expect(linkWhatsApp('5491112345678', 'Hola Ana')).toBe(
+      'https://wa.me/5491112345678?text=Hola%20Ana',
+    );
+    expect(linkWhatsApp(null, 'Hola')).toBe('https://wa.me/?text=Hola');
+  });
+});
+
+describe('Listo: comprobante por WhatsApp', () => {
+  it('muestra la burbuja y "Enviar por WhatsApp" abre wa.me con el comprobante', async () => {
+    const estado = {
+      tipo: 'fiado',
+      resultado: {
+        movimiento: {
+          id: 50,
+          cliente_id: 1,
+          cliente_nombre: 'Marta Giménez',
+          tipo: 'fiado',
+          monto: 4200,
+          nota: null,
+          created_at: '2026-10-13T17:00:00Z',
+          corrige_id: null,
+          corregido_por: null,
+        },
+        cliente: cliente(),
+      },
+    };
+    renderAt(['/fiado/clientes/1', { pathname: '/fiado/listo', state: estado }]);
+
+    expect(await screen.findByText(/anoté \$ 4\.200 en tu cuenta de Kiosco Lu/)).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar por WhatsApp' }));
+    const url = String(open.mock.calls[0]?.[0]);
+    expect(url.startsWith('https://wa.me/5491112345678?text=')).toBe(true);
+    expect(decodeURIComponent(url)).toContain('Hecho con Neggo');
+    expect(donde()).toBe('/fiado/clientes/1');
+  });
+});
+
+describe('Recordar pago', () => {
+  it('abre WhatsApp con el recordatorio, marca recordado y vuelve', async () => {
+    m.recordar.mockResolvedValue({ cliente_id: 1, enviado_at: '2026-10-13T17:00:00Z' });
+    m.resumen.mockResolvedValue({ total: 0, clientes_con_deuda: 0, para_cobrar: [], ultimos: [] });
+    renderAt(['/fiado', '/fiado/recordar/1']);
+
+    expect(await screen.findByText(/te recuerdo que tenés un saldo de \$ 42\.300/)).toBeDefined();
+    expect(screen.queryByRole('navigation', { name: 'Navegación inferior' })).toBeNull();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Abrir WhatsApp' }));
+    });
+    expect(String(open.mock.calls[0]?.[0])).toContain('https://wa.me/5491112345678?text=');
+    expect(m.recordar).toHaveBeenCalledWith(1);
+    await waitFor(() => expect(donde()).toBe('/fiado'));
+    expect(screen.getByTestId('toast-region').textContent).toContain('le recordaste a Marta');
+  });
+
+  it('sin celular válido avisa que se elige el contacto', async () => {
+    m.ficha.mockResolvedValue({ cliente: cliente({ whatsapp: null }), historial: [] });
+    renderAt(['/fiado/recordar/1']);
+    expect(await screen.findByText(/vas a elegir el contacto/)).toBeDefined();
+  });
+});
+
+describe('Para cobrar hoy', () => {
+  it('"Recordar" abre la pantalla y "Recordado" se muestra en verde', async () => {
+    const resumen: Resumen = {
+      total: 50000,
+      clientes_con_deuda: 2,
+      para_cobrar: [
+        { ...cliente(), recordado_hoy: false },
+        { ...cliente({ id: 2, nombre: 'Beto' }), recordado_hoy: true },
+      ],
+      ultimos: [],
+    };
+    m.resumen.mockResolvedValue(resumen);
+    renderAt(['/fiado']);
+    const lista = await screen.findByRole('list', { name: 'Para cobrar hoy' });
+    expect(within(lista).getByText('Recordado').className).toContain('text-ok');
+    expect(within(lista).getAllByRole('button', { name: 'Recordar' })).toHaveLength(1);
+    fireEvent.click(within(lista).getByRole('button', { name: 'Recordar' }));
+    expect(donde()).toBe('/fiado/recordar/1');
+  });
+});
+
+describe('Ficha', () => {
+  it('"Recordar" sólo aparece si debe algo', async () => {
+    renderAt(['/fiado/clientes/1']);
+    expect(await screen.findByRole('button', { name: 'Recordar' })).toBeDefined();
+    cleanup();
+    m.ficha.mockResolvedValue({
+      cliente: cliente({ saldo: 0, dias_sin_pagar: null }),
+      historial: [],
+    });
+    renderAt(['/fiado/clientes/1']);
+    await screen.findByText('Todavía no hay movimientos.');
+    expect(screen.queryByRole('button', { name: 'Recordar' })).toBeNull();
+  });
+});
+
+describe('Ajustes', () => {
+  it('carga, edita y guarda; "Volver al mensaje original" vacía la plantilla', async () => {
+    m.guardarAjustes.mockImplementation(async (p: Partial<Ajustes>) => ({ ...ajustes, ...p }));
+    renderAt(['/fiado/ajustes']);
+
+    const comercio = (await screen.findByLabelText('Nombre del comercio')) as HTMLInputElement;
+    expect(comercio.value).toBe('Kiosco Lu');
+    fireEvent.change(comercio, { target: { value: 'Almacén Rosa' } });
+    fireEvent.change(screen.getByLabelText('Aviso de deuda vieja (días)'), {
+      target: { value: '45 días' },
+    });
+    fireEvent.click(
+      screen.getAllByRole('button', { name: 'Volver al mensaje original' })[1] as HTMLElement,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+    });
+    expect(m.guardarAjustes).toHaveBeenCalledWith(
+      expect.objectContaining({
+        comercio: 'Almacén Rosa',
+        alias: 'kiosco.lu',
+        dias_deuda_vieja: 45,
+        plantilla_pago: '',
+      }),
+    );
+    expect(screen.getByTestId('toast-region').textContent).toContain('Guardaste los cambios.');
+    const nav = screen.getByRole('navigation', { name: 'Navegación inferior' });
+    expect(within(nav).getByRole('link', { name: 'Ajustes' }).getAttribute('aria-current')).toBe(
+      'page',
+    );
+  });
+});

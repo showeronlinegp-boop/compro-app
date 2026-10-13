@@ -126,7 +126,7 @@ describe('Inicio', () => {
     expect(screen.getByText('entre 3 clientes')).toBeDefined();
 
     const cobrar = screen.getByRole('list', { name: 'Para cobrar hoy' });
-    expect(within(cobrar).getByText('Pasó el límite')).toBeDefined();
+    expect(within(cobrar).getByRole('button', { name: 'Recordar' })).toBeDefined();
     // Más de 30 días: texto de atraso en negrita y color --late.
     expect(within(cobrar).getByText('35 días sin pagar').className).toContain('text-late');
 
@@ -154,7 +154,7 @@ describe('Inicio', () => {
     expect(await screen.findByText('Nadie para cobrar hoy.')).toBeDefined();
   });
 
-  it('barra inferior: Inicio, Clientes y Más', async () => {
+  it('barra inferior: Inicio, Clientes, Ajustes y Más', async () => {
     m.resumen.mockResolvedValue({ total: 0, clientes_con_deuda: 0, para_cobrar: [], ultimos: [] });
     renderAt('/fiado');
     const nav = screen.getByRole('navigation', { name: 'Navegación inferior' });
@@ -162,7 +162,7 @@ describe('Inicio', () => {
       within(nav)
         .getAllByRole('link')
         .map((a) => a.textContent),
-    ).toEqual(['Inicio', 'Clientes', 'Más']);
+    ).toEqual(['Inicio', 'Clientes', 'Ajustes', 'Más']);
     // Fiado no tiene la barra superior del host (marca "Neggo").
     expect(screen.queryByText('Neggo')).toBeNull();
     await screen.findByText('Nadie para cobrar hoy.');

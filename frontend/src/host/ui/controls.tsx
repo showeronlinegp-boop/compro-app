@@ -1,4 +1,4 @@
-import { type InputHTMLAttributes, useId } from 'react';
+import { type InputHTMLAttributes, type TextareaHTMLAttributes, useId } from 'react';
 import { FOCUS_RING } from './styles';
 
 // ─── FilterChips ──────────────────────────────────────────────────────────────
@@ -84,6 +84,39 @@ export function TextField({
         id={inputId}
         aria-describedby={hintId}
         className={`${size === 'compact' ? 'h-[46px]' : 'h-[52px]'} w-full rounded-m border-[1.5px] border-border bg-surface px-[14px] text-body-l text-ink placeholder:text-ink-disabled focus:outline-none focus:border-2 focus:border-focus ${className ?? ''}`}
+        {...rest}
+      />
+      {hint && (
+        <p id={hintId} className="m-0 text-caption text-ink-muted">
+          {hint}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ─── TextArea ─────────────────────────────────────────────────────────────────
+
+interface TextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
+  label: string;
+  hint?: string;
+}
+
+/** Texto largo (plantillas de mensajes). Mismas reglas que `TextField`: label visible, 17 px. */
+export function TextArea({ label, hint, id, className, rows = 4, ...rest }: TextAreaProps) {
+  const autoId = useId();
+  const inputId = id ?? autoId;
+  const hintId = hint ? `${inputId}-hint` : undefined;
+  return (
+    <div className="flex flex-col gap-[6px]">
+      <label htmlFor={inputId} className="text-caption text-ink-muted">
+        {label}
+      </label>
+      <textarea
+        id={inputId}
+        rows={rows}
+        aria-describedby={hintId}
+        className={`w-full rounded-m border-[1.5px] border-border bg-surface px-[14px] py-3 text-body-l text-ink leading-[1.45] focus:outline-none focus:border-2 focus:border-focus ${className ?? ''}`}
         {...rest}
       />
       {hint && (

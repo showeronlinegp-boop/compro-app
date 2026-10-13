@@ -222,9 +222,9 @@ describe('Listo y Deshacer', () => {
     expect(region.textContent).toContain('Queda anotado en el historial como corrección');
   });
 
-  it('"Terminar" vuelve al origen y cierra el toast de Deshacer', async () => {
+  it('"Ahora no" vuelve al origen y cierra el toast de Deshacer', async () => {
     renderListo();
-    fireEvent.click(screen.getByRole('button', { name: 'Terminar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ahora no' }));
     expect(donde()).toBe('/fiado/clientes/1');
     expect(screen.getByTestId('toast-region').textContent).toBe('');
     await screen.findByText('Todavía no hay movimientos.');

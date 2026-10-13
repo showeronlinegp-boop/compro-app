@@ -58,17 +58,22 @@ interface ListRowProps {
   title: ReactNode;
   /** Línea secundaria (`caption`, muted salvo que el caller la pinte). */
   subtitle?: ReactNode;
-  /** Monto o acción a la derecha. */
+  /** Monto o dato a la derecha (no interactivo si hay `onClick`). */
   trailing?: ReactNode;
-  /** Toda la fila es un botón (abre la ficha). Excluyente con `trailing` interactivo. */
+  /** Toda la fila (salvo `action`) es un botón, p. ej. para abrir la ficha. */
   onClick?: () => void;
+  /**
+   * Botón propio a la derecha ("Recordar"). Queda FUERA del botón de la fila:
+   * nunca se anidan elementos interactivos.
+   */
+  action?: ReactNode;
 }
 
 /**
- * Fila de lista (guía §4.3). Con `onClick`, la fila entera es un `<button>`;
- * sin él es un contenedor y lo interactivo vive en `trailing`.
+ * Fila de lista (guía §4.3). Con `onClick`, la fila es un `<button>`; sin él
+ * es un contenedor. `action` va al lado del botón, nunca adentro.
  */
-export function ListRow({ leading, title, subtitle, trailing, onClick }: ListRowProps) {
+export function ListRow({ leading, title, subtitle, trailing, onClick, action }: ListRowProps) {
   const body = (
     <>
       {leading}
@@ -80,18 +85,26 @@ export function ListRow({ leading, title, subtitle, trailing, onClick }: ListRow
     </>
   );
   const rowClass = 'flex items-center gap-3 px-[14px] py-3 min-h-touch text-left w-full';
+  const main = onClick ? (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`pressable bg-surface ${rowClass} ${action ? 'pr-2' : ''} ${FOCUS_RING}`}
+    >
+      {body}
+    </button>
+  ) : (
+    <div className={rowClass}>{body}</div>
+  );
   return (
     <li className="border-b border-line last:border-b-0">
-      {onClick ? (
-        <button
-          type="button"
-          onClick={onClick}
-          className={`pressable bg-surface ${rowClass} ${FOCUS_RING}`}
-        >
-          {body}
-        </button>
+      {action ? (
+        <div className="flex items-center bg-surface">
+          <div className="flex-1 min-w-0">{main}</div>
+          <div className="flex-none pr-[14px]">{action}</div>
+        </div>
       ) : (
-        <div className={rowClass}>{body}</div>
+        main
       )}
     </li>
   );
@@ -161,6 +174,20 @@ export function DataCells({ cells }: { cells: readonly { label: string; value: R
         </div>
       ))}
     </dl>
+  );
+}
+
+// ─── WhatsAppBubble ───────────────────────────────────────────────────────────
+
+/** Vista previa del mensaje que se va a abrir en WhatsApp (guía §4.9). */
+export function WhatsAppBubble({ text, label }: { text: string; label?: string }) {
+  return (
+    <figure className="m-0">
+      {label && <figcaption className="mb-[6px] text-caption text-ink-muted">{label}</figcaption>}
+      <blockquote className="m-0 bg-whatsapp-bubble rounded-[14px_14px_14px_4px] p-4 text-body-l text-ink whitespace-pre-line">
+        {text}
+      </blockquote>
+    </figure>
   );
 }
 

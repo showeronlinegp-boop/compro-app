@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
 import { Button } from '../../host/ui/Button';
-import { IconPlus } from '../../host/ui/icons';
+import { IconCheck, IconPlus } from '../../host/ui/icons';
 import { formatMoney } from '../../host/ui/format';
 import { Avatar, Card, EmptyNote, ListRow, Pill } from '../../host/ui/surfaces';
-import type { Cliente, Movimiento } from './api';
-import { DIAS_TARDE, lineaCliente, textoFecha, textoSaldo, textoTipo } from './textos';
+import type { Cliente, Cobro, Movimiento } from './api';
+import { DIAS_TARDE, lineaCliente, textoDias, textoFecha, textoSaldo, textoTipo } from './textos';
 
 // ─── Fila de cliente (guía §4.3) ──────────────────────────────────────────────
 
@@ -33,6 +33,55 @@ export function FilaCliente({ cliente, onClick, accion }: FilaClienteProps) {
             {cliente.excede_limite && <Pill tone="warn">Pasó el límite</Pill>}
             {cliente.saldo < 0 && <Pill tone="ok">a favor</Pill>}
           </span>
+        )
+      }
+    />
+  );
+}
+
+// ─── Fila de "Para cobrar hoy" (variante de §4.3) ─────────────────────────────
+
+/**
+ * Saldo y días juntos en la línea secundaria; a la derecha "Recordar", o
+ * "Recordado" en verde si ya se le mandó el recordatorio hoy.
+ */
+export function FilaCobro({
+  cobro,
+  onAbrir,
+  onRecordar,
+}: {
+  cobro: Cobro;
+  onAbrir: () => void;
+  onRecordar: () => void;
+}) {
+  const tarde = (cobro.dias_sin_pagar ?? 0) > DIAS_TARDE;
+  const dias = textoDias(cobro.dias_sin_pagar);
+  return (
+    <ListRow
+      onClick={onAbrir}
+      leading={<Avatar name={cobro.nombre} />}
+      title={cobro.nombre}
+      subtitle={
+        <span>
+          {formatMoney(cobro.saldo)}
+          {dias && (
+            <>
+              {' · '}
+              <span className={tarde ? 'text-late font-bold' : ''}>{dias}</span>
+            </>
+          )}
+        </span>
+      }
+      action={
+        cobro.recordado_hoy ? (
+          <span className="inline-flex items-center gap-1 text-body-s font-bold text-ok">
+            <IconCheck size={18} />
+            Recordado
+          </span>
+        ) : (
+          <Button variant="outline" size="s" onClick={onRecordar}>
+            Recordar
+          </Button>
         )
       }
     />
@@ -90,20 +139,28 @@ export function FilaMovimiento({
  */
 export function AccionesMovimiento({
   onAnotar,
+  onRecordar,
   compacto = false,
 }: {
   onAnotar: (tipo: 'fiado' | 'pago') => void;
+  /** Sólo en la ficha y si debe algo: tercer botón "Recordar". */
+  onRecordar?: () => void;
   compacto?: boolean;
 }) {
   const size = compacto ? 'l' : 'xl';
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className={`grid gap-3 ${onRecordar ? 'grid-cols-3' : 'grid-cols-2'}`}>
       <Button variant="fiado" size={size} icon={<IconPlus />} onClick={() => onAnotar('fiado')}>
         {compacto ? 'Fiado' : 'Anotar fiado'}
       </Button>
       <Button variant="pago" size={size} icon={<IconPlus />} onClick={() => onAnotar('pago')}>
         {compacto ? 'Pago' : 'Registrar pago'}
       </Button>
+      {onRecordar && (
+        <Button variant="outline" size={size} onClick={onRecordar}>
+          Recordar
+        </Button>
+      )}
     </div>
   );
 }
