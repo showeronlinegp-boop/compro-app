@@ -1,5 +1,7 @@
 # Exploración: test-notes (notas de prueba con "Marcar en pantalla")
 
+> Nota (post #34): esta exploración es anterior al merge del design-system. El layout real (columna 480 px, `main` único scroll, barra en flujo, `toast-region`, sin header global) y la resolución de P5 están en `design.md`.
+
 ## Estado actual
 
 **Origen (neggo, `C:\Users\USER\neggo-app-pruebas\`)**
