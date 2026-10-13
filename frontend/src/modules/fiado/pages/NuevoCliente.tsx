@@ -6,12 +6,13 @@ import { useToast } from '../../../host/ui/Toast';
 import { TextField } from '../../../host/ui/controls';
 import { Notice } from '../../../host/ui/surfaces';
 import { fiadoApi, mensajeDeError } from '../api';
-import { RUTAS } from '../rutas';
+import { RUTAS, conCliente, esRutaDelModulo } from '../rutas';
 
 /**
  * Alta de cliente (pantalla de tarea, sin barra inferior). Acepta
  * `?nombre=` para venir desde "Crear cliente nuevo" con lo ya tipeado y
- * `?volver=1` para regresar a la pantalla de origen en vez de abrir la ficha.
+ * `?siguiente=` (ruta de Anotar) para volver ahí con el cliente ya elegido.
+ * Sin `siguiente`, abre la ficha del cliente nuevo.
  */
 export default function NuevoCliente() {
   const navigate = useNavigate();
@@ -39,11 +40,10 @@ export default function NuevoCliente() {
         proximo_cobro: proximoCobro || null,
       });
       toast.show(`Guardaste a ${c.nombre}.`);
-      if (params.get('volver') === '1') {
-        navigate(-1);
-      } else {
-        navigate(RUTAS.ficha(c.id), { replace: true });
-      }
+      const siguiente = params.get('siguiente');
+      navigate(esRutaDelModulo(siguiente) ? conCliente(siguiente, c.id) : RUTAS.ficha(c.id), {
+        replace: true,
+      });
     } catch (err) {
       setError(mensajeDeError(err));
       setEnviando(false);

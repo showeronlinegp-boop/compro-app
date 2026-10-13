@@ -26,8 +26,10 @@ interface ToastState extends ToastOptions {
 }
 
 interface ToastApi {
-  show: (message: string, options?: ToastOptions) => void;
-  dismiss: () => void;
+  /** Muestra un toast y devuelve su id. */
+  show: (message: string, options?: ToastOptions) => number;
+  /** Cierra el toast actual; con `id`, sólo si sigue siendo ese. */
+  dismiss: (id?: number) => void;
 }
 
 const ToastContext = createContext<{ api: ToastApi; current: ToastState | null } | null>(null);
@@ -37,10 +39,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const [current, setCurrent] = useState<ToastState | null>(null);
   const seq = useRef(0);
 
-  const dismiss = useCallback(() => setCurrent(null), []);
+  const dismiss = useCallback((id?: number) => {
+    setCurrent((c) => (id === undefined || c?.id === id ? null : c));
+  }, []);
   const show = useCallback((message: string, options?: ToastOptions) => {
     seq.current += 1;
-    setCurrent({ id: seq.current, message, ...options });
+    const id = seq.current;
+    setCurrent({ id, message, ...options });
+    return id;
   }, []);
 
   useEffect(() => {
@@ -85,8 +91,8 @@ export function ToastViewport({ withBottomNav }: { withBottomNav: boolean }) {
             <button
               type="button"
               onClick={() => {
+                ctx.api.dismiss(toast.id);
                 toast.action?.onClick();
-                ctx.api.dismiss();
               }}
               className={`pressable min-h-touch px-2 -my-2 rounded-m font-bold text-on-dark-body underline ${FOCUS_RING}`}
             >
