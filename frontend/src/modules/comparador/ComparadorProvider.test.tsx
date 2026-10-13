@@ -73,6 +73,9 @@ vi.mock('./api', () => {
         shopping: group({ list: m.shoppingList, add: m.shoppingAdd }),
         profile: group({ get: m.profileGet }),
         cart: group({ get: m.cartGet }),
+        products: group({
+          groups: () => Promise.resolve({ data: [], total: 0, page: 1, pages: 1 }),
+        }),
       } as Record<string, unknown>,
       { get: (t, k: string) => (k in t ? t[k] : group({})) },
     ),
@@ -409,5 +412,53 @@ describe('C5 — polling', () => {
     expect(vi.getTimerCount()).toBe(2);
     unmount();
     expect(vi.getTimerCount()).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Integración host + comparador real (H1, C4)
+// ---------------------------------------------------------------------------
+describe('host + comparador', () => {
+  const renderHost = (path: string) =>
+    render(
+      <MemoryRouter initialEntries={[path]}>
+        <HostApp modules={[comparador]} />
+      </MemoryRouter>,
+    );
+
+  it('H1: "/" sin sesión muestra header, nav y Explorar, sin redirección', async () => {
+    auth.signedIn = false;
+    renderHost('/');
+    await flush();
+    expect(screen.getByRole('navigation', { name: 'Principal' })).toBeTruthy();
+    expect(screen.getByRole('navigation', { name: 'Navegación inferior' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Explorar productos' })).toBeTruthy();
+    expect(screen.queryByTestId('redirect-sign-in')).toBeNull();
+  });
+
+  it('H1: "/planner" sin sesión → sign-in de Clerk', async () => {
+    auth.signedIn = false;
+    renderHost('/planner');
+    await flush();
+    expect(screen.getByTestId('redirect-sign-in')).toBeTruthy();
+  });
+
+  it('C4: header en orden marca, carrito, ubicación, sync y cuenta', async () => {
+    auth.signedIn = false;
+    renderHost('/no-existe');
+    await flush();
+    const header = screen.getByRole('navigation', { name: 'Principal' });
+    const buttons = within(header).getAllByRole('button');
+    expect(buttons.map((b) => b.getAttribute('aria-label') ?? b.textContent)).toEqual([
+      'Carrito',
+      '📍 Elegí tu zona',
+      '⚡ Estado',
+      'Ingresar',
+    ]);
+    // La marca del host va antes que las acciones del módulo.
+    const brand = within(header).getByText('🛒 COMPRO');
+    expect(
+      brand.compareDocumentPosition(buttons[0] as Node) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 });
