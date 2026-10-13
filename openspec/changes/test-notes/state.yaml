@@ -1,0 +1,58 @@
+change: test-notes
+branch: feat/test-notes
+artifact_store: openspec
+phases:
+  explore: done
+  proposal: done
+  spec: done
+  design: done
+  tasks: done
+  apply: pending
+  verify: pending
+  archive: pending
+artifacts:
+  exploration: openspec/changes/test-notes/exploration.md
+  proposal: openspec/changes/test-notes/proposal.md
+  specs:
+    - openspec/changes/test-notes/specs/test-notes-api/spec.md
+    - openspec/changes/test-notes/specs/test-notes-tool/spec.md
+    - openspec/changes/test-notes/specs/app-shell/spec.md   # delta H7
+  design: openspec/changes/test-notes/design.md
+  tasks: openspec/changes/test-notes/tasks.md
+origin: C:\Users\USER\neggo-app-pruebas (TestNotes.jsx, testNotesMark.js, testNotesCapture.js, routes/testNotes.js, scripts/notaPrueba.js)
+closed_decisions:  # cerradas por el usuario
+  - "solo desarrollo local: front DEV && VITE_TEST_NOTES==='1' (rama muerta en prod, lazy import); back TEST_NOTES_ENABLED (sin flag el modulo no se registra -> 404); sin roles ni allowlist"
+  - "herramienta del host (HostTool) registrada en host/tools.tsx; usa useHostLocation(); funciona con chrome 'full' y 'task'"
+  - "port fiel adaptado: React 18 + TS + Tailwind, host/http.ts, Clerk; Nest domain/+infrastructure/ con repo factory request-scoped y user_id; Prisma 7 + migracion test_notes; CLI equivalente a notaPrueba.js en backend/scripts/"
+  - "mejoras baratas: selector con data-testid/id/aria-label antes del path; exclusion de captura parametrizada"
+  - "claude-link (neggo-claude://, .ps1, skill nota-prueba, boton Enviar a Claude) fuera de alcance; la CLI queda lista (--json)"
+design_decisions:
+  - "codigo front en src/devtools/test-notes/ (devtools -> host permitido; devtools -/-> modules; solo host/tools.tsx importa devtools; test de aislamiento propio)"
+  - "flag del front en frontend/.env.development.local (no .env.local: Vitest la cargaria)"
+  - "HostToolsOutlet envuelve cada tool en Suspense fallback null"
+  - "migracion Prisma normal: la tabla existe vacia en todos los entornos (migrate deploy en el entrypoint); aceptado"
+  - "tipo/estado VARCHAR + CHECK; pos_x Float; autor = users.email"
+  - "pines position fixed desde el rect en vivo; fallback relativo al contenedor de scroll (main si scrollea)"
+  - "captura instalada al montar la tool (no en main.tsx)"
+  - "CLI sobre contexto Nest minimo (PrismaModule + repo admin), no AppModule"
+open_decisions: []
+provisional_decisions:  # elegidas sin bloquear; validar con el usuario
+  - "P1 notas por usuario (scoping user_id); la CLI ve todas  | alt: compartidas entre cuentas de prueba (neggo)"
+  - "P2 TEST_NOTES_ENABLED=1 con NODE_ENV=production aborta el arranque  | alt: ignorar con warning"
+  - "P3 sin sesion de Clerk la tool no se muestra  | alt: UI deshabilitada"
+  - "P4 CLI 'npm run notes -- lista|ver|estado|responder' (+ --json)  | alt: otro nombre / solo texto"
+  - "P5 paleta Tailwind estandar hasta mergear feat/design-system; tokens despues  | alt: esperar el merge y usar tokens"
+coordination:
+  - "feat/design-system trabaja en el MISMO arbol de trabajo (cambios sin commitear en tailwind.config.ts, index.css, host/ui/*). Commitear por pathspec; no cambiar de rama sin coordinar"
+  - "contacto con el host: solo host/tools.tsx (+ tools.test.tsx)"
+  - "supuestos de layout aislados en devtools/test-notes/geometry.ts (main scrolleable, nav[aria-label='Navegación inferior'])"
+tasks_per_commit:
+  commit-1: 4
+  commit-2: 8
+  commit-3: 4
+  commit-4: 5
+  commit-5: 4
+  commit-6: 6
+  total: 31
+  manual: [3.4, 6.5, 6.6]
+next_phase: apply  # sdd-apply por commit, tras validar P1-P5
