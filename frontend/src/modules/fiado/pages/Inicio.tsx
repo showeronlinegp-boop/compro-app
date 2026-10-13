@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { EmptyNote, List, Pill, Section } from '../../../host/ui/surfaces';
 import { fiadoApi } from '../api';
 import {
+  AccionesMovimiento,
   Cargando,
   ErrorCarga,
   FilaCliente,
@@ -17,7 +18,7 @@ const NEGGO_URL = import.meta.env.VITE_NEGGO_PEDIDOS_URL as string | undefined;
 
 /**
  * Inicio de Fiado (guía §5 del mockup): comercio y saludo, total "Te deben",
- * "Para cobrar hoy", tarjeta Neggo y últimos movimientos.
+ * acciones rápidas, "Para cobrar hoy", tarjeta Neggo y últimos movimientos.
  */
 export default function Inicio() {
   const navigate = useNavigate();
@@ -40,6 +41,8 @@ export default function Inicio() {
       {resumen && (
         <>
           <TarjetaTeDeben total={resumen.total} clientes={resumen.clientes_con_deuda} />
+
+          <AccionesMovimiento onAnotar={(tipo) => navigate(RUTAS.anotar(tipo))} />
 
           <Section
             title="Para cobrar hoy"

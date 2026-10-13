@@ -61,3 +61,8 @@ export function lineaCliente(c: Pick<Cliente, 'dias_sin_pagar' | 'saldo'>): stri
   if (c.saldo === 0) return 'Al día';
   return textoDias(c.dias_sin_pagar) ?? '';
 }
+
+/** Sólo el primer nombre: "Marta Giménez" → "Marta". */
+export function primerNombre(nombre: string): string {
+  return nombre.trim().split(/\s+/)[0] ?? nombre;
+}

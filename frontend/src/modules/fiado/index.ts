@@ -1,9 +1,11 @@
 import { createElement } from 'react';
 import type { AppModule, NavItem } from '../../host/contract';
 import { IconClients, IconHome } from '../../host/ui/icons';
+import { AnotarFiado, RegistrarPago } from './pages/Anotar';
 import Clientes from './pages/Clientes';
 import Ficha from './pages/Ficha';
 import Inicio from './pages/Inicio';
+import Listo from './pages/Listo';
 import NuevoCliente from './pages/NuevoCliente';
 import { BASE, RUTAS } from './rutas';
 
@@ -33,6 +35,30 @@ export const fiado: AppModule = {
       chrome: 'task',
     },
     { id: 'ficha', path: 'clientes/:id', component: Ficha, auth: 'required', title: 'Cliente' },
+    {
+      id: 'anotar',
+      path: 'anotar',
+      component: AnotarFiado,
+      auth: 'required',
+      title: 'Anotar fiado',
+      chrome: 'task',
+    },
+    {
+      id: 'pago',
+      path: 'pago',
+      component: RegistrarPago,
+      auth: 'required',
+      title: 'Registrar pago',
+      chrome: 'task',
+    },
+    {
+      id: 'listo',
+      path: 'listo',
+      component: Listo,
+      auth: 'required',
+      title: 'Listo',
+      chrome: 'task',
+    },
   ],
   useNav: () => nav,
 };

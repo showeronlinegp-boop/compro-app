@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ScreenHeader } from '../../../host/ui/ScreenHeader';
 import { formatMoney } from '../../../host/ui/format';
 import {
@@ -12,7 +12,7 @@ import {
   Section,
 } from '../../../host/ui/surfaces';
 import { type Cliente, fiadoApi } from '../api';
-import { Cargando, ErrorCarga, FilaMovimiento } from '../components';
+import { AccionesMovimiento, Cargando, ErrorCarga, FilaMovimiento } from '../components';
 import { RUTAS } from '../rutas';
 import { textoDia, textoDias, textoSaldo } from '../textos';
 import { useCarga } from '../useCarga';
@@ -66,6 +66,7 @@ export function TarjetaFicha({ cliente: c }: { cliente: Cliente }) {
 export default function Ficha() {
   const { id } = useParams();
   const clienteId = Number(id);
+  const navigate = useNavigate();
   const carga = useCarga(() => fiadoApi.ficha(clienteId), [clienteId]);
 
   return (
@@ -86,6 +87,11 @@ export default function Ficha() {
       {carga.data && (
         <>
           <TarjetaFicha cliente={carga.data.cliente} />
+
+          <AccionesMovimiento
+            compacto
+            onAnotar={(tipo) => navigate(RUTAS.anotar(tipo, clienteId))}
+          />
 
           <Section title="Historial">
             <List label="Historial">
