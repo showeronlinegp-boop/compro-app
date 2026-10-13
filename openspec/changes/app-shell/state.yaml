@@ -8,7 +8,7 @@ phases:
   design: done
   tasks: done
   apply: done
-  verify: pending
+  verify: done
   archive: pending
 artifacts:
   exploration: openspec/changes/app-shell/exploration.md
@@ -18,6 +18,7 @@ artifacts:
     - openspec/changes/app-shell/specs/comparador/spec.md
   design: openspec/changes/app-shell/design.md
   tasks: openspec/changes/app-shell/tasks.md
+  verify_report: openspec/changes/app-shell/verify-report.md
 closed_decisions:
   - rutas eager en este cambio; el contrato soporta lazy a futuro
   - providers de todos los modulos siempre montados alrededor del layout
@@ -53,7 +54,7 @@ gaps_to_validate:  # el resto queda para feat/design-system
   - "Header global vs ScreenHeader por pantalla: el shell mobile no tiene header de host; donde van headerActions/AccountMenu -> feat/design-system"
   - "Volver por historial con fallback (entrada directa sin historial) -> host/ui ScreenHeader en feat/design-system"
   - "Toast global del host (offset segun chrome) -> feat/design-system"
-next_phase: verify
+next_phase: archive  # tras la verificacion manual 4.7/4.8 del usuario
 apply_progress:
   done: [commit-1, commit-2, commit-3, commit-4, commit-5]
   pending: []
@@ -66,3 +67,15 @@ apply_progress:
     - "commit 3 (3.1-3.12): host/contract.ts (AppModule, ModuleRoute+chrome, NavItem.icon string|ReactNode, HostTool, ResolvedLocation), routing.tsx, auth/{RequireAuth,AccountMenu} copiados literal de App.tsx, nav/{NavItemsProvider,TopNav,BottomNav,labels}, location.ts (resolveLocation pura con matchRoutes, chromeOf, useHostLocation), tools.tsx, ModuleProviders, HostLayout, HostApp. App.tsx sin cambios. Desvios menores: HostApp/HostLayout/HostToolsOutlet aceptan prop opcional tools (default hostTools) para inyectar una HostTool habilitada en tests H8; useHostLocation toma los modulos de NavItemsProvider (todavia no existe registry); isolation.test usa import.meta.glob ?raw con normalize propio (no hay @types/node) y se excluye a si mismo; useNavItems() agregado como helper. typecheck OK, tests 16 files / 113 passed (66 + 47 nuevos)"
     - "commit 4 (4.1-4.6): ComparadorProvider (CartProvider > ComparadorStateProvider) con estado/refs/efectos/acciones copiados literal de AppShell + useComparador(); useNav (Explorar con explorarTo.current, Intereses/Planner con badge, Comparar iconInTop solo con profile.onboarding_done; llama useLocation() para re-render por navegacion); routes.tsx (ExplorarRoute 7 props, InteresesRoute 4 props, OnboardingRoute con setProfile + navigate('/planner', replace)); components/{SyncPanel (literal), CartButton (literal, usa useCart), LocationSlot, HeaderActions (carrito, ubicacion, sync)}; manifest en modules/comparador/index.ts; host/registry.ts; App.tsx = AuthTokenBridge + HostApp modules={registry}. Desvios: el manifest vive en index.ts (como dicen design/spec/tasks), no en module.ts; el context expone el ref explorarTo (MutableRefObject) y setProfile tipado como (p) => void; formato Biome aplicado a los archivos nuevos salvo SyncPanel (se dejo literal, Biome sugiere 2 cambios de formato como en el App.tsx previo; CI no corre lint). Verificacion extra: test temporal (no commiteado) que renderiza el App.tsx previo y el nuevo con los mismos mocks y compara innerHTML: 9 rutas (/, /?q=leche, /intereses, /planner, /cart, /compare, /onboarding, /no-existe, /sign-in) x 3 combinaciones (con sesion + onboarding_done, con sesion sin onboarding -> redirect, sin sesion) + navegacion /?q=leche -> Planner con SyncPanel abierto: 28/28 HTML identico. typecheck OK, tests 16 files / 113 passed (smoke sin cambios, mocks sin tocar)"
     - "commit 5 (5.1-5.2): manifest.test.ts (8 tests: id/basePath/Provider/useNav/slots; rutas = tabla H1 en orden con auth; ids unicos y sin chrome; resolveLocation /compare sin navItem, / -> explorar, /sign-in/factor-one, /sign-up, /no-existe -> null) + ComparadorProvider.test.tsx (21 tests: C3 redirect con replace verificado con useNavigationType=REPLACE y navigate(-1) que saltea la ruta reemplazada, skip, ya en /onboarding, profile null, sin sesion no pide datos; C2 Comparar condicionado, contadores, Planner (n), Explorar recuerda ?q=, integracion HostApp+comparador top = bottom; C4 toggleInterest/addToShopping sin sesion -> /sign-in sin API; C5 fake timers: interval de 3 s exacto, se corta al terminar, banner de enrich 8 s, sin banner en carga fresca, unmount -> getTimerCount 0, StrictMode no duplica). Mock de ./api con Proxy (fallback []) y de Clerk con sesion conmutable. Chequeo de mutacion (no commiteado): sacar replace, sacar clearInterval o cambiar 8000 hace fallar 5 tests. Sin bugs del refactor. Hallazgo preexistente (literal de AppShell, no se toco): el setTimeout de 8 s del banner de enrich no se limpia al desmontar; si se desmonta con el banner visible queda 1 timeout colgado (setState sobre componente desmontado = no-op en React 18). typecheck OK, tests 18 files / 142 passed (113 + 29)"
+verify:
+  date: 2026-10-13
+  verdict: pass_with_warnings
+  critical: 0
+  warning: 3
+  suggestion: 4
+  tests: "frontend 18 files / 145 passed (2 corridas); typecheck front y back OK; backend sin diff vs main"
+  added_tests: "3 de integracion host + comparador real en ComparadorProvider.test.tsx (H1 publica sin sesion, H1 /planner sin sesion, C4 orden del header)"
+  warnings:
+    - "4.7/4.8 manuales pendientes del usuario"
+    - "setTimeout 8 s del banner de enrich sin cleanup al desmontar (preexistente, literal de AppShell)"
+    - "equivalencia visual de nav/header (clases) sin test commiteado"
