@@ -36,14 +36,14 @@ Fuente de diseño: `DESIGN.md` (mockup de Neggo) y la guía general `docs/design
 
 | Tabla | Campos clave |
 |---|---|
-| `fiado_clientes` | `id`, `user_id`, `nombre`, `telefono?`, `etiqueta?`, `limite?` (Int, pesos), `proximo_cobro?` (Date), `archivado_at?`, timestamps. Índice `(user_id, nombre)`. |
-| `fiado_movimientos` | `id`, `user_id`, `cliente_id`, `tipo` (`fiado`/`pago`/`correccion`), `monto` (Int pesos con signo; `fiado`/`pago` > 0, ≤ 999.999.999), `corrige_id?` (FK al movimiento corregido, único), `nota?`, `created_at`. Índice `(user_id, cliente_id, created_at)`. **Append-only: no hay UPDATE ni DELETE.** |
+| `fiado_clientes` | `id`, `user_id`, `nombre`, `telefono?`, `etiqueta?`, `limite?` (Int, pesos), `proximo_cobro?` (Date), timestamps (sin archivado en etapa 1). Índice `(user_id, nombre)`. |
+| `fiado_movimientos` | `id`, `user_id`, `cliente_id`, `tipo` (`fiado`/`pago`/`correccion`), `monto` (Int pesos = **efecto con signo** sobre lo que te deben: fiado > 0, pago < 0, corrección = −original; \|monto\| ≤ 999.999.999), `corrige_id?` (FK al movimiento corregido, único), `nota?`, `idempotency_key?` (única por usuario), `created_at`. Índice `(user_id, cliente_id, created_at)`. **Append-only: un trigger de Postgres rechaza UPDATE y DELETE directos; solo deja el borrado en cascada al eliminar el usuario.** CHECK de tipo/signo. |
 | `fiado_recordatorios` | `id`, `user_id`, `cliente_id`, `enviado_at`. |
 | `fiado_ajustes` | `user_id` único, `comercio`, `alias?`, `dias_deuda_vieja` (30), `plantilla_fiado`, `plantilla_pago`, `plantilla_recordatorio`. |
 
 **Decisión: libro append-only.** Un movimiento nunca se edita ni se borra. "Deshacer" crea un movimiento `correccion` que apunta al original (`corrige_id`) con el monto opuesto. El historial muestra **los dos**: el original tachado con la etiqueta "Corregido" y la corrección con su fecha y hora. Así ningún registro desaparece y no se puede borrar una deuda a escondidas. Un movimiento se corrige una sola vez (`corrige_id` único) y una corrección no se puede corregir.
 
-**Decisión: saldo calculado, no guardado.** `saldo = Σ fiado − Σ pago ± Σ correcciones`, por agregación. Evita que un saldo cacheado se desincronice; con los volúmenes de un kiosco (cientos de movimientos por cliente) la query con índice alcanza. Si algún día pesa, se agrega una columna mantenida en la misma transacción.
+**Decisión: saldo calculado, no guardado.** `saldo = Σ monto` (los montos ya traen signo). Evita que un saldo cacheado se desincronice; con los volúmenes de un kiosco (cientos de movimientos por cliente) la query con índice alcanza. Si algún día pesa, se agrega una columna mantenida en la misma transacción.
 
 **Dominio puro (`domain/`, testeado sin DB):** cálculo de saldo, días sin pagar (desde el último pago; si nunca pagó, desde el primer fiado; solo con saldo > 0), "para cobrar hoy", exceso de límite, render de plantillas (`{nombre}` = primer nombre), normalización de teléfono argentino para `wa.me` (+54 9 …), formato de dinero.
 
