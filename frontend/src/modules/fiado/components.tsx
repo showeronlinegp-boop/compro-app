@@ -148,16 +148,31 @@ export function AccionesMovimiento({
   compacto?: boolean;
 }) {
   const size = compacto ? 'l' : 'xl';
+  // A 320 px entran 3 botones de ~88 px: padding y texto más chicos (guía §2.2 button-m).
+  const ajuste = compacto ? '!px-2 !text-button-m !gap-1' : '';
+  const icono = <IconPlus size={compacto ? 20 : 24} />;
   return (
-    <div className={`grid gap-3 ${onRecordar ? 'grid-cols-3' : 'grid-cols-2'}`}>
-      <Button variant="fiado" size={size} icon={<IconPlus />} onClick={() => onAnotar('fiado')}>
+    <div className={`grid gap-2 ${onRecordar ? 'grid-cols-3' : 'grid-cols-2'}`}>
+      <Button
+        variant="fiado"
+        size={size}
+        icon={icono}
+        className={ajuste}
+        onClick={() => onAnotar('fiado')}
+      >
         {compacto ? 'Fiado' : 'Anotar fiado'}
       </Button>
-      <Button variant="pago" size={size} icon={<IconPlus />} onClick={() => onAnotar('pago')}>
+      <Button
+        variant="pago"
+        size={size}
+        icon={icono}
+        className={ajuste}
+        onClick={() => onAnotar('pago')}
+      >
         {compacto ? 'Pago' : 'Registrar pago'}
       </Button>
       {onRecordar && (
-        <Button variant="outline" size={size} onClick={onRecordar}>
+        <Button variant="outline" size={size} className={ajuste} onClick={onRecordar}>
           Recordar
         </Button>
       )}

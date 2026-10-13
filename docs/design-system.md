@@ -178,21 +178,22 @@ Estado: ✅ disponible · ⏳ llega con el PR que la usa por primera vez.
 |---|---|
 | `Button` ✅ | Variantes: `primary` (`--ink`), `fiado`, `pago`, `whatsapp`, `outline` (borde `--ink`), `soft` (borde `--border`), `text`, `on-dark`. Tamaños `xl` 76, `l` 60, `m` 52, `s` 44, `chip` 40. Siempre `<button>`; pressed `brightness(0.92)`; disabled `--disabled`. |
 | `Card` ✅ | `--surface`, `radius-xl`, padding 20. Variante `dark` (`--ink`), una sola por pantalla. Junto con `Section` (título `title-s` + contenido). |
-| `List` + `ListRow` ✅ | Lista blanca `radius-l`; fila entera es un `<button>` o `<a>`, separador `--line`, slot izquierda (avatar/imagen), centro (título + secundaria), derecha (monto/acción). |
+| `List` + `ListRow` ✅ | Lista blanca `radius-l`; fila entera es un `<button>` (y `action` va al lado, nunca anidado), separador `--line`, slot izquierda (avatar/imagen), centro (título + secundaria), derecha (monto/acción). |
 | `Avatar` ✅ | Círculo 40 (56 en ficha), inicial en Archivo. |
 | `Pill` ✅ | Neutra, `warn`, `late`, `ok`. `micro`/`caption` 700. |
 | `FilterChips` ✅ | Pastillas 40 px con `aria-pressed`, se envuelven en varias líneas (no scroll horizontal). |
 | `TextField` ✅ | Label siempre visible arriba, alto 50–52, texto 17, foco borde 2 px `--focus`. `inputmode` correcto (`tel`, `search`). |
-| `Keypad` ⏳ (fiado-movimientos) | 3 × 4 (`1-9`, `00`, `0`, `⌫`), teclas 54 px. Para montos nunca se usa `<input type="number">`. |
+| `Keypad` ✅ | 3 × 4 (`1-9`, `00`, `0`, `⌫`), teclas 54 px. Para montos nunca se usa `<input type="number">`. |
 | `ScreenHeader` ✅ | Variante `place` (título `title-l` + acción a la derecha) y `task` (flecha atrás 44 × 44 + `title-m`, color opcional). |
 | `BottomNav` ✅ (del host) | Ícono 24 + texto 13/700; activo `--ink`, inactivo `--ink-disabled`. |
 | `Toast` ✅ (`useToast()`) | `--ink`, texto blanco, `role="status"`, 3 s, acción opcional ("Deshacer"). |
 | `Notice` ✅ | Aviso `--warn-bg` que informa y no bloquea. |
-| `CorrectionMark` ⏳ (fiado-movimientos) | Movimiento corregido: monto tachado + pastilla neutra "Corregido"; la corrección se muestra como fila propia con fecha y hora. Nunca se oculta. |
+| Marca de corrección ✅ (en `FilaMovimiento` de Fiado) | Movimiento corregido: monto tachado + pastilla neutra "Corregido"; la corrección se muestra como fila propia con fecha y hora. Nunca se oculta. |
 | `EmptyNote` ✅ | Una frase en `body-s` muted dentro de la misma tarjeta o lista. Sin ilustraciones ni emoji. (`EmptyState`, el de pantalla completa, queda para el comparador hasta su migración.) |
 | `BottomSheet` ⏳ (migración del comparador) | Hoja inferior de ancho completo, para lo que hoy son modales/drawers (`FreqModal`, `CartDrawer`). |
+| `TextArea` ✅ | Mismas reglas que `TextField`, para textos largos (plantillas). |
 | `DataCells` ✅ | Grilla de 2–3 celdas `--surface-muted` con label `micro` y valor `body-s` 700. |
-| `WhatsAppBubble` ⏳ (fiado-whatsapp) | Vista previa del mensaje, termina en "Hecho con Neggo". |
+| `WhatsAppBubble` ✅ | Vista previa del mensaje, termina en "Hecho con Neggo". |
 
 Los componentes con dominio (fila de cliente, tarjeta de producto, selector de cliente) viven **dentro del módulo** y se arman con estas primitivas.
 
