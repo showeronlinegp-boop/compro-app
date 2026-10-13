@@ -1,37 +1,79 @@
 import type { Config } from 'tailwindcss';
 
-// ─── Tailwind Spacing / Radius / Density Convention ───────────────────────────
+// ─── Sistema de diseño Neggo (docs/design-system.md) ─────────────────────────
 //
-// PAGE PADDING  — handled exclusively via PageContainer; never repeat ad-hoc.
-//   Horizontal: px-4 (mobile) | sm:px-6 (≥640 px) | lg:px-8 (≥1024 px)
-//   Vertical:   py-6 on data pages
+// MOBILE ONLY — `screens` vacío: no existen `sm:`/`md:`/`lg:`. La app vive en
+// una columna de máx. 480 px (HostLayout), así que un breakpoint por ancho de
+// viewport no describe el espacio real. Las clases con breakpoint que todavía
+// queden en el comparador no generan CSS y rige siempre su versión mobile.
 //
-// SECTION GAP   — between major cards: space-y-6
-//                 within dense rows:   gap-3
-//                 chip / badge groups: gap-2
-//
-// RADIUS RHYTHM — cards & containers:        rounded-2xl
-//                 interactive controls/pills: rounded-xl
-//                 small inline badges:        rounded-full
-//                 data-dense table cells:     none (no radius)
-//
-// DENSITY       — table/list rows:  py-2
-//                 card interiors:   p-5 (comfortable) / p-4 (compact)
-//
-// No new Tailwind `theme.extend` values are introduced by this convention;
-// all values map to Tailwind's existing scale.
+// Colores, fuentes, tamaños y radios salen de los tokens CSS de `index.css`.
+// Código nuevo usa SOLO estos nombres (ver host/ui/design-lint.test.ts).
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
+    screens: {},
     extend: {
       colors: {
+        bg: 'var(--bg)',
+        surface: { DEFAULT: 'var(--surface)', muted: 'var(--surface-muted)' },
+        ink: {
+          DEFAULT: 'var(--ink)',
+          muted: 'var(--ink-muted)',
+          disabled: 'var(--ink-disabled)',
+        },
+        line: 'var(--line)',
+        border: { DEFAULT: 'var(--border)', strong: 'var(--border-strong)' },
+        avatar: 'var(--avatar)',
+        disabled: 'var(--disabled)',
+        'on-dark': { muted: 'var(--on-dark-muted)', body: 'var(--on-dark-body)' },
+        focus: 'var(--focus)',
+        ok: { DEFAULT: 'var(--ok)', bg: 'var(--ok-bg)' },
+        warn: { DEFAULT: 'var(--warn)', strong: 'var(--warn-strong)', bg: 'var(--warn-bg)' },
+        late: { DEFAULT: 'var(--late)', bg: 'var(--late-bg)' },
+        danger: 'var(--danger)',
+        fiado: 'var(--fiado)',
+        pago: { DEFAULT: 'var(--pago)', hover: 'var(--pago-hover)' },
+        whatsapp: { DEFAULT: 'var(--whatsapp)', bubble: 'var(--whatsapp-bubble)' },
+        // Identidad de cada súper (comparador): punto, borde o etiqueta, nunca fondo de botón.
         vea: { DEFAULT: '#E30613', light: '#fef2f2' },
         carrefour: { DEFAULT: '#004B93', light: '#eff6ff' },
         dia: { DEFAULT: '#E20032', light: '#fff1f2' },
         masonline: { DEFAULT: '#FF6600', light: '#fff7ed' },
       },
+      fontFamily: {
+        display: 'var(--font-display)',
+        body: 'var(--font-body)',
+      },
+      fontSize: {
+        'amount-xl': ['42px', { lineHeight: '1.1', letterSpacing: '-0.5px', fontWeight: '800' }],
+        'amount-l': ['44px', { lineHeight: '1.1', letterSpacing: '-0.5px', fontWeight: '800' }],
+        'amount-m': ['38px', { lineHeight: '1.1', letterSpacing: '-0.5px', fontWeight: '800' }],
+        price: ['20px', { lineHeight: '1.2', fontWeight: '800' }],
+        'title-l': ['26px', { lineHeight: '1.2', fontWeight: '800' }],
+        'title-m': ['22px', { lineHeight: '1.25', fontWeight: '800' }],
+        'title-s': ['19px', { lineHeight: '1.3', fontWeight: '700' }],
+        'button-l': ['18px', { lineHeight: '1.2', fontWeight: '700' }],
+        'button-m': ['16px', { lineHeight: '1.2', fontWeight: '700' }],
+        keypad: ['22px', { lineHeight: '1', fontWeight: '600' }],
+        'body-l': ['17px', '1.45'],
+        body: ['16px', '1.4'],
+        'body-s': ['15px', '1.4'],
+        caption: ['14px', '1.35'],
+        micro: ['13px', '1.3'],
+      },
+      borderRadius: {
+        m: '12px',
+        l: '16px',
+        xl: '20px',
+        pill: '999px',
+      },
+      minHeight: { touch: '44px' },
+      minWidth: { touch: '44px' },
+      height: { nav: '74px' },
+      maxWidth: { app: '480px' },
     },
   },
   plugins: [],

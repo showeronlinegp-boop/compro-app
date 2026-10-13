@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react';
 import { AccountMenu } from './auth/AccountMenu';
 import type { AppModule, HostTool } from './contract';
-import { chromeOf, useHostLocation } from './location';
+import { chromeOf } from './location';
+import { useActiveModule } from './nav/ActiveModule';
 import { BottomNav } from './nav/BottomNav';
-import { TopNav } from './nav/TopNav';
 import { HostToolsOutlet, hostTools } from './tools';
+import { ToastViewport } from './ui/Toast';
 
 interface HostLayoutProps {
   modules: readonly AppModule[];
@@ -13,44 +14,35 @@ interface HostLayoutProps {
 }
 
 /**
- * Layout del host: header (marca, TopNav, spacer, headerActions, cuenta),
- * main, overlays, BottomNav y HostToolsOutlet. Con chrome 'task' (H8) sólo
- * desaparece la BottomNav y el padding inferior que la reserva.
+ * Shell mobile del host (guía §3): columna de máx. 480 px y alto `100dvh`.
+ * `main` es el único contenedor que scrollea. Arriba, una barra compacta sólo
+ * en rutas de un módulo con `headerActions`; abajo, la BottomNav salvo en
+ * pantallas de tarea (chrome 'task'). Overlays, toast y tools van por encima.
  */
 export function HostLayout({ modules, tools = hostTools, children }: HostLayoutProps) {
-  const chrome = chromeOf(useHostLocation());
+  const { location } = useActiveModule();
+  const chrome = chromeOf(location);
+  const HeaderActions = location?.module.slots?.headerActions;
+  const withBottomNav = chrome === 'full';
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Navbar */}
-      <nav
-        aria-label="Principal"
-        className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-40"
+    <div className="relative mx-auto flex h-[100dvh] w-full max-w-app flex-col overflow-hidden bg-bg text-ink font-body text-body">
+      {HeaderActions && (
+        <header className="flex-none pt-safe bg-surface border-b border-line">
+          <div className="flex items-center gap-2 h-14 px-4">
+            <span className="font-display text-title-s text-ink flex-none">Neggo</span>
+            <div className="flex-1" aria-hidden="true" />
+            <HeaderActions />
+            <AccountMenu />
+          </div>
+        </header>
+      )}
+
+      <main
+        className={`flex-1 overflow-y-auto overscroll-contain ${HeaderActions ? '' : 'pt-safe'}`}
       >
-        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 flex items-center h-14 gap-3 sm:gap-6">
-          <span className="font-bold text-gray-900 text-base tracking-tight flex-shrink-0">
-            🛒 COMPRO
-          </span>
-
-          {/* Primary nav: inline on lg+. On smaller screens it moves to a bottom
-              tab bar (see BottomNav) so the top bar never overflows the viewport. */}
-          <TopNav />
-
-          {/* Spacer pushes the right-side controls to the edge on mobile, where the
-              inline nav links are hidden (they live in the bottom tab bar instead). */}
-          <div className="flex-1 lg:hidden" aria-hidden="true" />
-
-          {modules.map(({ id, slots }) => {
-            const HeaderActions = slots?.headerActions;
-            return HeaderActions ? <HeaderActions key={id} /> : null;
-          })}
-
-          <AccountMenu />
-        </div>
-      </nav>
-
-      {/* Content — bottom padding on mobile clears the fixed bottom tab bar */}
-      <main className={chrome === 'task' ? 'flex-1' : 'flex-1 pb-16 lg:pb-0'}>{children}</main>
+        {children}
+      </main>
 
       {/* Overlays de los módulos (p. ej. CartDrawer) — sobre todas las rutas */}
       {modules.map(({ id, slots }) => {
@@ -58,7 +50,9 @@ export function HostLayout({ modules, tools = hostTools, children }: HostLayoutP
         return Overlays ? <Overlays key={id} /> : null;
       })}
 
-      {chrome === 'full' && <BottomNav />}
+      {withBottomNav && <BottomNav />}
+
+      <ToastViewport withBottomNav={withBottomNav} />
 
       <HostToolsOutlet tools={tools} />
     </div>

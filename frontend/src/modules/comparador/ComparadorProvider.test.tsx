@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { type ReactNode, StrictMode } from 'react';
 import {
   MemoryRouter,
@@ -10,7 +10,6 @@ import {
 } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HostApp } from '../../host/HostApp';
-import { topLabel } from '../../host/nav/labels';
 import {
   type ComparadorContextValue,
   ComparadorProvider,
@@ -114,7 +113,7 @@ function Probe() {
       <ul data-testid="nav">
         {nav.map((i) => (
           <li key={i.id} data-to={i.to}>
-            {topLabel(i)}
+            {i.badge ? `${i.label} (${i.badge})` : i.label}
           </li>
         ))}
       </ul>
@@ -222,7 +221,7 @@ describe('C3 — redirección a onboarding', () => {
 // C2 — Nav decidida por el módulo
 // ---------------------------------------------------------------------------
 describe('C2 — useNav', () => {
-  it('con onboarding_done incluye 📊 Comparar → /compare al final', async () => {
+  it('con onboarding_done incluye Comparar → /compare al final', async () => {
     renderProvider(['/']);
     await flush();
     const items = screen.getByTestId('nav').querySelectorAll('li');
@@ -232,7 +231,7 @@ describe('C2 — useNav', () => {
       '/planner',
       '/compare',
     ]);
-    expect(navTexts()[3]).toBe('📊 Comparar');
+    expect(navTexts()[3]).toBe('Comparar');
   });
 
   it('sin Comparar con onboarding pendiente (skip) o profile sin cargar (sin sesión)', async () => {
@@ -240,22 +239,21 @@ describe('C2 — useNav', () => {
     m.profileGet.mockResolvedValue(profile(false));
     renderProvider(['/']);
     await flush();
-    expect(navTexts()).not.toContain('📊 Comparar');
+    expect(navTexts()).not.toContain('Comparar');
     cleanup();
 
     auth.signedIn = false;
     renderProvider(['/']);
     await flush();
     expect(ctx.profile).toBeUndefined();
-    expect(navTexts()).toEqual(['Explorar', 'Intereses ', 'Planner ']);
+    expect(navTexts()).toEqual(['Explorar', 'Intereses', 'Planner']);
   });
 
   it('contadores: 3 intereses y 0 en shopping → "Intereses (3)" y Planner sin contador', async () => {
     m.interestsList.mockResolvedValue([interest(1), interest(2), interest(3)]);
     renderProvider(['/']);
     await flush();
-    // 'Planner ' con espacio final: texto histórico con badge 0 (ver labels.test).
-    expect(navTexts().slice(0, 3)).toEqual(['Explorar', 'Intereses (3)', 'Planner ']);
+    expect(navTexts().slice(0, 3)).toEqual(['Explorar', 'Intereses (3)', 'Planner']);
   });
 
   it('contador de Planner con items en shopping', async () => {
@@ -273,23 +271,26 @@ describe('C2 — useNav', () => {
     expect(screen.getByTestId('nav').querySelector('li')?.dataset.to).toBe('/?q=leche');
   });
 
-  it('host + comparador: top y "Navegación inferior" con los mismos items y Comparar', async () => {
+  it('host + comparador: barra con 3 items + "Más", y Comparar en la pantalla "Más"', async () => {
     render(
-      <MemoryRouter initialEntries={['/no-existe']}>
+      <MemoryRouter initialEntries={['/']}>
         <HostApp modules={[comparador]} />
       </MemoryRouter>,
     );
     await flush();
     const bottom = screen.getByRole('navigation', { name: 'Navegación inferior' });
-    const top = screen.getByRole('navigation', { name: 'Principal' });
-    const hrefs = (el: HTMLElement) =>
-      within(el)
+    expect(
+      within(bottom)
         .getAllByRole('link')
-        .map((a) => a.getAttribute('href'))
-        .filter((h) => ['/', '/intereses', '/planner', '/compare'].includes(h ?? ''));
-    expect(hrefs(bottom)).toEqual(['/', '/intereses', '/planner', '/compare']);
-    expect(hrefs(top)).toEqual(hrefs(bottom));
-    expect(within(top).getByRole('link', { name: '📊 Comparar' })).toBeTruthy();
+        .map((a) => a.getAttribute('href')),
+    ).toEqual(['/', '/intereses', '/planner', '/mas']);
+
+    fireEvent.click(within(bottom).getByRole('link', { name: 'Más' }));
+    await flush();
+    expect(screen.getByRole('heading', { name: 'Más' })).toBeTruthy();
+    // Comparar (4.º item) se lista en "Más" bajo el nombre del módulo.
+    const section = screen.getByRole('heading', { name: 'Comparador' }).closest('section');
+    expect(within(section as HTMLElement).getByRole('button', { name: 'Comparar' })).toBeTruthy();
   });
 });
 
@@ -430,7 +431,7 @@ describe('host + comparador', () => {
     auth.signedIn = false;
     renderHost('/');
     await flush();
-    expect(screen.getByRole('navigation', { name: 'Principal' })).toBeTruthy();
+    expect(screen.getByRole('banner')).toBeTruthy();
     expect(screen.getByRole('navigation', { name: 'Navegación inferior' })).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Explorar productos' })).toBeTruthy();
     expect(screen.queryByTestId('redirect-sign-in')).toBeNull();
@@ -445,9 +446,9 @@ describe('host + comparador', () => {
 
   it('C4: header en orden marca, carrito, ubicación, sync y cuenta', async () => {
     auth.signedIn = false;
-    renderHost('/no-existe');
+    renderHost('/');
     await flush();
-    const header = screen.getByRole('navigation', { name: 'Principal' });
+    const header = screen.getByRole('banner');
     const buttons = within(header).getAllByRole('button');
     expect(buttons.map((b) => b.getAttribute('aria-label') ?? b.textContent)).toEqual([
       'Carrito',
@@ -456,7 +457,7 @@ describe('host + comparador', () => {
       'Ingresar',
     ]);
     // La marca del host va antes que las acciones del módulo.
-    const brand = within(header).getByText('🛒 COMPRO');
+    const brand = within(header).getByText('Neggo');
     expect(
       brand.compareDocumentPosition(buttons[0] as Node) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();

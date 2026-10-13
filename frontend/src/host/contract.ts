@@ -34,26 +34,38 @@ export interface NavItem {
   /** Texto base: 'Intereses'. */
   label: string;
   /**
-   * `string` = emoji (lo de hoy); `ReactNode` = SVG (feat/design-system).
-   * Bottom: siempre en `<span aria-hidden>`; top: sólo si `iconInTop`.
-   * (`string | ReactNode` equivale a `ReactNode` para TS; se deja explícito por intención.)
+   * SVG de `host/ui/icons` (guía §2.4). Se renderiza en un `<span aria-hidden>`.
+   * Un string (emoji) todavía funciona, pero la guía lo prohíbe en código nuevo.
    */
-  icon?: string | ReactNode;
-  /** Comparar → top '📊 Comparar'. */
-  iconInTop?: boolean;
-  /** Definido ⇒ contador en top; NO se muestra en bottom. */
+  icon?: ReactNode;
+  /** Contador; > 0 se muestra como burbuja sobre el ícono en la barra inferior. */
   badge?: number;
   end?: boolean;
 }
 
+/**
+ * Ítems por módulo que entran en la barra inferior; el host suma "Más" como
+ * cuarto ítem fijo y los sobrantes se listan en la pantalla "Más" (guía §3.1).
+ */
+export const MAX_BOTTOM_ITEMS = 3;
+
+/** Ruta propia del host. Ningún módulo puede declarar una ruta que caiga acá. */
+export const HOST_MORE_PATH = '/mas';
+
 export interface AppModule {
   id: string;
   label: string;
-  /** '/' para el comparador. */
+  /** '/' para el comparador. Al cambiar de módulo desde "Más" se navega acá. */
   basePath: string;
   routes: readonly ModuleRoute[];
   Provider?: ComponentType<{ children: ReactNode }>;
   useNav?: () => NavItem[];
+  /**
+   * `headerActions`: si existe, el host muestra una barra superior compacta
+   * (marca + acciones + cuenta) en las rutas de ESTE módulo. Sin él, cada
+   * pantalla pone su propio `ScreenHeader` (guía §4.15).
+   * `overlays`: montados siempre, sobre todas las rutas.
+   */
   slots?: { headerActions?: ComponentType; overlays?: ComponentType };
 }
 

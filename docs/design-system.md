@@ -104,7 +104,7 @@ Se cargan en `frontend/index.html`:
 
 **Reglas**
 - Ningún input con letra menor a 16 px (iOS hace zoom).
-- Dinero siempre en Archivo y con formato argentino `$ 42.300`. Se formatea con **una sola** función compartida (`frontend/src/ui/format.ts → formatMoney`), nunca a mano. Los precios con centavos del comparador muestran decimales solo si existen: `$ 1.249,90`.
+- Dinero siempre en Archivo y con formato argentino `$ 42.300`. Se formatea con **una sola** función compartida (`frontend/src/host/ui/format.ts → formatMoney`, y `formatSignedMoney` para `+`/`−`), nunca a mano. Los precios con centavos del comparador muestran decimales solo si existen: `$ 1.249,90`.
 - Interlineado 1,35–1,45 en textos de varias líneas.
 - Las clases `text-xs`/`text-[11px]` que hoy usa el comparador quedan prohibidas: el mínimo es `micro` (12 px).
 
@@ -130,7 +130,7 @@ Alturas de botón: 76 (acciones de inicio), 60 (confirmar), 58 (WhatsApp), 52–
 
 ### 2.4 Íconos
 
-SVG inline propios, 22–24 px, `stroke="currentColor"`, grosor 2–2,6, puntas redondeadas, `aria-hidden="true"`. Se centralizan en `frontend/src/ui/icons.tsx`. Set base: Más, Check, Atrás, Inicio, Clientes, Ajustes, Mensaje (paths en el `DESIGN.md` de fiado), más Buscar, Carrito, Comparar y Cerrar para el comparador. Botones de solo ícono llevan `aria-label`.
+SVG inline propios, 22–24 px, `stroke="currentColor"`, grosor 2–2,6, puntas redondeadas, `aria-hidden="true"`. Se centralizan en `frontend/src/host/ui/icons.tsx`. Set base: Más, Check, Atrás, Inicio, Clientes, Ajustes, Mensaje (paths en el `DESIGN.md` de fiado), más Buscar, Carrito, Comparar y Cerrar para el comparador. Botones de solo ícono llevan `aria-label`.
 
 ---
 
@@ -160,35 +160,39 @@ SVG inline propios, 22–24 px, `stroke="currentColor"`, grosor 2–2,6, puntas 
 
 ### 3.1 Navegación entre módulos
 
-Cada módulo declara en su contrato `AppModule` hasta **3 ítems** de barra inferior. El host agrega un cuarto ítem fijo, **"Más"**, que abre la pantalla del host con: cambiar de módulo, cuenta (Clerk) y ayuda. Con un solo módulo habilitado, "Más" igual existe (cuenta y ayuda).
+La barra inferior muestra **solo los ítems del módulo activo**: los 3 primeros de su `useNav`, más un cuarto ítem fijo del host, **"Más"** (`/mas`, constantes `MAX_BOTTOM_ITEMS` y `HOST_MORE_PATH` en `host/contract.ts`). La pantalla "Más" lista, en este orden: los ítems del módulo que no entraron en la barra, el cambio de herramienta (solo con más de un módulo) y la cuenta (Clerk). El módulo activo es el de la ruta actual; en `/mas` o en una ruta desconocida se mantiene el último visitado.
 
-Al volver se regresa a la pantalla de origen (si se entró a "Anotar" desde la ficha, se vuelve a la ficha). La flecha atrás usa el historial, no una ruta fija.
+**Barra superior:** no hay header global. Si un módulo declara `slots.headerActions`, el host muestra en **sus** rutas una barra compacta de 56 px (marca "Neggo" + acciones + cuenta). Un módulo sin `headerActions` (como Fiado) pone en cada pantalla su `ScreenHeader`.
+
+Al volver se regresa a la pantalla de origen (si se entró a "Anotar" desde la ficha, se vuelve a la ficha). La flecha atrás de `ScreenHeader` usa el historial y, si se entró directo por un link (sin historial dentro de la app), va a la ruta `backTo`. El hook `useGoBack(backTo)` hace lo mismo para botones propios.
 
 ---
 
-## 4. Componentes compartidos (`frontend/src/ui/`)
+## 4. Componentes compartidos (`frontend/src/host/ui/`)
 
-Primitivas sin dominio, usadas por todos los módulos. Un módulo **no** redefine botones ni inputs propios.
+Primitivas sin dominio, usadas por todos los módulos. Un módulo **no** redefine botones ni inputs propios. Los módulos importan de `host/ui/*`; el host nunca importa de `modules/` (lo controla `host/isolation.test.ts`).
+
+Estado: ✅ disponible · ⏳ llega con el PR que la usa por primera vez.
 
 | Componente | Notas |
 |---|---|
-| `Button` | Variantes: `primary` (`--ink`), `fiado`, `pago`, `whatsapp`, `outline` (borde `--ink`), `soft` (borde `--border`), `text`, `on-dark`. Tamaños `xl` 76, `l` 60, `m` 52, `s` 44, `chip` 40. Siempre `<button>`; pressed `brightness(0.92)`; disabled `--disabled`. |
-| `Card` | `--surface`, `radius-xl`, padding 20. Variante `dark` (`--ink`), una sola por pantalla. |
-| `List` + `ListRow` | Lista blanca `radius-l`; fila entera es un `<button>` o `<a>`, separador `--line`, slot izquierda (avatar/imagen), centro (título + secundaria), derecha (monto/acción). |
-| `Avatar` | Círculo 40 (56 en ficha), inicial en Archivo. |
-| `Pill` | Neutra, `warn`, `late`, `ok`. `micro`/`caption` 700. |
-| `FilterChips` | Pastillas 40 px con `aria-pressed`, se envuelven en varias líneas (no scroll horizontal). |
-| `TextField` | Label siempre visible arriba, alto 50–52, texto 17, foco borde 2 px `--focus`. `inputmode` correcto (`tel`, `search`). |
-| `Keypad` | 3 × 4 (`1-9`, `00`, `0`, `⌫`), teclas 54 px. Para montos nunca se usa `<input type="number">`. |
-| `ScreenHeader` | Variante `place` (título `title-l` + acción a la derecha) y `task` (flecha atrás 44 × 44 + `title-m`, color opcional). |
-| `BottomNav` | Ícono 24 + texto 13/700; activo `--ink`, inactivo `--ink-disabled`. |
-| `Toast` | `--ink`, texto blanco, `role="status"`, 3 s, acción opcional ("Deshacer"). |
-| `Notice` | Aviso `--warn-bg` que informa y no bloquea. |
-| `CorrectionMark` | Movimiento corregido: monto tachado + pastilla neutra "Corregido"; la corrección se muestra como fila propia con fecha y hora. Nunca se oculta. |
-| `EmptyState` | Una frase en `body-s` muted dentro de la misma tarjeta. Sin ilustraciones ni emoji. |
-| `BottomSheet` | Hoja inferior de ancho completo, para lo que hoy son modales/drawers (`FreqModal`, `CartDrawer`). |
-| `DataCells` | Grilla de 2–3 celdas `--surface-muted` con label `micro` y valor `body-s` 700. |
-| `WhatsAppBubble` | Vista previa del mensaje, termina en "Hecho con Neggo". |
+| `Button` ✅ | Variantes: `primary` (`--ink`), `fiado`, `pago`, `whatsapp`, `outline` (borde `--ink`), `soft` (borde `--border`), `text`, `on-dark`. Tamaños `xl` 76, `l` 60, `m` 52, `s` 44, `chip` 40. Siempre `<button>`; pressed `brightness(0.92)`; disabled `--disabled`. |
+| `Card` ✅ | `--surface`, `radius-xl`, padding 20. Variante `dark` (`--ink`), una sola por pantalla. Junto con `Section` (título `title-s` + contenido). |
+| `List` + `ListRow` ✅ | Lista blanca `radius-l`; fila entera es un `<button>` o `<a>`, separador `--line`, slot izquierda (avatar/imagen), centro (título + secundaria), derecha (monto/acción). |
+| `Avatar` ✅ | Círculo 40 (56 en ficha), inicial en Archivo. |
+| `Pill` ✅ | Neutra, `warn`, `late`, `ok`. `micro`/`caption` 700. |
+| `FilterChips` ✅ | Pastillas 40 px con `aria-pressed`, se envuelven en varias líneas (no scroll horizontal). |
+| `TextField` ✅ | Label siempre visible arriba, alto 50–52, texto 17, foco borde 2 px `--focus`. `inputmode` correcto (`tel`, `search`). |
+| `Keypad` ⏳ (fiado-movimientos) | 3 × 4 (`1-9`, `00`, `0`, `⌫`), teclas 54 px. Para montos nunca se usa `<input type="number">`. |
+| `ScreenHeader` ✅ | Variante `place` (título `title-l` + acción a la derecha) y `task` (flecha atrás 44 × 44 + `title-m`, color opcional). |
+| `BottomNav` ✅ (del host) | Ícono 24 + texto 13/700; activo `--ink`, inactivo `--ink-disabled`. |
+| `Toast` ✅ (`useToast()`) | `--ink`, texto blanco, `role="status"`, 3 s, acción opcional ("Deshacer"). |
+| `Notice` ✅ | Aviso `--warn-bg` que informa y no bloquea. |
+| `CorrectionMark` ⏳ (fiado-movimientos) | Movimiento corregido: monto tachado + pastilla neutra "Corregido"; la corrección se muestra como fila propia con fecha y hora. Nunca se oculta. |
+| `EmptyNote` ✅ | Una frase en `body-s` muted dentro de la misma tarjeta o lista. Sin ilustraciones ni emoji. (`EmptyState`, el de pantalla completa, queda para el comparador hasta su migración.) |
+| `BottomSheet` ⏳ (migración del comparador) | Hoja inferior de ancho completo, para lo que hoy son modales/drawers (`FreqModal`, `CartDrawer`). |
+| `DataCells` ✅ | Grilla de 2–3 celdas `--surface-muted` con label `micro` y valor `body-s` 700. |
+| `WhatsAppBubble` ⏳ (fiado-whatsapp) | Vista previa del mensaje, termina en "Hecho con Neggo". |
 
 Los componentes con dominio (fila de cliente, tarjeta de producto, selector de cliente) viven **dentro del módulo** y se arman con estas primitivas.
 
@@ -215,10 +219,10 @@ Los componentes con dominio (fila de cliente, tarjeta de producto, selector de c
 ## 7. Implementación en el código
 
 1. **Tokens:** bloque `:root { … }` en `frontend/src/index.css` con todas las variables de §2.
-2. **Tailwind:** `theme.extend` mapea los tokens (`colors: { bg: 'var(--bg)', ink: { DEFAULT: 'var(--ink)', muted: 'var(--ink-muted)' }, fiado: 'var(--fiado)', … }`, `fontFamily: { display, body }`, `borderRadius`, `fontSize` con los tokens de §2.2). Así se escribe `bg-surface text-ink rounded-xl text-body-l` y no hex sueltos.
-3. **Primitivas:** `frontend/src/ui/*` con tests de Testing Library (rol, `aria-*`, variantes).
-4. **Shell:** el host del refactor `app-shell` renderiza raíz `100dvh`, `main` scrolleable, `BottomNav` a partir de los `nav` de los módulos y `Toast` global.
-5. **Lint de diseño (barato):** un test que falle si aparece `indigo-`, `gray-`, `shadow-` o `text-[1` en `src/modules/**` y `src/ui/**`. Se amplía al comparador cuando se migre.
+2. **Tailwind:** `theme.screens` está **vacío**: no existen `sm:`/`md:`/`lg:`, porque la app vive en una columna de 480 px y un breakpoint por ancho de viewport no describe ese espacio. `theme.extend` mapea los tokens (`colors: { bg: 'var(--bg)', ink: { DEFAULT: 'var(--ink)', muted: 'var(--ink-muted)' }, fiado: 'var(--fiado)', … }`, `fontFamily: { display, body }`, `borderRadius`, `fontSize` con los tokens de §2.2). Así se escribe `bg-surface text-ink rounded-xl text-body-l` y no hex sueltos.
+3. **Primitivas:** `frontend/src/host/ui/*` con tests de Testing Library (rol, `aria-*`, variantes). Estado presionado con la clase utilitaria `pressable`.
+4. **Shell:** `host/HostLayout.tsx` renderiza la raíz `100dvh` de 480 px, la barra superior opcional, `main` (el único que scrollea), overlays, `BottomNav` del módulo activo y la región del toast. PWA: `public/manifest.webmanifest` + `public/icon.svg`, sin service worker (offline es etapa 2).
+5. **Lint de diseño (barato):** `host/ui/design-lint.test.ts` falla si en el código del host aparece la paleta default de Tailwind (`gray-`, `indigo-`, …), sombras, degradados, texto menor a 12 px, breakpoints, emoji o hex sueltos en clases. Cada módulo migrado o nuevo suma su carpeta al escaneo; el comparador entra cuando se migre.
 
 ### 7.1 Migración del comparador
 

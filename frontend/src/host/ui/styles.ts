@@ -9,17 +9,18 @@
 /**
  * Standard visible focus ring for keyboard navigation.
  * Applies only on :focus-visible (keyboard), not on mouse click.
- * Uses indigo-400 to match the existing indigo interaction palette.
+ * Uses the `--focus` token (docs/design-system.md §6).
  */
 export const FOCUS_RING =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2';
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2';
 
 /**
- * Primary CTA button/link appearance — indigo filled pill.
- * Compose with FOCUS_RING at call sites: `${PRIMARY_CTA} ${FOCUS_RING}`
+ * Primary CTA button/link appearance — dark (`--ink`) filled block.
+ * Compose with FOCUS_RING at call sites: `${PRIMARY_CTA} ${FOCUS_RING}`.
+ * New code should prefer `<Button variant="primary">`.
  */
 export const PRIMARY_CTA =
-  'inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors';
+  'pressable inline-flex items-center justify-center gap-2 min-h-touch px-4 rounded-m bg-ink text-surface font-display text-button-m';
 
 /**
  * Focus-visible ring for text inputs and selects.
@@ -27,4 +28,4 @@ export const PRIMARY_CTA =
  * Slightly tighter offset than FOCUS_RING to stay inside the input border.
  */
 export const FOCUS_RING_INPUT =
-  'focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1';
+  'focus:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-1';
