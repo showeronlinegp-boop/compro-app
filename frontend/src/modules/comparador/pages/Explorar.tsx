@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../api';
-import { EmptyState } from '../components/EmptyState';
+import { EmptyState } from '../../../host/ui/EmptyState';
 import FreqModal from '../components/FreqModal';
 import GroupedCard from '../components/GroupedCard';
 import PromoPanel from '../components/PromoPanel';
-import { PageContainer } from '../components/layout/PageContainer';
-import { FOCUS_RING, FOCUS_RING_INPUT, PRIMARY_CTA } from '../styles';
+import { PageContainer } from '../../../host/ui/layout/PageContainer';
+import { FOCUS_RING, FOCUS_RING_INPUT, PRIMARY_CTA } from '../../../host/ui/styles';
 import type {
   EnrichStatus,
   GroupsResult,

@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
-import { FOCUS_RING, PRIMARY_CTA } from '../styles';
+import { FOCUS_RING, PRIMARY_CTA } from '../../../host/ui/styles';
 import { pesos } from '../supers';
-import { EmptyState } from './EmptyState';
+import { EmptyState } from '../../../host/ui/EmptyState';
 
 /**
  * Cart drawer — right-side slide-over for quick cart editing.

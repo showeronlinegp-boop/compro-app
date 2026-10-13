@@ -8,7 +8,7 @@ Fuente de diseño: `DESIGN.md` (mockup de Neggo) y la guía general `docs/design
 ## Dependencias
 
 1. **`refactor/app-shell`** (en curso): el contrato `AppModule` (rutas + nav + providers en una sola fuente) tiene que estar mergeado. Fiado es el primer módulo nuevo y valida ese contrato.
-2. **`feat/design-system`**: tokens, fuentes, primitivas `ui/*` y shell mobile. Fiado no arranca pantallas sin esto.
+2. **`feat/design-system`**: tokens, fuentes, primitivas `host/ui/*` y shell mobile. Fiado no arranca pantallas sin esto.
 
 ## Alcance
 
@@ -81,7 +81,7 @@ Rutas bajo `/fiado/*`. Pantallas de tarea (`anotar`, `listo`, `recordar`, `nuevo
 | # | Rama | Contenido |
 |---|---|---|
 | 0 | `refactor/app-shell` | Prerrequisito, ya en curso. |
-| 1 | `feat/design-system` | Rebranding a **Neggo** (título, `theme-color`, manifest, textos visibles del host). Tokens en `index.css` + Tailwind, fuentes, `ui/*` con tests, shell mobile (100dvh, safe areas, `BottomNav` desde módulos, "Más"), manifest PWA, test de "lint de diseño". |
+| 1 | `feat/design-system` | Rebranding a **Neggo** (título, `theme-color`, manifest, textos visibles del host). Tokens en `index.css` + Tailwind, fuentes, `host/ui/*` con tests, shell mobile (100dvh, safe areas, `BottomNav` desde módulos, "Más"), manifest PWA, test de "lint de diseño". |
 | 2 | `feat/fiado-backend` | Migración Prisma, módulo Nest, dominio, API, tests unit/repo/e2e/aislamiento. |
 | 3 | `feat/fiado-clientes` | Módulo front registrado en el host; Inicio (sin acciones), Clientes, Ficha, Nuevo cliente. |
 | 4 | `feat/fiado-movimientos` | `Keypad`, Anotar fiado / Registrar pago, selector de cliente, Listo, toast con Deshacer (corrección visible en el historial). |
@@ -93,7 +93,10 @@ Cada PR deja `typecheck` y `test` verdes en CI y se mergea con squash.
 ## Módulos afectados
 
 - `backend/prisma/schema.prisma` + migración nueva, `backend/src/modules/fiado/*`, `app.module.ts`, `common/tokens.ts`, tests.
-- `frontend/index.html`, `index.css`, `tailwind.config.ts`, `styles.ts` (foco), `src/ui/*` nuevo, `src/modules/fiado/*` nuevo, registro en el host.
+- `frontend/index.html`, `index.css`, `tailwind.config.ts`, `host/ui/styles.ts` (foco), `src/host/ui/*` nuevo, `src/modules/fiado/*` nuevo, registro en el host.
+
+> Nota: la UI compartida vive en `frontend/src/host/ui/` (alineado con el design de `app-shell`, que la define como LA carpeta de UI compartida). Donde `docs/design-system.md` dice `src/ui/*`, leer `src/host/ui/*`.
+
 - El comparador **no** cambia de comportamiento; puede verse distinto en lo que toque el shell (raíz y barra inferior).
 
 ## Riesgos

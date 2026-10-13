@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { pesos, superCfg } from '../../supers';
 import type { CompareResult, SuperKey } from '../../types/api';
-import { TwoColumn } from '../layout/TwoColumn';
+import { TwoColumn } from '../../../../host/ui/layout/TwoColumn';
 import { ItemMatchTable } from './ItemMatchTable';
 import { OptionATable } from './OptionATable';
 import { OptionBBreakdown } from './OptionBBreakdown';

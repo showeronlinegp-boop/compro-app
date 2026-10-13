@@ -1,0 +1,81 @@
+change: app-shell
+branch: refactor/app-shell
+artifact_store: openspec
+phases:
+  explore: done
+  proposal: done
+  spec: done
+  design: done
+  tasks: done
+  apply: done
+  verify: done
+  archive: pending
+artifacts:
+  exploration: openspec/changes/app-shell/exploration.md
+  proposal: openspec/changes/app-shell/proposal.md
+  specs:
+    - openspec/changes/app-shell/specs/app-shell/spec.md
+    - openspec/changes/app-shell/specs/comparador/spec.md
+  design: openspec/changes/app-shell/design.md
+  tasks: openspec/changes/app-shell/tasks.md
+  verify_report: openspec/changes/app-shell/verify-report.md
+closed_decisions:
+  - rutas eager en este cambio; el contrato soporta lazy a futuro
+  - providers de todos los modulos siempre montados alrededor del layout
+  - profile/codigo postal/LocationSelector son del comparador; host solo identidad (Clerk) + layout
+  - mover archivos a modules/comparador en este cambio, commit previo de solo git mv (sin logica)
+  - "ui compartida del sistema en frontend/src/host/ui/ (modulos importan de ahi; host no importa de modulos); no existe src/ui ni src/shared"
+adjustments:
+  - date: 2026-10-13
+    origin: openspec/changes/fiado/proposal.md + docs/design-system.md (aprobado por el usuario)
+    items:
+      - "H8 chrome por ruta: ModuleRoute.chrome?: 'full' | 'task' (default 'full'); 'task' oculta solo la BottomNav y el pb-16 de main; header, overlays y HostToolsOutlet siguen montados; resuelto con chromeOf(useHostLocation()); ruta desconocida = 'full'; ninguna ruta del comparador lo usa"
+      - "host/ui/ documentada como LA carpeta de UI compartida; fiado/proposal.md alineada (src/ui/* -> src/host/ui/*)"
+    touched:
+      - openspec/changes/app-shell/specs/app-shell/spec.md (H8 + 5 escenarios)
+      - openspec/changes/app-shell/design.md (decisiones, contrato RouteChrome, layout, seccion UI compartida, tests, commit 3)
+      - openspec/changes/app-shell/tasks.md (3.11, 3.12; 4.7 amplia)
+      - openspec/changes/fiado/proposal.md (solo rutas ui)
+  - date: 2026-10-13
+    origin: brecha #7 de gaps_to_validate (aprobada por el usuario)
+    items:
+      - "NavItem.icon: string | ReactNode; emoji sigue igual (cero cambio visual); topLabel concatena solo string, TopNav renderiza ReactNode en span aria-hidden"
+    touched:
+      - openspec/changes/app-shell/design.md (contrato + nota bajo topLabel)
+      - openspec/changes/app-shell/specs/app-shell/spec.md (H3, una oracion)
+      - openspec/changes/app-shell/proposal.md (firma de NavItem)
+      - openspec/changes/app-shell/tasks.md (3.1, 3.4, 3.8)
+open_decisions: []
+accepted_gaps:
+  - "#7 NavItem.icon string | ReactNode -> aceptada en app-shell (2026-10-13)"
+gaps_to_validate:  # el resto queda para feat/design-system
+  - "BottomNav max 3 items por modulo + item fijo 'Mas' del host (pantalla de modulos/cuenta/ayuda) -> feat/design-system"
+  - "Nav multi-modulo: hoy top/bottom concatenan items de todos los modulos; falta 'modulo activo' y sus items -> feat/design-system (helper en host)"
+  - "Header global vs ScreenHeader por pantalla: el shell mobile no tiene header de host; donde van headerActions/AccountMenu -> feat/design-system"
+  - "Volver por historial con fallback (entrada directa sin historial) -> host/ui ScreenHeader en feat/design-system"
+  - "Toast global del host (offset segun chrome) -> feat/design-system"
+next_phase: archive  # tras la verificacion manual 4.7/4.8 del usuario
+apply_progress:
+  done: [commit-1, commit-2, commit-3, commit-4, commit-5]
+  pending: []
+  pending_user:  # verificacion manual en navegador (npm run dev), no la puede hacer el agente
+    - "4.7 nav top (lg+) y bottom (<lg): textos, iconos, contadores, activo, Comparar condicionado; header marca/carrito/ubicacion/sync/cuenta; barra inferior en todas las rutas del comparador"
+    - "4.8 usuario nuevo sin skip -> /onboarding sin historial; completar -> /planner; /planner sin sesion -> sign-in"
+  log:
+    - "commit 1 (1.1-1.4): git mv segun el mapa + especificadores; lista real de archivos = la del design, sin desvios. typecheck OK, tests 10 files / 66 passed"
+    - "commit 2 (2.1-2.2): host/http.ts con BASE (no exportado), setTokenGetter, req, reqOptional (exportados) movidos literal; api.ts importa de ../../host/http; AuthTokenBridge importa de ../http (fin de la violacion transitoria). typecheck OK, tests 10 files / 66 passed"
+    - "commit 3 (3.1-3.12): host/contract.ts (AppModule, ModuleRoute+chrome, NavItem.icon string|ReactNode, HostTool, ResolvedLocation), routing.tsx, auth/{RequireAuth,AccountMenu} copiados literal de App.tsx, nav/{NavItemsProvider,TopNav,BottomNav,labels}, location.ts (resolveLocation pura con matchRoutes, chromeOf, useHostLocation), tools.tsx, ModuleProviders, HostLayout, HostApp. App.tsx sin cambios. Desvios menores: HostApp/HostLayout/HostToolsOutlet aceptan prop opcional tools (default hostTools) para inyectar una HostTool habilitada en tests H8; useHostLocation toma los modulos de NavItemsProvider (todavia no existe registry); isolation.test usa import.meta.glob ?raw con normalize propio (no hay @types/node) y se excluye a si mismo; useNavItems() agregado como helper. typecheck OK, tests 16 files / 113 passed (66 + 47 nuevos)"
+    - "commit 4 (4.1-4.6): ComparadorProvider (CartProvider > ComparadorStateProvider) con estado/refs/efectos/acciones copiados literal de AppShell + useComparador(); useNav (Explorar con explorarTo.current, Intereses/Planner con badge, Comparar iconInTop solo con profile.onboarding_done; llama useLocation() para re-render por navegacion); routes.tsx (ExplorarRoute 7 props, InteresesRoute 4 props, OnboardingRoute con setProfile + navigate('/planner', replace)); components/{SyncPanel (literal), CartButton (literal, usa useCart), LocationSlot, HeaderActions (carrito, ubicacion, sync)}; manifest en modules/comparador/index.ts; host/registry.ts; App.tsx = AuthTokenBridge + HostApp modules={registry}. Desvios: el manifest vive en index.ts (como dicen design/spec/tasks), no en module.ts; el context expone el ref explorarTo (MutableRefObject) y setProfile tipado como (p) => void; formato Biome aplicado a los archivos nuevos salvo SyncPanel (se dejo literal, Biome sugiere 2 cambios de formato como en el App.tsx previo; CI no corre lint). Verificacion extra: test temporal (no commiteado) que renderiza el App.tsx previo y el nuevo con los mismos mocks y compara innerHTML: 9 rutas (/, /?q=leche, /intereses, /planner, /cart, /compare, /onboarding, /no-existe, /sign-in) x 3 combinaciones (con sesion + onboarding_done, con sesion sin onboarding -> redirect, sin sesion) + navegacion /?q=leche -> Planner con SyncPanel abierto: 28/28 HTML identico. typecheck OK, tests 16 files / 113 passed (smoke sin cambios, mocks sin tocar)"
+    - "commit 5 (5.1-5.2): manifest.test.ts (8 tests: id/basePath/Provider/useNav/slots; rutas = tabla H1 en orden con auth; ids unicos y sin chrome; resolveLocation /compare sin navItem, / -> explorar, /sign-in/factor-one, /sign-up, /no-existe -> null) + ComparadorProvider.test.tsx (21 tests: C3 redirect con replace verificado con useNavigationType=REPLACE y navigate(-1) que saltea la ruta reemplazada, skip, ya en /onboarding, profile null, sin sesion no pide datos; C2 Comparar condicionado, contadores, Planner (n), Explorar recuerda ?q=, integracion HostApp+comparador top = bottom; C4 toggleInterest/addToShopping sin sesion -> /sign-in sin API; C5 fake timers: interval de 3 s exacto, se corta al terminar, banner de enrich 8 s, sin banner en carga fresca, unmount -> getTimerCount 0, StrictMode no duplica). Mock de ./api con Proxy (fallback []) y de Clerk con sesion conmutable. Chequeo de mutacion (no commiteado): sacar replace, sacar clearInterval o cambiar 8000 hace fallar 5 tests. Sin bugs del refactor. Hallazgo preexistente (literal de AppShell, no se toco): el setTimeout de 8 s del banner de enrich no se limpia al desmontar; si se desmonta con el banner visible queda 1 timeout colgado (setState sobre componente desmontado = no-op en React 18). typecheck OK, tests 18 files / 142 passed (113 + 29)"
+verify:
+  date: 2026-10-13
+  verdict: pass_with_warnings
+  critical: 0
+  warning: 3
+  suggestion: 4
+  tests: "frontend 18 files / 145 passed (2 corridas); typecheck front y back OK; backend sin diff vs main"
+  added_tests: "3 de integracion host + comparador real en ComparadorProvider.test.tsx (H1 publica sin sesion, H1 /planner sin sesion, C4 orden del header)"
+  warnings:
+    - "4.7/4.8 manuales pendientes del usuario"
+    - "setTimeout 8 s del banner de enrich sin cleanup al desmontar (preexistente, literal de AppShell)"
+    - "equivalencia visual de nav/header (clases) sin test commiteado"
