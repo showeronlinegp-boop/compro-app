@@ -32,27 +32,34 @@ design_decisions:
   - "HostToolsOutlet envuelve cada tool en Suspense fallback null"
   - "migracion Prisma normal: la tabla existe vacia en todos los entornos (migrate deploy en el entrypoint); aceptado"
   - "tipo/estado VARCHAR + CHECK; pos_x Float; autor = users.email"
-  - "pines position fixed desde el rect en vivo; fallback relativo al contenedor de scroll (main si scrollea)"
+  - "tool montada en la columna del host (sin portal): raiz [data-test-notes] absolute inset-0 z-[60] pointer-events-none; column = ref.parentElement"
+  - "pines absolute en coords de la columna desde el rect en vivo; ocultos fuera de la banda visible de main; fallback pos_y relativo al contenido de main, pos_x fraccion del ancho de main"
+  - "FABs absolute right-4 con bottom = fabBottom(): toast-region medida + TOAST_SLOT 56 + 8 (154 px con barra, 84 en 'task'); no tapan BottomNav ni toasts"
+  - "panel como hoja inferior de ancho completo (guia 3: sin drawers laterales)"
+  - "pantalla = pantallaLabel(useActiveModule().location, pathname): 'Modulo > Titulo de ruta'; /mas -> 'Mas'; nunca navItem.label"
+  - "estilos con tokens del design-system; src/devtools/** entra al glob de host/ui/design-lint.test.ts"
   - "captura instalada al montar la tool (no en main.tsx)"
   - "CLI sobre contexto Nest minimo (PrismaModule + repo admin), no AppModule"
 open_decisions: []
+resolved_decisions:
+  - "P5 RESUELTA (design-system mergeado en #34, b4287ef): tokens del design-system desde el primer commit; devtools/** bajo design-lint"
 provisional_decisions:  # elegidas sin bloquear; validar con el usuario
   - "P1 notas por usuario (scoping user_id); la CLI ve todas  | alt: compartidas entre cuentas de prueba (neggo)"
   - "P2 TEST_NOTES_ENABLED=1 con NODE_ENV=production aborta el arranque  | alt: ignorar con warning"
   - "P3 sin sesion de Clerk la tool no se muestra  | alt: UI deshabilitada"
   - "P4 CLI 'npm run notes -- lista|ver|estado|responder' (+ --json)  | alt: otro nombre / solo texto"
-  - "P5 paleta Tailwind estandar hasta mergear feat/design-system; tokens despues  | alt: esperar el merge y usar tokens"
 coordination:
-  - "feat/design-system trabaja en el MISMO arbol de trabajo (cambios sin commitear en tailwind.config.ts, index.css, host/ui/*). Commitear por pathspec; no cambiar de rama sin coordinar"
-  - "contacto con el host: solo host/tools.tsx (+ tools.test.tsx)"
-  - "supuestos de layout aislados en devtools/test-notes/geometry.ts (main scrolleable, nav[aria-label='Navegación inferior'])"
+  - "worktree propio: C:\Users\USER\OneDrive\Escritorio\COMPRO-test-notes (rama feat/test-notes, rebaseada sobre main b4287ef). Commitear por pathspec"
+  - "contacto con el host: host/tools.tsx (+ tools.test.tsx) y glob de host/ui/design-lint.test.ts"
+  - "supuestos de layout aislados en devtools/test-notes/geometry.ts (main hijo de la columna, [data-testid='toast-region'], nav[aria-label='Navegación inferior'] como fallback)"
+aligned_with: "main b4287ef (design-system #34)"
 tasks_per_commit:
   commit-1: 4
   commit-2: 8
   commit-3: 4
   commit-4: 5
-  commit-5: 4
+  commit-5: 5
   commit-6: 6
-  total: 31
+  total: 32
   manual: [3.4, 6.5, 6.6]
-next_phase: apply  # sdd-apply por commit, tras validar P1-P5
+next_phase: apply  # sdd-apply por commit, tras validar P1-P4

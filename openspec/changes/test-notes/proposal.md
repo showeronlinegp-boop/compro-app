@@ -9,11 +9,11 @@ Probar COMPRO a mano hoy no deja rastro: los problemas se anotan afuera, sin pan
 ## Alcance
 
 **Adentro**
-- Front `src/devtools/test-notes/`: FABs "Marcar"/"Notas (n)", capa de marcado, pines, panel lateral (crear, filtrar, cambiar estado/modo, borrar, ir a la nota), captura de contexto. Registrada en `host/tools.tsx`; funciona con chrome `'full'` y `'task'`.
+- Front `src/devtools/test-notes/`: FABs "Marcar"/"Notas (n)", capa de marcado, pines, hoja inferior (crear, filtrar, cambiar estado/modo, borrar, ir a la nota), captura de contexto. Registrada en `host/tools.tsx`; funciona con chrome `'full'` y `'task'`.
 - Back `modules/test-notes/` (domain + infrastructure): CRUD `/api/test-notes` con validación y recortes; tabla `test_notes` (migración Prisma).
 - CLI `npm run notes -- lista | ver <id> | estado <id> <estado> | responder <id> <estado>` con salida estable (`--json`) para el futuro `claude-link`.
 - Gate: `VITE_TEST_NOTES=1` + `import.meta.env.DEV` (fuera del bundle de prod) y `TEST_NOTES_ENABLED=1` (sin la flag, el módulo no se registra → 404).
-- Mejoras baratas: selector con anclas estables (`data-testid` → id → `aria-label` único → path); captura con exclusión parametrizable; pines `fixed` que soportan `main` scrolleable.
+- Mejoras baratas: selector con anclas estables (`data-testid` → id → `aria-label` único → path); captura con exclusión parametrizable; pines medidos en vivo sobre `main` (único contenedor que scrollea).
 
 **Afuera**
 - Protocolo `neggo-claude://`, botón "Enviar a Claude", scripts `.ps1` y skill `nota-prueba` (cambio `claude-link`).
@@ -25,9 +25,9 @@ Probar COMPRO a mano hoy no deja rastro: los problemas se anotan afuera, sin pan
 |---|---|
 | Ubicación front | `src/devtools/test-notes/` (`devtools → host` permitido; `devtools ↛ modules`; solo `host/tools.tsx` importa `devtools`) |
 | Exclusión del bundle | ternario `DEV && VITE_TEST_NOTES === '1'` que envuelve `lazy(() => import(...))` |
-| Ubicación/pantalla | `useHostLocation()` → `módulo › título de ruta` |
+| Ubicación/pantalla | `useActiveModule().location` (misma resolución que `useHostLocation()`) → `módulo › título de ruta` |
 | HTTP | cliente sobre `host/http.ts` (`req`) |
-| Estilos | Tailwind estándar + `FOCUS_RING*` de `host/ui/styles.ts`; sin prefijos de breakpoint |
+| Estilos | Tokens del design-system + `FOCUS_RING*` de `host/ui/styles.ts`; `devtools/**` entra al `design-lint` |
 | Back | `TestNotesModule` patrón `cart` (repo factory `Scope.REQUEST` + `user_id`), import condicional en `AppModule` |
 | Tabla | migración Prisma normal: existe vacía en todos los entornos (aceptado; ver design) |
 
@@ -36,6 +36,7 @@ Probar COMPRO a mano hoy no deja rastro: los problemas se anotan afuera, sin pan
 | Área | Impacto |
 |---|---|
 | `frontend/src/host/tools.tsx` | Modificado (registro) |
+| `frontend/src/host/ui/design-lint.test.ts` | Modificado (glob de `devtools/**`) |
 | `frontend/src/devtools/test-notes/**` | Nuevo |
 | `backend/prisma/schema.prisma`, `prisma/migrations/*_add_test_notes` | Nuevo modelo + migración |
 | `backend/src/modules/test-notes/**`, `common/tokens.ts`, `config/env.ts`, `app.module.ts` | Nuevo / modificado |
@@ -46,7 +47,7 @@ Probar COMPRO a mano hoy no deja rastro: los problemas se anotan afuera, sin pan
 
 | Riesgo | Prob. | Mitigación |
 |---|---|---|
-| Choque con `feat/design-system` (mismo árbol de trabajo, layout/BottomNav/toasts) | Alta | Un solo toque al host; tool autocontenida; posicionamiento por medición; commits por pathspec |
+| Cambios futuros del layout del host (barra, toasts, `main`) | Media | Supuestos concentrados en `geometry.ts`; posicionamiento por medición; tests de `fabBottom`/`pinPosition` |
 | Código de la tool en el bundle de prod | Baja | Rama muerta por `DEV`; verificación manual con `rg` sobre `dist/` |
 | Flag del back activa en prod | Baja | Arranque falla si `TEST_NOTES_ENABLED=1` y `NODE_ENV=production` |
 | Tabla vacía en prod | Cierta | Inocua (sin rutas); documentado |
@@ -61,7 +62,7 @@ Rama `feat/test-notes`, commits por capa. Post-merge: `git revert` del squash y 
 - [ ] Sin flags: `hostTools` vacío, `/api/test-notes` → 404, build de prod sin rastro de `test-notes`.
 - [ ] Con flags: marcar, guardar, ver pin, cambiar estado y borrar funcionan en rutas `'full'` y `'task'`.
 - [ ] `npm run notes -- ver <id>` muestra nota, modo, errores y API capturados.
-- [ ] El host solo cambia en `host/tools.tsx`.
+- [ ] El host solo cambia en `host/tools.tsx` (+ test) y el glob de `host/ui/design-lint.test.ts`.
 
 ## Decisiones provisionales — validar con el usuario
 
@@ -71,4 +72,5 @@ Rama `feat/test-notes`, commits por capa. Post-merge: `git revert` del squash y 
 | P2 | `TEST_NOTES_ENABLED=1` con `NODE_ENV=production` **aborta el arranque** | Ignorar la flag con warning |
 | P3 | Sin sesión de Clerk la tool **no se muestra** | Mostrarla deshabilitada |
 | P4 | CLI `npm run notes` con comandos en castellano (compatibles con `notaPrueba.js`) + `--json` | Otro nombre / solo texto |
-| P5 | Paleta Tailwind estándar hasta que mergee el design-system; migrar a tokens después | Esperar a `feat/design-system` y usar tokens ya |
+
+**P5 resuelta** (design-system mergeado en #34): se usan los tokens del design-system desde el primer commit y `src/devtools/**` entra al escaneo de `design-lint.test.ts`.
