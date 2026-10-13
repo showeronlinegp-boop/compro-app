@@ -1,0 +1,39 @@
+# openspec/config.yaml
+schema: spec-driven
+
+context: |
+  Tech stack: monorepo npm. frontend/ = React 18.3 + Vite 5 + react-router-dom 6 + Tailwind 3 + TS 5 (strict) + Clerk. backend/ = NestJS 11 + Prisma 7 (Postgres).
+  Architecture: back modular Nest (src/modules/*, /api plano). Front plano por tipo (pages/, components/, contexts/), App.tsx mezcla shell y dominio.
+  Testing: Vitest 3 en ambos. Front: jsdom + Testing Library (tests co-ubicados, vi.mock con paths relativos). Back: Vitest + Postgres en CI.
+  Style: Biome 1.9 (single quotes, trailing commas, lineWidth 100). Conventional Commits. Ramas feat/ fix/ chore/ refactor/ + PR squash con CI verde (CONTRIBUTING.md).
+  CI: .github/workflows/ci.yml corre typecheck + test en backend y frontend.
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Identify affected modules/packages
+    - Escribir en español rioplatense técnico
+  specs:
+    - Use Given/When/Then format for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+  tasks:
+    - Group tasks by phase (infrastructure, implementation, testing)
+    - Use hierarchical numbering (1.1, 1.2, etc.)
+    - Keep tasks small enough to complete in one session
+    - Cada tarea deja `npm run typecheck` y `npm test` (frontend) en verde
+  apply:
+    - Follow existing code patterns and conventions
+    - No correr build (vite build) salvo pedido explícito
+    tdd: false
+    test_command: "cd frontend && npm test"
+  verify:
+    - Run tests if test infrastructure exists
+    - Compare implementation against every spec scenario
+    test_command: "cd frontend && npm run typecheck && npm test"
+    build_command: ""
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas (large removals)
