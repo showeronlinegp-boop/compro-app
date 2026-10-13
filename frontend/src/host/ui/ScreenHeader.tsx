@@ -43,6 +43,8 @@ interface TaskHeaderProps {
   titleClassName?: string;
   /** 'icon' = flecha 44×44 con aria-label; 'label' = flecha + "Volver" (ficha). */
   backStyle?: 'icon' | 'label';
+  /** El título sólo para lectores de pantalla (la pantalla ya lo muestra en otro lado). */
+  titleHidden?: boolean;
 }
 
 export type ScreenHeaderProps = PlaceHeaderProps | TaskHeaderProps;
@@ -64,8 +66,17 @@ export function ScreenHeader(props: ScreenHeaderProps) {
   return <TaskHeader {...props} />;
 }
 
-function TaskHeader({ title, backTo, titleClassName, backStyle = 'icon' }: TaskHeaderProps) {
+function TaskHeader({
+  title,
+  backTo,
+  titleClassName,
+  backStyle = 'icon',
+  titleHidden = false,
+}: TaskHeaderProps) {
   const goBack = useGoBack(backTo);
+  const titleClass = titleHidden
+    ? 'sr-only'
+    : `m-0 font-display text-title-m ${titleClassName ?? 'text-ink'}`;
   if (backStyle === 'label') {
     return (
       <header className="flex flex-col items-start gap-2">
@@ -77,7 +88,7 @@ function TaskHeader({ title, backTo, titleClassName, backStyle = 'icon' }: TaskH
           <IconBack size={22} />
           Volver
         </button>
-        <h1 className={`m-0 font-display text-title-m ${titleClassName ?? 'text-ink'}`}>{title}</h1>
+        <h1 className={titleClass}>{title}</h1>
       </header>
     );
   }
@@ -91,7 +102,7 @@ function TaskHeader({ title, backTo, titleClassName, backStyle = 'icon' }: TaskH
       >
         <IconBack />
       </button>
-      <h1 className={`m-0 font-display text-title-m ${titleClassName ?? 'text-ink'}`}>{title}</h1>
+      <h1 className={titleClass}>{title}</h1>
     </header>
   );
 }
