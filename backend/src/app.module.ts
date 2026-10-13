@@ -8,6 +8,7 @@ import { EnrichmentModule } from './enrichment/infrastructure/enrichment.module.
 import { CartModule } from './modules/cart/infrastructure/cart.module.js';
 import { CatalogModule } from './modules/catalog/infrastructure/catalog.module.js';
 import { CompareModule } from './modules/compare/infrastructure/compare.module.js';
+import { FiadoModule } from './modules/fiado/infrastructure/fiado.module.js';
 import { InterestsModule } from './modules/interests/infrastructure/interests.module.js';
 import { ProfileModule } from './modules/profile/infrastructure/profile.module.js';
 import { PromosModule } from './modules/promos/infrastructure/promos.module.js';
@@ -28,6 +29,7 @@ import { SchedulerModule } from './scheduler/scheduler.module.js';
     InterestsModule,
     ShoppingModule,
     CartModule,
+    FiadoModule,
     PromosModule,
     ProfileModule,
     CompareModule,

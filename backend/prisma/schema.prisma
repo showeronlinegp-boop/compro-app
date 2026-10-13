@@ -21,10 +21,15 @@ model users {
   created_at    DateTime @default(now()) @db.Timestamptz(6)
   updated_at    DateTime @updatedAt @db.Timestamptz(6)
 
-  cart          cart?
-  shopping      shopping[]
-  interests     interests[]
-  profile       user_profiles?
+  cart      cart?
+  shopping  shopping[]
+  interests interests[]
+  profile   user_profiles?
+
+  fiado_clientes      fiado_clientes[]
+  fiado_movimientos   fiado_movimientos[]
+  fiado_recordatorios fiado_recordatorios[]
+  fiado_ajustes       fiado_ajustes?
 
   @@map("users")
 }
@@ -242,4 +247,94 @@ model promo_offers {
 
   @@index([super, captured_at])
   @@map("promo_offers")
+}
+
+// ===========================================================================
+// Módulo Fiado (openspec/changes/fiado). Todo tiene dueño (user_id).
+// ===========================================================================
+
+// ---------------------------------------------------------------------------
+// fiado_clientes — clientes a los que el comercio les fía
+// ---------------------------------------------------------------------------
+model fiado_clientes {
+  id            Int       @id @default(autoincrement())
+  user_id       Int
+  nombre        String    @db.Text
+  telefono      String?   @db.Text
+  etiqueta      String?   @db.Text
+  /// Límite de fiado en pesos. Informa, no bloquea.
+  limite        Int?
+  proximo_cobro DateTime? @db.Date
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime  @updatedAt @db.Timestamptz(6)
+
+  user          users                 @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  movimientos   fiado_movimientos[]
+  recordatorios fiado_recordatorios[]
+
+  @@index([user_id, nombre])
+  @@map("fiado_clientes")
+}
+
+// ---------------------------------------------------------------------------
+// fiado_movimientos — libro APPEND-ONLY (un trigger bloquea UPDATE y DELETE
+// directos). `monto` es el efecto con signo sobre lo que te deben:
+// fiado > 0, pago < 0, correccion = −(monto del corregido).
+// ---------------------------------------------------------------------------
+model fiado_movimientos {
+  id              Int      @id @default(autoincrement())
+  user_id         Int
+  cliente_id      Int
+  /// 'fiado' | 'pago' | 'correccion' (CHECK en la migración)
+  tipo            String   @db.Text
+  monto           Int
+  /// Movimiento que esta corrección deshace. Único: se corrige una sola vez.
+  corrige_id      Int?     @unique
+  nota            String?  @db.Text
+  /// Evita duplicados por doble toque o reintento de red.
+  idempotency_key String?  @db.Text
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  user      users              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  cliente   fiado_clientes     @relation(fields: [cliente_id], references: [id], onDelete: Cascade)
+  corrige   fiado_movimientos? @relation("correccion", fields: [corrige_id], references: [id], onDelete: Cascade)
+  corregido fiado_movimientos? @relation("correccion")
+
+  @@unique([user_id, idempotency_key])
+  @@index([user_id, cliente_id, created_at])
+  @@map("fiado_movimientos")
+}
+
+// ---------------------------------------------------------------------------
+// fiado_recordatorios — cuándo se le recordó el pago a un cliente
+// ---------------------------------------------------------------------------
+model fiado_recordatorios {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  cliente_id Int
+  enviado_at DateTime @default(now()) @db.Timestamptz(6)
+
+  user    users          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  cliente fiado_clientes @relation(fields: [cliente_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, cliente_id, enviado_at])
+  @@map("fiado_recordatorios")
+}
+
+// ---------------------------------------------------------------------------
+// fiado_ajustes — una fila por usuario. Plantilla null = texto por defecto.
+// ---------------------------------------------------------------------------
+model fiado_ajustes {
+  user_id                Int      @id
+  comercio               String   @default("") @db.Text
+  alias                  String?  @db.Text
+  dias_deuda_vieja       Int      @default(30)
+  plantilla_fiado        String?  @db.Text
+  plantilla_pago         String?  @db.Text
+  plantilla_recordatorio String?  @db.Text
+  updated_at             DateTime @updatedAt @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("fiado_ajustes")
 }

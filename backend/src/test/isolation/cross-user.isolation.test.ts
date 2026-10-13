@@ -16,6 +16,7 @@ import { makeCartRepo } from '../../modules/cart/infrastructure/cart.repo.js';
 import { makeInterestsRepo } from '../../modules/interests/infrastructure/interests.repo.js';
 import { makeShoppingRepo } from '../../modules/shopping/infrastructure/shopping.repo.js';
 import { makeProfileRepo } from '../../modules/profile/infrastructure/profile.repo.js';
+import { makeFiadoRepo } from '../../modules/fiado/infrastructure/fiado.repo.js';
 import type { CompareRepo } from '../../modules/compare/infrastructure/compare.repo.js';
 import type { TierMap } from '../../shared/types.js';
 
@@ -34,7 +35,10 @@ async function seedUser(tx: Tx, label?: string): Promise<number> {
   return result.id;
 }
 
-async function seedProduct(tx: Tx, overrides: Partial<{ product_id: string }> = {}): Promise<number> {
+async function seedProduct(
+  tx: Tx,
+  overrides: Partial<{ product_id: string }> = {},
+): Promise<number> {
   const result = await tx.products.create({
     data: {
       super: 'vea',
@@ -346,6 +350,83 @@ describe('Profile isolation: user A cannot read or overwrite user B profile', ()
       // User A's profile is gone
       const profileA = await repoA.get();
       expect(profileA).toBeNull();
+    });
+  });
+});
+
+// ─── Fiado isolation ───────────────────────────────────────────────────────────
+
+describe('Fiado isolation: user A cannot read or write user B ledger', () => {
+  const sinDatos = { telefono: null, etiqueta: null, limite: null, proximo_cobro: null };
+
+  it('A no ve clientes ni deuda de B, y cada id de B le da 404', async () => {
+    await withRollback(async (tx) => {
+      const userA = await seedUser(tx, 'a');
+      const userB = await seedUser(tx, 'b');
+      const repoA = makeFiadoRepo(tx, userA);
+      const repoB = makeFiadoRepo(tx, userB);
+
+      const clienteB = await repoB.crearCliente({ ...sinDatos, nombre: 'Cliente de B' });
+      const movB = await repoB.crearMovimiento({
+        cliente_id: clienteB.id,
+        tipo: 'fiado',
+        monto: 7000,
+        nota: null,
+        idempotency_key: 'misma-clave',
+      });
+
+      expect(await repoA.listClientes('', 'deuda')).toEqual([]);
+      const resumenA = await repoA.resumen();
+      expect(resumenA.total).toBe(0);
+      expect(resumenA.ultimos).toEqual([]);
+
+      await expect(repoA.ficha(clienteB.id)).rejects.toMatchObject({ status: 404 });
+      await expect(
+        repoA.actualizarCliente(clienteB.id, { nombre: 'Hackeado' }),
+      ).rejects.toMatchObject({
+        status: 404,
+      });
+      await expect(
+        repoA.crearMovimiento({
+          cliente_id: clienteB.id,
+          tipo: 'pago',
+          monto: 7000,
+          nota: null,
+          idempotency_key: null,
+        }),
+      ).rejects.toMatchObject({ status: 404 });
+      await expect(repoA.corregirMovimiento(movB.movimiento.id)).rejects.toMatchObject({
+        status: 404,
+      });
+      await expect(repoA.registrarRecordatorio(clienteB.id)).rejects.toMatchObject({ status: 404 });
+
+      // B sigue intacto.
+      const fichaB = await repoB.ficha(clienteB.id);
+      expect(fichaB.cliente).toMatchObject({ nombre: 'Cliente de B', saldo: 7000 });
+      expect(fichaB.historial).toHaveLength(1);
+    });
+  });
+
+  it('la idempotency_key es por usuario: A puede usar la misma clave que B', async () => {
+    await withRollback(async (tx) => {
+      const repoA = makeFiadoRepo(tx, await seedUser(tx, 'a'));
+      const repoB = makeFiadoRepo(tx, await seedUser(tx, 'b'));
+      const cA = await repoA.crearCliente({ ...sinDatos, nombre: 'A1' });
+      const cB = await repoB.crearCliente({ ...sinDatos, nombre: 'B1' });
+      const input = { tipo: 'fiado' as const, monto: 100, nota: null, idempotency_key: 'k' };
+      const mB = await repoB.crearMovimiento({ ...input, cliente_id: cB.id });
+      const mA = await repoA.crearMovimiento({ ...input, cliente_id: cA.id });
+      expect(mA.movimiento.id).not.toBe(mB.movimiento.id);
+      expect(mA.cliente.saldo).toBe(100);
+    });
+  });
+
+  it('ajustes por usuario', async () => {
+    await withRollback(async (tx) => {
+      const repoA = makeFiadoRepo(tx, await seedUser(tx, 'a'));
+      const repoB = makeFiadoRepo(tx, await seedUser(tx, 'b'));
+      await repoB.putAjustes({ comercio: 'Kiosco B' });
+      expect((await repoA.getAjustes()).comercio).toBe('');
     });
   });
 });

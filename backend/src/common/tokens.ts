@@ -13,3 +13,4 @@ export const PROFILE_REPO = 'PROFILE_REPO' as const;
 export const LIST_GEN_SERVICE = 'LIST_GEN_SERVICE' as const;
 export const COMPARE_REPO = 'COMPARE_REPO' as const;
 export const CART_REPO = 'CART_REPO' as const;
+export const FIADO_REPO = 'FIADO_REPO' as const;
