@@ -4,12 +4,10 @@ import { Public } from '../../../common/auth/public.decorator.js';
 import { LIST_GEN_SERVICE, PROFILE_REPO } from '../../../common/tokens.js';
 import { SUPERS } from '../../../config/supers.js';
 import { geocodeAddress, geocodePostalCode, reverseGeocode } from '../../../infrastructure/geocode.js';
-import { getStoresNear, regionIdForSellers } from '../../../infrastructure/vtex/stores-client.js';
-import { resolveVeaRegion } from '../../../infrastructure/vtex/vea-region-client.js';
+import { resolveRegionForGeo } from '../../../infrastructure/vtex/resolve-region.js';
+import { getStoresNear } from '../../../infrastructure/vtex/stores-client.js';
 import type {
   OnboardingAnswers,
-  RegionIds,
-  StoreMap,
   SuperKey,
 } from '../../../shared/types.js';
 import type { ListGeneratorService } from '../../list-generator/infrastructure/list-generator.module.js';
@@ -131,32 +129,7 @@ export class ProfileController {
       throw new BadRequestException('Se requiere lat+lng o postal_code');
     }
 
-    const keys = Object.keys(SUPERS) as SuperKey[];
-    const lists = await Promise.all(keys.map((key) => getStoresNear(SUPERS[key].baseUrl, geo)));
-
-    const stores: StoreMap = {};
-    const regionIds: RegionIds = {};
-    keys.forEach((key, i) => {
-      const found = lists[i] ?? [];
-      stores[key] = found.map((s) => ({
-        sellerId: s.sellerId,
-        name: s.name,
-        city: s.city,
-        state: s.state,
-      }));
-      regionIds[key] = regionIdForSellers(found.map((s) => s.sellerId));
-    });
-
-    // VEA/Cencosud exposes no VTEX pickup-points, so the loop above leaves it on
-    // the default region. Resolve its zone seller via SEPA (nearest store) + the
-    // /regions seller list so VEA crawls region-accurate like the other supers.
-    if (!regionIds.vea) {
-      const vea = await resolveVeaRegion(SUPERS.vea.baseUrl, geo);
-      if (vea) {
-        regionIds.vea = vea.regionId;
-        stores.vea = [vea.store];
-      }
-    }
+    const { regionIds, stores } = await resolveRegionForGeo(geo);
 
     const profile = await this.repo.setLocation(locationName, regionIds, stores);
     if (!profile) {
