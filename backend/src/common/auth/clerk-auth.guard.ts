@@ -4,11 +4,18 @@ import type { CanActivate, ExecutionContext } from '@nestjs/common';
 // biome-ignore lint/style/useImportType: NestJS emitDecoratorMetadata requires value import for DI
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
-import { CLERK_ISSUER, CLERK_SECRET_KEY } from '../../config/env.js';
+import { CLERK_ISSUER, CLERK_SECRET_KEY, CORS_ORIGIN, IS_PRODUCTION } from '../../config/env.js';
 // biome-ignore lint/style/useImportType: NestJS emitDecoratorMetadata requires value import for DI
 import { PrismaService } from '../../prisma/prisma.service.js';
 import type { RequestWithAuth } from './current-user.service.js';
 import { IS_PUBLIC_KEY } from './public.decorator.js';
+
+/** Orígenes de los que se aceptan tokens: los mismos que CORS_ORIGIN (separados por coma). */
+function authorizedParties(): string[] {
+  return CORS_ORIGIN.split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+}
 
 /**
  * Global APP_GUARD. Default-deny: every route requires a valid Clerk JWT
@@ -68,6 +75,9 @@ export class ClerkAuthGuard implements CanActivate {
     try {
       payload = await verifyToken(token, {
         secretKey: CLERK_SECRET_KEY,
+        // En producción el token tiene que venir de nuestro dominio (claim azp).
+        // En dev no se exige: Vite puede levantar en otro puerto que CORS_ORIGIN.
+        ...(IS_PRODUCTION ? { authorizedParties: authorizedParties() } : {}),
       });
     } catch {
       throw new UnauthorizedException('Invalid or expired token');
