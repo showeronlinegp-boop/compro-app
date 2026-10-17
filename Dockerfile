@@ -4,6 +4,9 @@ WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm install
 COPY frontend/ ./
+# Vite embebe las VITE_* al compilar: Railway las pasa como build args.
+ARG VITE_CLERK_PUBLISHABLE_KEY
+ARG VITE_NEGGO_PEDIDOS_URL
 RUN npm run build
 
 # ── Stage 2: build del backend TypeScript (produces dist/) ───────────────────

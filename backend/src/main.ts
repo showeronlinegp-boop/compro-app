@@ -13,6 +13,10 @@ import { PORT } from './config/env.js';
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
+  // Railway termina HTTPS en un proxy: confiar en el primer salto para que
+  // req.ip (y el rate limit por IP) use la IP real del cliente.
+  app.set('trust proxy', 1);
+
   // Security headers — CSP disabled initially to avoid breaking the static SPA
   // bundle (script-src, style-src hashes not yet configured). Tighten in a
   // follow-up once a proper nonce/hash CSP policy is established.
