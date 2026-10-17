@@ -18,7 +18,7 @@ jobs:
         working-directory: backend
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:17-alpine
         env:
           POSTGRES_USER: compro
           POSTGRES_PASSWORD: compro
