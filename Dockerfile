@@ -12,15 +12,17 @@ RUN npm run build
 # ── Stage 2: build del backend TypeScript (produces dist/) ───────────────────
 FROM node:24-alpine AS backend-builder
 WORKDIR /app/backend
+# prisma.config.ts exige DATABASE_URL y tanto `npm ci` (postinstall) como
+# `npm run build` corren `prisma generate`, que no se conecta a la base.
+# URL ficticia para toda esta etapa; la imagen final no la hereda.
+ENV DATABASE_URL=postgresql://build:build@localhost:5432/build
 
 COPY backend/package*.json ./
 COPY backend/prisma ./prisma
 RUN npm ci
 
 COPY backend/ ./
-# Generate Prisma client before building. prisma.config.ts exige DATABASE_URL,
-# pero generate no se conecta: alcanza una URL ficticia que no queda en la imagen.
-RUN DATABASE_URL=postgresql://build:build@localhost:5432/build npx prisma generate
+# `npm run build` = prisma generate && tsup
 RUN npm run build
 
 # ── Stage 3: imagen final (backend + frontend compilado) ──────────────────────
