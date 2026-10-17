@@ -9,7 +9,9 @@ CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 -- unaccent() itself is STABLE, which blocks its use in an index expression.
 -- This wrapper is declared IMMUTABLE so PostgreSQL accepts it in functional indexes
 -- and allows the query planner to use the GIN index.
--- Body uses the standard single-argument form: SELECT unaccent($1).
+-- Body names the schema and dictionary explicitly: since PostgreSQL 17,
+-- CREATE INDEX runs with search_path = pg_catalog, pg_temp, so a bare
+-- unaccent($1) is not found ("function unaccent(text) does not exist").
 -- CRITICAL: the query fragment in buildNameSearch() MUST use immutable_unaccent() identically.
 CREATE OR REPLACE FUNCTION immutable_unaccent(text)
 RETURNS text
@@ -17,7 +19,7 @@ LANGUAGE sql
 IMMUTABLE
 PARALLEL SAFE
 AS $$
-  SELECT unaccent($1)
+  SELECT public.unaccent('public.unaccent'::regdictionary, $1)
 $$;
 
 -- CreateTable
