@@ -13,3 +13,5 @@
 process.env.CLERK_SECRET_KEY ??= 'sk_test_dummy_key_for_tests';
 process.env.CLERK_ISSUER ??= 'https://test.clerk.accounts.dev';
 process.env.CORS_ORIGIN ??= 'http://localhost:5173';
+// Los tests cubren también compras; el arranque sin compras se prueba aparte.
+process.env.ENABLE_COMPARADOR ??= 'true';

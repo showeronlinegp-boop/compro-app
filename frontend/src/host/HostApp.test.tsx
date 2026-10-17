@@ -263,6 +263,17 @@ describe('HostApp', () => {
     expect(bottomNav()).not.toBeNull();
   });
 
+  it("sin módulo en '/', '/' redirige al primer módulo", () => {
+    renderAt('/');
+    expect(screen.getByRole('heading', { name: 'Página demo' })).toBeDefined();
+  });
+
+  it("con un módulo en '/', '/' no redirige", () => {
+    const raiz: AppModule = { ...bare, id: 'raiz', basePath: '/' };
+    renderAt('/', [demo, raiz]);
+    expect(screen.getByRole('heading', { name: 'Bare' })).toBeDefined();
+  });
+
   it('H6: useHostLocation completa navItem cuyo to (sin search) matchea la ruta', () => {
     renderAt('/demo');
     expect(screen.getByTestId('probe').textContent).toBe('lista|demo');
