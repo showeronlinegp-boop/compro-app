@@ -30,6 +30,11 @@ export const NODE_ENV: string = process.env.NODE_ENV ?? 'development';
 
 export const IS_PRODUCTION: boolean = NODE_ENV === 'production';
 
+// Compras (comparador de supermercados, crawler y crons) — fail-closed: sólo se
+// monta con ENABLE_COMPARADOR=true (dev local y tests). La imagen de producción
+// no lo setea, así que sale sólo con Fiado.
+export const ENABLE_COMPARADOR: boolean = process.env.ENABLE_COMPARADOR === 'true';
+
 // ---------------------------------------------------------------------------
 // Clerk auth — required in all environments; fail-closed on missing (same
 // pattern as DATABASE_URL above).

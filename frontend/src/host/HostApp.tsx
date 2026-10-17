@@ -1,4 +1,4 @@
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { HostLayout } from './HostLayout';
 import { ModuleProviders } from './ModuleProviders';
 import { MorePage } from './MorePage';
@@ -7,7 +7,7 @@ import SignUpPage from './auth/SignUpPage';
 import { type AppModule, HOST_MORE_PATH, type HostTool } from './contract';
 import { ActiveModuleProvider } from './nav/ActiveModule';
 import { NavItemsProvider } from './nav/NavItemsProvider';
-import { ModuleRoutes } from './routing';
+import { type HostRoute, ModuleRoutes, flattenRoutes } from './routing';
 import { hostTools } from './tools';
 import { ToastProvider } from './ui/Toast';
 
@@ -16,6 +16,16 @@ interface HostAppProps {
   modules: readonly AppModule[];
   /** Herramientas globales; por defecto `hostTools`. */
   tools?: readonly HostTool[];
+}
+
+/**
+ * Si ningún módulo ocupa '/' (p. ej. producción sin comparador), '/' manda al
+ * primer módulo. Así los links y el sign-out que apuntan a '/' no quedan en blanco.
+ */
+function rootRedirect(modules: readonly AppModule[]): HostRoute[] {
+  const [first] = modules;
+  if (!first || flattenRoutes(modules).some((r) => r.fullPath === '/')) return [];
+  return [{ path: '/', element: <Navigate to={first.basePath} replace /> }];
 }
 
 /**
@@ -44,6 +54,7 @@ export function HostApp({ modules, tools = hostTools }: HostAppProps) {
                       modules={modules}
                       hostRoutes={[
                         { path: HOST_MORE_PATH, element: <MorePage modules={modules} /> },
+                        ...rootRedirect(modules),
                       ]}
                     />
                   </HostLayout>
