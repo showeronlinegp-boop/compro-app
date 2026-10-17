@@ -32,13 +32,17 @@ vi.mock('@clerk/backend', () => ({
 }));
 
 // Mock env module — guard imports CLERK_SECRET_KEY and CLERK_ISSUER from here.
+// IS_PRODUCTION es conmutable por test (getter) para cubrir authorizedParties.
+const env = vi.hoisted(() => ({ production: false }));
 vi.mock('../../config/env.js', () => ({
   CLERK_SECRET_KEY: 'test_secret_key',
   CLERK_ISSUER: 'https://clerk.example.com',
   DATABASE_URL: 'postgresql://test:test@localhost:5432/test',
   NODE_ENV: 'test',
-  IS_PRODUCTION: false,
-  CORS_ORIGIN: 'http://localhost:5173',
+  get IS_PRODUCTION() {
+    return env.production;
+  },
+  CORS_ORIGIN: 'https://app.example.com, https://otra.example.com',
 }));
 
 import { verifyToken } from '@clerk/backend';
@@ -96,6 +100,21 @@ describe('ClerkAuthGuard', () => {
   beforeEach(() => {
     prisma = buildPrisma();
     vi.mocked(verifyToken).mockReset();
+    env.production = false;
+  });
+
+  it('en producción exige que el token venga de un origen de CORS_ORIGIN (azp)', async () => {
+    env.production = true;
+    vi.mocked(verifyToken).mockResolvedValue(buildPayload('user_abc123') as never);
+    const guard = new ClerkAuthGuard(buildReflector(false), prisma);
+    const { ctx } = buildContext({ authorization: 'Bearer valid.jwt.token' });
+
+    await guard.canActivate(ctx);
+
+    expect(verifyToken).toHaveBeenCalledWith('valid.jwt.token', {
+      secretKey: 'test_secret_key',
+      authorizedParties: ['https://app.example.com', 'https://otra.example.com'],
+    });
   });
 
   it('(a) missing Authorization header → throws UnauthorizedException', async () => {
