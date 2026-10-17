@@ -18,8 +18,9 @@ COPY backend/prisma ./prisma
 RUN npm ci
 
 COPY backend/ ./
-# Generate Prisma client before building
-RUN npx prisma generate
+# Generate Prisma client before building. prisma.config.ts exige DATABASE_URL,
+# pero generate no se conecta: alcanza una URL ficticia que no queda en la imagen.
+RUN DATABASE_URL=postgresql://build:build@localhost:5432/build npx prisma generate
 RUN npm run build
 
 # ── Stage 3: imagen final (backend + frontend compilado) ──────────────────────
