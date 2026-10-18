@@ -55,9 +55,38 @@ export function abrirWhatsApp(numero: string | null, texto: string): void {
   window.open(linkWhatsApp(numero, texto), '_blank', 'noopener,noreferrer');
 }
 
-/** Variables que acepta cada plantilla (ayuda en Ajustes). */
-export const VARIABLES = {
-  fiado: '{nombre}, {monto}, {saldo}, {comercio}',
-  pago: '{nombre}, {monto}, {saldo}, {comercio}',
-  recordatorio: '{nombre}, {saldo}, {comercio}, {alias}',
-} as const;
+export type Variable = 'nombre' | 'monto' | 'saldo' | 'comercio' | 'alias';
+
+/** Variables que acepta cada plantilla (pastillas en Ajustes). */
+export const VARIABLES: Record<'fiado' | 'pago' | 'recordatorio', readonly Variable[]> = {
+  fiado: ['nombre', 'monto', 'saldo', 'comercio'],
+  pago: ['nombre', 'monto', 'saldo', 'comercio'],
+  recordatorio: ['nombre', 'saldo', 'comercio', 'alias'],
+};
+
+/** Cómo se muestra cada variable en las pastillas. */
+export const ETIQUETA_VARIABLE: Record<Variable, string> = {
+  nombre: 'Nombre',
+  monto: 'Monto',
+  saldo: 'Saldo',
+  comercio: 'Comercio',
+  alias: 'Alias',
+};
+
+/**
+ * Inserta `{variable}` en la selección `[inicio, fin)` del texto, separándola
+ * con espacios de las palabras pegadas. Devuelve el texto y dónde queda el cursor.
+ */
+export function insertarVariable(
+  texto: string,
+  variable: Variable,
+  inicio: number,
+  fin: number,
+): { texto: string; cursor: number } {
+  const antes = texto.slice(0, inicio);
+  const despues = texto.slice(fin);
+  const izq = antes === '' || /\s$/.test(antes) ? '' : ' ';
+  const der = despues === '' || /^[\s.,;:!?)]/.test(despues) ? '' : ' ';
+  const token = `${izq}{${variable}}${der}`;
+  return { texto: antes + token + despues, cursor: antes.length + token.length };
+}

@@ -5,7 +5,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HostApp } from '../../host/HostApp';
 import type { Ajustes, Cliente, Resumen } from './api';
 import { fiado } from './index';
-import { comprobante, linkWhatsApp, recordatorio, renderPlantilla } from './mensajes';
+import {
+  comprobante,
+  insertarVariable,
+  linkWhatsApp,
+  recordatorio,
+  renderPlantilla,
+} from './mensajes';
 
 vi.mock('@clerk/clerk-react', () => ({
   SignedIn: ({ children }: { children: ReactNode }) => children,
@@ -206,7 +212,38 @@ describe('Ficha', () => {
   });
 });
 
+describe('insertarVariable', () => {
+  it('pone la variable en el cursor, separada de las palabras pegadas', () => {
+    expect(insertarVariable('Hola', 'nombre', 4, 4)).toEqual({
+      texto: 'Hola {nombre}',
+      cursor: 13,
+    });
+    expect(insertarVariable('Hola !', 'nombre', 5, 5)).toEqual({
+      texto: 'Hola {nombre}!',
+      cursor: 13,
+    });
+    expect(insertarVariable('', 'saldo', 0, 0)).toEqual({ texto: '{saldo}', cursor: 7 });
+    expect(insertarVariable('Debés X.', 'saldo', 6, 7).texto).toBe('Debés {saldo}.');
+    expect(insertarVariable('Holachau', 'nombre', 4, 4).texto).toBe('Hola {nombre} chau');
+  });
+});
+
 describe('Ajustes', () => {
+  it('las pastillas suman el dato al mensaje sin escribir llaves', async () => {
+    renderAt(['/fiado/ajustes']);
+    const fiadoTxt = (await screen.findByLabelText('Comprobante de fiado')) as HTMLTextAreaElement;
+    fireEvent.change(fiadoTxt, { target: { value: 'Hola' } });
+    fiadoTxt.setSelectionRange(4, 4);
+
+    const grupo = screen.getByRole('group', { name: 'Datos para Comprobante de fiado' });
+    expect(within(grupo).queryByRole('button', { name: '+ Alias' })).toBeNull();
+    fireEvent.click(within(grupo).getByRole('button', { name: '+ Nombre' }));
+    expect(fiadoTxt.value).toBe('Hola {nombre}');
+
+    const recordatorioGrupo = screen.getByRole('group', { name: 'Datos para Recordatorio' });
+    expect(within(recordatorioGrupo).getByRole('button', { name: '+ Alias' })).toBeTruthy();
+  });
+
   it('carga, edita y guarda; "Volver al mensaje original" vacía la plantilla', async () => {
     m.guardarAjustes.mockImplementation(async (p: Partial<Ajustes>) => ({ ...ajustes, ...p }));
     renderAt(['/fiado/ajustes']);
