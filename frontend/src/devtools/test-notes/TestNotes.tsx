@@ -17,12 +17,21 @@ import { installCapture, snapshotContext } from './capture';
 import { DraftForm, type Draft } from './components/DraftForm';
 import { Fabs } from './components/Fabs';
 import { Highlights } from './components/Highlights';
-import { type LocalRect, MarkLayer } from './components/MarkLayer';
+import { Dock } from './components/Dock';
+import { type LocalRect, MarkBanner, MarkLayer } from './components/MarkLayer';
 import { NoteCard } from './components/NoteCard';
 import { Pins } from './components/Pins';
 import { Sheet } from './components/Sheet';
 import { FILTROS, type FiltroId, PENDIENTES, POLL_MS, VIVAS } from './constants';
-import { fabBottom, findMarked, markFromPoint, pinPosition, readFrame } from './geometry';
+import {
+  type Dock as DockFrame,
+  dockFrame,
+  fabBottom,
+  findMarked,
+  markFromPoint,
+  pinPosition,
+  readFrame,
+} from './geometry';
 import { isOwnUi, pantallaLabel } from './mark';
 import type { Estado, Modo, TestNote } from './types';
 
@@ -40,8 +49,10 @@ const FILTRO_PENDIENTES = { id: 'pendientes', label: 'Pendientes', estados: PEND
 
 /**
  * Notas de prueba ("Marcar en pantalla"): herramienta global del host, solo en
- * desarrollo local. Se monta en la columna del host (sin portal) y no conoce el
- * dominio de ningún módulo. Sin sesión no renderiza nada.
+ * desarrollo local. Pines, resaltados y la capa de marcado van en la columna
+ * del host (sobre lo marcado); el panel va AFUERA, a la derecha de la app, si
+ * hay lugar (dock), y si no, como hoja inferior. No conoce el dominio de ningún
+ * módulo. Sin sesión no renderiza nada.
  */
 export function TestNotes() {
   const { isSignedIn } = useAuth();
@@ -69,6 +80,7 @@ function TestNotesTool() {
   const [confirmDel, setConfirmDel] = useState<number | null>(null);
   const [pendingScroll, setPendingScroll] = useState<number | null>(null);
   const [bottom, setBottom] = useState(16);
+  const [dock, setDock] = useState<DockFrame | null>(null);
   const [, setTick] = useState(0);
 
   const column = (): HTMLElement | null => rootRef.current?.parentElement ?? null;
@@ -93,12 +105,20 @@ function TestNotesTool() {
     return () => window.clearInterval(id);
   }, [cargar]);
 
-  // Los FABs esquivan la barra y los toasts: el chrome cambia con la ruta
+  // Con lugar a la derecha de la columna, el panel va afuera de la app (dock);
+  // si no, FABs + hoja inferior. Los FABs esquivan la barra y los toasts: el
+  // chrome cambia con la ruta.
   // biome-ignore lint/correctness/useExhaustiveDependencies: recalcular al cambiar de ruta
   useLayoutEffect(() => {
     const col = column();
     if (!col) return;
-    const update = () => setBottom(fabBottom(col));
+    const update = () => {
+      setBottom(fabBottom(col));
+      const next = dockFrame(col.getBoundingClientRect(), window.innerWidth);
+      setDock((prev) =>
+        prev?.left === next?.left && prev?.width === next?.width ? prev : next,
+      );
+    };
     update();
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
@@ -248,7 +268,7 @@ function TestNotesTool() {
 
   const irANota = (nota: TestNote) => {
     setFocusId(nota.id);
-    setAbierta(false);
+    if (!dock) setAbierta(false); // la hoja tapa la app; el panel lateral no
     if (nota.ruta !== ruta) navigate(nota.ruta);
     setPendingScroll(nota.id);
   };
@@ -285,6 +305,102 @@ function TestNotesTool() {
     notas.filter((n) => estados.includes(n.estado) && (!soloEstaPantalla || n.ruta === ruta));
   const lista = visibles(filtroActual.estados);
 
+  const cancelarMarca = () => {
+    setMarking(false);
+    setHover(null);
+  };
+  const subtitulo = `${pantalla} · ${pendientesTotal} pendientes en total`;
+
+  // Contenido del panel: el mismo en el dock lateral y en la hoja inferior
+  const contenido = (
+    <>
+      {error && (
+        <p role="alert" className="m-0 rounded-m bg-warn-bg px-3 py-2 text-caption text-danger">
+          {error}
+        </p>
+      )}
+
+      {draft ? (
+        <DraftForm
+          draft={draft}
+          saving={saving}
+          onChange={setDraft}
+          onMarcar={empezarMarca}
+          onCancel={() => setDraft(null)}
+          onSave={() => void guardar()}
+        />
+      ) : (
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={empezarMarca}
+            className={`pressable min-h-touch flex-1 rounded-m bg-ink font-display text-button-m text-surface ${FOCUS_RING}`}
+          >
+            Marcar en pantalla
+          </button>
+          <button
+            type="button"
+            onClick={() => setDraft({ tipo: 'error', texto: '', modo: [], mark: null })}
+            className={`pressable min-h-touch flex-1 rounded-m border border-border bg-surface font-display text-button-m text-ink ${FOCUS_RING}`}
+          >
+            Nota sin marcar
+          </button>
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filtros">
+        {FILTROS.map((f) => {
+          const sel = filtro === f.id;
+          return (
+            <button
+              key={f.id}
+              type="button"
+              aria-pressed={sel}
+              onClick={() => setFiltro(f.id)}
+              className={`min-h-[36px] rounded-pill border px-3 text-caption ${
+                sel
+                  ? 'border-ink bg-ink font-bold text-surface'
+                  : 'border-border bg-surface text-ink-muted'
+              } ${FOCUS_RING}`}
+            >
+              {f.label} {visibles(f.estados).length}
+            </button>
+          );
+        })}
+        <label className="ml-auto flex min-h-[36px] cursor-pointer items-center gap-2 text-caption text-ink-muted">
+          <input
+            type="checkbox"
+            className="h-4 w-4"
+            checked={soloEstaPantalla}
+            onChange={(e) => setSoloEstaPantalla(e.target.checked)}
+          />
+          Solo esta pantalla
+        </label>
+      </div>
+
+      {lista.length === 0 && (
+        <p className="m-0 py-6 text-center text-caption text-ink-muted">
+          No hay notas en «{filtroActual.label}»{soloEstaPantalla ? ' en esta pantalla' : ''}.
+        </p>
+      )}
+      {lista.map((n) => (
+        <NoteCard
+          key={n.id}
+          nota={n}
+          activa={focusId === n.id}
+          confirmDel={confirmDel === n.id}
+          onFocus={() => setFocusId(n.id)}
+          onIr={() => irANota(n)}
+          onEstado={(estado) => void actualizar(n, { estado })}
+          onModo={(modo) => void actualizar(n, { modo })}
+          onPedirBorrar={() => setConfirmDel(n.id)}
+          onCancelarBorrar={() => setConfirmDel(null)}
+          onBorrar={() => void borrar(n)}
+        />
+      ))}
+    </>
+  );
+
   return (
     <div
       ref={rootRef}
@@ -299,115 +415,38 @@ function TestNotesTool() {
           hover={hover}
           onMove={onMarkMove}
           onPick={onMarkPick}
-          onCancel={() => {
-            setMarking(false);
-            setHover(null);
-          }}
+          onCancel={cancelarMarca}
+          banner={!dock}
         />
       )}
 
-      {!marking && !abierta && (
-        <Fabs
-          bottom={bottom}
-          pendientesRuta={pendientesRuta}
-          onMarcar={empezarMarca}
-          onNotas={() => setAbierta(true)}
-        />
-      )}
-
-      {abierta && !marking && (
-        <Sheet
-          subtitulo={`${pantalla} · ${pendientesTotal} pendientes en total`}
-          onClose={() => {
-            setAbierta(false);
-            setFocusId(null);
-          }}
-        >
-          {error && (
-            <p role="alert" className="m-0 rounded-m bg-warn-bg px-3 py-2 text-caption text-danger">
-              {error}
-            </p>
-          )}
-
-          {draft ? (
-            <DraftForm
-              draft={draft}
-              saving={saving}
-              onChange={setDraft}
+      {dock ? (
+        // Afuera de la app: siempre visible, no tapa lo que se prueba
+        <Dock frame={dock} subtitulo={subtitulo}>
+          {marking ? <MarkBanner onCancel={cancelarMarca} /> : contenido}
+        </Dock>
+      ) : (
+        <>
+          {!marking && !abierta && (
+            <Fabs
+              bottom={bottom}
+              pendientesRuta={pendientesRuta}
               onMarcar={empezarMarca}
-              onCancel={() => setDraft(null)}
-              onSave={() => void guardar()}
+              onNotas={() => setAbierta(true)}
             />
-          ) : (
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={empezarMarca}
-                className={`pressable min-h-touch flex-1 rounded-m bg-ink font-display text-button-m text-surface ${FOCUS_RING}`}
-              >
-                Marcar en pantalla
-              </button>
-              <button
-                type="button"
-                onClick={() => setDraft({ tipo: 'error', texto: '', modo: [], mark: null })}
-                className={`pressable min-h-touch flex-1 rounded-m border border-border bg-surface font-display text-button-m text-ink ${FOCUS_RING}`}
-              >
-                Nota sin marcar
-              </button>
-            </div>
           )}
-
-          <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filtros">
-            {FILTROS.map((f) => {
-              const sel = filtro === f.id;
-              return (
-                <button
-                  key={f.id}
-                  type="button"
-                  aria-pressed={sel}
-                  onClick={() => setFiltro(f.id)}
-                  className={`min-h-[36px] rounded-pill border px-3 text-caption ${
-                    sel
-                      ? 'border-ink bg-ink font-bold text-surface'
-                      : 'border-border bg-surface text-ink-muted'
-                  } ${FOCUS_RING}`}
-                >
-                  {f.label} {visibles(f.estados).length}
-                </button>
-              );
-            })}
-            <label className="ml-auto flex min-h-[36px] cursor-pointer items-center gap-2 text-caption text-ink-muted">
-              <input
-                type="checkbox"
-                className="h-4 w-4"
-                checked={soloEstaPantalla}
-                onChange={(e) => setSoloEstaPantalla(e.target.checked)}
-              />
-              Solo esta pantalla
-            </label>
-          </div>
-
-          {lista.length === 0 && (
-            <p className="m-0 py-6 text-center text-caption text-ink-muted">
-              No hay notas en «{filtroActual.label}»{soloEstaPantalla ? ' en esta pantalla' : ''}.
-            </p>
+          {abierta && !marking && (
+            <Sheet
+              subtitulo={subtitulo}
+              onClose={() => {
+                setAbierta(false);
+                setFocusId(null);
+              }}
+            >
+              {contenido}
+            </Sheet>
           )}
-          {lista.map((n) => (
-            <NoteCard
-              key={n.id}
-              nota={n}
-              activa={focusId === n.id}
-              confirmDel={confirmDel === n.id}
-              onFocus={() => setFocusId(n.id)}
-              onIr={() => irANota(n)}
-              onEstado={(estado) => void actualizar(n, { estado })}
-              onModo={(modo) => void actualizar(n, { modo })}
-              onPedirBorrar={() => setConfirmDel(n.id)}
-              onCancelarBorrar={() => setConfirmDel(null)}
-              onBorrar={() => void borrar(n)}
-            />
-          ))}
-        </Sheet>
+        </>
       )}
     </div>
   );

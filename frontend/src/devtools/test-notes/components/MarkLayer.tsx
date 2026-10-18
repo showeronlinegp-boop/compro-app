@@ -18,11 +18,14 @@ export function MarkLayer({
   onMove,
   onPick,
   onCancel,
+  banner = true,
 }: {
   hover: LocalRect | null;
   onMove: (e: PointerEvent<HTMLDivElement>) => void;
   onPick: (e: MouseEvent<HTMLDivElement>) => void;
   onCancel: () => void;
+  /** Sin panel lateral, el cartel va sobre la app. */
+  banner?: boolean;
 }) {
   return (
     <div
@@ -37,19 +40,28 @@ export function MarkLayer({
           style={hover}
         />
       )}
-      <div className="absolute inset-x-4 top-3 flex items-center justify-between gap-3 rounded-pill bg-ink px-4 py-2 text-caption text-surface">
-        <span>Tocá donde está el problema</span>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onCancel();
-          }}
-          className={`min-h-[36px] rounded-m border border-on-dark-muted px-3 text-caption text-surface ${FOCUS_RING}`}
-        >
-          Cancelar (Esc)
-        </button>
-      </div>
+      {banner && <MarkBanner className="absolute inset-x-4 top-3" onCancel={onCancel} />}
+    </div>
+  );
+}
+
+/** "Tocá donde está el problema" + Cancelar: sobre la app o, con panel lateral, en el panel. */
+export function MarkBanner({ className = '', onCancel }: { className?: string; onCancel: () => void }) {
+  return (
+    <div
+      className={`flex items-center justify-between gap-3 rounded-pill bg-ink px-4 py-2 text-caption text-surface ${className}`}
+    >
+      <span>Tocá donde está el problema</span>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onCancel();
+        }}
+        className={`min-h-[36px] rounded-m border border-on-dark-muted px-3 text-caption text-surface ${FOCUS_RING}`}
+      >
+        Cancelar (Esc)
+      </button>
     </div>
   );
 }

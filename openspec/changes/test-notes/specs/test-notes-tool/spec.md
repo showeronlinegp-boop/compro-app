@@ -105,7 +105,7 @@ Cada nota viva de la ruta actual con marca MUST mostrar un pin con su `#id` junt
 
 ### Requirement: T7 — Panel
 
-El panel MUST ser una hoja inferior de ancho completo dentro de la columna (sin drawer lateral) y MUST mostrar pantalla actual y total pendiente, filtros con contador (Pendientes = `abierta|en_curso|consulta`; Para revisar; Corregidas; Descartadas) y "Solo esta pantalla" (activo por defecto). Acciones por estado: `para_revisar` → Confirmar (`corregida`) / Sigue mal (`abierta`); `abierta|en_curso|consulta` → Descartar y checklist de modo editable; `corregida|descartada` → Reabrir; siempre Borrar con confirmación. Cada tarjeta MUST mostrar el autor (`autor`), porque las notas son compartidas entre cuentas (P1). La respuesta de Claude MUST verse como "Pregunta de Claude" en `consulta` y "Respuesta de Claude" en otros estados. "Ir a la nota" MUST navegar a su ruta y llevar la vista al pin. El panel MUST recargar cada 60 s.
+Si a la derecha de la columna quedan al menos 320 px libres (desktop), el panel MUST mostrarse FUERA de la app, fijo en ese espacio y siempre visible (sin FABs; el cartel de marcado va en el panel), para no tapar lo que se prueba (pedido del usuario, 2026-10-18). Si no hay lugar, MUST ser una hoja inferior de ancho completo dentro de la columna. En ambos casos MUST mostrar pantalla actual y total pendiente, filtros con contador (Pendientes = `abierta|en_curso|consulta`; Para revisar; Corregidas; Descartadas) y "Solo esta pantalla" (activo por defecto). Acciones por estado: `para_revisar` → Confirmar (`corregida`) / Sigue mal (`abierta`); `abierta|en_curso|consulta` → Descartar y checklist de modo editable; `corregida|descartada` → Reabrir; siempre Borrar con confirmación. Cada tarjeta MUST mostrar el autor (`autor`), porque las notas son compartidas entre cuentas (P1). La respuesta de Claude MUST verse como "Pregunta de Claude" en `consulta` y "Respuesta de Claude" en otros estados. "Ir a la nota" MUST navegar a su ruta y llevar la vista al pin. El panel MUST recargar cada 60 s.
 
 #### Scenario: Confirmar corrección
 - GIVEN una nota `para_revisar`
@@ -142,7 +142,7 @@ Con la tool cargada, MUST registrarse (idempotente) los últimos 15 `console.err
 
 ### Requirement: T10 — Estilo del design-system y layout del host
 
-La UI de la tool MUST usar solo tokens del design-system (`docs/design-system.md`: `bg-surface`, `text-ink`, `border-line`, `bg-danger`, `text-micro`, …) y `FOCUS_RING*` de `host/ui/styles.ts`; MUST NOT usar paleta default de Tailwind, sombras, degradados, breakpoints, emoji, hex sueltos ni texto menor a 12 px. `src/devtools/**` (sin tests) MUST estar dentro del escaneo de `host/ui/design-lint.test.ts`. La tool MUST montarse dentro de la columna del host (no en un portal a `body`).
+La UI de la tool MUST usar solo tokens del design-system (`docs/design-system.md`: `bg-surface`, `text-ink`, `border-line`, `bg-danger`, `text-micro`, …) y `FOCUS_RING*` de `host/ui/styles.ts`; MUST NOT usar paleta default de Tailwind, sombras, degradados, breakpoints, emoji, hex sueltos ni texto menor a 12 px. `src/devtools/**` (sin tests) MUST estar dentro del escaneo de `host/ui/design-lint.test.ts`. Pines, resaltados y la capa de marcado MUST montarse dentro de la columna del host; solo el panel lateral (modo desktop de T7) va por portal a `body`.
 
 #### Scenario: Lint de diseño
 - GIVEN un archivo de `src/devtools/test-notes/` con `className="shadow-lg"`

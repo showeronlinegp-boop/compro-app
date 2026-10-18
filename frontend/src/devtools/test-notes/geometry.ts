@@ -154,3 +154,27 @@ export function fabBottom(column: Element): number {
   if (nav) return Math.round(nav.getBoundingClientRect().height + 16);
   return 16;
 }
+
+/** Separación entre la columna, el panel lateral y el borde de la ventana. */
+export const DOCK_GAP = 16;
+/** Ancho mínimo útil del panel lateral; con menos espacio se usa la hoja inferior. */
+export const DOCK_MIN = 320;
+/** Ancho máximo del panel lateral. */
+export const DOCK_MAX = 440;
+
+export interface Dock {
+  /** px desde el borde izquierdo de la ventana. */
+  left: number;
+  width: number;
+}
+
+/**
+ * Panel lateral FUERA de la app: en el espacio libre a la derecha de la
+ * columna, para que la tool no tape lo que se está probando. `null` si no
+ * entra (ventana angosta): la tool vuelve a la hoja inferior dentro de la columna.
+ */
+export function dockFrame(column: Pick<DOMRect, 'right'>, viewportWidth: number): Dock | null {
+  const libre = viewportWidth - column.right - DOCK_GAP * 2;
+  if (libre < DOCK_MIN) return null;
+  return { left: Math.round(column.right + DOCK_GAP), width: Math.min(libre, DOCK_MAX) };
+}
