@@ -3,6 +3,7 @@ import { Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/commo
 import type { CanActivate, ExecutionContext } from '@nestjs/common';
 // biome-ignore lint/style/useImportType: NestJS emitDecoratorMetadata requires value import for DI
 import { Reflector } from '@nestjs/core';
+import { Prisma } from '@prisma/client';
 import type { Request } from 'express';
 import { CLERK_ISSUER, CLERK_SECRET_KEY, CORS_ORIGIN, IS_PRODUCTION } from '../../config/env.js';
 // biome-ignore lint/style/useImportType: NestJS emitDecoratorMetadata requires value import for DI
@@ -93,17 +94,29 @@ export class ClerkAuthGuard implements CanActivate {
 
     // JIT provision: upsert the local users row on first authenticated request.
     // The upsert is idempotent — subsequent requests reuse the existing row.
-    const user = await this.prisma.users.upsert({
-      where: { clerk_user_id: clerkUserId },
-      create: {
-        clerk_user_id: clerkUserId,
-        // email comes from the token's email claim when present (not always set
-        // for OAuth-only sign-ups; nullable in schema).
-        email: (payload as Record<string, unknown>).email as string | undefined,
-      },
-      update: {},
-      select: { id: true },
-    });
+    // Prisma's upsert is find-then-create, not atomic: a new user's screen fires
+    // several requests at once and all but one hit P2002 on clerk_user_id. That
+    // means another request just created the row, so read it instead of failing.
+    let user: { id: number };
+    try {
+      user = await this.prisma.users.upsert({
+        where: { clerk_user_id: clerkUserId },
+        create: {
+          clerk_user_id: clerkUserId,
+          // email comes from the token's email claim when present (not always set
+          // for OAuth-only sign-ups; nullable in schema).
+          email: (payload as Record<string, unknown>).email as string | undefined,
+        },
+        update: {},
+        select: { id: true },
+      });
+    } catch (err) {
+      if (!(err instanceof Prisma.PrismaClientKnownRequestError) || err.code !== 'P2002') throw err;
+      user = await this.prisma.users.findUniqueOrThrow({
+        where: { clerk_user_id: clerkUserId },
+        select: { id: true },
+      });
+    }
 
     // Write resolved identity onto the request object. CurrentUserService
     // (request-scoped) reads from here — no circular scope dependency.
