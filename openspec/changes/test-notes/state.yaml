@@ -1,0 +1,78 @@
+change: test-notes
+branch: feat/test-notes
+artifact_store: openspec
+phases:
+  explore: done
+  proposal: done
+  spec: done
+  design: done
+  tasks: done
+  apply: done
+  verify: pending
+  archive: pending
+artifacts:
+  exploration: openspec/changes/test-notes/exploration.md
+  proposal: openspec/changes/test-notes/proposal.md
+  specs:
+    - openspec/changes/test-notes/specs/test-notes-api/spec.md
+    - openspec/changes/test-notes/specs/test-notes-tool/spec.md
+    - openspec/changes/test-notes/specs/app-shell/spec.md   # delta H7
+  design: openspec/changes/test-notes/design.md
+  tasks: openspec/changes/test-notes/tasks.md
+origin: C:\Users\USER\neggo-app-pruebas (TestNotes.jsx, testNotesMark.js, testNotesCapture.js, routes/testNotes.js, scripts/notaPrueba.js)
+closed_decisions:  # cerradas por el usuario
+  - "solo desarrollo local: front DEV && VITE_TEST_NOTES==='1' (rama muerta en prod, lazy import); back TEST_NOTES_ENABLED (sin flag el modulo no se registra -> 404); sin roles ni allowlist"
+  - "herramienta del host (HostTool) registrada en host/tools.tsx; usa useHostLocation(); funciona con chrome 'full' y 'task'"
+  - "port fiel adaptado: React 18 + TS + Tailwind, host/http.ts, Clerk; Nest domain/+infrastructure/ con repo factory request-scoped y user_id (autor, ver P1); Prisma 7 + migracion test_notes; CLI equivalente a notaPrueba.js en backend/scripts/"
+  - "mejoras baratas: selector con data-testid/id/aria-label antes del path; exclusion de captura parametrizada"
+  - "claude-link (neggo-claude://, .ps1, skill nota-prueba, boton Enviar a Claude) fuera de alcance; la CLI queda lista (--json)"
+design_decisions:
+  - "codigo front en src/devtools/test-notes/ (devtools -> host permitido; devtools -/-> modules; solo host/tools.tsx importa devtools; test de aislamiento propio)"
+  - "flag del front en frontend/.env.development.local (no .env.local: Vitest la cargaria)"
+  - "HostToolsOutlet envuelve cada tool en Suspense fallback null"
+  - "migracion Prisma normal: la tabla existe vacia en todos los entornos (migrate deploy en el entrypoint); aceptado"
+  - "tipo/estado VARCHAR + CHECK; pos_x Float; autor = users.email o #<user_id>"
+  - "repo sin filtro user_id en lectura/escritura; factory request-scoped solo para fijar el autor en create; indices (estado, created_at) y (ruta)"
+  - "sin describe en cross-user.isolation: e2e verifica que B ve y opera la nota de A"
+  - "tool montada en la columna del host (sin portal): raiz [data-test-notes] absolute inset-0 z-[60] pointer-events-none; column = ref.parentElement"
+  - "pines absolute en coords de la columna desde el rect en vivo; ocultos fuera de la banda visible de main; fallback pos_y relativo al contenido de main, pos_x fraccion del ancho de main"
+  - "FABs absolute right-4 con bottom = fabBottom(): toast-region medida + TOAST_SLOT 56 + 8 (154 px con barra, 84 en 'task'); no tapan BottomNav ni toasts"
+  - "panel como hoja inferior de ancho completo (guia 3: sin drawers laterales)"
+  - "pantalla = pantallaLabel(useActiveModule().location, pathname): 'Modulo > Titulo de ruta'; /mas -> 'Mas'; nunca navItem.label"
+  - "estilos con tokens del design-system; src/devtools/** entra al glob de host/ui/design-lint.test.ts"
+  - "captura instalada al montar la tool (no en main.tsx)"
+  - "CLI sobre contexto Nest minimo (PrismaModule + repo admin), no AppModule"
+open_decisions: []
+resolved_decisions:  # cerradas por el usuario
+  - "P1 RESUELTA: notas COMPARTIDAS entre todas las cuentas (ambiente de pruebas: todos son usuarios de prueba); cualquiera lista/ve/edita/cambia estado/borra; user_id solo como autor (fijado al crear, visible en la tarjeta); la CLI ve todas"
+  - "P1 borrado: cualquiera borra/descarta (con confirmacion en la UI); restringir DELETE al autor descartado (requiere es_mia en el DTO, no protege nada entre cuentas de prueba)"
+  - "P2 RESUELTA: TEST_NOTES_ENABLED=1 con NODE_ENV=production aborta el arranque con error claro (la herramienta nunca es para produccion)"
+  - "P3 RESUELTA: sin sesion de Clerk la tool no aparece"
+  - "P4 RESUELTA: CLI 'npm run notes -- lista|ver|estado|responder' en castellano + --json"
+  - "P5 RESUELTA (design-system mergeado en #34, b4287ef): tokens del design-system desde el primer commit; devtools/** bajo design-lint"
+provisional_decisions: []
+coordination:
+  - "worktree propio: C:\Users\USER\OneDrive\Escritorio\COMPRO-test-notes (rama feat/test-notes, rebaseada sobre main b4287ef). Commitear por pathspec"
+  - "contacto con el host: host/tools.tsx (+ tools.test.tsx) y glob de host/ui/design-lint.test.ts"
+  - "supuestos de layout aislados en devtools/test-notes/geometry.ts (main hijo de la columna, [data-testid='toast-region'], nav[aria-label='Navegación inferior'] como fallback)"
+aligned_with: "main b4287ef (design-system #34)"
+tasks_per_commit:
+  commit-1: 4
+  commit-2: 8
+  commit-3: 4
+  commit-4: 5
+  commit-5: 5
+  commit-6: 6
+  total: 32
+  manual: [3.4, 6.5, 6.6]
+apply_progress:
+  commit-1: done  # modelo test_notes + migracion 20261013010000_add_test_notes + dominio (parseCreate/parsePatch)
+  commit-2: done  # flag TEST_NOTES_ENABLED (fail-fast en prod), repo compartido + admin, controller, modulo condicional, e2e (A1-A6)
+  commit-3: done  # CLI npm run notes (lista|ver|estado|responder, --json); 3.4 manual del usuario pendiente
+  commit-4: done  # lógica pura (mark, capture, geometry, api)
+  commit-5: done  # componentes + TestNotes + design-lint de devtools
+  commit-6: done  # gate en hostTools + Suspense + aislamiento + CONTRIBUTING; manuales 3.4/6.5/6.6 del usuario
+  notes:
+    - "migracion renombrada a 20261013010000_add_test_notes: main ya tiene 20261013000000_add_fiado (mismo timestamp)"
+    - "tests del back corridos contra una DB de test propia (compro_test_notes) para no tocar compro_test de la otra sesion"
+next_phase: apply  # sdd-apply por commit; P1-P5 cerradas

@@ -14,3 +14,5 @@ export const LIST_GEN_SERVICE = 'LIST_GEN_SERVICE' as const;
 export const COMPARE_REPO = 'COMPARE_REPO' as const;
 export const CART_REPO = 'CART_REPO' as const;
 export const FIADO_REPO = 'FIADO_REPO' as const;
+export const TEST_NOTES_REPO = 'TEST_NOTES_REPO' as const;
+export const TEST_NOTES_ADMIN_REPO = 'TEST_NOTES_ADMIN_REPO' as const;

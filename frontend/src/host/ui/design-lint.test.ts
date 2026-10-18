@@ -45,8 +45,10 @@ const scanned = Object.fromEntries(
       [
         '../**/*.{ts,tsx}',
         '../../modules/fiado/**/*.{ts,tsx}',
+        '../../devtools/**/*.{ts,tsx}',
         '!../**/*.test.{ts,tsx}',
         '!../../modules/**/*.test.{ts,tsx}',
+        '!../../devtools/**/*.test.{ts,tsx}',
       ],
       {
         query: '?raw',
@@ -62,6 +64,7 @@ describe('lint de diseño', () => {
     expect(Object.keys(scanned)).toContain('../HostLayout.tsx');
     expect(Object.keys(scanned)).toContain('../../modules/fiado/pages/Inicio.tsx');
     expect(Object.keys(scanned)).toContain('./Button.tsx');
+    expect(Object.keys(scanned)).toContain('../../devtools/test-notes/TestNotes.tsx');
   });
 
   it('el host y Fiado usan sólo tokens del sistema de diseño', () => {

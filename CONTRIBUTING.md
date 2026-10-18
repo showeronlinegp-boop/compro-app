@@ -60,3 +60,23 @@ npm run ops -- sync [super|all]
 npm run ops -- enrich [super|all]
 npm run ops -- promos [super|all]
 ```
+
+## Notas de prueba ("Marcar en pantalla")
+
+Herramienta para anotar errores, mejoras y dudas mientras probás la app: tocás el elemento que falla y queda un pin numerado. **Solo existe en desarrollo local**: el build de producción no la incluye y el backend se niega a arrancar si se prende con `NODE_ENV=production`.
+
+Para prenderla:
+
+1. `backend/.env` → `TEST_NOTES_ENABLED=1`, y reiniciá el backend.
+2. `frontend/.env.development.local` → `VITE_TEST_NOTES=1`, y reiniciá Vite. Va en ese archivo y no en `.env.local`, porque Vitest también lee `.env.local`.
+
+Las notas son compartidas entre todas las cuentas de prueba. Para trabajarlas desde la terminal, desde `backend/`:
+
+```bash
+npm run notes -- lista                      # notas vivas
+npm run notes -- ver <id>                   # detalle completo (texto, elemento, errores capturados)
+npm run notes -- estado <id> <estado>       # abierta | en_curso | consulta | para_revisar | corregida | descartada
+echo "Listo" | npm run notes -- responder <id> para_revisar
+```
+
+Todos aceptan `--json`.
