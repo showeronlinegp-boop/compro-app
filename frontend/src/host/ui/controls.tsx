@@ -1,4 +1,4 @@
-import { type InputHTMLAttributes, type TextareaHTMLAttributes, useId } from 'react';
+import { type InputHTMLAttributes, type TextareaHTMLAttributes, forwardRef, useId } from 'react';
 import { FOCUS_RING } from './styles';
 
 // ─── FilterChips ──────────────────────────────────────────────────────────────
@@ -103,7 +103,10 @@ interface TextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
 }
 
 /** Texto largo (plantillas de mensajes). Mismas reglas que `TextField`: label visible, 17 px. */
-export function TextArea({ label, hint, id, className, rows = 4, ...rest }: TextAreaProps) {
+export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(function TextArea(
+  { label, hint, id, className, rows = 4, ...rest },
+  ref,
+) {
   const autoId = useId();
   const inputId = id ?? autoId;
   const hintId = hint ? `${inputId}-hint` : undefined;
@@ -113,6 +116,7 @@ export function TextArea({ label, hint, id, className, rows = 4, ...rest }: Text
         {label}
       </label>
       <textarea
+        ref={ref}
         id={inputId}
         rows={rows}
         aria-describedby={hintId}
@@ -126,4 +130,4 @@ export function TextArea({ label, hint, id, className, rows = 4, ...rest }: Text
       )}
     </div>
   );
-}
+});

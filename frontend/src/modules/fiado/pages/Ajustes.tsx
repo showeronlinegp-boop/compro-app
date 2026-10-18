@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useState } from 'react';
+import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { Button } from '../../../host/ui/Button';
 import { ScreenHeader } from '../../../host/ui/ScreenHeader';
 import { useToast } from '../../../host/ui/Toast';
@@ -6,12 +6,12 @@ import { TextArea, TextField } from '../../../host/ui/controls';
 import { Card, Notice, Section } from '../../../host/ui/surfaces';
 import { type Ajustes as AjustesData, fiadoApi, mensajeDeError } from '../api';
 import { Cargando, ErrorCarga } from '../components';
-import { FIRMA, VARIABLES } from '../mensajes';
+import { ETIQUETA_VARIABLE, FIRMA, VARIABLES, type Variable, insertarVariable } from '../mensajes';
 import { useCarga } from '../useCarga';
 
 type Plantilla = 'plantilla_fiado' | 'plantilla_pago' | 'plantilla_recordatorio';
 
-const PLANTILLAS: { campo: Plantilla; label: string; vars: string }[] = [
+const PLANTILLAS: { campo: Plantilla; label: string; vars: readonly Variable[] }[] = [
   { campo: 'plantilla_fiado', label: 'Comprobante de fiado', vars: VARIABLES.fiado },
   { campo: 'plantilla_pago', label: 'Comprobante de pago', vars: VARIABLES.pago },
   { campo: 'plantilla_recordatorio', label: 'Recordatorio', vars: VARIABLES.recordatorio },
@@ -33,8 +33,26 @@ export default function Ajustes() {
     }
   }, [carga.data]);
 
+  const textareas = useRef<Partial<Record<Plantilla, HTMLTextAreaElement | null>>>({});
+
   const set = <K extends keyof AjustesData>(k: K, v: AjustesData[K]) =>
     setForm((f) => (f ? { ...f, [k]: v } : f));
+
+  /** Suma `{variable}` donde está el cursor (o al final) y deja el cursor después. */
+  function agregarVariable(campo: Plantilla, variable: Variable) {
+    if (!form) return;
+    const el = textareas.current[campo];
+    const texto = form[campo];
+    const inicio = el?.selectionStart ?? texto.length;
+    const fin = el?.selectionEnd ?? texto.length;
+    const r = insertarVariable(texto, variable, inicio, fin);
+    if (r.texto.length > 1000) return;
+    set(campo, r.texto);
+    requestAnimationFrame(() => {
+      el?.focus();
+      el?.setSelectionRange(r.cursor, r.cursor);
+    });
+  }
 
   async function guardar(e: FormEvent) {
     e.preventDefault();
@@ -106,12 +124,28 @@ export default function Ajustes() {
                 {PLANTILLAS.map((p) => (
                   <div key={p.campo} className="flex flex-col gap-2">
                     <TextArea
+                      ref={(el) => {
+                        textareas.current[p.campo] = el;
+                      }}
                       label={p.label}
                       value={form[p.campo]}
                       maxLength={1000}
                       onChange={(e) => set(p.campo, e.target.value)}
-                      hint={`Podés usar ${p.vars}. Siempre termina con “${FIRMA}”.`}
+                      hint={`Tocá un dato para sumarlo al mensaje. Siempre termina con “${FIRMA}”.`}
                     />
+                    <fieldset className="m-0 p-0 border-0 min-w-0 flex flex-wrap gap-2">
+                      <legend className="sr-only">{`Datos para ${p.label}`}</legend>
+                      {p.vars.map((v) => (
+                        <Button
+                          key={v}
+                          variant="soft"
+                          size="chip"
+                          onClick={() => agregarVariable(p.campo, v)}
+                        >
+                          + {ETIQUETA_VARIABLE[v]}
+                        </Button>
+                      ))}
+                    </fieldset>
                     <Button
                       variant="text"
                       size="s"
