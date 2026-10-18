@@ -83,7 +83,7 @@ Todos aceptan `--json`.
 
 ### "Enviar a Claude"
 
-Cada nota pendiente tiene el botón **Enviar a Claude**: abre Windows Terminal con Claude Code en la carpeta del repo, trabajando esa nota con la skill `nota-prueba` (`.claude/skills/nota-prueba/SKILL.md`). Claude corrige en un worktree, te deja una vista previa en `http://localhost:5174` y **recién mergea cuando le das el OK** (cada merge a `main` sale a producción).
+Cada nota pendiente tiene el botón **Enviar a Claude**: abre Windows Terminal con Claude Code en la carpeta del repo, trabajando esa nota con la skill `nota-prueba` (`.claude/skills/nota-prueba/SKILL.md`). Claude corrige en un worktree y te deja el cambio aplicado (sin commitear) en tu `http://localhost:5173`, sin que tengas que correr comandos: solo recargás la página. **Recién mergea cuando le das el OK** (cada merge a `main` sale a producción) y después limpia tu checkout y hace `git pull`. Para que pueda hacerlo sin pedirte comandos, la primera vez te pide aprobar unas reglas de permisos en `.claude/settings.local.json` (local, no va al repo).
 
 El botón usa el link `compro-claude://nota/<id>`, que hay que registrar **una vez** en Windows (no pide administrador), desde el checkout principal:
 
