@@ -20,6 +20,7 @@
 import type { ExecutionContext } from '@nestjs/common';
 import { UnauthorizedException } from '@nestjs/common';
 import type { Reflector } from '@nestjs/core';
+import { Prisma } from '@prisma/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ClerkAuthGuard } from './clerk-auth.guard.js';
 import type { RequestWithAuth } from './current-user.service.js';
@@ -81,6 +82,7 @@ function buildPrisma(userId = 42) {
   return {
     users: {
       upsert: vi.fn().mockResolvedValue({ id: userId }),
+      findUniqueOrThrow: vi.fn().mockResolvedValue({ id: userId }),
     },
   } as unknown as import('../../prisma/prisma.service.js').PrismaService;
 }
@@ -162,6 +164,36 @@ describe('ClerkAuthGuard', () => {
     );
     // Identity is written directly onto the request object
     expect(request.auth).toEqual({ clerkUserId, userId: 42 });
+  });
+
+  it('primer ingreso con pedidos simultáneos: P2002 en el upsert → usa la fila que creó el otro', async () => {
+    vi.mocked(verifyToken).mockResolvedValue(buildPayload('user_nuevo') as never);
+    vi.mocked(prisma.users.upsert).mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+        code: 'P2002',
+        clientVersion: 'test',
+      }),
+    );
+    vi.mocked(prisma.users.findUniqueOrThrow).mockResolvedValue({ id: 7 } as never);
+    const guard = new ClerkAuthGuard(buildReflector(false), prisma);
+    const { ctx, request } = buildContext({ authorization: 'Bearer valid.jwt.token' });
+
+    await expect(guard.canActivate(ctx)).resolves.toBe(true);
+    expect(prisma.users.findUniqueOrThrow).toHaveBeenCalledWith({
+      where: { clerk_user_id: 'user_nuevo' },
+      select: { id: true },
+    });
+    expect(request.auth).toEqual({ clerkUserId: 'user_nuevo', userId: 7 });
+  });
+
+  it('un error de base que no es P2002 se propaga', async () => {
+    vi.mocked(verifyToken).mockResolvedValue(buildPayload('user_x') as never);
+    vi.mocked(prisma.users.upsert).mockRejectedValue(new Error('connection lost'));
+    const guard = new ClerkAuthGuard(buildReflector(false), prisma);
+    const { ctx } = buildContext({ authorization: 'Bearer valid.jwt.token' });
+
+    await expect(guard.canActivate(ctx)).rejects.toThrow('connection lost');
+    expect(prisma.users.findUniqueOrThrow).not.toHaveBeenCalled();
   });
 
   it('(d) @Public() route → bypasses guard entirely, returns true', async () => {
