@@ -29,25 +29,25 @@
 
 ## Commit 4 — `feat(frontend): lógica pura de test-notes`
 
-- [ ] 4.1 `devtools/test-notes/{types,constants}.ts` (T5, T7)
-- [ ] 4.2 `mark.ts` + `mark.test.ts`: port de los tests de neggo + "data-testid gana", `aria-label` único/no único, "Id generado", `pantallaLabel` con `ResolvedLocation` ("Módulo › Título"), `null` en `/mas` → "Más", `/` → "Inicio", otro → pathname (T4, T5)
-- [ ] 4.3 `capture.ts` + `capture.test.ts`: "API fallida", "Llamada propia excluida", sin respuesta, idempotencia, `console.error` original preservado, límite 15 (T8)
-- [ ] 4.4 `geometry.ts` + `geometry.test.ts`: `readFrame` (raíz `main` hijo de la columna / fallback documento, banda visible), `toRootY`/`fromRootY` (documento y elemento), `markFromPoint` (`pos_x` sobre el ancho de `main`), `pinPosition` exacto/aproximado/fuera de banda/null en coordenadas de la columna, `fabBottom` (región de toasts a 90 px → 154, a 20 px → 84, sin región → barra + 16 / 16) (T2, T3, T6)
-- [ ] 4.5 `api.ts` + `api.test.ts` (`apiErrorMessage`, paths y métodos con `fetch` stub) (T5, T7). Verif: `VF`
+- [x] 4.1 `devtools/test-notes/{types,constants}.ts` (T5, T7)
+- [x] 4.2 `mark.ts` + `mark.test.ts`: port de los tests de neggo + "data-testid gana", `aria-label` único/no único, "Id generado", `pantallaLabel` con `ResolvedLocation` ("Módulo › Título"), `null` en `/mas` → "Más", `/` → "Inicio", otro → pathname (T4, T5)
+- [x] 4.3 `capture.ts` + `capture.test.ts`: "API fallida", "Llamada propia excluida", sin respuesta, idempotencia, `console.error` original preservado, límite 15 (T8)
+- [x] 4.4 `geometry.ts` + `geometry.test.ts`: `readFrame` (raíz `main` hijo de la columna / fallback documento, banda visible), `toRootY`/`fromRootY` (documento y elemento), `markFromPoint` (`pos_x` sobre el ancho de `main`), `pinPosition` exacto/aproximado/fuera de banda/null en coordenadas de la columna, `fabBottom` (región de toasts a 90 px → 154, a 20 px → 84, sin región → barra + 16 / 16) (T2, T3, T6)
+- [x] 4.5 `api.ts` + `api.test.ts` (`apiErrorMessage`, paths y métodos con `fetch` stub) (T5, T7). Verif: `VF`
 
 ## Commit 5 — `feat(frontend): herramienta Notas de prueba`
 
-- [ ] 5.1 `components/{MiniButton,ModoChecklist,Fabs,MarkLayer,Highlights,Pins}.tsx` con tokens del design-system + `FOCUS_RING*` (clases por tipo/estado en `constants.ts`); sin breakpoints, sombras, emoji ni texto < 12 px; `absolute` dentro de la raíz de la tool (T2, T3, T6, T10)
-- [ ] 5.2 `components/{DraftForm,NoteCard,Sheet}.tsx`: hoja inferior de ancho completo (`absolute inset-x-0 bottom-0 max-h-[85%]`); `NoteCard` muestra `autor` (T5, T7, T10)
-- [ ] 5.3 `TestNotes.tsx` (raíz `[data-test-notes]` `absolute inset-0 z-[60] pointer-events-none` en la columna, sin portal; `column = ref.parentElement`; pantalla con `useActiveModule().location`; FABs con `fabBottom` recalculado por `location`/`resize`; polling 60 s, recálculo de pines, Esc, ir a la nota, `null` sin sesión, `installCapture` al montar) + `index.tsx` (T1–T8)
-- [ ] 5.4 `TestNotes.test.tsx` con `HostApp` + módulo falso: "Sin sesión", "Ruta de tarea", "Clic sobre un botón de la app", "Escape", "Nota sin marcar", "Elemento desaparecido", "Confirmar corrección", "Borrado con confirmación", "Montaje en la columna", error conserva borrador (T1–T7, T10). Verif: `VF`
-- [ ] 5.5 `host/ui/design-lint.test.ts`: sumar `../../devtools/**/*.{ts,tsx}` (y su exclusión de tests) al glob + `toContain('../../devtools/test-notes/TestNotes.tsx')` (T10). Verif: `VF`
+- [x] 5.1 `components/{MiniButton,ModoChecklist,Fabs,MarkLayer,Highlights,Pins}.tsx` con tokens del design-system + `FOCUS_RING*` (clases por tipo/estado en `constants.ts`); sin breakpoints, sombras, emoji ni texto < 12 px; `absolute` dentro de la raíz de la tool (T2, T3, T6, T10)
+- [x] 5.2 `components/{DraftForm,NoteCard,Sheet}.tsx`: hoja inferior de ancho completo (`absolute inset-x-0 bottom-0 max-h-[85%]`); `NoteCard` muestra `autor` (T5, T7, T10)
+- [x] 5.3 `TestNotes.tsx` (raíz `[data-test-notes]` `absolute inset-0 z-[60] pointer-events-none` en la columna, sin portal; `column = ref.parentElement`; pantalla con `useActiveModule().location`; FABs con `fabBottom` recalculado por `location`/`resize`; polling 60 s, recálculo de pines, Esc, ir a la nota, `null` sin sesión, `installCapture` al montar) + `index.tsx` (T1–T8)
+- [x] 5.4 `TestNotes.test.tsx` con `HostApp` + módulo falso: "Sin sesión", "Ruta de tarea", "Clic sobre un botón de la app", "Escape", "Nota sin marcar", "Elemento desaparecido", "Confirmar corrección", "Borrado con confirmación", "Montaje en la columna", error conserva borrador (T1–T7, T10). Verif: `VF`
+- [x] 5.5 `host/ui/design-lint.test.ts`: sumar `../../devtools/**/*.{ts,tsx}` (y su exclusión de tests) al glob + `toContain('../../devtools/test-notes/TestNotes.tsx')` (T10). Verif: `VF`
 
 ## Commit 6 — `feat(frontend): registrar test-notes en hostTools con gate de build`
 
-- [ ] 6.1 `host/tools.tsx`: ternario `DEV && VITE_TEST_NOTES === '1'` con `lazy`; `HostToolsOutlet` envuelve cada tool en `Suspense` (T1, H7)
-- [ ] 6.2 `host/tools.test.tsx`: "Flags apagadas" y "Tool diferida" (H7). Verif: `VF`
-- [ ] 6.3 `devtools/isolation.test.ts`: `devtools ↛ modules`; solo `host/tools.tsx` importa `devtools`; caso sintético "Import prohibido" (T9). Verif: `VF`
-- [ ] 6.4 `CONTRIBUTING.md`: sección "Notas de prueba" (flags, `.env.development.local`, `npm run notes`) y `TEST_NOTES_ENABLED=` comentado en `backend/.env.example`
+- [x] 6.1 `host/tools.tsx`: ternario `DEV && VITE_TEST_NOTES === '1'` con `lazy`; `HostToolsOutlet` envuelve cada tool en `Suspense` (T1, H7)
+- [x] 6.2 `host/tools.test.tsx`: "Flags apagadas" y "Tool diferida" (H7). Verif: `VF`
+- [x] 6.3 `devtools/isolation.test.ts`: `devtools ↛ modules`; solo `host/tools.tsx` importa `devtools`; caso sintético "Import prohibido" (T9). Verif: `VF`
+- [x] 6.4 `CONTRIBUTING.md`: sección "Notas de prueba" (flags, `.env.development.local`, `npm run notes`) y `TEST_NOTES_ENABLED=` comentado en `backend/.env.example`
 - [ ] 6.5 🖐 Con ambas flags: marcar, guardar, pin, filtros, Confirmar/Reabrir/Borrar, "Ir a la nota" entre rutas, en una ruta `'full'` y una `'task'`, con scroll dentro de `main`, con un toast visible (los FABs no lo tapan) y en desktop (nada fuera de la columna de 480 px) (T2–T7, T10)
 - [ ] 6.6 🖐 `cd frontend && VITE_TEST_NOTES=1 npx vite build && rg -l "test-notes" dist` → vacío (T1 "Build de producción")

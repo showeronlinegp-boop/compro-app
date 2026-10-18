@@ -7,7 +7,7 @@ phases:
   spec: done
   design: done
   tasks: done
-  apply: in_progress
+  apply: done
   verify: pending
   archive: pending
 artifacts:
@@ -69,9 +69,9 @@ apply_progress:
   commit-1: done  # modelo test_notes + migracion 20261013010000_add_test_notes + dominio (parseCreate/parsePatch)
   commit-2: done  # flag TEST_NOTES_ENABLED (fail-fast en prod), repo compartido + admin, controller, modulo condicional, e2e (A1-A6)
   commit-3: done  # CLI npm run notes (lista|ver|estado|responder, --json); 3.4 manual del usuario pendiente
-  commit-4: pending
-  commit-5: pending
-  commit-6: pending
+  commit-4: done  # lógica pura (mark, capture, geometry, api)
+  commit-5: done  # componentes + TestNotes + design-lint de devtools
+  commit-6: done  # gate en hostTools + Suspense + aislamiento + CONTRIBUTING; manuales 3.4/6.5/6.6 del usuario
   notes:
     - "migracion renombrada a 20261013010000_add_test_notes: main ya tiene 20261013000000_add_fiado (mismo timestamp)"
     - "tests del back corridos contra una DB de test propia (compro_test_notes) para no tocar compro_test de la otra sesion"
