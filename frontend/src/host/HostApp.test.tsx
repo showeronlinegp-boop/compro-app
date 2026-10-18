@@ -257,6 +257,15 @@ describe('HostApp', () => {
     expect(screen.getByTestId('overlay')).toBeDefined();
   });
 
+  it('privacidad: abre sin sesión, fuera del layout y con noindex', () => {
+    auth.signedIn = false;
+    renderAt('/privacidad');
+    expect(screen.getByRole('heading', { name: 'Política de privacidad' })).toBeDefined();
+    expect(screen.queryByTestId('redirect-sign-in')).toBeNull();
+    expect(bottomNav()).toBeNull();
+    expect(document.head.querySelector('meta[name="robots"][content="noindex"]')).not.toBeNull();
+  });
+
   it('H1: ruta desconocida → layout con main vacío y barra', () => {
     renderAt('/no-existe');
     expect(screen.getByRole('main').innerHTML).toBe('');
