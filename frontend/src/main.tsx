@@ -3,6 +3,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
+import { clerkLocalization } from './host/auth/clerkLocalization';
 import './index.css';
 
 const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
@@ -15,7 +16,12 @@ if (!rootEl) throw new Error('Root element #root not found');
 
 ReactDOM.createRoot(rootEl).render(
   <React.StrictMode>
-    <ClerkProvider publishableKey={publishableKey}>
+    <ClerkProvider
+      publishableKey={publishableKey}
+      localization={clerkLocalization}
+      signInUrl="/sign-in"
+      signUpUrl="/sign-up"
+    >
       <BrowserRouter>
         <App />
       </BrowserRouter>
