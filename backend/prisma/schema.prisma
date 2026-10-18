@@ -284,18 +284,20 @@ model fiado_clientes {
 // fiado > 0, pago < 0, correccion = −(monto del corregido).
 // ---------------------------------------------------------------------------
 model fiado_movimientos {
-  id              Int      @id @default(autoincrement())
+  id              Int       @id @default(autoincrement())
   user_id         Int
   cliente_id      Int
   /// 'fiado' | 'pago' | 'correccion' (CHECK en la migración)
-  tipo            String   @db.Text
+  tipo            String    @db.Text
   monto           Int
   /// Movimiento que esta corrección deshace. Único: se corrige una sola vez.
-  corrige_id      Int?     @unique
-  nota            String?  @db.Text
+  corrige_id      Int?      @unique
+  nota            String?   @db.Text
   /// Evita duplicados por doble toque o reintento de red.
-  idempotency_key String?  @db.Text
-  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  idempotency_key String?   @db.Text
+  /// Sólo en un fiado: fecha en que te lo tienen que pagar (CHECK en la migración).
+  vence           DateTime? @db.Date
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
 
   user      users              @relation(fields: [user_id], references: [id], onDelete: Cascade)
   cliente   fiado_clientes     @relation(fields: [cliente_id], references: [id], onDelete: Cascade)

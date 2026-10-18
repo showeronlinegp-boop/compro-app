@@ -66,6 +66,7 @@ describe('clientes', () => {
         tipo: 'fiado',
         monto: 100,
         nota: null,
+        vence: null,
         idempotency_key: null,
       });
       await repo.crearMovimiento({
@@ -73,6 +74,7 @@ describe('clientes', () => {
         tipo: 'fiado',
         monto: 900,
         nota: null,
+        vence: null,
         idempotency_key: null,
       });
 
@@ -99,6 +101,7 @@ describe('movimientos', () => {
         tipo: 'fiado',
         monto: 4200,
         nota: 'yerba',
+        vence: null,
         idempotency_key: null,
       });
       expect(r1.movimiento).toMatchObject({ tipo: 'fiado', monto: 4200, nota: 'yerba' });
@@ -109,6 +112,7 @@ describe('movimientos', () => {
         tipo: 'fiado',
         monto: 1000,
         nota: null,
+        vence: null,
         idempotency_key: null,
       });
       expect(r2.cliente).toMatchObject({ saldo: 5200, excede_limite: true });
@@ -118,6 +122,7 @@ describe('movimientos', () => {
         tipo: 'pago',
         monto: 6000,
         nota: null,
+        vence: null,
         idempotency_key: null,
       });
       expect(r3.movimiento.monto).toBe(-6000);
@@ -140,6 +145,7 @@ describe('movimientos', () => {
         tipo: 'fiado' as const,
         monto: 300,
         nota: null,
+        vence: null,
         idempotency_key: 'k-1',
       };
       const a = await repo.crearMovimiento(input);
@@ -158,6 +164,7 @@ describe('movimientos', () => {
           tipo: 'fiado',
           monto: 1,
           nota: null,
+          vence: null,
           idempotency_key: null,
         }),
       ).rejects.toMatchObject({ status: 404 });
@@ -181,6 +188,7 @@ describe('corrección (Deshacer)', () => {
         tipo: 'fiado',
         monto: 1000,
         nota: null,
+        vence: null,
         idempotency_key: null,
       });
       const malo = await repo.crearMovimiento({
@@ -188,6 +196,7 @@ describe('corrección (Deshacer)', () => {
         tipo: 'fiado',
         monto: 4200,
         nota: null,
+        vence: null,
         idempotency_key: null,
       });
 
@@ -221,6 +230,7 @@ describe('corrección (Deshacer)', () => {
         tipo: 'pago',
         monto: 500,
         nota: null,
+        vence: null,
         idempotency_key: null,
       });
       const corr = await repo.corregirMovimiento(m.movimiento.id);
@@ -231,25 +241,24 @@ describe('corrección (Deshacer)', () => {
   });
 });
 
-describe('resumen', () => {
-  it('total, para cobrar hoy (fecha vencida o deuda vieja) y recordado hoy', async () => {
+describe('resumen y avisos', () => {
+  const hoyAR = () =>
+    new Date().toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' });
+  const enDias = (n: number) =>
+    new Date(Date.parse(`${hoyAR()}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
+
+  it('para cobrar hoy = algo vencido (con fecha o por deuda vieja), y recordado hoy', async () => {
     await withRollback(async (tx) => {
       const userId = await seedUser(tx);
       const repo = makeFiadoRepo(tx, userId);
-      const base = { telefono: null, etiqueta: null, limite: null };
-      const vieja = await repo.crearCliente({ ...base, nombre: 'Vieja', proximo_cobro: null });
-      const vence = await repo.crearCliente({
-        ...base,
-        nombre: 'Vence',
-        proximo_cobro: '2020-01-01',
-      });
-      const nueva = await repo.crearCliente({ ...base, nombre: 'Nueva', proximo_cobro: null });
-      const alDia = await repo.crearCliente({
-        ...base,
-        nombre: 'Al día',
-        proximo_cobro: '2020-01-01',
-      });
+      const base = { telefono: null, etiqueta: null, limite: null, proximo_cobro: null };
+      const vieja = await repo.crearCliente({ ...base, nombre: 'Vieja' });
+      const vence = await repo.crearCliente({ ...base, nombre: 'Vence' });
+      const nueva = await repo.crearCliente({ ...base, nombre: 'Nueva' });
+      const pago = await repo.crearCliente({ ...base, nombre: 'Pagó' });
+      const sinFecha = { nota: null, idempotency_key: null } as const;
 
+      // Sin fecha y anotado hace 40 días: vence a los 30 (deuda vieja).
       await tx.fiado_movimientos.create({
         data: {
           user_id: userId,
@@ -260,31 +269,81 @@ describe('resumen', () => {
         },
       });
       await repo.crearMovimiento({
+        ...sinFecha,
         cliente_id: vence.id,
         tipo: 'fiado',
         monto: 2000,
-        nota: null,
-        idempotency_key: null,
+        vence: enDias(0),
       });
       await repo.crearMovimiento({
+        ...sinFecha,
         cliente_id: nueva.id,
         tipo: 'fiado',
         monto: 1000,
-        nota: null,
-        idempotency_key: null,
+        vence: enDias(3),
+      });
+      // Vencido pero pagado: el pago lo tapa y no queda nada vencido.
+      await repo.crearMovimiento({
+        ...sinFecha,
+        cliente_id: pago.id,
+        tipo: 'fiado',
+        monto: 500,
+        vence: enDias(-2),
+      });
+      await repo.crearMovimiento({
+        ...sinFecha,
+        cliente_id: pago.id,
+        tipo: 'fiado',
+        monto: 700,
+        vence: enDias(10),
+      });
+      await repo.crearMovimiento({
+        ...sinFecha,
+        cliente_id: pago.id,
+        tipo: 'pago',
+        monto: 500,
+        vence: null,
       });
       await repo.registrarRecordatorio(vieja.id);
 
       const r = await repo.resumen();
-      expect(r.total).toBe(6000);
-      expect(r.clientes_con_deuda).toBe(3);
-      expect(r.para_cobrar.map((c) => [c.nombre, c.recordado_hoy])).toEqual([
-        ['Vieja', true],
-        ['Vence', false],
+      expect(r.total).toBe(6700);
+      expect(r.clientes_con_deuda).toBe(4);
+      expect(r.para_cobrar.map((c) => [c.nombre, c.vencido, c.recordado_hoy])).toEqual([
+        ['Vieja', 3000, true],
+        ['Vence', 2000, false],
       ]);
-      expect(r.para_cobrar.map((c) => c.id)).not.toContain(alDia.id);
-      expect(r.ultimos[0]?.cliente_nombre).toBe('Nueva');
       expect(r.ultimos.length).toBeLessThanOrEqual(4);
+
+      const f = await repo.ficha(pago.id);
+      expect(f.cliente.proximo_vencimiento).toEqual({ fecha: enDias(10), monto: 700 });
+      expect(f.historial.filter((m) => m.tipo === 'fiado').map((m) => m.pendiente)).toEqual([
+        700, 0,
+      ]);
+
+      const a = await repo.avisos();
+      expect(a.vencidos.map((x) => [x.cliente_nombre, x.monto])).toEqual([['Vieja', 3000]]);
+      expect(a.hoy.map((x) => [x.cliente_nombre, x.monto])).toEqual([['Vence', 2000]]);
+      expect(a.proximos.map((x) => [x.cliente_nombre, x.fecha])).toEqual([['Nueva', enDias(3)]]);
+      expect(a.sin_recordar).toBe(1);
+    });
+  });
+
+  it('un pago no puede llevar fecha de cobro (CHECK de la base)', async () => {
+    await withRollback(async (tx) => {
+      const userId = await seedUser(tx);
+      const repo = makeFiadoRepo(tx, userId);
+      const c = await repo.crearCliente({
+        nombre: 'X',
+        telefono: null,
+        etiqueta: null,
+        limite: null,
+        proximo_cobro: null,
+      });
+      await expect(
+        tx.$executeRaw`INSERT INTO fiado_movimientos (user_id, cliente_id, tipo, monto, vence)
+          VALUES (${userId}, ${c.id}, 'pago', -100, CURRENT_DATE)`,
+      ).rejects.toThrow();
     });
   });
 });
@@ -332,6 +391,7 @@ describe('libro append-only en la base', () => {
         tipo: 'fiado',
         monto: 100,
         nota: null,
+        vence: null,
         idempotency_key: null,
       });
       await expect(
@@ -355,6 +415,7 @@ describe('libro append-only en la base', () => {
         tipo: 'fiado',
         monto: 100,
         nota: null,
+        vence: null,
         idempotency_key: null,
       });
       await expect(
@@ -398,6 +459,7 @@ describe('libro append-only en la base', () => {
         tipo: 'fiado',
         monto: 100,
         nota: null,
+        vence: null,
         idempotency_key: null,
       });
       await repo.corregirMovimiento(m.movimiento.id);

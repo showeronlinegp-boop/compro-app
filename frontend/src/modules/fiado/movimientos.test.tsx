@@ -42,6 +42,9 @@ const cliente = (over: Partial<Cliente> = {}): Cliente => ({
   saldo: 3000,
   dias_sin_pagar: 3,
   excede_limite: false,
+  vencido: 0,
+  vencido_desde: null,
+  proximo_vencimiento: null,
   ...over,
 });
 
@@ -59,6 +62,8 @@ const resultado = (
     created_at: '2026-10-13T17:00:00Z',
     corrige_id: null,
     corregido_por: null,
+    vence: null,
+    pendiente: null,
     ...over,
   },
   cliente: c,

@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react';
 import { Button } from '../../host/ui/Button';
-import { IconCheck, IconPlus } from '../../host/ui/icons';
 import { formatMoney } from '../../host/ui/format';
+import { IconCheck, IconPlus } from '../../host/ui/icons';
 import { Avatar, Card, EmptyNote, ListRow, Pill } from '../../host/ui/surfaces';
 import type { Cliente, Cobro, Movimiento } from './api';
-import { DIAS_TARDE, lineaCliente, textoDias, textoFecha, textoSaldo, textoTipo } from './textos';
+import { DIAS_TARDE, lineaCliente, textoFecha, textoSaldo, textoTipo, textoVence } from './textos';
+import { hoyAR } from './vence';
 
 // ─── Fila de cliente (guía §4.3) ──────────────────────────────────────────────
 
@@ -42,8 +43,8 @@ export function FilaCliente({ cliente, onClick, accion }: FilaClienteProps) {
 // ─── Fila de "Para cobrar hoy" (variante de §4.3) ─────────────────────────────
 
 /**
- * Saldo y días juntos en la línea secundaria; a la derecha "Recordar", o
- * "Recordado" en verde si ya se le mandó el recordatorio hoy.
+ * Lo vencido (y de cuánto es la deuda) y desde cuándo en la línea secundaria;
+ * a la derecha "Recordar", o "Recordado" en verde si ya se le mandó hoy.
  */
 export function FilaCobro({
   cobro,
@@ -55,7 +56,7 @@ export function FilaCobro({
   onRecordar: () => void;
 }) {
   const tarde = (cobro.dias_sin_pagar ?? 0) > DIAS_TARDE;
-  const dias = textoDias(cobro.dias_sin_pagar);
+  const deuda = cobro.saldo > cobro.vencido ? ` de ${formatMoney(cobro.saldo)}` : '';
   return (
     <ListRow
       onClick={onAbrir}
@@ -63,28 +64,39 @@ export function FilaCobro({
       title={cobro.nombre}
       subtitle={
         <span>
-          {formatMoney(cobro.saldo)}
-          {dias && (
+          {formatMoney(cobro.vencido)} vencido{deuda}
+          {cobro.vencido_desde && (
             <>
               {' · '}
-              <span className={tarde ? 'text-late font-bold' : ''}>{dias}</span>
+              <span className={tarde ? 'text-late font-bold' : ''}>
+                {textoVence(cobro.vencido_desde, hoyAR())}
+              </span>
             </>
           )}
         </span>
       }
-      action={
-        cobro.recordado_hoy ? (
-          <span className="inline-flex items-center gap-1 text-body-s font-bold text-ok">
-            <IconCheck size={18} />
-            Recordado
-          </span>
-        ) : (
-          <Button variant="outline" size="s" onClick={onRecordar}>
-            Recordar
-          </Button>
-        )
-      }
+      action={<BotonRecordar recordado={cobro.recordado_hoy} onRecordar={onRecordar} />}
     />
+  );
+}
+
+/** "Recordar", o "Recordado" en verde si ya se le mandó el recordatorio hoy. */
+export function BotonRecordar({
+  recordado,
+  onRecordar,
+}: {
+  recordado: boolean;
+  onRecordar: () => void;
+}) {
+  return recordado ? (
+    <span className="inline-flex items-center gap-1 text-body-s font-bold text-ok">
+      <IconCheck size={18} />
+      Recordado
+    </span>
+  ) : (
+    <Button variant="outline" size="s" onClick={onRecordar}>
+      Recordar
+    </Button>
   );
 }
 
@@ -109,7 +121,12 @@ export function FilaMovimiento({
     m.tipo === 'fiado' ? 'text-fiado' : m.tipo === 'pago' ? 'text-pago' : 'text-ink-muted';
   const signo = m.monto > 0 ? '+' : '−';
   const titulo = conCliente ? m.cliente_nombre : textoTipo(m);
-  const detalle = [conCliente ? textoTipo(m) : null, textoFecha(m.created_at), m.nota]
+  const detalle = [
+    conCliente ? textoTipo(m) : null,
+    textoFecha(m.created_at),
+    m.nota,
+    textoPendiente(m),
+  ]
     .filter(Boolean)
     .join(' · ');
   return (
@@ -129,6 +146,18 @@ export function FilaMovimiento({
       }
     />
   );
+}
+
+/**
+ * En un fiado vigente de la ficha: "vence el 25 oct", "falta $ 300 · vence…"
+ * si se pagó una parte, o "pagado" si los pagos ya lo taparon.
+ */
+function textoPendiente(m: Movimiento): string | null {
+  if (m.tipo !== 'fiado' || m.pendiente == null || m.corregido_por != null) return null;
+  if (m.pendiente === 0) return 'pagado';
+  const vence = m.vence ? textoVence(m.vence, hoyAR()) : null;
+  const falta = m.pendiente < m.monto ? `falta ${formatMoney(m.pendiente)}` : null;
+  return [falta, vence].filter(Boolean).join(' · ') || null;
 }
 
 // ─── Acciones de fiado y pago ─────────────────────────────────────────────────
