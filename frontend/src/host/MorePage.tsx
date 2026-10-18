@@ -1,6 +1,7 @@
 import { SignInButton, SignOutButton, SignedIn, SignedOut, UserButton } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 import type { AppModule } from './contract';
+import { OpcionInstalar } from './install/InstalarApp';
 import { useActiveModule } from './nav/ActiveModule';
 import { splitNavItems } from './nav/BottomNav';
 import { Button } from './ui/Button';
@@ -61,6 +62,8 @@ export function MorePage({ modules }: { modules: readonly AppModule[] }) {
           </List>
         </Section>
       )}
+
+      <OpcionInstalar />
 
       <Section title="Cuenta">
         <Card>

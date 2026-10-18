@@ -4,12 +4,15 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { clerkLocalization } from './host/auth/clerkLocalization';
+import { escucharInstalacion } from './host/install/instalar';
 import './index.css';
 
 const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
 if (!publishableKey) {
   throw new Error('[env] VITE_CLERK_PUBLISHABLE_KEY is required — add it to frontend/.env');
 }
+
+escucharInstalacion();
 
 const rootEl = document.getElementById('root');
 if (!rootEl) throw new Error('Root element #root not found');
