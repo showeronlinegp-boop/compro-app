@@ -33,6 +33,8 @@ export function NoteCard({
   onPedirBorrar,
   onCancelarBorrar,
   onBorrar,
+  enviada,
+  onEnviar,
 }: {
   nota: TestNote;
   activa: boolean;
@@ -44,6 +46,9 @@ export function NoteCard({
   onPedirBorrar: () => void;
   onCancelarBorrar: () => void;
   onBorrar: () => void;
+  /** Se acaba de mandar a Claude: muestra la ayuda por si no se abre la terminal. */
+  enviada: boolean;
+  onEnviar: () => void;
 }) {
   const pendiente = PENDIENTES.includes(nota.estado);
   const consulta = nota.estado === 'consulta';
@@ -101,7 +106,18 @@ export function NoteCard({
           </p>
         )
       )}
+      {enviada && (
+        <p className="m-0 text-micro text-ink-muted">
+          Abriendo la terminal con Claude… Si el navegador pregunta, tocá «Abrir». Si no pasa nada,
+          falta registrar el link: tools\claude-link\registrar.ps1 (ver CONTRIBUTING.md).
+        </p>
+      )}
       <div className="flex flex-wrap gap-2">
+        {pendiente && (
+          <MiniButton tone="ink" solid onClick={onEnviar}>
+            Enviar a Claude
+          </MiniButton>
+        )}
         {nota.estado === 'para_revisar' && (
           <>
             <MiniButton tone="ok" solid onClick={() => onEstado('corregida')}>

@@ -36,6 +36,13 @@ vi.mock('./api', async (importOriginal) => ({
   testNotesApi: api,
 }));
 
+// jsdom no navega a links compro-claude://: se espía el envío
+const enviar = vi.hoisted(() => vi.fn());
+vi.mock('./claude-link', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./claude-link')>()),
+  enviarAClaude: enviar,
+}));
+
 // ---------------------------------------------------------------------------
 // Módulo falso: una ruta 'full' con un botón y una 'task'
 // ---------------------------------------------------------------------------
@@ -316,5 +323,40 @@ describe('TestNotes (desktop: panel lateral fuera de la app)', () => {
     fireEvent.click(await within(panel).findByRole('button', { name: 'Demo › Tarea' }));
     expect(await screen.findByRole('heading', { name: 'Tarea' })).toBeDefined();
     expect(screen.getByRole('region', { name: 'Notas de prueba' })).toBeDefined();
+  });
+});
+
+describe('TestNotes: Enviar a Claude', () => {
+  beforeEach(() => {
+    anchoVentana(300);
+    auth.signedIn = true;
+    enviar.mockReset();
+    document.elementsFromPoint = () => [];
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
+  it('en una nota pendiente manda su número y muestra la ayuda', async () => {
+    api.list.mockResolvedValue([nota({ id: 21 })]);
+    renderAt('/demo');
+    await waitFor(() => expect(api.list).toHaveBeenCalled());
+    abrirNotas();
+    const card = await within(hoja()).findByTestId('test-note-21');
+    fireEvent.click(within(card).getByRole('button', { name: 'Enviar a Claude' }));
+    expect(enviar).toHaveBeenCalledWith(21);
+    expect(within(card).getByText(/Abriendo la terminal con Claude/)).toBeDefined();
+  });
+
+  it('no aparece en notas que ya no están pendientes', async () => {
+    api.list.mockResolvedValue([nota({ id: 22, estado: 'para_revisar' })]);
+    renderAt('/demo');
+    await waitFor(() => expect(api.list).toHaveBeenCalled());
+    abrirNotas();
+    fireEvent.click(within(hoja()).getByRole('button', { name: /^Para revisar/ }));
+    const card = await within(hoja()).findByTestId('test-note-22');
+    expect(within(card).queryByRole('button', { name: 'Enviar a Claude' })).toBeNull();
   });
 });

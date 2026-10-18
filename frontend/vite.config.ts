@@ -6,7 +6,9 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/api': 'http://localhost:3001',
+      // API_PROXY_TARGET: la vista previa de una nota de prueba puede apuntar a otro
+      // backend (skill nota-prueba). Sin prefijo VITE_: no llega al navegador.
+      '/api': process.env.API_PROXY_TARGET ?? 'http://localhost:3001',
     },
   },
 });

@@ -42,6 +42,8 @@ Thumbs.db
 
 # IA local config
 .atl
-.claude
+# .claude: solo se versionan las skills del proyecto (p. ej. nota-prueba)
+.claude/*
+!.claude/skills/
 .agents
 skills-lock.json
