@@ -1,5 +1,6 @@
 import { formatMoney } from '../../host/ui/format';
 import type { Cliente, Movimiento } from './api';
+import { diasHasta } from './vence';
 
 /** Umbral de "deuda vieja" para pintar los días en `--late` (guía §4.3). */
 export const DIAS_TARDE = 30;
@@ -45,6 +46,18 @@ const fechaDia = new Intl.DateTimeFormat('es-AR', {
 /** 'AAAA-MM-DD' → "1 nov". */
 export function textoDia(ymd: string | null): string {
   return ymd ? fechaDia.format(new Date(`${ymd}T00:00:00Z`)) : '—';
+}
+
+/**
+ * Vencimiento relativo a hoy: "venció el 10 oct", "vence hoy", "vence
+ * mañana" o "vence el 25 oct".
+ */
+export function textoVence(ymd: string, hoy: string): string {
+  const d = diasHasta(ymd, hoy);
+  if (d < 0) return `venció el ${textoDia(ymd)}`;
+  if (d === 0) return 'vence hoy';
+  if (d === 1) return 'vence mañana';
+  return `vence el ${textoDia(ymd)}`;
 }
 
 /** "Buen día" / "Buenas tardes" / "Buenas noches" según la hora local. */

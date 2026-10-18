@@ -46,9 +46,15 @@ export function TarjetaFicha({ cliente: c }: { cliente: Cliente }) {
             label: 'Sin pagar',
             value: textoDias(c.dias_sin_pagar)?.replace(' sin pagar', '') ?? '—',
           },
-          { label: 'Próx. cobro', value: textoDia(c.proximo_cobro) },
+          { label: 'Próx. vence', value: textoDia(c.proximo_vencimiento?.fecha ?? null) },
         ]}
       />
+
+      {c.vencido > 0 && (
+        <p className="m-0 mt-3 text-body-s font-bold text-late">
+          Tiene {formatMoney(c.vencido)} vencido.
+        </p>
+      )}
 
       {c.excede_limite && c.limite != null && (
         <div className="mt-3">

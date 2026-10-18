@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { TarjetaInstalar } from '../../../host/install/InstalarApp';
+import { IconBell } from '../../../host/ui/icons';
+import { FOCUS_RING } from '../../../host/ui/styles';
 import { EmptyNote, List, Pill, Section } from '../../../host/ui/surfaces';
 import { fiadoApi } from '../api';
 import {
@@ -25,13 +27,35 @@ export default function Inicio() {
   const navigate = useNavigate();
   const carga = useCarga(() => Promise.all([fiadoApi.resumen(), fiadoApi.ajustes()]), []);
 
+  // La campanita carga aparte: si falla, el inicio se ve igual (sin número).
+  const avisos = useCarga(() => fiadoApi.avisos(), []);
+
   const [resumen, ajustes] = carga.data ?? [null, null];
+  const sinRecordar = avisos.data?.sin_recordar ?? 0;
 
   return (
     <div className="flex flex-col gap-5 px-4 py-6">
-      <header>
-        <p className="m-0 text-body text-ink-muted">{ajustes?.comercio || 'Tu comercio'}</p>
-        <h1 className="m-0 font-display text-title-m font-bold text-ink">{saludo()}</h1>
+      <header className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="m-0 text-body text-ink-muted">{ajustes?.comercio || 'Tu comercio'}</p>
+          <h1 className="m-0 font-display text-title-m font-bold text-ink">{saludo()}</h1>
+        </div>
+        <button
+          type="button"
+          onClick={() => navigate(RUTAS.avisos)}
+          aria-label={sinRecordar > 0 ? `Avisos: ${sinRecordar} para cobrar` : 'Avisos'}
+          className={`pressable relative flex-none inline-flex items-center justify-center min-h-touch min-w-touch rounded-pill bg-surface text-ink border-[1.5px] border-border ${FOCUS_RING}`}
+        >
+          <IconBell />
+          {sinRecordar > 0 && (
+            <span
+              aria-hidden="true"
+              className="absolute -top-1 -right-1 min-w-[22px] h-[22px] px-[6px] rounded-pill bg-late text-surface text-micro font-bold inline-flex items-center justify-center"
+            >
+              {sinRecordar > 99 ? '99+' : sinRecordar}
+            </span>
+          )}
+        </button>
       </header>
 
       {carga.error && !resumen && (

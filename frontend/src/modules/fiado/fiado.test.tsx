@@ -20,6 +20,7 @@ vi.mock('@clerk/clerk-react', () => ({
 
 const m = vi.hoisted(() => ({
   resumen: vi.fn(),
+  avisos: vi.fn(),
   ajustes: vi.fn(),
   clientes: vi.fn(),
   ficha: vi.fn(),
@@ -44,6 +45,9 @@ const cliente = (over: Partial<Cliente> = {}): Cliente => ({
   saldo: 42300,
   dias_sin_pagar: 35,
   excede_limite: true,
+  vencido: 0,
+  vencido_desde: null,
+  proximo_vencimiento: null,
   ...over,
 });
 
@@ -57,6 +61,8 @@ const mov = (over: Partial<Movimiento> = {}): Movimiento => ({
   created_at: '2026-10-13T17:00:00Z',
   corrige_id: null,
   corregido_por: null,
+  vence: null,
+  pendiente: null,
   ...over,
 });
 
@@ -86,8 +92,11 @@ function renderAt(path: string) {
 
 const donde = () => screen.getByTestId('donde').textContent;
 
+const sinAvisos = { vencidos: [], hoy: [], proximos: [], sin_recordar: 0 };
+
 beforeEach(() => {
   m.ajustes.mockResolvedValue(ajustes);
+  m.avisos.mockResolvedValue(sinAvisos);
 });
 
 afterEach(() => {
@@ -115,7 +124,9 @@ describe('Inicio', () => {
     const resumen: Resumen = {
       total: 42300,
       clientes_con_deuda: 3,
-      para_cobrar: [{ ...cliente(), recordado_hoy: false }],
+      para_cobrar: [
+        { ...cliente({ vencido: 30000, vencido_desde: '2026-09-01' }), recordado_hoy: false },
+      ],
       ultimos: [mov(), mov({ id: 11, tipo: 'pago', monto: -1000 })],
     };
     m.resumen.mockResolvedValue(resumen);
@@ -128,8 +139,9 @@ describe('Inicio', () => {
 
     const cobrar = screen.getByRole('list', { name: 'Para cobrar hoy' });
     expect(within(cobrar).getByRole('button', { name: 'Recordar' })).toBeDefined();
-    // Más de 30 días: texto de atraso en negrita y color --late.
-    expect(within(cobrar).getByText('35 días sin pagar').className).toContain('text-late');
+    // Lo vencido y de cuánto es la deuda; más de 30 días: en negrita y color --late.
+    expect(within(cobrar).getByText(/\$ 30\.000 vencido de \$ 42\.300/)).toBeDefined();
+    expect(within(cobrar).getByText(/venció el 1 sept?/).className).toContain('text-late');
 
     const ultimos = screen.getByRole('list', { name: 'Últimos movimientos' });
     expect(within(ultimos).getByText('+ $ 4.200').className).toContain('text-fiado');
@@ -167,6 +179,60 @@ describe('Inicio', () => {
     // Fiado no tiene la barra superior del host (marca "Neggo").
     expect(screen.queryByText('Neggo')).toBeNull();
     await screen.findByText('Nadie para cobrar hoy.');
+  });
+});
+
+// ─── Campanita y avisos (nota de prueba #3) ──────────────────────────────────
+
+describe('Avisos', () => {
+  const aviso = (over: Partial<import('./api').Aviso> = {}) => ({
+    cliente_id: 1,
+    cliente_nombre: 'Marta Giménez',
+    monto: 3000,
+    fecha: '2020-01-10',
+    recordado_hoy: false,
+    ...over,
+  });
+
+  it('la campanita del inicio muestra cuántos hay para cobrar y abre los avisos', async () => {
+    m.resumen.mockResolvedValue({ total: 0, clientes_con_deuda: 0, para_cobrar: [], ultimos: [] });
+    m.avisos.mockResolvedValue({ ...sinAvisos, vencidos: [aviso()], sin_recordar: 2 });
+    renderAt('/fiado');
+    const campana = await screen.findByRole('button', { name: 'Avisos: 2 para cobrar' });
+    expect(campana.textContent).toContain('2');
+    fireEvent.click(campana);
+    expect(donde()).toBe('/fiado/avisos');
+  });
+
+  it('sin nada para cobrar, la campanita no lleva número', async () => {
+    m.resumen.mockResolvedValue({ total: 0, clientes_con_deuda: 0, para_cobrar: [], ultimos: [] });
+    renderAt('/fiado');
+    await screen.findByText('Nadie para cobrar hoy.');
+    expect(screen.getByRole('button', { name: 'Avisos' }).textContent).toBe('');
+  });
+
+  it('agrupa vencidos y próximos; "Recordar" lleva al recordatorio', async () => {
+    m.avisos.mockResolvedValue({
+      vencidos: [aviso()],
+      hoy: [],
+      proximos: [aviso({ cliente_id: 2, cliente_nombre: 'Ana', fecha: '2999-01-01' })],
+      sin_recordar: 1,
+    });
+    renderAt('/fiado/avisos');
+    const vencidos = await screen.findByRole('list', { name: 'Vencidos' });
+    expect(within(vencidos).getByText(/venció el 10 ene/)).toBeDefined();
+    expect(screen.queryByRole('list', { name: 'Vencen hoy' })).toBeNull();
+    const proximos = screen.getByRole('list', { name: 'Próximos 7 días' });
+    expect(within(proximos).getByText('Ana')).toBeDefined();
+    fireEvent.click(within(vencidos).getByRole('button', { name: 'Recordar' }));
+    expect(donde()).toBe('/fiado/recordar/1');
+  });
+
+  it('sin avisos: estado vacío escrito', async () => {
+    renderAt('/fiado/avisos');
+    expect(
+      await screen.findByText('No tenés cobros vencidos ni por vencer esta semana.'),
+    ).toBeDefined();
   });
 });
 
@@ -215,7 +281,10 @@ describe('Clientes', () => {
 describe('Ficha', () => {
   it('muestra saldo, celdas, aviso de límite e historial con correcciones visibles', async () => {
     const ficha: Ficha = {
-      cliente: cliente({ proximo_cobro: '2026-11-01' }),
+      cliente: cliente({
+        vencido: 1200,
+        proximo_vencimiento: { fecha: '2026-11-01', monto: 3000 },
+      }),
       historial: [
         mov({ id: 12, tipo: 'correccion', monto: -4200, corrige_id: 10 }),
         mov({ id: 10, corregido_por: 12 }),
@@ -228,6 +297,8 @@ describe('Ficha', () => {
     expect(screen.getByText('$ 42.300')).toBeDefined();
     expect(screen.getByText('$ 40.000')).toBeDefined();
     expect(screen.getByText('35 días')).toBeDefined();
+    expect(screen.getByText('1 nov')).toBeDefined();
+    expect(screen.getByText('Tiene $ 1.200 vencido.')).toBeDefined();
     expect(screen.getByText(/Pasó el límite de \$ 40\.000/).tagName).toBe('OUTPUT');
 
     const historial = screen.getByRole('list', { name: 'Historial' });
@@ -276,7 +347,6 @@ describe('Nuevo cliente', () => {
       nombre: 'Rosa',
       telefono: null,
       limite: 50000,
-      proximo_cobro: null,
     });
     await waitFor(() => expect(donde()).toBe('/fiado/clientes/7'));
     expect(screen.getByTestId('toast-region').textContent).toContain('Guardaste a Rosa.');

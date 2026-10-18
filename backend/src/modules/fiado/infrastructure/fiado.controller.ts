@@ -54,6 +54,12 @@ export class FiadoController {
     return run(() => this.repo.resumen());
   }
 
+  /** Campanita: vencidos, vencen hoy y próximos días (nota de prueba #3). */
+  @Get('avisos')
+  avisos() {
+    return run(() => this.repo.avisos());
+  }
+
   @Get('clientes')
   listClientes(@Query('q') q?: string, @Query('orden') orden?: string) {
     return run(() => this.repo.listClientes(typeof q === 'string' ? q : '', parseOrden(orden)));

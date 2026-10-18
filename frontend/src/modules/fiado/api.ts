@@ -19,6 +19,12 @@ export interface Cliente {
   saldo: number;
   dias_sin_pagar: number | null;
   excede_limite: boolean;
+  /** Lo que ya tendría que haber pagado (vence hoy o antes). */
+  vencido: number;
+  /** 'AAAA-MM-DD' del vencimiento vencido más viejo, o null. */
+  vencido_desde: string | null;
+  /** El próximo vencimiento que todavía no llegó. */
+  proximo_vencimiento: { fecha: string; monto: number } | null;
 }
 
 export interface Movimiento {
@@ -32,6 +38,10 @@ export interface Movimiento {
   created_at: string;
   corrige_id: number | null;
   corregido_por: number | null;
+  /** En un fiado vigente (sólo en la ficha): cuándo vence. */
+  vence: string | null;
+  /** En un fiado vigente (sólo en la ficha): lo que falta pagar de ese fiado. */
+  pendiente: number | null;
 }
 
 export interface Cobro extends Cliente {
@@ -43,6 +53,23 @@ export interface Resumen {
   clientes_con_deuda: number;
   para_cobrar: Cobro[];
   ultimos: Movimiento[];
+}
+
+/** Un cliente en la campanita: cuánto y desde/para cuándo ('AAAA-MM-DD'). */
+export interface Aviso {
+  cliente_id: number;
+  cliente_nombre: string;
+  monto: number;
+  fecha: string;
+  recordado_hoy: boolean;
+}
+
+export interface Avisos {
+  vencidos: Aviso[];
+  hoy: Aviso[];
+  proximos: Aviso[];
+  /** Número de la campanita: vencidos u hoy sin recordar todavía. */
+  sin_recordar: number;
 }
 
 export interface Ficha {
@@ -69,7 +96,6 @@ export interface ClienteInput {
   telefono?: string | null;
   etiqueta?: string | null;
   limite?: number | null;
-  proximo_cobro?: string | null;
 }
 
 export interface MovimientoInput {
@@ -77,6 +103,8 @@ export interface MovimientoInput {
   tipo: 'fiado' | 'pago';
   monto: number;
   nota?: string | null;
+  /** Sólo en un fiado: 'AAAA-MM-DD' en que te lo tienen que pagar. */
+  vence?: string | null;
   idempotency_key: string;
 }
 
@@ -89,6 +117,7 @@ const json = (method: string, body: unknown): RequestInit => ({
 
 export const fiadoApi = {
   resumen: () => req<Resumen>('/fiado/resumen'),
+  avisos: () => req<Avisos>('/fiado/avisos'),
   clientes: (q = '', orden: OrdenClientes = 'deuda') =>
     req<Cliente[]>(`/fiado/clientes?${new URLSearchParams({ q, orden })}`),
   crearCliente: (input: ClienteInput) => req<Cliente>('/fiado/clientes', json('POST', input)),

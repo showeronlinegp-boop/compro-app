@@ -21,6 +21,8 @@ export interface MovimientoLedger {
   tipo: TipoMovimiento;
   monto: number;
   corrige_id: number | null;
+  /** Sólo en un fiado: 'AAAA-MM-DD' en que te lo tienen que pagar. */
+  vence: string | null;
   created_at: Date;
 }
 
@@ -54,6 +56,11 @@ export function fechaAR(d: Date): string {
 /** Días calendario entre dos fechas 'YYYY-MM-DD' (b − a). */
 export function diasEntre(a: string, b: string): number {
   return Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86_400_000);
+}
+
+/** 'YYYY-MM-DD' + n días. */
+export function sumarDias(ymd: string, n: number): string {
+  return new Date(Date.parse(`${ymd}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
 }
 
 // ─── Libro ────────────────────────────────────────────────────────────────────
@@ -102,21 +109,79 @@ export function excedeLimite(s: number, limite: number | null): boolean {
   return limite != null && s > limite;
 }
 
-/**
- * "Para cobrar hoy": debe algo y (la fecha de cobro ya llegó o la deuda es
- * vieja: `diasSinPagar >= umbral`).
- */
-export function paraCobrarHoy(args: {
-  saldo: number;
-  diasSinPagar: number | null;
-  proximoCobro: string | null;
-  umbralDias: number;
-  hoy: string;
-}): boolean {
-  if (args.saldo <= 0) return false;
-  if (args.proximoCobro && args.proximoCobro <= args.hoy) return true;
-  return args.diasSinPagar != null && args.diasSinPagar >= args.umbralDias;
+// ─── Vencimientos (nota de prueba #3) ─────────────────────────────────────────
+
+/** Lo que falta pagar de un fiado vigente y cuándo vence. */
+export interface FiadoPendiente {
+  id: number;
+  /** Fecha efectiva: la elegida al anotar o, sin fecha, el día +`umbralDias`. */
+  vence: string;
+  pendiente: number;
 }
+
+/**
+ * Imputa los pagos a los fiados (decisión 2026-10-18): un pago no dice qué
+ * fiado paga, así que se calcula. Lo pagado tapa primero lo que vence antes
+ * (empate: el más viejo). Un fiado sin fecha vence a los `umbralDias` de
+ * anotado ("deuda vieja"). Los movimientos corregidos y las correcciones no
+ * cuentan. Devuelve todos los fiados vigentes, en orden de vencimiento.
+ */
+export function imputarFiados(
+  movs: readonly MovimientoLedger[],
+  umbralDias: number,
+): FiadoPendiente[] {
+  const corregidos = idsCorregidos(movs);
+  const vigentes = movs.filter((m) => m.tipo !== 'correccion' && !corregidos.has(m.id));
+  let pagado = -vigentes.filter((m) => m.tipo === 'pago').reduce((acc, m) => acc + m.monto, 0);
+  const fiados = vigentes
+    .filter((m) => m.tipo === 'fiado')
+    .map((m) => ({ m, vence: m.vence ?? sumarDias(fechaAR(m.created_at), umbralDias) }))
+    .sort(
+      (a, b) =>
+        a.vence.localeCompare(b.vence) ||
+        a.m.created_at.getTime() - b.m.created_at.getTime() ||
+        a.m.id - b.m.id,
+    );
+  return fiados.map(({ m, vence }) => {
+    const cubre = Math.min(pagado, m.monto);
+    pagado -= cubre;
+    return { id: m.id, vence, pendiente: m.monto - cubre };
+  });
+}
+
+export interface Vencimientos {
+  /** Lo que ya tendría que haber pagado (vence hoy o antes). */
+  vencido: number;
+  /** Fecha del vencimiento vencido más viejo, o null. */
+  vencido_desde: string | null;
+  /** El próximo vencimiento que todavía no llegó. */
+  proximo: { fecha: string; monto: number } | null;
+}
+
+export function vencimientos(pendientes: readonly FiadoPendiente[], hoy: string): Vencimientos {
+  const deben = pendientes.filter((p) => p.pendiente > 0);
+  const vencidos = deben.filter((p) => p.vence <= hoy);
+  const futuros = deben.filter((p) => p.vence > hoy);
+  const fecha = futuros[0]?.vence ?? null;
+  return {
+    vencido: vencidos.reduce((acc, p) => acc + p.pendiente, 0),
+    vencido_desde: vencidos[0]?.vence ?? null,
+    proximo: fecha
+      ? {
+          fecha,
+          monto: futuros.filter((p) => p.vence === fecha).reduce((acc, p) => acc + p.pendiente, 0),
+        }
+      : null,
+  };
+}
+
+/** "Para cobrar hoy": tiene algo vencido (hoy o antes). */
+export function paraCobrarHoy(v: Pick<Vencimientos, 'vencido'>): boolean {
+  return v.vencido > 0;
+}
+
+/** Ventana de "Próximos días" en los avisos. */
+export const DIAS_PROXIMOS = 7;
 
 /**
  * Valida que `original` se pueda corregir y devuelve el monto de la
@@ -271,6 +336,8 @@ export interface MovimientoInput {
   tipo: 'fiado' | 'pago';
   monto: number;
   nota: string | null;
+  /** Sólo en un fiado: 'AAAA-MM-DD' o null (vence como deuda vieja). */
+  vence: string | null;
   idempotency_key: string | null;
 }
 
@@ -283,11 +350,14 @@ export function parseMovimientoInput(body: unknown): MovimientoInput {
   if (!Number.isInteger(monto) || monto < 1 || monto > MONTO_MAX) {
     throw bad(`monto debe ser un entero entre 1 y ${MONTO_MAX}`);
   }
+  const vence = fechaOpcional(b.vence, 'vence');
+  if (vence && b.tipo !== 'fiado') throw bad('Sólo un fiado puede tener fecha de cobro');
   return {
     cliente_id,
     tipo: b.tipo,
     monto,
     nota: texto(b.nota, 'nota', 200, false),
+    vence,
     idempotency_key: texto(b.idempotency_key, 'idempotency_key', 64, false),
   };
 }
@@ -343,6 +413,10 @@ export function ordenarClientes<
 
 /** Búsqueda por nombre sin distinguir mayúsculas ni tildes. */
 export function coincideNombre(nombre: string, q: string): boolean {
-  const norm = (s: string) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+  const norm = (s: string) =>
+    s
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .toLowerCase();
   return norm(nombre).includes(norm(q.trim()));
 }

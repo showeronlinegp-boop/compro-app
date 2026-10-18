@@ -8,6 +8,7 @@ import {
   excedeLimite,
   fechaAR,
   formatSaldo,
+  imputarFiados,
   montoConSigno,
   montoCorreccion,
   ordenarClientes,
@@ -20,7 +21,9 @@ import {
   primerNombre,
   renderPlantilla,
   saldo,
+  sumarDias,
   telefonoWhatsApp,
+  vencimientos,
 } from './fiado.js';
 
 let seq = 0;
@@ -29,6 +32,7 @@ function mov(
   monto: number,
   fecha: string,
   corrige_id: number | null = null,
+  vence: string | null = null,
 ): MovimientoLedger {
   seq += 1;
   // 15:00 UTC = 12:00 en Argentina: la fecha calendario no cambia.
@@ -38,6 +42,7 @@ function mov(
     tipo,
     monto,
     corrige_id,
+    vence,
     created_at: new Date(`${fecha}T15:00:00Z`),
   };
 }
@@ -122,26 +127,72 @@ describe('límite y para cobrar hoy', () => {
     expect(excedeLimite(1_000_000, null)).toBe(false);
   });
 
-  const base = {
-    saldo: 1000,
-    diasSinPagar: 5,
-    proximoCobro: null,
-    umbralDias: 30,
-    hoy: '2026-10-13',
-  };
+  it('entra a "para cobrar hoy" sólo con algo vencido', () => {
+    expect(paraCobrarHoy({ vencido: 1 })).toBe(true);
+    expect(paraCobrarHoy({ vencido: 0 })).toBe(false);
+  });
+});
 
-  it('entra por fecha de cobro vencida o de hoy', () => {
-    expect(paraCobrarHoy({ ...base, proximoCobro: '2026-10-13' })).toBe(true);
-    expect(paraCobrarHoy({ ...base, proximoCobro: '2026-10-14' })).toBe(false);
+describe('vencimientos', () => {
+  it('sumarDias cruza meses', () => {
+    expect(sumarDias('2026-10-25', 7)).toBe('2026-11-01');
   });
 
-  it('entra por deuda vieja (días >= umbral)', () => {
-    expect(paraCobrarHoy({ ...base, diasSinPagar: 30 })).toBe(true);
-    expect(paraCobrarHoy({ ...base, diasSinPagar: 29 })).toBe(false);
+  it('un fiado sin fecha vence a los umbralDias de anotado', () => {
+    expect(imputarFiados([mov('fiado', 500, '2026-10-01')], 30)).toEqual([
+      { id: seq, vence: '2026-10-31', pendiente: 500 },
+    ]);
   });
 
-  it('sin deuda nunca entra', () => {
-    expect(paraCobrarHoy({ ...base, saldo: 0, proximoCobro: '2026-10-01' })).toBe(false);
+  it('el pago tapa primero lo que vence antes, aunque se haya anotado después', () => {
+    const tarde = mov('fiado', 1000, '2026-10-01', null, '2026-10-30');
+    const pronto = mov('fiado', 800, '2026-10-05', null, '2026-10-12');
+    const pago = mov('pago', -1200, '2026-10-12');
+    expect(imputarFiados([tarde, pronto, pago], 30)).toEqual([
+      { id: pronto.id, vence: '2026-10-12', pendiente: 0 },
+      { id: tarde.id, vence: '2026-10-30', pendiente: 600 },
+    ]);
+  });
+
+  it('los corregidos no cuentan: ni el fiado ni el pago deshechos', () => {
+    const f = mov('fiado', 1000, '2026-10-01', null, '2026-10-10');
+    const p = mov('pago', -1000, '2026-10-02');
+    const corr = mov('correccion', 1000, '2026-10-02', p.id);
+    const f2 = mov('fiado', 300, '2026-10-03', null, '2026-10-20');
+    const corr2 = mov('correccion', -300, '2026-10-03', f2.id);
+    expect(imputarFiados([f, p, corr, f2, corr2], 30)).toEqual([
+      { id: f.id, vence: '2026-10-10', pendiente: 1000 },
+    ]);
+  });
+
+  it('saldo a favor cubre lo que se anota después', () => {
+    const p = mov('pago', -500, '2026-10-01');
+    const f = mov('fiado', 800, '2026-10-02', null, '2026-10-09');
+    expect(imputarFiados([p, f], 30)).toEqual([{ id: f.id, vence: '2026-10-09', pendiente: 300 }]);
+  });
+
+  it('vencido (hoy incluido) y próximo vencimiento', () => {
+    const v = vencimientos(
+      [
+        { id: 1, vence: '2026-10-10', pendiente: 200 },
+        { id: 2, vence: '2026-10-13', pendiente: 300 },
+        { id: 3, vence: '2026-10-15', pendiente: 0 },
+        { id: 4, vence: '2026-10-20', pendiente: 400 },
+        { id: 5, vence: '2026-10-20', pendiente: 100 },
+        { id: 6, vence: '2026-11-01', pendiente: 900 },
+      ],
+      '2026-10-13',
+    );
+    expect(v).toEqual({
+      vencido: 500,
+      vencido_desde: '2026-10-10',
+      proximo: { fecha: '2026-10-20', monto: 500 },
+    });
+    expect(vencimientos([], '2026-10-13')).toEqual({
+      vencido: 0,
+      vencido_desde: null,
+      proximo: null,
+    });
   });
 });
 
@@ -206,7 +257,17 @@ describe('validación de entrada', () => {
       tipo: 'pago',
       monto: 4200,
       nota: null,
+      vence: null,
     });
+    expect(
+      parseMovimientoInput({ cliente_id: 3, tipo: 'fiado', monto: 1, vence: '2026-11-10' }),
+    ).toMatchObject({ vence: '2026-11-10' });
+    expect(() =>
+      parseMovimientoInput({ cliente_id: 3, tipo: 'pago', monto: 1, vence: '2026-11-10' }),
+    ).toThrow('fecha de cobro');
+    expect(() =>
+      parseMovimientoInput({ cliente_id: 3, tipo: 'fiado', monto: 1, vence: '10/11' }),
+    ).toThrow('vence');
     expect(() => parseMovimientoInput({ cliente_id: 3, tipo: 'correccion', monto: 1 })).toThrow(
       'tipo',
     );

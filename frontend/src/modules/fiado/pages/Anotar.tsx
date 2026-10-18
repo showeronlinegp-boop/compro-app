@@ -3,12 +3,14 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../../../host/ui/Button';
 import { Keypad } from '../../../host/ui/Keypad';
 import { ScreenHeader } from '../../../host/ui/ScreenHeader';
-import { TextField } from '../../../host/ui/controls';
+import { FilterChips, TextField } from '../../../host/ui/controls';
 import { formatMoney } from '../../../host/ui/format';
 import { Notice } from '../../../host/ui/surfaces';
+import { SelectorCliente } from '../SelectorCliente';
 import { type Cliente, type MovimientoResult, fiadoApi, mensajeDeError } from '../api';
 import { RUTAS, type TipoAnotar } from '../rutas';
-import { SelectorCliente } from '../SelectorCliente';
+import { textoDia } from '../textos';
+import { type Atajo, fechaDeAtajo, hoyAR, opcionesAtajo } from '../vence';
 
 /** Lo que "Listo" recibe por `location.state`. */
 export interface EstadoListo {
@@ -42,6 +44,7 @@ export function Anotar({ tipo }: { tipo: TipoAnotar }) {
   const [cliente, setCliente] = useState<Cliente | null>(null);
   const [monto, setMonto] = useState('');
   const [nota, setNota] = useState('');
+  const [atajo, setAtajo] = useState<Atajo>('sin');
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const clave = useRef(nuevaClave());
@@ -62,6 +65,8 @@ export function Anotar({ tipo }: { tipo: TipoAnotar }) {
     };
   }, [clienteParam]);
 
+  const hoy = hoyAR();
+  const vence = tipo === 'fiado' ? fechaDeAtajo(atajo, hoy) : null;
   const valor = Number(monto || '0');
   const puedeConfirmar = cliente != null && valor > 0 && !enviando;
 
@@ -75,6 +80,7 @@ export function Anotar({ tipo }: { tipo: TipoAnotar }) {
         tipo,
         monto: valor,
         nota: nota.trim() || null,
+        vence,
         idempotency_key: clave.current,
       });
       const estado: EstadoListo = { tipo, resultado };
@@ -132,6 +138,23 @@ export function Anotar({ tipo }: { tipo: TipoAnotar }) {
         maxLength={200}
         onChange={(e) => setNota(e.target.value)}
       />
+
+      {tipo === 'fiado' && (
+        <div className="flex flex-col gap-2">
+          <p className="m-0 text-caption text-ink-muted">¿Cuándo te lo paga?</p>
+          <FilterChips
+            label="¿Cuándo te lo paga?"
+            options={opcionesAtajo(hoy)}
+            value={atajo}
+            onChange={setAtajo}
+          />
+          <p className="m-0 text-caption text-ink-muted" aria-live="polite">
+            {vence
+              ? `Vence el ${textoDia(vence)}. Ese día aparece en “Para cobrar hoy”.`
+              : 'Sin fecha: vence a los días de deuda vieja que pusiste en Ajustes.'}
+          </p>
+        </div>
+      )}
 
       {error && <Notice>{error}</Notice>}
 

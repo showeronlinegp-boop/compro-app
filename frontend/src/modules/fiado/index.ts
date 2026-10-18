@@ -1,8 +1,9 @@
 import { createElement } from 'react';
 import type { AppModule, NavItem } from '../../host/contract';
 import { IconClients, IconHome, IconSettings } from '../../host/ui/icons';
-import { AnotarFiado, RegistrarPago } from './pages/Anotar';
 import Ajustes from './pages/Ajustes';
+import { AnotarFiado, RegistrarPago } from './pages/Anotar';
+import Avisos from './pages/Avisos';
 import Clientes from './pages/Clientes';
 import Ficha from './pages/Ficha';
 import Inicio from './pages/Inicio';
@@ -68,6 +69,14 @@ export const fiado: AppModule = {
       component: Recordar,
       auth: 'required',
       title: 'Recordar pago',
+      chrome: 'task',
+    },
+    {
+      id: 'avisos',
+      path: 'avisos',
+      component: Avisos,
+      auth: 'required',
+      title: 'Avisos',
       chrome: 'task',
     },
     { id: 'ajustes', path: 'ajustes', component: Ajustes, auth: 'required', title: 'Ajustes' },

@@ -27,6 +27,7 @@ export const RUTAS = {
     }),
   listo: `${BASE}/listo`,
   recordar: (clienteId: number) => `${BASE}/recordar/${clienteId}`,
+  avisos: `${BASE}/avisos`,
   ajustes: `${BASE}/ajustes`,
 } as const;
 

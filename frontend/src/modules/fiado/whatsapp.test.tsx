@@ -20,6 +20,7 @@ vi.mock('@clerk/clerk-react', () => ({
 
 const m = vi.hoisted(() => ({
   resumen: vi.fn(),
+  avisos: vi.fn(),
   ajustes: vi.fn(),
   ficha: vi.fn(),
   recordar: vi.fn(),
@@ -54,6 +55,9 @@ const cliente = (over: Partial<Cliente> = {}): Cliente => ({
   saldo: 42300,
   dias_sin_pagar: 18,
   excede_limite: false,
+  vencido: 0,
+  vencido_desde: null,
+  proximo_vencimiento: null,
   ...over,
 });
 
@@ -76,6 +80,7 @@ let open: { mock: { calls: unknown[][] }; mockRestore: () => void };
 
 beforeEach(() => {
   m.ajustes.mockResolvedValue(ajustes);
+  m.avisos.mockResolvedValue({ vencidos: [], hoy: [], proximos: [], sin_recordar: 0 });
   m.ficha.mockResolvedValue({ cliente: cliente(), historial: [] });
   open = vi.spyOn(window, 'open').mockImplementation(() => null);
 });
@@ -124,6 +129,8 @@ describe('Listo: comprobante por WhatsApp', () => {
           created_at: '2026-10-13T17:00:00Z',
           corrige_id: null,
           corregido_por: null,
+          vence: null,
+          pendiente: null,
         },
         cliente: cliente(),
       },

@@ -372,6 +372,7 @@ describe('Fiado isolation: user A cannot read or write user B ledger', () => {
         tipo: 'fiado',
         monto: 7000,
         nota: null,
+        vence: null,
         idempotency_key: 'misma-clave',
       });
 
@@ -392,6 +393,7 @@ describe('Fiado isolation: user A cannot read or write user B ledger', () => {
           tipo: 'pago',
           monto: 7000,
           nota: null,
+          vence: null,
           idempotency_key: null,
         }),
       ).rejects.toMatchObject({ status: 404 });
@@ -413,7 +415,13 @@ describe('Fiado isolation: user A cannot read or write user B ledger', () => {
       const repoB = makeFiadoRepo(tx, await seedUser(tx, 'b'));
       const cA = await repoA.crearCliente({ ...sinDatos, nombre: 'A1' });
       const cB = await repoB.crearCliente({ ...sinDatos, nombre: 'B1' });
-      const input = { tipo: 'fiado' as const, monto: 100, nota: null, idempotency_key: 'k' };
+      const input = {
+        tipo: 'fiado' as const,
+        monto: 100,
+        nota: null,
+        vence: null,
+        idempotency_key: 'k',
+      };
       const mB = await repoB.crearMovimiento({ ...input, cliente_id: cB.id });
       const mA = await repoA.crearMovimiento({ ...input, cliente_id: cA.id });
       expect(mA.movimiento.id).not.toBe(mB.movimiento.id);

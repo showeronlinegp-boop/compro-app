@@ -21,7 +21,6 @@ export default function NuevoCliente() {
   const [nombre, setNombre] = useState(params.get('nombre') ?? '');
   const [telefono, setTelefono] = useState('');
   const [limite, setLimite] = useState('');
-  const [proximoCobro, setProximoCobro] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,7 +36,6 @@ export default function NuevoCliente() {
         nombre: nombre.trim(),
         telefono: telefono.trim() || null,
         limite: limite ? Number(limite) : null,
-        proximo_cobro: proximoCobro || null,
       });
       toast.show(`Guardaste a ${c.nombre}.`);
       const siguiente = params.get('siguiente');
@@ -81,13 +79,6 @@ export default function NuevoCliente() {
         value={limite}
         onChange={(e) => setLimite(e.target.value.replace(/\D/g, '').slice(0, 9))}
         hint="Si lo pasa, te avisamos. No te frena para anotar."
-      />
-      <TextField
-        label="Próximo cobro (opcional)"
-        type="date"
-        value={proximoCobro}
-        onChange={(e) => setProximoCobro(e.target.value)}
-        hint="Ese día aparece en “Para cobrar hoy”."
       />
 
       {error && <Notice>{error}</Notice>}
