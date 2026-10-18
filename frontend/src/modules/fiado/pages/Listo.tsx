@@ -98,7 +98,7 @@ export default function Listo() {
         <>
           <WhatsAppBubble
             label="Comprobante"
-            text={comprobante(tipo, Math.abs(movimiento.monto), cliente, ajustes.data)}
+            text={comprobante(tipo, Math.abs(movimiento.monto), cliente, ajustes.data, movimiento.vence)}
           />
           <Button
             variant="whatsapp"
@@ -109,7 +109,7 @@ export default function Listo() {
               if (!ajustes.data) return;
               abrirWhatsApp(
                 cliente.whatsapp,
-                comprobante(tipo, Math.abs(movimiento.monto), cliente, ajustes.data),
+                comprobante(tipo, Math.abs(movimiento.monto), cliente, ajustes.data, movimiento.vence),
               );
               volver();
             }}

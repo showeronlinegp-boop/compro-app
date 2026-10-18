@@ -107,6 +107,16 @@ describe('mensajes', () => {
     );
   });
 
+  it('comprobante de fiado con fecha de cobro, o "a convenir" sin fecha', () => {
+    const conFecha = { ...ajustes, plantilla_fiado: 'Fecha de cobro: {vence}' };
+    expect(comprobante('fiado', 4200, cliente(), conFecha, '2026-11-10')).toBe(
+      'Fecha de cobro: 10 nov\n\nHecho con Neggo',
+    );
+    expect(comprobante('fiado', 4200, cliente(), conFecha)).toBe(
+      'Fecha de cobro: a convenir\n\nHecho con Neggo',
+    );
+  });
+
   it('recordatorio con alias; la firma se agrega si la borraron', () => {
     expect(recordatorio(cliente(), ajustes)).toContain('al alias kiosco.lu');
     expect(renderPlantilla('Hola {nombre}', { nombre: 'Ana' })).toBe('Hola Ana\n\nHecho con Neggo');

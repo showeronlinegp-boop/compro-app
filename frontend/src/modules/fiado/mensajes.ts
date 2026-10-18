@@ -1,6 +1,6 @@
 import { formatMoney } from '../../host/ui/format';
 import type { Ajustes, Cliente } from './api';
-import { primerNombre, textoSaldo } from './textos';
+import { primerNombre, textoDia, textoSaldo } from './textos';
 
 export const FIRMA = 'Hecho con Neggo';
 
@@ -25,15 +25,26 @@ function varsBase(cliente: Cliente, ajustes: Ajustes): Record<string, string> {
   };
 }
 
-/** Comprobante después de anotar un fiado o un pago. `monto` sin signo. */
+/** Lo que dice `{vence}` en un fiado sin fecha de cobro (nota de prueba #6). */
+export const SIN_FECHA_COBRO = 'a convenir';
+
+/**
+ * Comprobante después de anotar un fiado o un pago. `monto` sin signo;
+ * `vence` es la fecha de cobro del fiado ('AAAA-MM-DD') o null.
+ */
 export function comprobante(
   tipo: 'fiado' | 'pago',
   monto: number,
   cliente: Cliente,
   ajustes: Ajustes,
+  vence: string | null = null,
 ): string {
   const plantilla = tipo === 'fiado' ? ajustes.plantilla_fiado : ajustes.plantilla_pago;
-  return renderPlantilla(plantilla, { ...varsBase(cliente, ajustes), monto: formatMoney(monto) });
+  return renderPlantilla(plantilla, {
+    ...varsBase(cliente, ajustes),
+    monto: formatMoney(monto),
+    vence: vence ? textoDia(vence) : SIN_FECHA_COBRO,
+  });
 }
 
 /** Recordatorio de pago para un cliente que debe. */
@@ -55,11 +66,11 @@ export function abrirWhatsApp(numero: string | null, texto: string): void {
   window.open(linkWhatsApp(numero, texto), '_blank', 'noopener,noreferrer');
 }
 
-export type Variable = 'nombre' | 'monto' | 'saldo' | 'comercio' | 'alias';
+export type Variable = 'nombre' | 'monto' | 'saldo' | 'comercio' | 'alias' | 'vence';
 
 /** Variables que acepta cada plantilla (pastillas en Ajustes). */
 export const VARIABLES: Record<'fiado' | 'pago' | 'recordatorio', readonly Variable[]> = {
-  fiado: ['nombre', 'monto', 'saldo', 'comercio'],
+  fiado: ['nombre', 'monto', 'saldo', 'comercio', 'vence'],
   pago: ['nombre', 'monto', 'saldo', 'comercio'],
   recordatorio: ['nombre', 'saldo', 'comercio', 'alias'],
 };
@@ -71,6 +82,7 @@ export const ETIQUETA_VARIABLE: Record<Variable, string> = {
   saldo: 'Saldo',
   comercio: 'Comercio',
   alias: 'Alias',
+  vence: 'Fecha de cobro',
 };
 
 /**
