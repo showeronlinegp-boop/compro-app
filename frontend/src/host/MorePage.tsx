@@ -1,4 +1,4 @@
-import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/clerk-react';
+import { SignInButton, SignOutButton, SignedIn, SignedOut, UserButton } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 import type { AppModule } from './contract';
 import { useActiveModule } from './nav/ActiveModule';
@@ -65,10 +65,15 @@ export function MorePage({ modules }: { modules: readonly AppModule[] }) {
       <Section title="Cuenta">
         <Card>
           <SignedIn>
-            <div className="flex items-center gap-3">
+            <div className="mb-4 flex items-center gap-3">
               <UserButton afterSignOutUrl="/" />
               <span className="text-body text-ink">Tu cuenta</span>
             </div>
+            <SignOutButton signOutOptions={{ redirectUrl: '/' }}>
+              <Button variant="outline" size="m" block>
+                Cerrar sesión
+              </Button>
+            </SignOutButton>
           </SignedIn>
           <SignedOut>
             <p className="m-0 mb-3 text-body-s text-ink-muted">

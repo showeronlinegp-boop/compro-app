@@ -36,6 +36,7 @@ vi.mock('@clerk/clerk-react', () => ({
   SignedOut: ({ children }: { children: ReactNode }) => (auth.signedIn ? null : children),
   RedirectToSignIn: () => <div data-testid="redirect-sign-in" />,
   UserButton: () => null,
+  SignOutButton: ({ children }: { children: ReactNode }) => children,
   SignInButton: ({ children }: { children: ReactNode }) => children,
   SignIn: () => null,
   SignUp: () => null,
