@@ -16,7 +16,12 @@ if (!rootEl) throw new Error('Root element #root not found');
 
 ReactDOM.createRoot(rootEl).render(
   <React.StrictMode>
-    <ClerkProvider publishableKey={publishableKey} localization={clerkLocalization}>
+    <ClerkProvider
+      publishableKey={publishableKey}
+      localization={clerkLocalization}
+      signInUrl="/sign-in"
+      signUpUrl="/sign-up"
+    >
       <BrowserRouter>
         <App />
       </BrowserRouter>
