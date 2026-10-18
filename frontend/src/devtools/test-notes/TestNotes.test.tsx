@@ -106,8 +106,14 @@ const marcar = () => fireEvent.click(screen.getByRole('button', { name: 'Marcar'
 const abrirNotas = () => fireEvent.click(screen.getByRole('button', { name: /^Notas/ }));
 const hoja = () => screen.getByRole('region', { name: 'Notas de prueba' });
 
-describe('TestNotes', () => {
+function anchoVentana(px: number) {
+  Object.defineProperty(window, 'innerWidth', { value: px, configurable: true, writable: true });
+}
+
+describe('TestNotes (ventana angosta: FABs y hoja inferior)', () => {
   beforeEach(() => {
+    // En jsdom la columna mide 0: con 300 px quedan 268 libres < DOCK_MIN → sin panel lateral
+    anchoVentana(300);
     auth.signedIn = true;
     api.list.mockResolvedValue([]);
     api.create.mockReset();
@@ -255,5 +261,60 @@ describe('TestNotes', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('TestNotes (desktop: panel lateral fuera de la app)', () => {
+  beforeEach(() => {
+    anchoVentana(1440);
+    auth.signedIn = true;
+    api.list.mockResolvedValue([]);
+    api.create.mockReset();
+    agregado.mockReset();
+    document.elementsFromPoint = () => [];
+    // Columna de 480 px pegada a la izquierda: libre a la derecha = 1440 - 480 - 32
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+      const ancho = this.tagName === 'DIV' && this.querySelector(':scope > main') ? 480 : 0;
+      return { top: 0, left: 0, right: ancho, bottom: 800, width: ancho, height: 800, x: 0, y: 0, toJSON: () => ({}) };
+    });
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
+  it('el panel se ve sin abrirlo, afuera de la columna, y no hay botones flotantes', async () => {
+    renderAt('/demo');
+    const panel = await screen.findByRole('region', { name: 'Notas de prueba' });
+    const columna = screen.getByRole('main').parentElement;
+    expect(columna?.contains(panel)).toBe(false);
+    expect(panel.style.left).toBe('496px');
+    expect(within(panel).getByRole('button', { name: 'Marcar en pantalla' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /^Notas/ })).toBeNull();
+  });
+
+  it('al marcar, el cartel va en el panel (no sobre la app) y el borrador queda en el panel', async () => {
+    renderAt('/demo');
+    const panel = await screen.findByRole('region', { name: 'Notas de prueba' });
+    fireEvent.click(within(panel).getByRole('button', { name: 'Marcar en pantalla' }));
+    const capa = screen.getByTestId('test-notes-mark-layer');
+    expect(within(capa).queryByText('Tocá donde está el problema')).toBeNull();
+    expect(within(panel).getByText('Tocá donde está el problema')).toBeDefined();
+    const boton = screen.getByRole('button', { name: 'Agregar' });
+    document.elementsFromPoint = () => [capa, boton];
+    fireEvent.click(capa, { clientX: 10, clientY: 10 });
+    expect(agregado).not.toHaveBeenCalled();
+    expect(within(panel).getByText('Botón: "Agregar"')).toBeDefined();
+  });
+
+  it('"Ir a la nota" deja el panel visible', async () => {
+    api.list.mockResolvedValue([nota({ id: 3, ruta: '/demo/tarea', pantalla: 'Demo › Tarea' })]);
+    renderAt('/demo');
+    const panel = await screen.findByRole('region', { name: 'Notas de prueba' });
+    fireEvent.click(within(panel).getByRole('checkbox', { name: 'Solo esta pantalla' }));
+    fireEvent.click(await within(panel).findByRole('button', { name: 'Demo › Tarea' }));
+    expect(await screen.findByRole('heading', { name: 'Tarea' })).toBeDefined();
+    expect(screen.getByRole('region', { name: 'Notas de prueba' })).toBeDefined();
   });
 });

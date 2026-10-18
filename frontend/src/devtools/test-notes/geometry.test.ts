@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  DOCK_MAX,
   type Frame,
   PIN_SIZE,
   TOAST_SLOT,
+  dockFrame,
   fabBottom,
   fromRootY,
   markFromPoint,
@@ -238,5 +240,22 @@ describe('fabBottom', () => {
     expect(fabBottom(column)).toBe(90);
     column.querySelector('nav')?.remove();
     expect(fabBottom(column)).toBe(16);
+  });
+});
+
+describe('dockFrame', () => {
+  it('desktop: el panel va a la derecha de la columna, sin pasar el máximo', () => {
+    // columna de 480 centrada en 1440 → right = 960; libre = 1440 - 960 - 32 = 448
+    expect(dockFrame({ right: 960 }, 1440)).toEqual({ left: 976, width: DOCK_MAX });
+  });
+
+  it('con poco más del mínimo usa todo el espacio libre', () => {
+    // 1280: right = 880; libre = 1280 - 880 - 32 = 368
+    expect(dockFrame({ right: 880 }, 1280)).toEqual({ left: 896, width: 368 });
+  });
+
+  it('ventana angosta (celular o navegador achicado): null → hoja inferior', () => {
+    expect(dockFrame({ right: 390 }, 390)).toBeNull();
+    expect(dockFrame({ right: 700 }, 1000)).toBeNull(); // libre = 268
   });
 });
