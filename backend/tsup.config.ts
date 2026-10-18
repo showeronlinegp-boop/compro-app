@@ -11,7 +11,9 @@ export default defineConfig({
   target: 'node22',
   platform: 'node',
   external: ['@prisma/client', '.prisma/client', '@prisma/engines', 'dotenv'],
-  sourcemap: true,
+  // Sin source maps: producción arranca sin --enable-source-maps (no se usaban)
+  // y el .map llevaba una copia del código fuente a la imagen.
+  sourcemap: false,
   clean: true,
   outDir: 'dist',
   // Build de producción: las herramientas de desarrollo (notas de prueba) quedan
