@@ -80,3 +80,16 @@ echo "Listo" | npm run notes -- responder <id> para_revisar
 ```
 
 Todos aceptan `--json`.
+
+### "Enviar a Claude"
+
+Cada nota pendiente tiene el botón **Enviar a Claude**: abre Windows Terminal con Claude Code en la carpeta del repo, trabajando esa nota con la skill `nota-prueba` (`.claude/skills/nota-prueba/SKILL.md`). Claude corrige en un worktree, te deja una vista previa en `http://localhost:5174` y **recién mergea cuando le das el OK** (cada merge a `main` sale a producción).
+
+El botón usa el link `compro-claude://nota/<id>`, que hay que registrar **una vez** en Windows (no pide administrador), desde el checkout principal:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\claude-link\registrar.ps1    # registrar
+powershell -ExecutionPolicy Bypass -File tools\claude-link\desregistrar.ps1 # sacarlo
+```
+
+Por seguridad, `abrir-nota.ps1` solo acepta `nota/<número>`: cualquier otro link se rechaza y queda anotado en `%TEMP%\compro-claude-link.log`. El pedido a Claude es fijo; el texto de la nota lo lee Claude de la base.

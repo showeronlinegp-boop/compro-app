@@ -80,7 +80,7 @@ jobs:
         run: |
           npx vite build
           grep -rq "Clientes" dist/assets || { echo "::error::dist sin Fiado: el chequeo no es válido"; exit 1; }
-          if grep -rlE "test-notes|Marcar en pantalla|Tocá donde está el problema" dist; then
+          if grep -rlE "test-notes|compro-claude|Marcar en pantalla|Tocá donde está el problema" dist; then
             echo "::error::Las notas de prueba quedaron en el build de producción del frontend"
             exit 1
           fi

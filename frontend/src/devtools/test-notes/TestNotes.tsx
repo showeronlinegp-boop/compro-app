@@ -14,6 +14,7 @@ import { useActiveModule } from '../../host/nav/ActiveModule';
 import { FOCUS_RING } from '../../host/ui/styles';
 import { TEST_NOTES_API, apiErrorMessage, testNotesApi } from './api';
 import { installCapture, snapshotContext } from './capture';
+import { enviarAClaude } from './claude-link';
 import { DraftForm, type Draft } from './components/DraftForm';
 import { Fabs } from './components/Fabs';
 import { Highlights } from './components/Highlights';
@@ -78,6 +79,7 @@ function TestNotesTool() {
   const [saving, setSaving] = useState(false);
   const [focusId, setFocusId] = useState<number | null>(null);
   const [confirmDel, setConfirmDel] = useState<number | null>(null);
+  const [enviadaId, setEnviadaId] = useState<number | null>(null);
   const [pendingScroll, setPendingScroll] = useState<number | null>(null);
   const [bottom, setBottom] = useState(16);
   const [dock, setDock] = useState<DockFrame | null>(null);
@@ -396,6 +398,11 @@ function TestNotesTool() {
           onPedirBorrar={() => setConfirmDel(n.id)}
           onCancelarBorrar={() => setConfirmDel(null)}
           onBorrar={() => void borrar(n)}
+          enviada={enviadaId === n.id}
+          onEnviar={() => {
+            setEnviadaId(n.id);
+            enviarAClaude(n.id);
+          }}
         />
       ))}
     </>
