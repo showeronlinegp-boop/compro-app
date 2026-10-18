@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { TarjetaInstalar } from '../../../host/install/InstalarApp';
 import { EmptyNote, List, Pill, Section } from '../../../host/ui/surfaces';
 import { fiadoApi } from '../api';
 import {
@@ -71,6 +72,8 @@ export default function Inicio() {
           </Section>
 
           {NEGGO_URL && <TarjetaNeggo href={NEGGO_URL} />}
+
+          <TarjetaInstalar />
 
           <Section title="Últimos movimientos">
             <List label="Últimos movimientos">
