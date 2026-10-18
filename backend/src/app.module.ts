@@ -15,7 +15,6 @@ import { InterestsModule } from './modules/interests/infrastructure/interests.mo
 import { ProfileModule } from './modules/profile/infrastructure/profile.module.js';
 import { PromosModule } from './modules/promos/infrastructure/promos.module.js';
 import { ShoppingModule } from './modules/shopping/infrastructure/shopping.module.js';
-import { TestNotesModule } from './modules/test-notes/infrastructure/test-notes.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { SchedulerModule } from './scheduler/scheduler.module.js';
 
@@ -37,9 +36,17 @@ export const COMPARADOR_MODULES = [
 ];
 
 /**
- * Imports del AppModule; exportado para testear el arranque sin compras.
- * Las notas de prueba sólo existen con TEST_NOTES_ENABLED (nunca en producción).
+ * Notas de prueba: sólo desarrollo local, NUNCA en el deploy. El build de
+ * producción (tsup.config.ts) reemplaza `process.env.COMPRO_PROD_BUILD` por
+ * "1": la condición queda constante, esbuild borra la rama y el módulo no entra
+ * a dist/ (el CI lo verifica). En dev (tsx) y tests se carga sólo con la flag.
  */
+const TEST_NOTES_MODULES =
+  process.env.COMPRO_PROD_BUILD !== '1' && TEST_NOTES_ENABLED
+    ? [(await import('./modules/test-notes/infrastructure/test-notes.module.js')).TestNotesModule]
+    : [];
+
+/** Imports del AppModule; exportado para testear el arranque sin compras. */
 export function appImports(comparador: boolean, testNotes = false) {
   return [
     // Global rate-limiting: 100 requests per 60 s per IP.
@@ -52,7 +59,7 @@ export function appImports(comparador: boolean, testNotes = false) {
     HealthModule,
     FiadoModule,
     ...(comparador ? COMPARADOR_MODULES : []),
-    ...(testNotes ? [TestNotesModule] : []),
+    ...(testNotes ? TEST_NOTES_MODULES : []),
   ];
 }
 

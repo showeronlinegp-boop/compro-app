@@ -14,4 +14,7 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   outDir: 'dist',
+  // Build de producción: las herramientas de desarrollo (notas de prueba) quedan
+  // como código muerto y esbuild las elimina del bundle (ver app.module.ts).
+  define: { 'process.env.COMPRO_PROD_BUILD': '"1"' },
 });
