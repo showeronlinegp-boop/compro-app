@@ -17,6 +17,7 @@ vi.mock('@clerk/clerk-react', () => ({
   SignedOut: ({ children }: { children: ReactNode }) => (auth.signedIn ? null : children),
   RedirectToSignIn: () => <div data-testid="redirect-sign-in" />,
   UserButton: () => null,
+  SignOutButton: ({ children }: { children: ReactNode }) => children,
   SignInButton: ({ children }: { children: ReactNode }) => children,
   SignIn: () => <div data-testid="clerk-sign-in" />,
   SignUp: () => null,
@@ -221,10 +222,17 @@ describe('HostApp', () => {
     expect(screen.getByRole('heading', { name: 'Bare' })).toBeDefined();
   });
 
+  it('Más: con sesión ofrece Cerrar sesión a la vista', () => {
+    renderAt('/mas');
+    expect(screen.getByRole('button', { name: 'Cerrar sesión' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Ingresar' })).toBeNull();
+  });
+
   it('Más: sin sesión ofrece Ingresar', () => {
     auth.signedIn = false;
     renderAt('/mas');
     expect(screen.getByRole('button', { name: 'Ingresar' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Cerrar sesión' })).toBeNull();
   });
 
   it('H1: ruta required sin sesión → RedirectToSignIn', () => {
