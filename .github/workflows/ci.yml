@@ -74,6 +74,9 @@ jobs:
       - name: El build de producción no incluye las notas de prueba
         env:
           VITE_TEST_NOTES: '1'
+          # Sin clave, main.tsx hace throw y Rollup descarta toda la app como código
+          # muerto (el chequeo pasaría sin revisar nada). Clave ficticia, no es un secreto.
+          VITE_CLERK_PUBLISHABLE_KEY: pk_test_Y2kuZXhhbXBsZS5jb20k
         run: |
           npx vite build
           grep -rq "Clientes" dist/assets || { echo "::error::dist sin Fiado: el chequeo no es válido"; exit 1; }
