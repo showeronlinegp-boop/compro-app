@@ -44,6 +44,15 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      # Las herramientas de desarrollo (notas de prueba) NUNCA van al deploy.
+      - name: El build de producción no incluye las notas de prueba
+        run: |
+          npm run build
+          grep -q "api/fiado" dist/main.js || { echo "::error::dist/main.js no tiene Fiado: el chequeo no es válido"; exit 1; }
+          if grep -rlE "api/test-notes|test_notes" dist; then
+            echo "::error::Las notas de prueba quedaron en el build de producción del backend"
+            exit 1
+          fi
 
   frontend:
     name: Frontend (typecheck + tests)
@@ -61,3 +70,17 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      # Aunque la flag esté prendida, el build de producción no puede tener la tool.
+      - name: El build de producción no incluye las notas de prueba
+        env:
+          VITE_TEST_NOTES: '1'
+          # Sin clave, main.tsx hace throw y Rollup descarta toda la app como código
+          # muerto (el chequeo pasaría sin revisar nada). Clave ficticia, no es un secreto.
+          VITE_CLERK_PUBLISHABLE_KEY: pk_test_Y2kuZXhhbXBsZS5jb20k
+        run: |
+          npx vite build
+          grep -rq "Clientes" dist/assets || { echo "::error::dist sin Fiado: el chequeo no es válido"; exit 1; }
+          if grep -rlE "test-notes|Marcar en pantalla|Tocá donde está el problema" dist; then
+            echo "::error::Las notas de prueba quedaron en el build de producción del frontend"
+            exit 1
+          fi
