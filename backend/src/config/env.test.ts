@@ -27,6 +27,16 @@ describe('DATABASE_URL env config', () => {
     expect(DATABASE_URL).toBe('postgresql://test:test@localhost:5432/testdb');
   });
 
+  it('strEnv recorta espacios y trata el vacío como ausente', async () => {
+    const { strEnv } = await import('./env.js');
+    process.env.TEST_STR_ENV = '  postgresql://u:p@host:5432/railway \n';
+    expect(strEnv('TEST_STR_ENV')).toBe('postgresql://u:p@host:5432/railway');
+    process.env.TEST_STR_ENV = '   ';
+    expect(strEnv('TEST_STR_ENV')).toBeUndefined();
+    delete process.env.TEST_STR_ENV;
+    expect(strEnv('TEST_STR_ENV')).toBeUndefined();
+  });
+
   it('exports DATABASE_URL (not DB_PATH) as the primary database config', async () => {
     process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/testdb';
     const env = await import('./env.js');

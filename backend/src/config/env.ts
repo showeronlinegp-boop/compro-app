@@ -17,8 +17,18 @@ import {
 
 export const PORT: number = Number(process.env.PORT ?? 3001);
 
+/**
+ * Lee una variable de texto recortando espacios; vacía = ausente. Un espacio
+ * pegado de más en el panel del hosting rompía la conexión: Postgres buscaba
+ * la base "railway " (con espacio) y no la encontraba.
+ */
+export const strEnv = (key: string): string | undefined => {
+  const value = process.env[key]?.trim();
+  return value ? value : undefined;
+};
+
 // DATABASE_URL is required in all environments — set it in backend/.env (see .env.example).
-const rawDatabaseUrl = process.env.DATABASE_URL;
+const rawDatabaseUrl = strEnv('DATABASE_URL');
 if (!rawDatabaseUrl) {
   throw new Error(
     '[env] DATABASE_URL is required — set it in backend/.env (see .env.example)',
@@ -26,21 +36,21 @@ if (!rawDatabaseUrl) {
 }
 export const DATABASE_URL: string = rawDatabaseUrl;
 
-export const NODE_ENV: string = process.env.NODE_ENV ?? 'development';
+export const NODE_ENV: string = strEnv('NODE_ENV') ?? 'development';
 
 export const IS_PRODUCTION: boolean = NODE_ENV === 'production';
 
 // Compras (comparador de supermercados, crawler y crons) — fail-closed: sólo se
 // monta con ENABLE_COMPARADOR=true (dev local y tests). La imagen de producción
 // no lo setea, así que sale sólo con Fiado.
-export const ENABLE_COMPARADOR: boolean = process.env.ENABLE_COMPARADOR === 'true';
+export const ENABLE_COMPARADOR: boolean = strEnv('ENABLE_COMPARADOR') === 'true';
 
 // ---------------------------------------------------------------------------
 // Clerk auth — required in all environments; fail-closed on missing (same
 // pattern as DATABASE_URL above).
 // ---------------------------------------------------------------------------
 
-const rawClerkSecretKey = process.env.CLERK_SECRET_KEY;
+const rawClerkSecretKey = strEnv('CLERK_SECRET_KEY');
 if (!rawClerkSecretKey) {
   throw new Error(
     '[env] CLERK_SECRET_KEY is required — set it in backend/.env (see .env.example)',
@@ -48,7 +58,7 @@ if (!rawClerkSecretKey) {
 }
 export const CLERK_SECRET_KEY: string = rawClerkSecretKey;
 
-const rawClerkIssuer = process.env.CLERK_ISSUER;
+const rawClerkIssuer = strEnv('CLERK_ISSUER');
 if (!rawClerkIssuer) {
   throw new Error(
     '[env] CLERK_ISSUER is required — set it in backend/.env (see .env.example)',
@@ -58,7 +68,7 @@ export const CLERK_ISSUER: string = rawClerkIssuer;
 
 // CORS_ORIGIN is required in production; optional in development (falls back
 // to localhost). Comma-separated list of allowed origins.
-const rawCorsOrigin = process.env.CORS_ORIGIN;
+const rawCorsOrigin = strEnv('CORS_ORIGIN');
 if (!rawCorsOrigin && IS_PRODUCTION) {
   throw new Error(
     '[env] CORS_ORIGIN is required in production — set it in backend/.env (see .env.example)',
