@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { HostLayout } from './HostLayout';
 import { ModuleProviders } from './ModuleProviders';
 import { MorePage } from './MorePage';
+import PrivacidadPage from './PrivacidadPage';
 import SignInPage from './auth/SignInPage';
 import SignUpPage from './auth/SignUpPage';
 import { type AppModule, HOST_MORE_PATH, type HostTool } from './contract';
@@ -39,6 +40,8 @@ export function HostApp({ modules, tools = hostTools }: HostAppProps) {
       {/* Clerk-hosted auth routes */}
       <Route path="/sign-in/*" element={<SignInPage />} />
       <Route path="/sign-up/*" element={<SignUpPage />} />
+      {/* Pública y sin links desde la app: sólo se llega por URL (la pide Google). */}
+      <Route path="/privacidad" element={<PrivacidadPage />} />
 
       {/* Everything else renders for everyone — browsing is public.
           User-specific routes are gated individually (auth: 'required'). */}
