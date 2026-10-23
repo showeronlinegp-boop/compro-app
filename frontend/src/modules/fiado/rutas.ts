@@ -20,6 +20,7 @@ export const RUTAS = {
   nuevoCliente: (opts: { nombre?: string; siguiente?: string } = {}) =>
     conQuery(`${BASE}/clientes/nuevo`, opts),
   ficha: (id: number) => `${BASE}/clientes/${id}`,
+  editarCliente: (id: number) => `${BASE}/clientes/${id}/editar`,
   /** Anotar fiado o registrar pago, opcionalmente con el cliente ya elegido. */
   anotar: (tipo: TipoAnotar, clienteId?: number) =>
     conQuery(`${BASE}/${tipo === 'fiado' ? 'anotar' : 'pago'}`, {

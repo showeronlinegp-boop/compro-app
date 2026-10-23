@@ -5,6 +5,7 @@ import Ajustes from './pages/Ajustes';
 import { AnotarFiado, RegistrarPago } from './pages/Anotar';
 import Avisos from './pages/Avisos';
 import Clientes from './pages/Clientes';
+import EditarCliente from './pages/EditarCliente';
 import Ficha from './pages/Ficha';
 import Inicio from './pages/Inicio';
 import Listo from './pages/Listo';
@@ -39,6 +40,14 @@ export const fiado: AppModule = {
       chrome: 'task',
     },
     { id: 'ficha', path: 'clientes/:id', component: Ficha, auth: 'required', title: 'Cliente' },
+    {
+      id: 'editar-cliente',
+      path: 'clientes/:id/editar',
+      component: EditarCliente,
+      auth: 'required',
+      title: 'Editar datos',
+      chrome: 'task',
+    },
     {
       id: 'anotar',
       path: 'anotar',

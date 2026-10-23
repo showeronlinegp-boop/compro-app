@@ -1,11 +1,8 @@
-import { type FormEvent, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Button } from '../../../host/ui/Button';
 import { ScreenHeader } from '../../../host/ui/ScreenHeader';
 import { useToast } from '../../../host/ui/Toast';
-import { TextField } from '../../../host/ui/controls';
-import { Notice } from '../../../host/ui/surfaces';
-import { fiadoApi, mensajeDeError } from '../api';
+import { FormCliente } from '../FormCliente';
+import { fiadoApi } from '../api';
 import { RUTAS, conCliente, esRutaDelModulo } from '../rutas';
 
 /**
@@ -18,74 +15,22 @@ export default function NuevoCliente() {
   const navigate = useNavigate();
   const toast = useToast();
   const [params] = useSearchParams();
-  const [nombre, setNombre] = useState(params.get('nombre') ?? '');
-  const [telefono, setTelefono] = useState('');
-  const [limite, setLimite] = useState('');
-  const [enviando, setEnviando] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const listo = nombre.trim().length > 0 && !enviando;
-
-  async function guardar(e: FormEvent) {
-    e.preventDefault();
-    if (!listo) return;
-    setEnviando(true);
-    setError(null);
-    try {
-      const c = await fiadoApi.crearCliente({
-        nombre: nombre.trim(),
-        telefono: telefono.trim() || null,
-        limite: limite ? Number(limite) : null,
-      });
-      toast.show(`Guardaste a ${c.nombre}.`);
-      const siguiente = params.get('siguiente');
-      navigate(esRutaDelModulo(siguiente) ? conCliente(siguiente, c.id) : RUTAS.ficha(c.id), {
-        replace: true,
-      });
-    } catch (err) {
-      setError(mensajeDeError(err));
-      setEnviando(false);
-    }
-  }
 
   return (
-    <form onSubmit={guardar} className="flex flex-col gap-5 px-4 pt-4 pb-6" noValidate>
+    <div className="flex flex-col gap-5 px-4 pt-4 pb-6">
       <ScreenHeader variant="task" title="Nuevo cliente" backTo={RUTAS.clientes} />
-
-      <TextField
-        label="Nombre"
-        labelTone="question"
-        autoComplete="off"
-        autoCapitalize="words"
-        value={nombre}
-        onChange={(e) => setNombre(e.target.value)}
-        maxLength={80}
-        required
+      <FormCliente
+        inicial={{ nombre: params.get('nombre') ?? '' }}
+        textoBoton="Guardar cliente"
+        onGuardar={async (datos) => {
+          const c = await fiadoApi.crearCliente(datos);
+          toast.show(`Guardaste a ${c.nombre}.`);
+          const siguiente = params.get('siguiente');
+          navigate(esRutaDelModulo(siguiente) ? conCliente(siguiente, c.id) : RUTAS.ficha(c.id), {
+            replace: true,
+          });
+        }}
       />
-      <TextField
-        label="Teléfono (opcional)"
-        type="tel"
-        inputMode="tel"
-        autoComplete="off"
-        placeholder="11 1234-5678"
-        value={telefono}
-        onChange={(e) => setTelefono(e.target.value)}
-        hint="Para mandarle el comprobante por WhatsApp."
-      />
-      <TextField
-        label="Límite de fiado (opcional)"
-        inputMode="numeric"
-        placeholder="Sin límite"
-        value={limite}
-        onChange={(e) => setLimite(e.target.value.replace(/\D/g, '').slice(0, 9))}
-        hint="Si lo pasa, te avisamos. No te frena para anotar."
-      />
-
-      {error && <Notice>{error}</Notice>}
-
-      <Button type="submit" variant="primary" size="l" block disabled={!listo}>
-        {enviando ? 'Guardando…' : 'Guardar cliente'}
-      </Button>
-    </form>
+    </div>
   );
 }
