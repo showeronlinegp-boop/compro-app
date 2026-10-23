@@ -25,6 +25,7 @@ const m = vi.hoisted(() => ({
   clientes: vi.fn(),
   ficha: vi.fn(),
   crearCliente: vi.fn(),
+  actualizarCliente: vi.fn(),
 }));
 
 vi.mock('./api', async (importOriginal) => {
@@ -363,5 +364,67 @@ describe('Nuevo cliente', () => {
     });
     expect(await screen.findByText('nombre no puede superar 80 caracteres')).toBeDefined();
     expect(donde()).toBe('/fiado/clientes/nuevo?nombre=Pepe');
+  });
+});
+
+// ─── Editar cliente ───────────────────────────────────────────────────────────
+
+describe('Editar cliente', () => {
+  it('desde la ficha abre el formulario con los datos cargados', async () => {
+    m.ficha.mockResolvedValue({ cliente: cliente(), historial: [] });
+    renderAt('/fiado/clientes/1');
+    fireEvent.click(await screen.findByRole('button', { name: 'Editar' }));
+    expect(donde()).toBe('/fiado/clientes/1/editar');
+    expect(((await screen.findByLabelText('Nombre')) as HTMLInputElement).value).toBe(
+      'Marta Giménez',
+    );
+    expect((screen.getByLabelText('Teléfono (opcional)') as HTMLInputElement).value).toBe(
+      '11 1234-5678',
+    );
+    expect((screen.getByLabelText('Límite de fiado (opcional)') as HTMLInputElement).value).toBe(
+      '40000',
+    );
+  });
+
+  it('guarda los cambios (vaciar el límite lo saca) y vuelve a la ficha', async () => {
+    m.ficha.mockResolvedValue({ cliente: cliente(), historial: [] });
+    m.actualizarCliente.mockResolvedValue(cliente({ nombre: 'Marta Gómez', limite: null }));
+    renderAt('/fiado/clientes/1/editar');
+
+    fireEvent.change(await screen.findByLabelText('Nombre'), {
+      target: { value: ' Marta Gómez ' },
+    });
+    fireEvent.change(screen.getByLabelText('Límite de fiado (opcional)'), {
+      target: { value: '' },
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+    });
+    expect(m.actualizarCliente).toHaveBeenCalledWith(1, {
+      nombre: 'Marta Gómez',
+      telefono: '11 1234-5678',
+      limite: null,
+    });
+    await waitFor(() => expect(donde()).toBe('/fiado/clientes/1'));
+    expect(screen.getByTestId('toast-region').textContent).toContain(
+      'Guardaste los datos de Marta Gómez.',
+    );
+  });
+
+  it('sin nombre no deja guardar; muestra el error del backend', async () => {
+    m.ficha.mockResolvedValue({ cliente: cliente(), historial: [] });
+    m.actualizarCliente.mockRejectedValue(new Error('400 {"error":"limite inválido"}'));
+    renderAt('/fiado/clientes/1/editar');
+
+    const nombre = await screen.findByLabelText('Nombre');
+    const guardar = screen.getByRole('button', { name: 'Guardar cambios' }) as HTMLButtonElement;
+    fireEvent.change(nombre, { target: { value: '  ' } });
+    expect(guardar.disabled).toBe(true);
+    fireEvent.change(nombre, { target: { value: 'Marta' } });
+    await act(async () => {
+      fireEvent.click(guardar);
+    });
+    expect(await screen.findByText('limite inválido')).toBeDefined();
+    expect(donde()).toBe('/fiado/clientes/1/editar');
   });
 });

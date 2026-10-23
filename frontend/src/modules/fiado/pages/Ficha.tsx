@@ -1,4 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom';
+import { Button } from '../../../host/ui/Button';
 import { ScreenHeader } from '../../../host/ui/ScreenHeader';
 import { formatMoney } from '../../../host/ui/format';
 import {
@@ -18,12 +19,19 @@ import { textoDia, textoDias, textoSaldo } from '../textos';
 import { useCarga } from '../useCarga';
 
 /** Tarjeta principal de la ficha: identidad, saldo, celdas y aviso de límite. */
-export function TarjetaFicha({ cliente: c }: { cliente: Cliente }) {
+export function TarjetaFicha({
+  cliente: c,
+  onEditar,
+}: {
+  cliente: Cliente;
+  /** Si viene, muestra "Editar" para corregir nombre, teléfono y límite. */
+  onEditar?: () => void;
+}) {
   return (
     <Card>
       <div className="flex items-center gap-3">
         <Avatar name={c.nombre} size="l" />
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <h2 className="m-0 font-display text-title-m text-ink truncate">{c.nombre}</h2>
           {c.telefono && <p className="m-0 text-body-s text-ink-muted">{c.telefono}</p>}
           {c.etiqueta && (
@@ -32,6 +40,11 @@ export function TarjetaFicha({ cliente: c }: { cliente: Cliente }) {
             </span>
           )}
         </div>
+        {onEditar && (
+          <Button variant="text" size="s" onClick={onEditar}>
+            Editar
+          </Button>
+        )}
       </div>
 
       <p className="m-0 mt-4 text-body text-ink-muted">
@@ -92,7 +105,10 @@ export default function Ficha() {
 
       {carga.data && (
         <>
-          <TarjetaFicha cliente={carga.data.cliente} />
+          <TarjetaFicha
+            cliente={carga.data.cliente}
+            onEditar={() => navigate(RUTAS.editarCliente(clienteId))}
+          />
 
           <AccionesMovimiento
             compacto
