@@ -91,3 +91,16 @@ describe('resolveTestNotesFlag (test-notes A1)', () => {
     expect(resolveTestNotesFlag(undefined, true)).toBe(false);
   });
 });
+
+describe('parseIdList (panel de uso)', () => {
+  it('separa por comas, recorta espacios y descarta vacíos', async () => {
+    const { parseIdList } = await import('./env.js');
+    expect(parseIdList(' user_a , user_b,,')).toEqual(['user_a', 'user_b']);
+  });
+
+  it('sin variable → lista vacía (nadie es admin)', async () => {
+    const { parseIdList } = await import('./env.js');
+    expect(parseIdList(undefined)).toEqual([]);
+    expect(parseIdList('  ')).toEqual([]);
+  });
+});

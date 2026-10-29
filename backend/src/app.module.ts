@@ -7,6 +7,7 @@ import { ENABLE_COMPARADOR, TEST_NOTES_ENABLED } from './config/env.js';
 import { CrawlerModule } from './crawler/infrastructure/crawler.module.js';
 import { EnrichmentModule } from './enrichment/infrastructure/enrichment.module.js';
 import { HealthModule } from './health/health.module.js';
+import { AdminModule } from './modules/admin/infrastructure/admin.module.js';
 import { CartModule } from './modules/cart/infrastructure/cart.module.js';
 import { CatalogModule } from './modules/catalog/infrastructure/catalog.module.js';
 import { CompareModule } from './modules/compare/infrastructure/compare.module.js';
@@ -58,6 +59,7 @@ export function appImports(comparador: boolean, testNotes = false) {
     ScheduleModule.forRoot(),
     HealthModule,
     FiadoModule,
+    AdminModule,
     ...(comparador ? COMPARADOR_MODULES : []),
     ...(testNotes ? TEST_NOTES_MODULES : []),
   ];

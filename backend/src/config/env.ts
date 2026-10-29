@@ -105,6 +105,32 @@ export const TEST_NOTES_ENABLED: boolean = resolveTestNotesFlag(
 export const TEST_NOTES_APP_URL: string = process.env.TEST_NOTES_APP_URL ?? 'http://localhost:5173';
 
 // ---------------------------------------------------------------------------
+// Panel de uso (/api/admin/uso) — fail-closed: sin ADMIN_CLERK_USER_IDS nadie
+// es admin y la ruta responde 403 a todos.
+// ---------------------------------------------------------------------------
+
+/** Lista separada por comas → ids sin espacios ni vacíos. */
+export function parseIdList(raw: string | undefined): string[] {
+  return (raw ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+/** Clerk user IDs (`user_…`) que pueden ver el panel de uso. */
+export const ADMIN_CLERK_USER_IDS: readonly string[] = parseIdList(
+  process.env.ADMIN_CLERK_USER_IDS,
+);
+
+/**
+ * Cuentas que no cuentan en las métricas de uso (las de prueba). Los admins
+ * quedan afuera siempre, estén o no en esta lista.
+ */
+export const METRICAS_EXCLUIR_CLERK_USER_IDS: readonly string[] = parseIdList(
+  process.env.METRICAS_EXCLUIR_CLERK_USER_IDS,
+);
+
+// ---------------------------------------------------------------------------
 // Crawler runtime config — resolved from env with static defaults as fallback.
 // Missing or non-numeric values fall back to the static default (never throw).
 // ---------------------------------------------------------------------------

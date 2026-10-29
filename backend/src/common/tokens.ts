@@ -16,3 +16,6 @@ export const CART_REPO = 'CART_REPO' as const;
 export const FIADO_REPO = 'FIADO_REPO' as const;
 export const TEST_NOTES_REPO = 'TEST_NOTES_REPO' as const;
 export const TEST_NOTES_ADMIN_REPO = 'TEST_NOTES_ADMIN_REPO' as const;
+export const USO_REPO = 'USO_REPO' as const;
+export const CLERK_INGRESOS = 'CLERK_INGRESOS' as const;
+export const ADMIN_IDS = 'ADMIN_IDS' as const;
