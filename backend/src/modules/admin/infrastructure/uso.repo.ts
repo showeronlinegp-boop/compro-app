@@ -1,6 +1,12 @@
 import { Prisma, type PrismaClient } from '@prisma/client';
 import { TZ } from '../../fiado/domain/fiado.js';
-import type { Accion, ActividadSemanal, ComercioHechos } from '../domain/uso.js';
+import type {
+  Accion,
+  ActividadSemanal,
+  Apertura,
+  ComercioHechos,
+  VistasPantalla,
+} from '../domain/uso.js';
 
 type PrismaLike = Pick<PrismaClient, '$queryRaw'>;
 
@@ -9,6 +15,12 @@ export interface UsoRepo {
   comercios(): Promise<ComercioHechos[]>;
   /** (comercio, semana, acción) distintos desde el lunes `desde` ('AAAA-MM-DD'). */
   actividad(desde: string): Promise<ActividadSemanal[]>;
+  /** (comercio, semana) en que abrió alguna pantalla, desde el lunes `desde`. */
+  aperturas(desde: string): Promise<Apertura[]>;
+  /** Vistas y comercios distintos por pantalla desde el lunes `desde`. */
+  pantallas(desde: string): Promise<VistasPantalla[]>;
+  /** Primer evento de uso registrado (antes no se medían pantallas), o null. */
+  eventosDesde(): Promise<Date | null>;
 }
 
 /**
@@ -34,6 +46,7 @@ export function makeUsoRepo(prisma: PrismaLike, excluir: readonly string[]): Uso
           c.clientes_con_etiqueta, c.clientes_con_proximo_cobro, c.primer_cliente,
           m.fiados, m.fiados_con_vence, m.pagos, m.correcciones, m.primer_fiado, m.primer_pago,
           r.recordatorios, r.primer_recordatorio,
+          e.comprobantes, e.ultima_vista, e.uso_instalada, e.uso_movil,
           GREATEST(c.ultimo_cliente, m.ultimo_movimiento, r.ultimo_recordatorio, a.updated_at)
             AS ultima_actividad
         FROM users u
@@ -64,6 +77,13 @@ export function makeUsoRepo(prisma: PrismaLike, excluir: readonly string[]): Uso
             max(enviado_at) AS ultimo_recordatorio
           FROM fiado_recordatorios WHERE user_id = u.id
         ) r
+        CROSS JOIN LATERAL (
+          SELECT count(*) FILTER (WHERE evento = 'comprobante')::int AS comprobantes,
+            max(created_at) FILTER (WHERE evento = 'pantalla') AS ultima_vista,
+            COALESCE(bool_or(standalone), false) AS uso_instalada,
+            COALESCE(bool_or(movil), false) AS uso_movil
+          FROM uso_eventos WHERE user_id = u.id
+        ) e
         WHERE u.id IN (${incluidos})
         ORDER BY u.id`);
     },
@@ -84,6 +104,30 @@ export function makeUsoRepo(prisma: PrismaLike, excluir: readonly string[]): Uso
           WHERE semana >= ${desde} AND user_id IN (${incluidos})`,
       );
       return rows;
+    },
+
+    async aperturas(desde) {
+      return prisma.$queryRaw<Apertura[]>(Prisma.sql`
+        SELECT DISTINCT user_id, ${semana(Prisma.sql`created_at`)} AS semana
+        FROM uso_eventos
+        WHERE evento = 'pantalla' AND ${semana(Prisma.sql`created_at`)} >= ${desde}
+          AND user_id IN (${incluidos})`);
+    },
+
+    async pantallas(desde) {
+      return prisma.$queryRaw<VistasPantalla[]>(Prisma.sql`
+        SELECT modulo, ruta_id, count(*)::int AS vistas, count(DISTINCT user_id)::int AS comercios
+        FROM uso_eventos
+        WHERE evento = 'pantalla' AND ${semana(Prisma.sql`created_at`)} >= ${desde}
+          AND user_id IN (${incluidos})
+        GROUP BY modulo, ruta_id
+        ORDER BY comercios DESC, vistas DESC, modulo, ruta_id`);
+    },
+
+    async eventosDesde() {
+      const [row] = await prisma.$queryRaw<Array<{ desde: Date | null }>>(Prisma.sql`
+        SELECT min(created_at) AS desde FROM uso_eventos WHERE user_id IN (${incluidos})`);
+      return row?.desde ?? null;
     },
   };
 }

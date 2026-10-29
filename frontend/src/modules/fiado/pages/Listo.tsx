@@ -6,6 +6,7 @@ import { useToast } from '../../../host/ui/Toast';
 import { formatMoney } from '../../../host/ui/format';
 import { IconCheck } from '../../../host/ui/icons';
 import { Card, Notice, WhatsAppBubble } from '../../../host/ui/surfaces';
+import { registrarUso } from '../../../host/uso';
 import { fiadoApi, mensajeDeError } from '../api';
 import { abrirWhatsApp, comprobante } from '../mensajes';
 import { RUTAS } from '../rutas';
@@ -111,6 +112,7 @@ export default function Listo() {
                 cliente.whatsapp,
                 comprobante(tipo, Math.abs(movimiento.monto), cliente, ajustes.data, movimiento.vence),
               );
+              registrarUso('comprobante', 'fiado');
               volver();
             }}
           >

@@ -33,6 +33,12 @@ const m = vi.hoisted(() => ({
   guardarAjustes: vi.fn(),
 }));
 
+const uso = vi.hoisted(() => ({ registrarUso: vi.fn() }));
+vi.mock('../../host/uso', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../host/uso')>()),
+  registrarUso: uso.registrarUso,
+}));
+
 vi.mock('./api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./api')>();
   return { ...actual, fiadoApi: { ...actual.fiadoApi, ...m } };
@@ -158,6 +164,7 @@ describe('Listo: comprobante por WhatsApp', () => {
     const url = String(open.mock.calls[0]?.[0]);
     expect(url.startsWith('https://wa.me/5491112345678?text=')).toBe(true);
     expect(decodeURIComponent(url)).toContain('Hecho con Neggo');
+    expect(uso.registrarUso).toHaveBeenCalledWith('comprobante', 'fiado');
     expect(donde()).toBe('/fiado/clientes/1');
   });
 });

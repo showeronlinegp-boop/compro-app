@@ -1,10 +1,10 @@
 /**
  * Dominio del panel de uso — puro, sin DB ni Nest.
  *
- * Todo sale de lo que la base ya registra: altas, clientes, movimientos del
- * libro (append-only), recordatorios y ajustes. Las lecturas (abrir una
- * pantalla sin anotar nada) NO quedan registradas: "activo" acá significa
- * "hizo algo", y el último ingreso a la app viene aparte, de Clerk.
+ * "Activo" = hizo algo (cliente, movimiento del libro, recordatorio, ajustes):
+ * sale de lo que la app ya guardaba, con historia completa. "Abrió" = abrió
+ * alguna pantalla: sale de uso_eventos, que existe recién desde `eventos_desde`
+ * (antes no se medía). El último ingreso según Clerk va aparte.
  *
  * Nunca se exponen datos de los clientes del comercio (nombres, teléfonos,
  * montos): sólo conteos por comercio.
@@ -50,6 +50,12 @@ export interface ComercioHechos {
   primer_recordatorio: Date | null;
   /** Última vez que escribió algo (cliente, movimiento, recordatorio, ajustes). */
   ultima_actividad: Date | null;
+  /** De uso_eventos (sólo desde que se mide). */
+  comprobantes: number;
+  ultima_vista: Date | null;
+  /** Alguna vez la abrió instalada (desde el ícono) / desde un celular. */
+  uso_instalada: boolean;
+  uso_movil: boolean;
 }
 
 /** El comercio hizo `accion` al menos una vez en la semana que empieza el lunes `semana`. */
@@ -58,6 +64,20 @@ export interface ActividadSemanal {
   /** Lunes 'AAAA-MM-DD' (hora argentina). */
   semana: string;
   accion: Accion;
+}
+
+/** El comercio abrió alguna pantalla en la semana del lunes `semana`. */
+export interface Apertura {
+  user_id: number;
+  semana: string;
+}
+
+/** Cuántas veces se abrió una pantalla y cuántos comercios distintos la abrieron. */
+export interface VistasPantalla {
+  modulo: string;
+  ruta_id: string;
+  vistas: number;
+  comercios: number;
 }
 
 /** Último ingreso según Clerk (abrir la app cuenta, aunque no anote nada). */
@@ -104,6 +124,8 @@ export interface Semana {
   altas: number;
   /** Comercios que hicieron algo esa semana. */
   activos: number;
+  /** Comercios que abrieron alguna pantalla esa semana (0 antes de `eventos_desde`). */
+  abrieron: number;
   por_accion: Record<Accion, number>;
 }
 
@@ -137,7 +159,10 @@ export interface ComercioView {
   fiados: number;
   pagos: number;
   recordatorios: number;
+  comprobantes: number;
+  instalada: boolean;
   ultima_actividad: string | null;
+  ultima_vista: string | null;
   /** De Clerk; null si no hay dato o Clerk no respondió. */
   ultimo_ingreso: string | null;
   ultimo_login: string | null;
@@ -147,6 +172,8 @@ export interface UsoReporte {
   generado_at: string;
   /** 'clerk' = hay último ingreso; 'no_disponible' = Clerk no respondió. */
   ingresos: 'clerk' | 'no_disponible';
+  /** Desde cuándo hay eventos de uso (pantallas, comprobantes); null = todavía ninguno. */
+  eventos_desde: string | null;
   totales: {
     comercios: number;
     /** Hicieron algo en los últimos 7 / 30 días. */
@@ -154,12 +181,29 @@ export interface UsoReporte {
     activos_30d: number;
     /** Abrieron la app en los últimos 7 días (Clerk); null si no hay dato. */
     ingresaron_7d: number | null;
+    /** Abrieron alguna pantalla en los últimos 7 días (uso_eventos). */
+    abrieron_7d: number;
+    /** Alguna vez la usaron instalada / desde el celular. */
+    usan_instalada: number;
+    usan_celular: number;
   };
   embudo: PasoEmbudo[];
   adopcion: Adopcion[];
   semanal: Semana[];
   cohortes: Cohorte[];
+  pantallas: VistasPantalla[];
   comercios: ComercioView[];
+}
+
+/** Lo que el repo trae para armar el reporte. */
+export interface DatosUso {
+  comercios: readonly ComercioHechos[];
+  actividad: readonly ActividadSemanal[];
+  aperturas: readonly Apertura[];
+  pantallas: readonly VistasPantalla[];
+  eventos_desde: Date | null;
+  /** null si Clerk no respondió. */
+  ingresos: ReadonlyMap<string, Ingreso> | null;
 }
 
 const DIA_MS = 86_400_000;
@@ -176,6 +220,7 @@ const ceroPorAccion = (): Record<Accion, number> => ({
 export function serieSemanal(
   comercios: readonly ComercioHechos[],
   actividad: readonly ActividadSemanal[],
+  aperturas: readonly Apertura[],
   semanas: readonly string[],
 ): Semana[] {
   return semanas.map((semana) => {
@@ -190,6 +235,7 @@ export function serieSemanal(
       semana,
       altas: comercios.filter((c) => lunesDe(fechaAR(c.alta)) === semana).length,
       activos: new Set(deLaSemana.map((a) => a.user_id)).size,
+      abrieron: new Set(aperturas.filter((a) => a.semana === semana).map((a) => a.user_id)).size,
       por_accion,
     };
   });
@@ -241,6 +287,7 @@ export function adopcion(comercios: readonly ComercioHechos[]): Adopcion[] {
     { funcion: 'Fecha de cobro en el fiado', comercios: contar((c) => c.fiados_con_vence > 0), de },
     { funcion: 'Registrar pagos', comercios: contar((c) => c.pagos > 0), de },
     { funcion: 'Recordatorios', comercios: contar((c) => c.recordatorios > 0), de },
+    { funcion: 'Comprobante por WhatsApp', comercios: contar((c) => c.comprobantes > 0), de },
     { funcion: 'Deshacer (corrección)', comercios: contar((c) => c.correcciones > 0), de },
     { funcion: 'Teléfono del cliente', comercios: contar((c) => c.clientes_con_telefono > 0), de },
     { funcion: 'Límite de fiado', comercios: contar((c) => c.clientes_con_limite > 0), de },
@@ -252,41 +299,39 @@ export function adopcion(comercios: readonly ComercioHechos[]): Adopcion[] {
     },
     { funcion: 'Alias para cobrar', comercios: contar((c) => c.alias), de },
     { funcion: 'Mensajes personalizados', comercios: contar((c) => c.plantillas_propias > 0), de },
+    { funcion: 'App instalada', comercios: contar((c) => c.uso_instalada), de },
   ];
 }
 
 const iso = (d: Date | null) => (d ? d.toISOString() : null);
 
-/** Arma el reporte completo. `ingresos` = null si Clerk no respondió. */
-export function armarReporte(
-  comercios: readonly ComercioHechos[],
-  actividad: readonly ActividadSemanal[],
-  ingresos: ReadonlyMap<string, Ingreso> | null,
-  semanas: number,
-  ahora: Date,
-): UsoReporte {
+/** Arma el reporte completo de las últimas `semanas` semanas. */
+export function armarReporte(datos: DatosUso, semanas: number, ahora: Date): UsoReporte {
+  const { comercios, actividad, aperturas, pantallas, eventos_desde, ingresos } = datos;
   const lunes = ultimasSemanas(fechaAR(ahora), semanas);
   const desde = (dias: number) => ahora.getTime() - dias * DIA_MS;
-  const activosDesde = (dias: number) =>
-    comercios.filter((c) => c.ultima_actividad && c.ultima_actividad.getTime() >= desde(dias))
-      .length;
+  const desdeHace = (dias: number, f: (c: ComercioHechos) => Date | null | undefined) =>
+    comercios.filter((c) => (f(c)?.getTime() ?? 0) >= desde(dias)).length;
   const ingreso = (c: ComercioHechos) => ingresos?.get(c.clerk_user_id);
 
   return {
     generado_at: ahora.toISOString(),
     ingresos: ingresos ? 'clerk' : 'no_disponible',
+    eventos_desde: iso(eventos_desde),
     totales: {
       comercios: comercios.length,
-      activos_7d: activosDesde(7),
-      activos_30d: activosDesde(30),
-      ingresaron_7d: ingresos
-        ? comercios.filter((c) => (ingreso(c)?.last_active_at?.getTime() ?? 0) >= desde(7)).length
-        : null,
+      activos_7d: desdeHace(7, (c) => c.ultima_actividad),
+      activos_30d: desdeHace(30, (c) => c.ultima_actividad),
+      ingresaron_7d: ingresos ? desdeHace(7, (c) => ingreso(c)?.last_active_at) : null,
+      abrieron_7d: desdeHace(7, (c) => c.ultima_vista),
+      usan_instalada: comercios.filter((c) => c.uso_instalada).length,
+      usan_celular: comercios.filter((c) => c.uso_movil).length,
     },
     embudo: embudo(comercios),
     adopcion: adopcion(comercios),
-    semanal: serieSemanal(comercios, actividad, lunes),
+    semanal: serieSemanal(comercios, actividad, aperturas, lunes),
     cohortes: cohortes(comercios, actividad, lunes),
+    pantallas: [...pantallas],
     comercios: [...comercios]
       .sort((a, b) => (b.ultima_actividad?.getTime() ?? 0) - (a.ultima_actividad?.getTime() ?? 0))
       .map((c) => ({
@@ -298,7 +343,10 @@ export function armarReporte(
         fiados: c.fiados,
         pagos: c.pagos,
         recordatorios: c.recordatorios,
+        comprobantes: c.comprobantes,
+        instalada: c.uso_instalada,
         ultima_actividad: iso(c.ultima_actividad),
+        ultima_vista: iso(c.ultima_vista),
         ultimo_ingreso: iso(ingreso(c)?.last_active_at ?? null),
         ultimo_login: iso(ingreso(c)?.last_sign_in_at ?? null),
       })),

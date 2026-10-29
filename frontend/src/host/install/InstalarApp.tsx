@@ -2,6 +2,7 @@ import { Button } from '../ui/Button';
 import { IconClose } from '../ui/icons';
 import { FOCUS_RING } from '../ui/styles';
 import { Card } from '../ui/surfaces';
+import { registrarUso } from '../uso';
 import { instalarApp, marcarInstalada, ocultarTarjetaInstalar, useInstalar } from './instalar';
 
 /** Ícono "Compartir" de Safari (cuadrado con flecha), para reconocerlo en pantalla. */
@@ -34,7 +35,14 @@ function Cuerpo({ modo }: { modo: 'android' | 'ios' }) {
         <p className="m-0 mb-4 text-body-s text-ink-muted">
           Tenela en la pantalla de inicio y abrila con un toque, como cualquier app.
         </p>
-        <Button variant="primary" size="m" block onClick={() => void instalarApp()}>
+        <Button
+          variant="primary"
+          size="m"
+          block
+          onClick={async () => {
+            if (await instalarApp()) registrarUso('instalar', 'host');
+          }}
+        >
           Instalar
         </Button>
       </>
@@ -50,7 +58,15 @@ function Cuerpo({ modo }: { modo: 'android' | 'ios' }) {
           Elegí <strong className="text-ink">Agregar a inicio</strong>.
         </li>
       </ol>
-      <Button variant="soft" size="s" block onClick={marcarInstalada}>
+      <Button
+        variant="soft"
+        size="s"
+        block
+        onClick={() => {
+          marcarInstalada();
+          registrarUso('instalar', 'host');
+        }}
+      >
         Ya la agregué
       </Button>
     </>

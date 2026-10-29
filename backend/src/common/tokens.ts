@@ -19,3 +19,4 @@ export const TEST_NOTES_ADMIN_REPO = 'TEST_NOTES_ADMIN_REPO' as const;
 export const USO_REPO = 'USO_REPO' as const;
 export const CLERK_INGRESOS = 'CLERK_INGRESOS' as const;
 export const ADMIN_IDS = 'ADMIN_IDS' as const;
+export const USO_EVENTOS_REPO = 'USO_EVENTOS_REPO' as const;
