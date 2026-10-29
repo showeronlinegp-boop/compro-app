@@ -37,6 +37,8 @@ export default {
         fiado: 'var(--fiado)',
         pago: { DEFAULT: 'var(--pago)', hover: 'var(--pago-hover)' },
         whatsapp: { DEFAULT: 'var(--whatsapp)', bubble: 'var(--whatsapp-bubble)' },
+        // Series de gráficos, en este orden (validadas para daltonismo sobre --surface).
+        chart: { 1: 'var(--chart-1)', 2: 'var(--chart-2)' },
         // Identidad de cada súper (comparador): punto, borde o etiqueta, nunca fondo de botón.
         vea: { DEFAULT: '#E30613', light: '#fef2f2' },
         carrefour: { DEFAULT: '#004B93', light: '#eff6ff' },

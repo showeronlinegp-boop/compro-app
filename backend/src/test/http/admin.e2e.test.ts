@@ -64,6 +64,24 @@ afterAll(async () => {
   await testPrisma.$disconnect();
 });
 
+describe('GET /api/admin/acceso', () => {
+  it('admin → { admin: true }; comercio → 403; sin sesión → 401', async () => {
+    const admin = await api()
+      .get('/api/admin/acceso')
+      .set(...AUTH_ADMIN);
+    expect(admin.status).toBe(200);
+    expect(admin.body).toEqual({ admin: true });
+    expect(
+      (
+        await api()
+          .get('/api/admin/acceso')
+          .set(...AUTH_COMERCIO)
+      ).status,
+    ).toBe(403);
+    expect((await api().get('/api/admin/acceso')).status).toBe(401);
+  });
+});
+
 describe('GET /api/admin/uso', () => {
   it('sin sesión → 401', async () => {
     expect((await api().get('/api/admin/uso')).status).toBe(401);

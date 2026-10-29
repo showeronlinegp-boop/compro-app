@@ -3,9 +3,10 @@ import { HostLayout } from './HostLayout';
 import { ModuleProviders } from './ModuleProviders';
 import { MorePage } from './MorePage';
 import PrivacidadPage from './PrivacidadPage';
+import { AdminPage } from './admin/AdminPage';
 import SignInPage from './auth/SignInPage';
 import SignUpPage from './auth/SignUpPage';
-import { type AppModule, HOST_MORE_PATH, type HostTool } from './contract';
+import { type AppModule, HOST_ADMIN_PATH, HOST_MORE_PATH, type HostTool } from './contract';
 import { ActiveModuleProvider } from './nav/ActiveModule';
 import { NavItemsProvider } from './nav/NavItemsProvider';
 import { type HostRoute, ModuleRoutes, flattenRoutes } from './routing';
@@ -57,6 +58,7 @@ export function HostApp({ modules, tools = hostTools }: HostAppProps) {
                       modules={modules}
                       hostRoutes={[
                         { path: HOST_MORE_PATH, element: <MorePage modules={modules} /> },
+                        { path: HOST_ADMIN_PATH, element: <AdminPage modules={modules} /> },
                         ...rootRedirect(modules),
                       ]}
                     />

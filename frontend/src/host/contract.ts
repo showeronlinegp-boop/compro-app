@@ -52,6 +52,9 @@ export const MAX_BOTTOM_ITEMS = 3;
 /** Ruta propia del host. Ningún módulo puede declarar una ruta que caiga acá. */
 export const HOST_MORE_PATH = '/mas';
 
+/** Panel de uso (sólo admins; el backend responde 403 al resto). */
+export const HOST_ADMIN_PATH = '/admin';
+
 export interface AppModule {
   id: string;
   label: string;
