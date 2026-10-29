@@ -63,6 +63,7 @@ Los componentes usan **siempre** el token, nunca el hex ni la paleta default de 
 | Fiado | `--pago` | `#1B4FA8` | Te deben menos (registrar pago), links |
 | Fiado | `--pago-hover` | `#133B80` | Pressed de links |
 | Compartido | `--whatsapp` / `--whatsapp-bubble` | `#1E6B45` / `#DCF3E4` | Todo lo que abre WhatsApp |
+| Panel de uso | `--chart-1` / `--chart-2` | `#2A78D6` / `#EB6834` | **Series de gráficos**, siempre en este orden (la 1 para una sola serie). Validadas para daltonismo sobre `--surface`. Nunca para texto: los valores van en `--ink`. |
 | Comparador | `--super-vea`, `--super-carrefour`, `--super-dia`, `--super-masonline` | `#E30613`, `#004B93`, `#E20032`, `#FF6600` | **Identidad** del súper (punto, borde, etiqueta). Nunca fondo de botón ni texto largo. |
 
 **Reglas de color**

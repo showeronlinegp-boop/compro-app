@@ -1,6 +1,7 @@
 import { SignInButton, SignOutButton, SignedIn, SignedOut, UserButton } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
-import type { AppModule } from './contract';
+import { useEsAdmin } from './admin/useEsAdmin';
+import { type AppModule, HOST_ADMIN_PATH } from './contract';
 import { OpcionInstalar } from './install/InstalarApp';
 import { useActiveModule } from './nav/ActiveModule';
 import { splitNavItems } from './nav/BottomNav';
@@ -11,12 +12,13 @@ import { Card, List, ListRow, Pill, Section } from './ui/surfaces';
 
 /**
  * Pantalla "Más" del host (guía §3.1): atajos del módulo que no entraron en
- * la barra, cambio de módulo (con más de uno) y cuenta.
+ * la barra, cambio de módulo (con más de uno), panel de uso (sólo admins) y cuenta.
  */
 export function MorePage({ modules }: { modules: readonly AppModule[] }) {
   const navigate = useNavigate();
   const { module: active, items } = useActiveModule();
   const { overflow } = splitNavItems(items);
+  const esAdmin = useEsAdmin();
 
   return (
     <div className="flex flex-col gap-5 px-4 py-6">
@@ -64,6 +66,19 @@ export function MorePage({ modules }: { modules: readonly AppModule[] }) {
       )}
 
       <OpcionInstalar />
+
+      {esAdmin && (
+        <Section title="Administración">
+          <List>
+            <ListRow
+              title="Panel de uso"
+              subtitle="Cómo usan la app los comercios"
+              trailing={<IconChevron size={20} className="text-ink-muted" />}
+              onClick={() => navigate(HOST_ADMIN_PATH)}
+            />
+          </List>
+        </Section>
+      )}
 
       <Section title="Cuenta">
         <Card>

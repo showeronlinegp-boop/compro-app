@@ -37,6 +37,10 @@
   --whatsapp: #1e6b45;
   --whatsapp-bubble: #dcf3e4;
 
+  /* Gráficos (panel de uso): series en orden fijo, validadas para daltonismo sobre --surface */
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+
   /* Tipografía */
   --font-display: 'Archivo', system-ui, sans-serif;
   --font-body: 'Atkinson Hyperlegible', system-ui, sans-serif;

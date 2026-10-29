@@ -21,6 +21,12 @@ export class AdminController {
     @Inject(CLERK_INGRESOS) private readonly clerkIngresos: ClerkIngresos,
   ) {}
 
+  /** El front pregunta esto para mostrar (o no) el acceso al panel. 403 = no es admin. */
+  @Get('acceso')
+  acceso() {
+    return { admin: true };
+  }
+
   @Get('uso')
   @Throttle({ global: { ttl: 60_000, limit: 20 } })
   async uso(@Query('semanas') rawSemanas?: string) {
