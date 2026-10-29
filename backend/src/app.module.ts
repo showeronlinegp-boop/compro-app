@@ -16,6 +16,7 @@ import { InterestsModule } from './modules/interests/infrastructure/interests.mo
 import { ProfileModule } from './modules/profile/infrastructure/profile.module.js';
 import { PromosModule } from './modules/promos/infrastructure/promos.module.js';
 import { ShoppingModule } from './modules/shopping/infrastructure/shopping.module.js';
+import { UsoModule } from './modules/uso/infrastructure/uso.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { SchedulerModule } from './scheduler/scheduler.module.js';
 
@@ -60,6 +61,7 @@ export function appImports(comparador: boolean, testNotes = false) {
     HealthModule,
     FiadoModule,
     AdminModule,
+    UsoModule,
     ...(comparador ? COMPARADOR_MODULES : []),
     ...(testNotes ? TEST_NOTES_MODULES : []),
   ];

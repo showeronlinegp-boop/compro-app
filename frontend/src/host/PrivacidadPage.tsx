@@ -19,7 +19,7 @@ function useNoIndex() {
   }, []);
 }
 
-const VIGENCIA = '17 de octubre de 2026';
+const VIGENCIA = '29 de octubre de 2026';
 const RESPONSABLE = 'Mariano Menéndez';
 const CUIT = '20-39963857-8';
 const CONTACTO = 'showeronlinegp@gmail.com';
@@ -80,6 +80,7 @@ export default function PrivacidadPage() {
             items={[
               'El email con el que se registra. Si entra con Google, también recibimos su nombre y foto de perfil.',
               'El nombre del comercio, el alias para cobrar y los textos de los mensajes que configura.',
+              'Cómo usa la app: qué pantallas abre y cuándo, si envió un comprobante por WhatsApp, si la instaló y si la usa desde el celular o la compu. Esto no incluye datos de sus clientes.',
             ]}
           />
           <P>De los clientes que el comercio carga en su libreta:</P>
@@ -98,10 +99,17 @@ export default function PrivacidadPage() {
 
         <Seccion titulo="Para qué los usamos">
           <P>
-            Solo para que la app funcione: mostrarle al comercio sus clientes, sus saldos y su
-            historial, y armar los mensajes de comprobante y recordatorio. No vendemos datos, no los
-            usamos para publicidad y no los compartimos con otros comercios: cada comercio ve
-            únicamente su propia libreta.
+            Para que la app funcione: mostrarle al comercio sus clientes, sus saldos y su historial,
+            y armar los mensajes de comprobante y recordatorio. No vendemos datos, no los usamos
+            para publicidad y no los compartimos con otros comercios: cada comercio ve únicamente su
+            propia libreta.
+          </P>
+          <P>
+            Para mejorar la app: medimos qué funciones se usan y cuáles no (por ejemplo, cuántos
+            comercios anotan pagos o mandan recordatorios). Para eso miramos cantidades por
+            comercio, nunca los nombres, teléfonos ni montos de sus clientes. Esta medición la
+            hacemos nosotros, sin herramientas de analítica de terceros, y guardamos el registro de
+            uso por hasta 400 días.
           </P>
           <P>
             Los movimientos no se pueden borrar ni editar. Si hubo un error, se registra una
@@ -139,7 +147,7 @@ export default function PrivacidadPage() {
         <Seccion titulo="Cookies">
           <P>
             Usamos solo las cookies necesarias para mantener la sesión iniciada. No usamos cookies
-            de publicidad ni de analítica.
+            de publicidad ni de analítica: la medición de uso no usa cookies.
           </P>
         </Seccion>
 

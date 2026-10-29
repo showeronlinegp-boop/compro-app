@@ -27,14 +27,17 @@ export class AdminController {
     const semanas = parseSemanas(rawSemanas);
     if (semanas === null) throw new HttpException('semanas inválido (1 a 52)', 400);
     const ahora = new Date();
-    const [comercios, actividad] = await Promise.all([
+    const desde = primeraSemana(fechaAR(ahora), semanas);
+    const [comercios, actividad, aperturas, pantallas, eventos_desde] = await Promise.all([
       this.repo.comercios(),
-      this.repo.actividad(primeraSemana(fechaAR(ahora), semanas)),
+      this.repo.actividad(desde),
+      this.repo.aperturas(desde),
+      this.repo.pantallas(desde),
+      this.repo.eventosDesde(),
     ]);
+    const ingresos = await this.ingresos(comercios.map((c) => c.clerk_user_id));
     return armarReporte(
-      comercios,
-      actividad,
-      await this.ingresos(comercios.map((c) => c.clerk_user_id)),
+      { comercios, actividad, aperturas, pantallas, eventos_desde, ingresos },
       semanas,
       ahora,
     );

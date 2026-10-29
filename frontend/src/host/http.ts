@@ -39,6 +39,25 @@ export async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+/**
+ * POST en segundo plano que sobrevive al cierre de la pestaña (`keepalive`).
+ * Sólo con sesión: sin token no manda nada. Nunca lanza; si falla, se pierde.
+ */
+export async function postKeepalive(path: string, body: unknown): Promise<void> {
+  try {
+    const auth = await authHeaders();
+    if (!auth.Authorization) return;
+    await fetch(BASE + path, {
+      method: 'POST',
+      keepalive: true,
+      headers: { 'Content-Type': 'application/json', ...auth },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    // Medición de uso: mejor perder un evento que molestar al usuario.
+  }
+}
+
 // Like req<T> but returns null on 404/204 (resource not found / no content).
 // Throws on any other non-ok status so callers get real errors surfaced.
 export async function reqOptional<T>(path: string, opts: RequestInit = {}): Promise<T | null> {

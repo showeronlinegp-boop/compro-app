@@ -6,6 +6,7 @@ import { useActiveModule } from './nav/ActiveModule';
 import { BottomNav } from './nav/BottomNav';
 import { HostToolsOutlet, hostTools } from './tools';
 import { ToastViewport } from './ui/Toast';
+import { useRegistrarPantallas } from './uso';
 
 interface HostLayoutProps {
   modules: readonly AppModule[];
@@ -24,6 +25,7 @@ export function HostLayout({ modules, tools = hostTools, children }: HostLayoutP
   const chrome = chromeOf(location);
   const HeaderActions = location?.module.slots?.headerActions;
   const withBottomNav = chrome === 'full';
+  useRegistrarPantallas(location?.module.id, location?.route.id);
 
   return (
     <div className="relative mx-auto flex h-[100dvh] w-full max-w-app flex-col overflow-hidden bg-bg text-ink font-body text-body">

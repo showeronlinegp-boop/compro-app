@@ -50,7 +50,8 @@ function guardar(key: string) {
   }
 }
 
-function abiertaComoApp(): boolean {
+/** Abierta desde el ícono de inicio (app instalada). */
+export function abiertaComoApp(): boolean {
   const standalone = (navigator as Navigator & { standalone?: boolean }).standalone === true;
   return standalone || window.matchMedia?.('(display-mode: standalone)').matches === true;
 }

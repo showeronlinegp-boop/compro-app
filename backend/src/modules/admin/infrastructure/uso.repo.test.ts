@@ -170,3 +170,82 @@ describe('actividad', () => {
     });
   });
 });
+
+describe('eventos de uso', () => {
+  const vista = (user_id: number, ruta_id: string, created_at: string) => ({
+    user_id,
+    evento: 'pantalla',
+    modulo: 'fiado',
+    ruta_id,
+    created_at: new Date(created_at),
+  });
+
+  it('suma comprobantes, última vista e instalada/celular a cada comercio', async () => {
+    await withRollback(async (tx) => {
+      const u = await seedUser(tx);
+      await tx.uso_eventos.createMany({
+        data: [
+          { ...vista(u.id, 'inicio', '2026-10-27T15:00:00Z'), movil: true },
+          { ...vista(u.id, 'ficha', '2026-10-28T15:00:00Z'), standalone: true },
+          { user_id: u.id, evento: 'comprobante', modulo: 'fiado' },
+          { user_id: u.id, evento: 'comprobante', modulo: 'fiado' },
+        ],
+      });
+      const fila = (await makeUsoRepo(tx, []).comercios()).find((r) => r.user_id === u.id);
+      expect(fila).toMatchObject({ comprobantes: 2, uso_instalada: true, uso_movil: true });
+      expect(fila?.ultima_vista).toEqual(new Date('2026-10-28T15:00:00Z'));
+    });
+  });
+
+  it('sin eventos: cero, sin vista y false', async () => {
+    await withRollback(async (tx) => {
+      const u = await seedUser(tx);
+      const fila = (await makeUsoRepo(tx, []).comercios()).find((r) => r.user_id === u.id);
+      expect(fila).toMatchObject({
+        comprobantes: 0,
+        ultima_vista: null,
+        uso_instalada: false,
+        uso_movil: false,
+      });
+    });
+  });
+
+  it('aperturas por semana y vistas por pantalla, sin las cuentas excluidas', async () => {
+    await withRollback(async (tx) => {
+      const a = await seedUser(tx);
+      const b = await seedUser(tx);
+      const excluida = await seedUser(tx);
+      await tx.uso_eventos.createMany({
+        data: [
+          vista(a.id, 'inicio', '2026-10-27T15:00:00Z'),
+          vista(a.id, 'inicio', '2026-10-28T15:00:00Z'),
+          vista(b.id, 'inicio', '2026-10-28T15:00:00Z'),
+          vista(b.id, 'ajustes', '2026-10-28T15:00:00Z'),
+          vista(a.id, 'clientes', '2026-10-01T15:00:00Z'), // antes de `desde`
+          vista(excluida.id, 'avisos', '2026-10-28T15:00:00Z'),
+          { user_id: a.id, evento: 'comprobante', modulo: 'fiado' }, // no es pantalla
+        ],
+      });
+      const repo = makeUsoRepo(tx, [excluida.clerk_user_id]);
+      const nuestros = new Set([a.id, b.id, excluida.id]);
+
+      const aperturas = (await repo.aperturas('2026-10-26'))
+        .filter((r) => nuestros.has(r.user_id))
+        .sort((x, y) => x.user_id - y.user_id);
+      expect(aperturas).toEqual([
+        { user_id: a.id, semana: '2026-10-26' },
+        { user_id: b.id, semana: '2026-10-26' },
+      ]);
+
+      // La base de tests puede tener eventos de otros tests: se mira que estén los nuestros.
+      const pantallas = await repo.pantallas('2026-10-26');
+      const inicio = pantallas.find((p) => p.modulo === 'fiado' && p.ruta_id === 'inicio');
+      expect(inicio?.vistas).toBeGreaterThanOrEqual(3);
+      expect(inicio?.comercios).toBeGreaterThanOrEqual(2);
+      expect(pantallas.some((p) => p.ruta_id === 'ajustes')).toBe(true);
+      expect(pantallas.some((p) => p.ruta_id === 'clientes')).toBe(false);
+
+      expect(await repo.eventosDesde()).toBeInstanceOf(Date);
+    });
+  });
+});

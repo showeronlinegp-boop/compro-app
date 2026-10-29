@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   type ActividadSemanal,
   type ComercioHechos,
+  type DatosUso,
   adopcion,
   armarReporte,
   cohortes,
@@ -40,6 +41,10 @@ function comercio(over: Partial<ComercioHechos> = {}): ComercioHechos {
     primer_pago: null,
     primer_recordatorio: null,
     ultima_actividad: null,
+    comprobantes: 0,
+    ultima_vista: null,
+    uso_instalada: false,
+    uso_movil: false,
     ...over,
   };
 }
@@ -85,8 +90,12 @@ describe('serieSemanal', () => {
       { user_id: 1, semana: '2026-10-19', accion: 'pago' },
       { user_id: 2, semana: '2026-10-19', accion: 'fiado' },
     ];
-    const [s1, s2] = serieSemanal(comercios, actividad, ['2026-10-12', '2026-10-19']);
-    expect(s1).toMatchObject({ semana: '2026-10-12', altas: 1, activos: 1 });
+    const aperturas = [
+      { user_id: 1, semana: '2026-10-19' },
+      { user_id: 2, semana: '2026-10-19' },
+    ];
+    const [s1, s2] = serieSemanal(comercios, actividad, aperturas, ['2026-10-12', '2026-10-19']);
+    expect(s1).toMatchObject({ semana: '2026-10-12', altas: 1, activos: 1, abrieron: 0 });
     expect(s1?.por_accion).toEqual({
       cliente: 1,
       fiado: 1,
@@ -94,14 +103,14 @@ describe('serieSemanal', () => {
       correccion: 0,
       recordatorio: 0,
     });
-    expect(s2).toMatchObject({ semana: '2026-10-19', altas: 1, activos: 2 });
+    expect(s2).toMatchObject({ semana: '2026-10-19', altas: 1, activos: 2, abrieron: 2 });
     expect(s2?.por_accion.fiado).toBe(1);
     expect(s2?.por_accion.pago).toBe(1);
   });
 
   it('el alta se cuenta en hora argentina (domingo 23:30 AR sigue siendo esa semana)', () => {
     const domingoNoche = new Date('2026-10-19T02:30:00Z'); // dom 18/10 23:30 AR
-    const [s] = serieSemanal([comercio({ alta: domingoNoche })], [], ['2026-10-12']);
+    const [s] = serieSemanal([comercio({ alta: domingoNoche })], [], [], ['2026-10-12']);
     expect(s?.altas).toBe(1);
   });
 });
@@ -152,6 +161,8 @@ describe('embudo y adopción', () => {
       pagos: 1,
       recordatorios: 2,
       plantillas_propias: 2,
+      comprobantes: 3,
+      uso_instalada: true,
     }),
   ];
 
@@ -170,6 +181,8 @@ describe('embudo y adopción', () => {
     expect(porFuncion['Alias para cobrar']?.comercios).toBe(1);
     expect(porFuncion['Mensajes personalizados']?.comercios).toBe(1);
     expect(porFuncion['Límite de fiado']?.comercios).toBe(0);
+    expect(porFuncion['Comprobante por WhatsApp']?.comercios).toBe(1);
+    expect(porFuncion['App instalada']?.comercios).toBe(1);
   });
 });
 
@@ -187,16 +200,34 @@ describe('armarReporte', () => {
       clerk_user_id: 'user_2',
       ultima_actividad: new Date('2026-10-10T12:00:00Z'),
     }),
-    comercio({ user_id: 3, clerk_user_id: 'user_3' }),
+    comercio({
+      user_id: 3,
+      clerk_user_id: 'user_3',
+      ultima_vista: new Date('2026-10-27T12:00:00Z'),
+      uso_instalada: true,
+      uso_movil: true,
+    }),
   ];
+  const datos = (over: Partial<DatosUso> = {}): DatosUso => ({
+    comercios,
+    actividad: [],
+    aperturas: [],
+    pantallas: [],
+    eventos_desde: null,
+    ingresos: null,
+    ...over,
+  });
 
   it('activos por última actividad y orden por actividad más reciente', () => {
-    const r = armarReporte(comercios, [], null, 4, ahora);
+    const r = armarReporte(datos(), 4, ahora);
     expect(r.totales).toEqual({
       comercios: 3,
       activos_7d: 1,
       activos_30d: 2,
       ingresaron_7d: null,
+      abrieron_7d: 1,
+      usan_instalada: 1,
+      usan_celular: 1,
     });
     expect(r.comercios.map((c) => c.user_id)).toEqual([1, 2, 3]);
     expect(r.comercios[0]?.comercio).toBe('Almacén');
@@ -209,7 +240,7 @@ describe('armarReporte', () => {
   });
 
   it('sin Clerk: ingresos no disponibles y sin último ingreso', () => {
-    const r = armarReporte(comercios, [], null, 4, ahora);
+    const r = armarReporte(datos(), 4, ahora);
     expect(r.ingresos).toBe('no_disponible');
     expect(r.comercios[0]?.ultimo_ingreso).toBeNull();
   });
@@ -219,11 +250,56 @@ describe('armarReporte', () => {
       ['user_2', { last_active_at: new Date('2026-10-27T00:00:00Z'), last_sign_in_at: null }],
       ['user_3', { last_active_at: new Date('2026-09-01T00:00:00Z'), last_sign_in_at: null }],
     ]);
-    const r = armarReporte(comercios, [], ingresos, 4, ahora);
+    const r = armarReporte(datos({ ingresos }), 4, ahora);
     expect(r.ingresos).toBe('clerk');
     expect(r.totales.ingresaron_7d).toBe(1);
     expect(r.comercios.find((c) => c.user_id === 2)?.ultimo_ingreso).toBe(
       '2026-10-27T00:00:00.000Z',
     );
+  });
+});
+
+describe('armarReporte con eventos de uso', () => {
+  it('pasa las pantallas, la fecha desde que se mide y los datos de cada comercio', () => {
+    const pantallas = [{ modulo: 'fiado', ruta_id: 'inicio', vistas: 9, comercios: 2 }];
+    const r = armarReporte(
+      {
+        comercios: [
+          comercio({ comprobantes: 2, uso_instalada: true, ultima_vista: ar('2026-10-28') }),
+        ],
+        actividad: [],
+        aperturas: [],
+        pantallas,
+        eventos_desde: new Date('2026-10-29T03:00:00Z'),
+        ingresos: null,
+      },
+      2,
+      new Date('2026-10-29T15:00:00Z'),
+    );
+    expect(r.eventos_desde).toBe('2026-10-29T03:00:00.000Z');
+    expect(r.pantallas).toEqual(pantallas);
+    expect(r.comercios[0]).toMatchObject({
+      comprobantes: 2,
+      instalada: true,
+      ultima_vista: '2026-10-28T15:00:00.000Z',
+    });
+  });
+
+  it('sin eventos todavía: eventos_desde null y nadie abrió', () => {
+    const r = armarReporte(
+      {
+        comercios: [comercio()],
+        actividad: [],
+        aperturas: [],
+        pantallas: [],
+        eventos_desde: null,
+        ingresos: null,
+      },
+      2,
+      new Date('2026-10-29T15:00:00Z'),
+    );
+    expect(r.eventos_desde).toBeNull();
+    expect(r.totales.abrieron_7d).toBe(0);
+    expect(r.semanal.every((s) => s.abrieron === 0)).toBe(true);
   });
 });
