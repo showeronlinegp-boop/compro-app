@@ -140,7 +140,7 @@ describe('vencimientos', () => {
 
   it('un fiado sin fecha vence a los umbralDias de anotado', () => {
     expect(imputarFiados([mov('fiado', 500, '2026-10-01')], 30)).toEqual([
-      { id: seq, vence: '2026-10-31', pendiente: 500 },
+      { id: seq, vence: '2026-10-31', pendiente: 500, recargo_de: null },
     ]);
   });
 
@@ -149,8 +149,8 @@ describe('vencimientos', () => {
     const pronto = mov('fiado', 800, '2026-10-05', null, '2026-10-12');
     const pago = mov('pago', -1200, '2026-10-12');
     expect(imputarFiados([tarde, pronto, pago], 30)).toEqual([
-      { id: pronto.id, vence: '2026-10-12', pendiente: 0 },
-      { id: tarde.id, vence: '2026-10-30', pendiente: 600 },
+      { id: pronto.id, vence: '2026-10-12', pendiente: 0, recargo_de: null },
+      { id: tarde.id, vence: '2026-10-30', pendiente: 600, recargo_de: null },
     ]);
   });
 
@@ -161,25 +161,27 @@ describe('vencimientos', () => {
     const f2 = mov('fiado', 300, '2026-10-03', null, '2026-10-20');
     const corr2 = mov('correccion', -300, '2026-10-03', f2.id);
     expect(imputarFiados([f, p, corr, f2, corr2], 30)).toEqual([
-      { id: f.id, vence: '2026-10-10', pendiente: 1000 },
+      { id: f.id, vence: '2026-10-10', pendiente: 1000, recargo_de: null },
     ]);
   });
 
   it('saldo a favor cubre lo que se anota después', () => {
     const p = mov('pago', -500, '2026-10-01');
     const f = mov('fiado', 800, '2026-10-02', null, '2026-10-09');
-    expect(imputarFiados([p, f], 30)).toEqual([{ id: f.id, vence: '2026-10-09', pendiente: 300 }]);
+    expect(imputarFiados([p, f], 30)).toEqual([
+      { id: f.id, vence: '2026-10-09', pendiente: 300, recargo_de: null },
+    ]);
   });
 
   it('vencido (hoy incluido) y próximo vencimiento', () => {
     const v = vencimientos(
       [
-        { id: 1, vence: '2026-10-10', pendiente: 200 },
-        { id: 2, vence: '2026-10-13', pendiente: 300 },
-        { id: 3, vence: '2026-10-15', pendiente: 0 },
-        { id: 4, vence: '2026-10-20', pendiente: 400 },
-        { id: 5, vence: '2026-10-20', pendiente: 100 },
-        { id: 6, vence: '2026-11-01', pendiente: 900 },
+        { id: 1, vence: '2026-10-10', pendiente: 200, recargo_de: null },
+        { id: 2, vence: '2026-10-13', pendiente: 300, recargo_de: null },
+        { id: 3, vence: '2026-10-15', pendiente: 0, recargo_de: null },
+        { id: 4, vence: '2026-10-20', pendiente: 400, recargo_de: null },
+        { id: 5, vence: '2026-10-20', pendiente: 100, recargo_de: null },
+        { id: 6, vence: '2026-11-01', pendiente: 900, recargo_de: null },
       ],
       '2026-10-13',
     );
