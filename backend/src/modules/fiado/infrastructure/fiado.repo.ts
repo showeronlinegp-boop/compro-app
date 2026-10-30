@@ -14,6 +14,7 @@ import {
   diasSinPagar,
   excedeLimite,
   fechaAR,
+  idsCorregidos,
   imputarFiados,
   montoConSigno,
   montoCorreccion,
@@ -174,6 +175,8 @@ export interface FiadoRepo {
   actualizarCliente(clienteId: number, patch: Partial<ClienteInput>): Promise<ClienteView>;
   crearMovimiento(input: MovimientoInput): Promise<MovimientoResult>;
   corregirMovimiento(movimientoId: number): Promise<MovimientoResult>;
+  /** "Perdonar" un recargo: lo deshace y marca su período "No cobrar". */
+  perdonarRecargo(movimientoId: number): Promise<MovimientoResult>;
   registrarRecordatorio(clienteId: number): Promise<{ cliente_id: number; enviado_at: string }>;
   getAjustes(): Promise<AjustesView>;
   putAjustes(input: AjustesInput): Promise<AjustesView>;
@@ -231,16 +234,19 @@ const configDe = (v: Prisma.JsonValue | null | undefined): ConfigRecargo | null 
   v && typeof v === 'object' && !Array.isArray(v) ? (v as unknown as ConfigRecargo) : null;
 
 /**
- * Último período ya tratado de cada fiado: sumado (aunque después se haya
- * perdonado, así perdonar no hace reaparecer la sugerencia) u omitido.
+ * Último período ya tratado de cada fiado: con un recargo vigente o marcado
+ * "No cobrar". Un recargo deshecho NO cuenta ("me equivoqué": la sugerencia
+ * vuelve); perdonar un recargo además lo marca "No cobrar", así no reaparece.
  */
 function tratadosDe(
   movs: readonly MovimientoLedger[],
   omitidos: ReadonlyMap<number, number>,
 ): Map<number, number> {
   const out = new Map(omitidos);
+  const deshechos = idsCorregidos(movs);
   for (const m of movs) {
     if (m.tipo !== 'recargo' || m.recargo_de == null || m.recargo_periodo == null) continue;
+    if (deshechos.has(m.id)) continue;
     out.set(m.recargo_de, Math.max(out.get(m.recargo_de) ?? 0, m.recargo_periodo));
   }
   return out;
@@ -712,6 +718,31 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
         }
         throw err;
       }
+    },
+
+    async perdonarRecargo(movimientoId) {
+      const recargo = await prisma.fiado_movimientos.findFirst({
+        where: { id: movimientoId, user_id: uid(), tipo: 'recargo' },
+      });
+      if (!recargo || recargo.recargo_de == null || recargo.recargo_periodo == null) {
+        throw new FiadoError(404, 'Recargo no encontrado');
+      }
+      // Primero "No cobrar" (si ya estaba, no pasa nada) y después la corrección:
+      // si la corrección fallara, el período queda omitido y el recargo vigente,
+      // que se puede volver a perdonar.
+      try {
+        await prisma.fiado_recargo_omisiones.create({
+          data: {
+            user_id: uid(),
+            cliente_id: recargo.cliente_id,
+            fiado_id: recargo.recargo_de,
+            periodo: recargo.recargo_periodo,
+          },
+        });
+      } catch (err) {
+        if (!isUniqueViolation(err, 'fiado_id')) throw err;
+      }
+      return this.corregirMovimiento(movimientoId);
     },
 
     async registrarRecordatorio(clienteId) {
