@@ -71,7 +71,12 @@ export function makeUsoRepo(prisma: PrismaLike, excluir: readonly string[]): Uso
             min(created_at) FILTER (WHERE tipo = 'fiado') AS primer_fiado,
             min(created_at) FILTER (WHERE tipo = 'pago') AS primer_pago,
             max(created_at) AS ultimo_movimiento,
-            count(*) FILTER (WHERE tipo = 'recargo')::int AS recargos_sumados
+            -- Sólo los vigentes: un recargo deshecho o perdonado no cuenta como sumado.
+            count(*) FILTER (
+              WHERE tipo = 'recargo' AND NOT EXISTS (
+                SELECT 1 FROM fiado_movimientos k WHERE k.corrige_id = fiado_movimientos.id
+              )
+            )::int AS recargos_sumados
           FROM fiado_movimientos WHERE user_id = u.id
         ) m
         CROSS JOIN LATERAL (

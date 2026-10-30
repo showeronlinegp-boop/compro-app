@@ -283,6 +283,26 @@ describe('recargos por atraso', () => {
           recargo_dias: 14,
         },
       });
+      // Uno deshecho: no cuenta como sumado.
+      const deshecho = await tx.fiado_movimientos.create({
+        data: {
+          user_id: u.id,
+          cliente_id: c.id,
+          tipo: 'recargo',
+          monto: 500,
+          recargo_de: f.id,
+          recargo_dias: 20,
+        },
+      });
+      await tx.fiado_movimientos.create({
+        data: {
+          user_id: u.id,
+          cliente_id: c.id,
+          tipo: 'correccion',
+          monto: -500,
+          corrige_id: deshecho.id,
+        },
+      });
       await tx.fiado_recargo_omisiones.create({
         data: { user_id: u.id, cliente_id: c.id, fiado_id: f.id, dias: 40 },
       });
