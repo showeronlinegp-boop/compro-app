@@ -137,6 +137,15 @@ function Reporte({ datos, modules }: { datos: UsoReporte; modules: readonly AppM
           { label: 'Desde el celular', value: totales.usan_celular },
         ]}
       />
+      {totales.recargos_activos > 0 && (
+        <DataCells
+          cells={[
+            { label: 'Con recargos', value: totales.recargos_activos },
+            { label: 'Recargos sumados', value: totales.recargos_sumados },
+            { label: 'No cobrados', value: totales.recargos_no_cobrados },
+          ]}
+        />
+      )}
       {datos.ingresos === 'no_disponible' && (
         <Notice>Clerk no respondió: falta cuándo entró cada comercio por última vez.</Notice>
       )}

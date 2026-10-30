@@ -54,6 +54,9 @@ function reporte(over: Partial<UsoReporte> = {}): UsoReporte {
       abrieron_7d: 7,
       usan_instalada: 2,
       usan_celular: 8,
+      recargos_activos: 0,
+      recargos_sumados: 0,
+      recargos_no_cobrados: 0,
     },
     embudo: [
       { paso: 'Se registró', comercios: 9 },
@@ -214,6 +217,29 @@ describe('Panel de uso', () => {
     expect(celda('Entraron (Clerk)')).toBe('—');
     expect(screen.getByText(/aperturas todavía no tienen registros/)).toBeDefined();
     expect(screen.queryByText('Abrieron la app', { selector: 'figcaption *' })).toBeNull();
+  });
+
+  it('recargos: las celdas aparecen sólo si algún comercio los prendió', async () => {
+    renderAt('/admin');
+    await screen.findByText(/de 9 registrados/);
+    expect(screen.queryByText('Con recargos', { selector: 'dt' })).toBeNull();
+    cleanup();
+
+    api.uso.mockResolvedValue(
+      reporte({
+        totales: {
+          ...reporte().totales,
+          recargos_activos: 3,
+          recargos_sumados: 12,
+          recargos_no_cobrados: 4,
+        },
+      }),
+    );
+    renderAt('/admin');
+    await screen.findByText(/de 9 registrados/);
+    expect(celda('Con recargos')).toBe('3');
+    expect(celda('Recargos sumados')).toBe('12');
+    expect(celda('No cobrados')).toBe('4');
   });
 
   it('403: dice que es solo para administradores', async () => {

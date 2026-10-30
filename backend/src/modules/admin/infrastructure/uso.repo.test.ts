@@ -249,3 +249,75 @@ describe('eventos de uso', () => {
     });
   });
 });
+
+describe('recargos por atraso', () => {
+  it('cuenta la opción prendida, los recargos sumados y los "No cobrar"', async () => {
+    await withRollback(async (tx) => {
+      const u = await seedUser(tx);
+      const sin = await seedUser(tx);
+      await tx.fiado_ajustes.create({
+        data: {
+          user_id: u.id,
+          recargo: {
+            esquema: 'mes',
+            tipo: 'pct',
+            valor: 5,
+            tolerancia: 7,
+            desde: 'vencimiento',
+            activado_el: '2026-10-01',
+          },
+          recargo_version: 1,
+        },
+      });
+      const c = await tx.fiado_clientes.create({ data: { user_id: u.id, nombre: 'Marta' } });
+      const f = await tx.fiado_movimientos.create({
+        data: { user_id: u.id, cliente_id: c.id, tipo: 'fiado', monto: 10_000 },
+      });
+      await tx.fiado_movimientos.create({
+        data: {
+          user_id: u.id,
+          cliente_id: c.id,
+          tipo: 'recargo',
+          monto: 500,
+          recargo_de: f.id,
+          recargo_dias: 14,
+        },
+      });
+      // Uno deshecho: no cuenta como sumado.
+      const deshecho = await tx.fiado_movimientos.create({
+        data: {
+          user_id: u.id,
+          cliente_id: c.id,
+          tipo: 'recargo',
+          monto: 500,
+          recargo_de: f.id,
+          recargo_dias: 20,
+        },
+      });
+      await tx.fiado_movimientos.create({
+        data: {
+          user_id: u.id,
+          cliente_id: c.id,
+          tipo: 'correccion',
+          monto: -500,
+          corrige_id: deshecho.id,
+        },
+      });
+      await tx.fiado_recargo_omisiones.create({
+        data: { user_id: u.id, cliente_id: c.id, fiado_id: f.id, dias: 40 },
+      });
+      const rows = await makeUsoRepo(tx, []).comercios();
+      expect(rows.find((r) => r.user_id === u.id)).toMatchObject({
+        recargos_activos: true,
+        recargos_sumados: 1,
+        recargos_no_cobrados: 1,
+        fiados: 1,
+      });
+      expect(rows.find((r) => r.user_id === sin.id)).toMatchObject({
+        recargos_activos: false,
+        recargos_sumados: 0,
+        recargos_no_cobrados: 0,
+      });
+    });
+  });
+});

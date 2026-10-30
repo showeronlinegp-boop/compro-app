@@ -56,6 +56,10 @@ export interface ComercioHechos {
   /** Alguna vez la abrió instalada (desde el ícono) / desde un celular. */
   uso_instalada: boolean;
   uso_movil: boolean;
+  /** Recargos por atraso: opción prendida, recargos sumados y períodos "No cobrar". */
+  recargos_activos: boolean;
+  recargos_sumados: number;
+  recargos_no_cobrados: number;
 }
 
 /** El comercio hizo `accion` al menos una vez en la semana que empieza el lunes `semana`. */
@@ -186,6 +190,11 @@ export interface UsoReporte {
     /** Alguna vez la usaron instalada / desde el celular. */
     usan_instalada: number;
     usan_celular: number;
+    /** Comercios con los recargos prendidos. */
+    recargos_activos: number;
+    /** Recargos sugeridos que se sumaron / que se dejaron sin cobrar (todos los comercios). */
+    recargos_sumados: number;
+    recargos_no_cobrados: number;
   };
   embudo: PasoEmbudo[];
   adopcion: Adopcion[];
@@ -300,6 +309,7 @@ export function adopcion(comercios: readonly ComercioHechos[]): Adopcion[] {
     { funcion: 'Alias para cobrar', comercios: contar((c) => c.alias), de },
     { funcion: 'Mensajes personalizados', comercios: contar((c) => c.plantillas_propias > 0), de },
     { funcion: 'App instalada', comercios: contar((c) => c.uso_instalada), de },
+    { funcion: 'Recargos por atraso', comercios: contar((c) => c.recargos_sumados > 0), de },
   ];
 }
 
@@ -326,6 +336,9 @@ export function armarReporte(datos: DatosUso, semanas: number, ahora: Date): Uso
       abrieron_7d: desdeHace(7, (c) => c.ultima_vista),
       usan_instalada: comercios.filter((c) => c.uso_instalada).length,
       usan_celular: comercios.filter((c) => c.uso_movil).length,
+      recargos_activos: comercios.filter((c) => c.recargos_activos).length,
+      recargos_sumados: comercios.reduce((acc, c) => acc + c.recargos_sumados, 0),
+      recargos_no_cobrados: comercios.reduce((acc, c) => acc + c.recargos_no_cobrados, 0),
     },
     embudo: embudo(comercios),
     adopcion: adopcion(comercios),
