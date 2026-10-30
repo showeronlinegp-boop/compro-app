@@ -8,6 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { testPrisma } from '../../../test/helpers/test-client.js';
 import { withRollback } from '../../../test/helpers/with-rollback.js';
 import { FiadoError, fechaAR, sumarDias } from '../domain/fiado.js';
+import { TERMINOS_RECARGO_VERSION } from '../domain/recargo.js';
 import { makeFiadoRepo } from './fiado.repo.js';
 
 type Tx = Parameters<Parameters<typeof testPrisma.$transaction>[0]>[0];
@@ -17,12 +18,18 @@ const haceDias = (n: number) => sumarDias(hoy, -n);
 const fecha = (ymd: string) => new Date(`${ymd}T15:00:00Z`);
 const mes5 = { esquema: 'mes', tipo: 'pct', valor: 5, tolerancia: 7 };
 
-async function preparar(tx: Tx) {
+/** Usuario con un cliente; salvo `terminos: false`, ya aceptó los términos del recargo. */
+async function preparar(tx: Tx, { terminos = true } = {}) {
   const u = await tx.users.create({
     data: { clerk_user_id: `test_recargo_${Date.now()}_${Math.random()}` },
   });
   const repo = makeFiadoRepo(tx, u.id);
   await repo.putAjustes({ comercio: 'Almacén Don Pepe' });
+  if (terminos) {
+    await tx.fiado_terminos_aceptados.create({
+      data: { user_id: u.id, documento: 'recargo', version: TERMINOS_RECARGO_VERSION },
+    });
+  }
   const cliente = await tx.fiado_clientes.create({
     data: { user_id: u.id, nombre: 'Marta Giménez' },
   });
@@ -139,6 +146,40 @@ describe('aviso obligatorio', () => {
       await repo.registrarAvisoRecargo(cliente.id, 'informado');
       await expect(
         tx.$executeRaw`UPDATE fiado_avisos_recargo SET via = 'whatsapp' WHERE cliente_id = ${cliente.id}`,
+      ).rejects.toThrow(/append-only/);
+    });
+  });
+
+  it('activar pide aceptar los términos vigentes y deja la aceptación registrada', async () => {
+    await withRollback(async (tx) => {
+      const { u, repo } = await preparar(tx, { terminos: false });
+      expect(await repo.getAjustes()).toMatchObject({
+        recargo_terminos_version: TERMINOS_RECARGO_VERSION,
+        recargo_terminos_aceptados: false,
+      });
+      // Apagado se guarda igual (otros ajustes no piden nada).
+      await repo.putAjustes({ recargo: null, alias: 'pepe.mp' });
+      await expect(repo.putAjustes({ recargo: mes5 })).rejects.toEqual(
+        conflicto(/aceptar los términos/),
+      );
+      await expect(
+        repo.putAjustes({ recargo: mes5, terminos_recargo: '2020-01-01' }),
+      ).rejects.toEqual(conflicto(/términos cambiaron/));
+      expect((await repo.getAjustes()).recargo).toBeNull();
+
+      const activo = await repo.putAjustes({
+        recargo: mes5,
+        terminos_recargo: TERMINOS_RECARGO_VERSION,
+      });
+      expect(activo).toMatchObject({ recargo_version: 1, recargo_terminos_aceptados: true });
+      // Ya aceptados: cambiar las condiciones no los vuelve a pedir ni duplica el registro.
+      await repo.putAjustes({ recargo: { ...mes5, valor: 6 } });
+      const filas = await tx.fiado_terminos_aceptados.findMany({ where: { user_id: u.id } });
+      expect(filas).toEqual([
+        expect.objectContaining({ documento: 'recargo', version: TERMINOS_RECARGO_VERSION }),
+      ]);
+      await expect(
+        tx.$executeRaw`DELETE FROM fiado_terminos_aceptados WHERE user_id = ${u.id}`,
       ).rejects.toThrow(/append-only/);
     });
   });

@@ -5,6 +5,7 @@ import { useToast } from '../../../host/ui/Toast';
 import { TextArea, TextField } from '../../../host/ui/controls';
 import { Card, Notice, Section } from '../../../host/ui/surfaces';
 import { type BorradorRecargo, SeccionRecargo, borradorDe, configDe } from '../AjustesRecargo';
+import { DialogoTerminosRecargo } from '../TerminosRecargo';
 import { type Ajustes as AjustesData, fiadoApi, mensajeDeError } from '../api';
 import { Cargando, ErrorCarga } from '../components';
 import { ETIQUETA_VARIABLE, FIRMA, VARIABLES, type Variable, insertarVariable } from '../mensajes';
@@ -27,6 +28,11 @@ export default function Ajustes() {
   const [recargo, setRecargo] = useState<BorradorRecargo>(() => borradorDe(null));
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** Aceptó los términos del recargo en esta pantalla (se mandan al guardar). */
+  const [aceptoTerminos, setAceptoTerminos] = useState(false);
+  /** El diálogo de términos abierto: al prender el interruptor o al guardar. */
+  const [pideTerminos, setPideTerminos] = useState<null | 'activar' | 'guardar'>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     if (carga.data) {
@@ -57,9 +63,34 @@ export default function Ajustes() {
     });
   }
 
+  const faltanTerminos = () => form !== null && !form.recargo_terminos_aceptados && !aceptoTerminos;
+
+  /** Prender el interruptor pide aceptar los términos (si todavía no los aceptó). */
+  function cambiarRecargo(b: BorradorRecargo) {
+    if (b.activo && !recargo.activo && faltanTerminos()) {
+      setPideTerminos('activar');
+      return;
+    }
+    setRecargo(b);
+  }
+
+  function aceptarTerminos() {
+    setAceptoTerminos(true);
+    const motivo = pideTerminos;
+    setPideTerminos(null);
+    if (motivo === 'activar') setRecargo((b) => ({ ...b, activo: true }));
+    // Si fue al guardar, se vuelve a enviar el formulario ya con la aceptación.
+    else requestAnimationFrame(() => formRef.current?.requestSubmit());
+  }
+
   async function guardar(e: FormEvent) {
     e.preventDefault();
     if (!form) return;
+    // Términos nuevos (o nunca aceptados) con los recargos prendidos: primero aceptarlos.
+    if (recargo.activo && faltanTerminos()) {
+      setPideTerminos('guardar');
+      return;
+    }
     setGuardando(true);
     setError(null);
     try {
@@ -71,6 +102,9 @@ export default function Ajustes() {
         plantilla_pago: form.plantilla_pago,
         plantilla_recordatorio: form.plantilla_recordatorio,
         recargo: configDe(recargo),
+        ...(aceptoTerminos && recargo.activo
+          ? { terminos_recargo: form.recargo_terminos_version }
+          : {}),
       });
       const hayQueAvisar =
         guardado.recargo !== null && guardado.recargo_version > form.recargo_version;
@@ -90,7 +124,7 @@ export default function Ajustes() {
   }
 
   return (
-    <form onSubmit={guardar} className="flex flex-col gap-5 px-4 py-6" noValidate>
+    <form ref={formRef} onSubmit={guardar} className="flex flex-col gap-5 px-4 py-6" noValidate>
       <ScreenHeader variant="place" title="Ajustes" />
 
       {carga.error && !carga.data && (
@@ -131,7 +165,7 @@ export default function Ajustes() {
 
           <SeccionRecargo
             borrador={recargo}
-            onChange={setRecargo}
+            onChange={cambiarRecargo}
             condiciones={form.recargo_condiciones}
           />
 
@@ -184,6 +218,13 @@ export default function Ajustes() {
           </Button>
 
           <p className="m-0 text-center text-caption text-ink-muted">{FIRMA}</p>
+
+          {pideTerminos && (
+            <DialogoTerminosRecargo
+              onAceptar={aceptarTerminos}
+              onCancelar={() => setPideTerminos(null)}
+            />
+          )}
         </>
       )}
     </form>

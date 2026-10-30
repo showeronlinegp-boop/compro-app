@@ -1,6 +1,7 @@
 import { Button } from '../../host/ui/Button';
 import { FilterChips, TextField } from '../../host/ui/controls';
 import { Card, Section } from '../../host/ui/surfaces';
+import { TERMINOS_RECARGO_URL } from './TerminosRecargo';
 import type { ConfigRecargo, EsquemaRecargo } from './api';
 import { Interruptor } from './recargos';
 
@@ -115,7 +116,15 @@ export function SeccionRecargo({
             <>
               <p className="m-0 rounded-m bg-warn-bg p-3 text-body-s text-warn">
                 Antes de cobrarle recargos a un cliente tenés que avisarle las condiciones. Te lo
-                vamos a pedir en su ficha. Informarle es tu responsabilidad.
+                vamos a pedir en su ficha. Informarle es tu responsabilidad.{' '}
+                <a
+                  className="font-bold text-warn underline"
+                  href={TERMINOS_RECARGO_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Ver términos
+                </a>
               </p>
 
               <div className="flex flex-col gap-2">

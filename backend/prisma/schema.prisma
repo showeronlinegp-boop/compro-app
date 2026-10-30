@@ -32,6 +32,7 @@ model users {
   fiado_ajustes           fiado_ajustes?
   fiado_avisos_recargo    fiado_avisos_recargo[]
   fiado_recargo_omisiones fiado_recargo_omisiones[]
+  fiado_terminos_aceptados fiado_terminos_aceptados[]
 
   test_notes test_notes[]
 
@@ -464,4 +465,21 @@ model uso_eventos {
   @@index([created_at])
   @@index([user_id, created_at])
   @@map("uso_eventos")
+}
+
+// ---------------------------------------------------------------------------
+// fiado_terminos_aceptados — APPEND-ONLY (trigger): cada vez que el comercio
+// aceptó unos términos (hoy sólo 'recargo'), con su versión y fecha.
+// ---------------------------------------------------------------------------
+model fiado_terminos_aceptados {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  documento  String   @db.VarChar(30)
+  version    String   @db.VarChar(20)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, documento])
+  @@map("fiado_terminos_aceptados")
 }

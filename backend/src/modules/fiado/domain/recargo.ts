@@ -48,6 +48,13 @@ export interface ConfigRecargo {
 }
 
 export const TRAMOS_MAX = 3;
+
+/**
+ * Versión vigente de los términos del recargo por atraso (la fecha de
+ * "Términos y condiciones" en /terminos). Si el texto cambia de fondo, sube y
+ * se vuelve a pedir la aceptación antes de guardar con recargos activos.
+ */
+export const TERMINOS_RECARGO_VERSION = '2026-10-30';
 export const PCT_MAX = 100;
 export const FIJO_MAX = 9_999_999;
 export const TOLERANCIA_MAX = 90;

@@ -19,6 +19,7 @@
   --on-dark-muted: #c9d2d0;
   --on-dark-body: #dce3e1;
   --focus: #1b4fa8;
+  --scrim: rgba(21, 25, 27, 0.5);
 
   /* Estados */
   --ok: #1e6b45;
