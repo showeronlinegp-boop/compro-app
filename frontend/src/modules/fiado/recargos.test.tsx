@@ -26,6 +26,7 @@ const m = vi.hoisted(() => ({
   ajustes: vi.fn(),
   ficha: vi.fn(),
   corregir: vi.fn(),
+  perdonarRecargo: vi.fn(),
   guardarAjustes: vi.fn(),
   sumarRecargos: vi.fn(),
   omitirRecargo: vi.fn(),
@@ -372,16 +373,17 @@ describe('historial: recargos', () => {
       recargo_periodo: 1,
     });
     m.ficha.mockResolvedValue(ficha({ historial: [recargo, mov()] }));
-    m.corregir.mockResolvedValue({});
+    m.perdonarRecargo.mockResolvedValue({});
     renderAt('/fiado/clientes/1');
 
     expect(
       await screen.findByText(/del fiado del 15 sept · 5 % de \$ 12\.000 · mes 1/),
     ).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Perdonar' }));
-    expect(m.corregir).not.toHaveBeenCalled();
+    expect(m.perdonarRecargo).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Sí, perdonar' }));
-    await waitFor(() => expect(m.corregir).toHaveBeenCalledWith(20));
+    await waitFor(() => expect(m.perdonarRecargo).toHaveBeenCalledWith(20));
+    expect(m.corregir).not.toHaveBeenCalled();
     expect(await screen.findByText(/Perdonaste el recargo de \$ 600/)).toBeDefined();
   });
 

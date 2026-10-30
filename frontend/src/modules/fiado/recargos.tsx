@@ -202,7 +202,8 @@ const CONFIRMAR_MS = 5000;
 
 /**
  * "Perdonar" en la fila de un recargo sin pagar. Pide un segundo toque porque
- * una corrección no se puede deshacer. Perdona sólo ese recargo.
+ * una corrección no se puede deshacer. Perdona sólo ese recargo y deja su
+ * período como "No cobrar" (la sugerencia de ese mes no vuelve).
  */
 export function BotonPerdonar({
   recargo,
@@ -223,7 +224,7 @@ export function BotonPerdonar({
   async function perdonar() {
     setEnviando(true);
     try {
-      await fiadoApi.corregir(recargo.id);
+      await fiadoApi.perdonarRecargo(recargo.id);
       onPerdonado(null);
     } catch (err) {
       onPerdonado(mensajeDeError(err));

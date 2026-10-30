@@ -196,6 +196,9 @@ export const fiadoApi = {
     req<MovimientoResult>('/fiado/movimientos', json('POST', input)),
   corregir: (movimientoId: number) =>
     req<MovimientoResult>(`/fiado/movimientos/${movimientoId}/correccion`, { method: 'POST' }),
+  /** "Perdonar" un recargo: lo deshace y deja ese período como "No cobrar". */
+  perdonarRecargo: (movimientoId: number) =>
+    req<MovimientoResult>(`/fiado/movimientos/${movimientoId}/perdonar`, { method: 'POST' }),
   recordar: (clienteId: number) =>
     req<{ cliente_id: number; enviado_at: string }>(`/fiado/clientes/${clienteId}/recordatorios`, {
       method: 'POST',
