@@ -96,7 +96,7 @@ const mov = (over: Partial<Movimiento> = {}): Movimiento => ({
   vence: '2026-10-15',
   pendiente: 12000,
   recargo_de: null,
-  recargo_periodo: null,
+  recargo_dias: null,
   ...over,
 });
 
@@ -293,7 +293,7 @@ describe('ficha: sugerencia', () => {
       monto: 600,
       nota: '5 % de $ 12.000 · mes 1',
       recargo_de: 10,
-      recargo_periodo: 1,
+      recargo_dias: 14,
       vence: null,
     });
     const recargoB = mov({
@@ -302,7 +302,7 @@ describe('ficha: sugerencia', () => {
       monto: 800,
       nota: '5 % de $ 16.000 · mes 1',
       recargo_de: 11,
-      recargo_periodo: 1,
+      recargo_dias: 14,
       vence: null,
     });
     m.sumarRecargos.mockResolvedValue({
@@ -370,7 +370,7 @@ describe('historial: recargos', () => {
       vence: null,
       pendiente: 600,
       recargo_de: 10,
-      recargo_periodo: 1,
+      recargo_dias: 14,
     });
     m.ficha.mockResolvedValue(ficha({ historial: [recargo, mov()] }));
     m.perdonarRecargo.mockResolvedValue({});

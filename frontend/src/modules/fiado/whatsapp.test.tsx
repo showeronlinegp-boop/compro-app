@@ -161,7 +161,7 @@ describe('Listo: comprobante por WhatsApp', () => {
           vence: null,
           pendiente: null,
           recargo_de: null,
-          recargo_periodo: null,
+          recargo_dias: null,
         },
         cliente: cliente(),
       },
