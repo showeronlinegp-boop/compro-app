@@ -16,6 +16,7 @@ const base = { tolerancia: 7, desde: 'vencimiento', activado_el: '2026-01-01' } 
 const mes5: ConfigRecargo = { ...base, esquema: 'mes', tipo: 'pct', valor: 5 };
 const mesFijo: ConfigRecargo = { ...base, esquema: 'mes', tipo: 'fijo', valor: 500 };
 const semana1: ConfigRecargo = { ...base, esquema: 'semana', tipo: 'pct', valor: 1 };
+const dia01: ConfigRecargo = { ...base, esquema: 'dia', tipo: 'pct', valor: 0.1 };
 const tramos: ConfigRecargo = {
   ...base,
   esquema: 'tramos',
@@ -43,7 +44,8 @@ const sugerir = (c: ConfigRecargo, dia: number, tratado = 0, f = fiado()) =>
   recargosSugeridos([f], new Map(tratado ? [[f.id, tratado]] : []), c, diaDeAtraso(dia));
 
 describe('períodos y redondeo', () => {
-  it('mes = cada 30 días, semana = cada 7, tramos = índice', () => {
+  it('mes = cada 30 días, semana = cada 7, día = cada día, tramos = índice', () => {
+    expect([1, 2, 30, 31].map((d) => periodoDe(d, dia01))).toEqual([1, 2, 30, 31]);
     expect([1, 30, 31, 60, 61].map((d) => periodoDe(d, mes5))).toEqual([1, 1, 2, 2, 3]);
     expect([1, 7, 8, 14, 15].map((d) => periodoDe(d, semana1))).toEqual([1, 1, 2, 2, 3]);
     expect([1, 30, 31, 60, 61, 400].map((d) => periodoDe(d, tramos))).toEqual([1, 1, 2, 2, 3, 3]);
@@ -168,6 +170,52 @@ describe('sugerencia: la tabla de la propuesta ($ 28.000 vencidos, 7 días de gr
   });
 });
 
+describe('por día', () => {
+  it('pasada la gracia suma todos los días desde el vencimiento; después, de a uno', () => {
+    expect(sugerir(dia01, 7)).toEqual([]);
+    // 0,1 % de $ 28.000 = $ 28 por día; 8 días = $ 224 → $ 220.
+    expect(sugerir(dia01, 8)[0]).toMatchObject({
+      periodo_desde: 1,
+      periodo_hasta: 8,
+      monto: 220,
+      detalle: '0,1 % de $ 28.000 · días 1 a 8',
+    });
+    expect(sugerir(dia01, 9, 8)[0]).toMatchObject({
+      monto: 20,
+      detalle: '0,1 % de $ 28.000 · día 9',
+    });
+    expect(sugerir(dia01, 9, 9)).toEqual([]);
+  });
+
+  it('con deudas chicas, los días se acumulan hasta llegar a $ 10', () => {
+    const chico = fiado({ pendiente: 1000 }); // $ 1 por día
+    expect(sugerir(dia01, 9, 0, chico)).toEqual([]);
+    expect(sugerir(dia01, 10, 0, chico)[0]).toMatchObject({ periodo_hasta: 10, monto: 10 });
+  });
+
+  it('monto fijo por día', () => {
+    const fijo: ConfigRecargo = { ...base, esquema: 'dia', tipo: 'fijo', valor: 50 };
+    expect(sugerir(fijo, 10, 8)[0]).toMatchObject({
+      monto: 100,
+      detalle: '$ 50 por día · días 9 a 10',
+    });
+  });
+
+  it('condiciones, validación y aviso al cambiar de esquema', () => {
+    expect(condicionesTexto(dia01)).toBe(
+      'un recargo del 0,1 % por cada día de atraso, después de 7 días de gracia',
+    );
+    expect(
+      parseConfigRecargo(
+        { esquema: 'dia', tipo: 'pct', valor: 0.5, tolerancia: 0 },
+        '2026-10-30',
+        null,
+      ),
+    ).toMatchObject({ esquema: 'dia', valor: 0.5 });
+    expect(requiereAviso(semana1, { ...dia01, valor: 0.01 })).toBe(true);
+  });
+});
+
 describe('textos', () => {
   it('condiciones en una frase', () => {
     expect(condicionesTexto(mes5)).toBe(
@@ -267,7 +315,7 @@ describe('parseConfigRecargo', () => {
   });
 
   it.each([
-    ['esquema desconocido', { esquema: 'dia', tipo: 'pct', valor: 1 }],
+    ['esquema desconocido', { esquema: 'anio', tipo: 'pct', valor: 1 }],
     ['sin tipo', { esquema: 'mes', valor: 5 }],
     ['porcentaje 0', { esquema: 'mes', tipo: 'pct', valor: 0 }],
     ['porcentaje con 3 decimales', { esquema: 'mes', tipo: 'pct', valor: 1.234 }],

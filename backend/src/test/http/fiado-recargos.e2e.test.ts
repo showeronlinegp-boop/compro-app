@@ -63,7 +63,7 @@ describe('recargos por HTTP', () => {
     const res = await api()
       .put('/api/fiado/ajustes')
       .set(...A)
-      .send({ recargo: { esquema: 'dia', tipo: 'pct', valor: 5 } });
+      .send({ recargo: { esquema: 'anio', tipo: 'pct', valor: 5 } });
     expect(res.status).toBe(400);
   });
 

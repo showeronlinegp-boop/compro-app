@@ -1,7 +1,8 @@
 /**
  * Recargos por atraso — dominio puro, sin DB ni Nest.
  *
- * Reglas (propuesta "Recargos por atraso", decisiones del 30/10/2026):
+ * Reglas (propuesta "Recargos por atraso", decisiones del 30/10/2026; el
+ * esquema "por día" se sumó después, a pedido de comercios):
  * - El recargo se SUGIERE; nunca se suma solo. Es un movimiento más del libro,
  *   pegado al fiado que lo generó (`recargo_de`).
  * - Cada fiado tiene su propio calendario: los días de atraso se cuentan desde
@@ -22,7 +23,19 @@ import { FIRMA, FiadoError, diasEntre, formatMoney, primerNombre } from './fiado
 
 // ─── Configuración ────────────────────────────────────────────────────────────
 
-export type EsquemaRecargo = 'mes' | 'semana' | 'tramos';
+export type EsquemaRecargo = 'mes' | 'semana' | 'dia' | 'tramos';
+
+/** Esquemas con un valor fijo por período (todos menos tramos). */
+type EsquemaPeriodico = Exclude<EsquemaRecargo, 'tramos'>;
+
+/** Duración en días de cada período. */
+const DIAS_PERIODO: Record<EsquemaPeriodico, number> = { mes: 30, semana: 7, dia: 1 };
+
+const UNIDAD: Record<EsquemaPeriodico, { uno: string; varios: string }> = {
+  mes: { uno: 'mes', varios: 'meses' },
+  semana: { uno: 'semana', varios: 'semanas' },
+  dia: { uno: 'día', varios: 'días' },
+};
 
 export interface TramoRecargo {
   /** Último día de atraso del tramo; null = "más de …" (sólo el último). */
@@ -33,9 +46,9 @@ export interface TramoRecargo {
 
 export interface ConfigRecargo {
   esquema: EsquemaRecargo;
-  /** Sólo mes/semana: porcentaje sobre lo vencido o monto fijo en pesos. */
+  /** Sólo mes/semana/día: porcentaje sobre lo vencido o monto fijo en pesos. */
   tipo?: 'pct' | 'fijo';
-  /** Sólo mes/semana: el porcentaje (ej. 5 o 2.5) o el monto fijo. */
+  /** Sólo mes/semana/día: el porcentaje (ej. 5 o 2.5) o el monto fijo. */
   valor?: number;
   /** Sólo tramos: de 1 a 3, ordenados por `hasta`. */
   tramos?: TramoRecargo[];
@@ -84,8 +97,13 @@ export function parseConfigRecargo(
   if (v === null) return null;
   if (typeof v !== 'object' || Array.isArray(v)) throw bad('recargo inválido');
   const b = v as Record<string, unknown>;
-  if (b.esquema !== 'mes' && b.esquema !== 'semana' && b.esquema !== 'tramos') {
-    throw bad("recargo.esquema debe ser 'mes', 'semana' o 'tramos'");
+  if (
+    b.esquema !== 'mes' &&
+    b.esquema !== 'semana' &&
+    b.esquema !== 'dia' &&
+    b.esquema !== 'tramos'
+  ) {
+    throw bad("recargo.esquema debe ser 'mes', 'semana', 'dia' o 'tramos'");
   }
   const tolerancia = numero(b.tolerancia ?? 0, 'recargo.tolerancia', 0, TOLERANCIA_MAX, false);
   if (b.desde !== undefined && b.desde !== 'vencimiento' && b.desde !== 'activacion') {
@@ -186,7 +204,7 @@ export function condicionesTexto(c: ConfigRecargo): string {
         : (partes[0] ?? '');
     return `un recargo ${lista} de atraso (en total, no se suman), ${gracia(c.tolerancia)}`;
   }
-  const periodo = c.esquema === 'mes' ? 'mes' : 'semana';
+  const periodo = UNIDAD[c.esquema].uno;
   const cuanto =
     c.tipo === 'fijo' ? `de ${formatMoney(c.valor ?? 0)}` : `del ${formatPct(c.valor ?? 0)}`;
   return `un recargo ${cuanto} por cada ${periodo} de atraso, ${gracia(c.tolerancia)}`;
@@ -211,12 +229,12 @@ export function inicioAtraso(vence: string, c: ConfigRecargo): string {
 
 /**
  * Período de atraso (1, 2, …) para `dias` de atraso, o 0 si no hay atraso.
- * Mes = cada 30 días; semana = cada 7; tramos = índice del tramo (1-based).
+ * Mes = cada 30 días; semana = cada 7; día = cada día; tramos = índice del
+ * tramo (1-based).
  */
 export function periodoDe(dias: number, c: ConfigRecargo): number {
   if (dias <= 0) return 0;
-  if (c.esquema === 'mes') return Math.ceil(dias / 30);
-  if (c.esquema === 'semana') return Math.ceil(dias / 7);
+  if (c.esquema !== 'tramos') return Math.ceil(dias / DIAS_PERIODO[c.esquema]);
   const tramos = c.tramos ?? [];
   const i = tramos.findIndex((t) => t.hasta === null || dias <= t.hasta);
   return i === -1 ? tramos.length : i + 1;
@@ -240,9 +258,8 @@ function nombrePeriodo(c: ConfigRecargo, desde: number, hasta: number): string {
     if (t.hasta === null) return `más de ${prev?.hasta ?? 0} días`;
     return hasta === 1 ? `hasta ${t.hasta} días` : `${(prev?.hasta ?? 0) + 1} a ${t.hasta} días`;
   }
-  const unidad = c.esquema === 'mes' ? 'mes' : 'semana';
-  const plural = c.esquema === 'mes' ? 'meses' : 'semanas';
-  return desde === hasta ? `${unidad} ${hasta}` : `${plural} ${desde} a ${hasta}`;
+  const { uno, varios } = UNIDAD[c.esquema];
+  return desde === hasta ? `${uno} ${hasta}` : `${varios} ${desde} a ${hasta}`;
 }
 
 // ─── Sugerencia ───────────────────────────────────────────────────────────────
@@ -303,7 +320,7 @@ export function recargosSugeridos(
           : `${formatPct(pctTramo(c, periodo))} de ${formatMoney(f.pendiente)}`;
     } else if (c.tipo === 'fijo') {
       bruto = (c.valor ?? 0) * (periodo - tratado);
-      como = `${formatMoney(c.valor ?? 0)} por ${c.esquema === 'mes' ? 'mes' : 'semana'}`;
+      como = `${formatMoney(c.valor ?? 0)} por ${UNIDAD[c.esquema].uno}`;
     } else {
       bruto = (f.pendiente * (c.valor ?? 0) * (periodo - tratado)) / 100;
       como = `${formatPct(c.valor ?? 0)} de ${formatMoney(f.pendiente)}`;

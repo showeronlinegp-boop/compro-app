@@ -71,6 +71,7 @@ export function configDe(b: BorradorRecargo): Omit<ConfigRecargo, 'activado_el'>
 const ESQUEMAS = [
   { value: 'mes', label: 'Por mes' },
   { value: 'semana', label: 'Por semana' },
+  { value: 'dia', label: 'Por día' },
   { value: 'tramos', label: 'Por tramos' },
 ] as const;
 
@@ -83,6 +84,18 @@ const DESDE = [
   { value: 'vencimiento', label: 'Desde el vencimiento' },
   { value: 'activacion', label: 'Desde hoy' },
 ] as const;
+
+/**
+ * Por día, el porcentaje engaña: 1 % por día son 30 % por mes. Mostramos el
+ * equivalente mensual para que el comercio vea lo que va a pagar el cliente.
+ */
+export function equivalenteMensual(b: BorradorRecargo): string | null {
+  if (b.esquema !== 'dia' || b.tipo !== 'pct') return null;
+  const v = num(b.valor);
+  if (!Number.isFinite(v) || v <= 0) return null;
+  const mes = (v * 30).toLocaleString('es-AR', { maximumFractionDigits: 2 });
+  return `Equivale a ${mes} % por mes.`;
+}
 
 const soloNumero = (v: string, max: number) => v.replace(/[^\d,.]/g, '').slice(0, max);
 
@@ -99,7 +112,8 @@ export function SeccionRecargo({
   const set = (patch: Partial<BorradorRecargo>) => onChange({ ...b, ...patch });
   const setTramo = (i: number, patch: Partial<{ hasta: string; pct: string }>) =>
     set({ tramos: b.tramos.map((t, j) => (j === i ? { ...t, ...patch } : t)) });
-  const periodo = b.esquema === 'mes' ? 'mes' : 'semana';
+  const periodo = b.esquema === 'mes' ? 'mes' : b.esquema === 'semana' ? 'semana' : 'día';
+  const equivalente = equivalenteMensual(b);
 
   return (
     <Section title="Recargo por atraso">
@@ -156,11 +170,14 @@ export function SeccionRecargo({
                     onChange={(e) =>
                       set({ valor: soloNumero(e.target.value, b.tipo === 'pct' ? 6 : 7) })
                     }
-                    hint={
+                    hint={[
                       b.tipo === 'pct'
                         ? 'Sobre lo que falta pagar de cada fiado atrasado.'
-                        : 'Se suma por cada fiado atrasado. Múltiplos de $ 10.'
-                    }
+                        : 'Se suma por cada fiado atrasado. Múltiplos de $ 10.',
+                      equivalente,
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
                   />
                 </>
               ) : (
