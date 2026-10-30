@@ -121,6 +121,13 @@ export class FiadoController {
     return run(() => this.repo.corregirMovimiento(parseId(id, 'id')));
   }
 
+  /** "Perdonar" un recargo: lo deshace y deja su período como "No cobrar". */
+  @Post('movimientos/:id/perdonar')
+  @HttpCode(201)
+  perdonarRecargo(@Param('id') id: string) {
+    return run(() => this.repo.perdonarRecargo(parseId(id, 'id')));
+  }
+
   @Get('ajustes')
   getAjustes() {
     return run(() => this.repo.getAjustes());

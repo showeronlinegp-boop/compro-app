@@ -305,7 +305,7 @@ describe('sugerir y sumar', () => {
 });
 
 describe('perdonar, deshacer y no cobrar', () => {
-  it('perdonar un recargo (deshacer) no hace reaparecer la sugerencia del mismo mes', async () => {
+  it('deshacer un recargo recién sumado ("me equivoqué") devuelve la sugerencia', async () => {
     await withRollback(async (tx) => {
       const { repo, cliente, fiado } = await preparar(tx);
       await fiado(28_000, 14);
@@ -314,7 +314,25 @@ describe('perdonar, deshacer y no cobrar', () => {
       await repo.corregirMovimiento((movimientos[0] as { id: number }).id);
       const ficha = await repo.ficha(cliente.id);
       expect(ficha.cliente.saldo).toBe(28_000);
+      expect(ficha.recargo?.sugeridos.map((s) => s.monto)).toEqual([1400]);
+    });
+  });
+
+  it('perdonar un recargo lo deshace y no hace reaparecer la sugerencia del mismo mes', async () => {
+    await withRollback(async (tx) => {
+      const { u, repo, cliente, fiado } = await preparar(tx);
+      const f = await fiado(28_000, 14);
+      await activarYAvisar(repo, cliente.id);
+      const { movimientos } = await repo.sumarRecargos(cliente.id, null, null);
+      const r = await repo.perdonarRecargo((movimientos[0] as { id: number }).id);
+      expect(r.movimiento.tipo).toBe('correccion');
+      const ficha = await repo.ficha(cliente.id);
+      expect(ficha.cliente.saldo).toBe(28_000);
       expect(ficha.recargo?.sugeridos).toEqual([]);
+      expect(await tx.fiado_recargo_omisiones.findMany({ where: { user_id: u.id } })).toEqual([
+        expect.objectContaining({ fiado_id: f.id, periodo: 1 }),
+      ]);
+      await expect(repo.perdonarRecargo(f.id)).rejects.toMatchObject({ status: 404 });
     });
   });
 
