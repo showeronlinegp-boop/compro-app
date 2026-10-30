@@ -57,6 +57,10 @@ export interface UsoReporte {
     abrieron_7d: number;
     usan_instalada: number;
     usan_celular: number;
+    /** Recargos por atraso: comercios con la opción prendida, sumados y "No cobrar". */
+    recargos_activos: number;
+    recargos_sumados: number;
+    recargos_no_cobrados: number;
   };
   embudo: { paso: string; comercios: number }[];
   adopcion: { funcion: string; comercios: number; de: number }[];

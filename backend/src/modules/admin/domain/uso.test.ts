@@ -45,6 +45,9 @@ function comercio(over: Partial<ComercioHechos> = {}): ComercioHechos {
     ultima_vista: null,
     uso_instalada: false,
     uso_movil: false,
+    recargos_activos: false,
+    recargos_sumados: 0,
+    recargos_no_cobrados: 0,
     ...over,
   };
 }
@@ -228,6 +231,9 @@ describe('armarReporte', () => {
       abrieron_7d: 1,
       usan_instalada: 1,
       usan_celular: 1,
+      recargos_activos: 0,
+      recargos_sumados: 0,
+      recargos_no_cobrados: 0,
     });
     expect(r.comercios.map((c) => c.user_id)).toEqual([1, 2, 3]);
     expect(r.comercios[0]?.comercio).toBe('Almacén');
@@ -301,5 +307,42 @@ describe('armarReporte con eventos de uso', () => {
     expect(r.eventos_desde).toBeNull();
     expect(r.totales.abrieron_7d).toBe(0);
     expect(r.semanal.every((s) => s.abrieron === 0)).toBe(true);
+  });
+});
+
+describe('recargos por atraso en el reporte', () => {
+  it('cuenta comercios con la opción prendida, recargos sumados y no cobrados', () => {
+    const r = armarReporte(
+      {
+        comercios: [
+          comercio({
+            user_id: 1,
+            fiados: 3,
+            recargos_activos: true,
+            recargos_sumados: 4,
+            recargos_no_cobrados: 1,
+          }),
+          comercio({ user_id: 2, fiados: 2, recargos_activos: true, recargos_no_cobrados: 2 }),
+          comercio({ user_id: 3, fiados: 1 }),
+        ],
+        actividad: [],
+        aperturas: [],
+        pantallas: [],
+        eventos_desde: null,
+        ingresos: null,
+      },
+      2,
+      new Date('2026-10-30T15:00:00Z'),
+    );
+    expect(r.totales).toMatchObject({
+      recargos_activos: 2,
+      recargos_sumados: 4,
+      recargos_no_cobrados: 3,
+    });
+    expect(r.adopcion.find((a) => a.funcion === 'Recargos por atraso')).toEqual({
+      funcion: 'Recargos por atraso',
+      comercios: 1,
+      de: 3,
+    });
   });
 });
