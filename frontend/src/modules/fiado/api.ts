@@ -123,7 +123,7 @@ export interface RecargosResult {
   cliente: Cliente;
 }
 
-export type EsquemaRecargo = 'mes' | 'semana' | 'tramos';
+export type EsquemaRecargo = 'mes' | 'semana' | 'dia' | 'tramos';
 
 export interface TramoRecargo {
   /** Último día de atraso del tramo; null = "más de …" (sólo el último). */
