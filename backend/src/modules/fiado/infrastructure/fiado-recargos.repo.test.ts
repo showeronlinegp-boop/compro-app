@@ -213,7 +213,7 @@ describe('sugerir y sumar', () => {
           tipo: 'recargo',
           monto: 1400,
           recargo_de: f.id,
-          recargo_periodo: 1,
+          recargo_dias: 14,
           nota: '5 % de $ 28.000 · mes 1',
           pendiente: 1400,
         }),
@@ -330,7 +330,7 @@ describe('perdonar, deshacer y no cobrar', () => {
       expect(ficha.cliente.saldo).toBe(28_000);
       expect(ficha.recargo?.sugeridos).toEqual([]);
       expect(await tx.fiado_recargo_omisiones.findMany({ where: { user_id: u.id } })).toEqual([
-        expect.objectContaining({ fiado_id: f.id, periodo: 1 }),
+        expect.objectContaining({ fiado_id: f.id, dias: 14 }),
       ]);
       await expect(repo.perdonarRecargo(f.id)).rejects.toMatchObject({ status: 404 });
     });
@@ -361,7 +361,7 @@ describe('perdonar, deshacer y no cobrar', () => {
       const ficha = await repo.omitirRecargo(cliente.id, a.id);
       expect(ficha.recargo?.sugeridos.map((s) => s.fiado_id)).toEqual([b.id]);
       expect(await tx.fiado_recargo_omisiones.findMany({ where: { user_id: u.id } })).toEqual([
-        expect.objectContaining({ fiado_id: a.id, periodo: 1 }),
+        expect.objectContaining({ fiado_id: a.id, dias: 14 }),
       ]);
       await expect(repo.omitirRecargo(cliente.id, a.id)).rejects.toEqual(conflicto(/ya no está/));
     });
@@ -439,7 +439,7 @@ describe('reglas de la base', () => {
             cliente_id: cliente.id,
             tipo: 'recargo',
             monto: 100,
-            recargo_periodo: 1,
+            recargo_dias: 14,
           },
         }),
       ).rejects.toThrow();

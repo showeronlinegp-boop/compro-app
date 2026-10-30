@@ -4,10 +4,12 @@
 
 -- ── Movimientos: nuevo tipo 'recargo', siempre pegado a un fiado ────────────
 -- recargo_de      = el fiado al que pertenece el recargo.
--- recargo_periodo = último período de atraso que cubre (mes, semana o tramo).
+-- recargo_dias   = días de atraso que cubre (hasta ese día). Se guardan DÍAS y no
+--                  el número de período, así un cambio de esquema (semana → mes,
+--                  mes → tramos) sigue sabiendo qué parte del atraso ya se trató.
 ALTER TABLE "fiado_movimientos"
   ADD COLUMN "recargo_de" INTEGER,
-  ADD COLUMN "recargo_periodo" SMALLINT;
+  ADD COLUMN "recargo_dias" SMALLINT;
 
 ALTER TABLE "fiado_movimientos" ADD CONSTRAINT "fiado_movimientos_recargo_de_fkey"
   FOREIGN KEY ("recargo_de") REFERENCES "fiado_movimientos"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -18,10 +20,10 @@ CREATE INDEX "fiado_movimientos_recargo_de_idx" ON "fiado_movimientos"("recargo_
 ALTER TABLE "fiado_movimientos" DROP CONSTRAINT "fiado_movimientos_tipo_check";
 ALTER TABLE "fiado_movimientos" ADD CONSTRAINT "fiado_movimientos_tipo_check"
   CHECK (
-    ("tipo" = 'fiado' AND "monto" > 0 AND "corrige_id" IS NULL AND "recargo_de" IS NULL AND "recargo_periodo" IS NULL) OR
-    ("tipo" = 'pago' AND "monto" < 0 AND "corrige_id" IS NULL AND "recargo_de" IS NULL AND "recargo_periodo" IS NULL) OR
-    ("tipo" = 'correccion' AND "monto" <> 0 AND "corrige_id" IS NOT NULL AND "recargo_de" IS NULL AND "recargo_periodo" IS NULL) OR
-    ("tipo" = 'recargo' AND "monto" > 0 AND "corrige_id" IS NULL AND "recargo_de" IS NOT NULL AND "recargo_periodo" >= 1)
+    ("tipo" = 'fiado' AND "monto" > 0 AND "corrige_id" IS NULL AND "recargo_de" IS NULL AND "recargo_dias" IS NULL) OR
+    ("tipo" = 'pago' AND "monto" < 0 AND "corrige_id" IS NULL AND "recargo_de" IS NULL AND "recargo_dias" IS NULL) OR
+    ("tipo" = 'correccion' AND "monto" <> 0 AND "corrige_id" IS NOT NULL AND "recargo_de" IS NULL AND "recargo_dias" IS NULL) OR
+    ("tipo" = 'recargo' AND "monto" > 0 AND "corrige_id" IS NULL AND "recargo_de" IS NOT NULL AND "recargo_dias" >= 1)
   );
 
 -- ── Ajustes: configuración del recargo ───────────────────────────────────────
@@ -78,12 +80,13 @@ CREATE TRIGGER "fiado_avisos_recargo_append_only"
   FOR EACH ROW EXECUTE FUNCTION "fiado_avisos_recargo_append_only"();
 
 -- ── Períodos que el comercio decidió no cobrar ("No cobrar") ────────────────
+-- dias = días de atraso hasta los que se decidió no cobrar (como recargo_dias).
 CREATE TABLE "fiado_recargo_omisiones" (
   "id" SERIAL PRIMARY KEY,
   "user_id" INTEGER NOT NULL,
   "cliente_id" INTEGER NOT NULL,
   "fiado_id" INTEGER NOT NULL,
-  "periodo" SMALLINT NOT NULL CHECK ("periodo" >= 1),
+  "dias" SMALLINT NOT NULL CHECK ("dias" >= 1),
   "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT now()
 );
 
@@ -94,5 +97,5 @@ ALTER TABLE "fiado_recargo_omisiones" ADD CONSTRAINT "fiado_recargo_omisiones_cl
 ALTER TABLE "fiado_recargo_omisiones" ADD CONSTRAINT "fiado_recargo_omisiones_fiado_id_fkey"
   FOREIGN KEY ("fiado_id") REFERENCES "fiado_movimientos"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
-CREATE UNIQUE INDEX "fiado_recargo_omisiones_fiado_id_periodo_key" ON "fiado_recargo_omisiones"("fiado_id", "periodo");
+CREATE UNIQUE INDEX "fiado_recargo_omisiones_fiado_id_dias_key" ON "fiado_recargo_omisiones"("fiado_id", "dias");
 CREATE INDEX "fiado_recargo_omisiones_user_id_cliente_id_idx" ON "fiado_recargo_omisiones"("user_id", "cliente_id");

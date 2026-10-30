@@ -38,6 +38,7 @@ const diaDeAtraso = (n: number) => {
   const d = new Date(Date.parse('2026-10-01T00:00:00Z') + n * 86_400_000);
   return d.toISOString().slice(0, 10);
 };
+/** `tratado` = días de atraso ya cubiertos por un recargo o un "No cobrar". */
 const sugerir = (c: ConfigRecargo, dia: number, tratado = 0, f = fiado()) =>
   recargosSugeridos([f], new Map(tratado ? [[f.id, tratado]] : []), c, diaDeAtraso(dia));
 
@@ -64,27 +65,27 @@ describe('sugerencia: la tabla de la propuesta ($ 28.000 vencidos, 7 días de gr
 
   it('5 % por mes: 1.400 el día 14, +1.400 el 31, +1.400 el 61', () => {
     expect(sugerir(mes5, 14)[0]).toMatchObject({ monto: 1400, periodo_desde: 1, periodo_hasta: 1 });
-    expect(sugerir(mes5, 14, 1)).toEqual([]); // el mes 1 ya está tratado
-    expect(sugerir(mes5, 31, 1)[0]).toMatchObject({ monto: 1400, periodo_hasta: 2 });
-    expect(sugerir(mes5, 61, 2)[0]).toMatchObject({ monto: 1400, periodo_hasta: 3 });
+    expect(sugerir(mes5, 14, 14)).toEqual([]); // el mes 1 ya está tratado
+    expect(sugerir(mes5, 31, 14)[0]).toMatchObject({ monto: 1400, periodo_hasta: 2 });
+    expect(sugerir(mes5, 61, 31)[0]).toMatchObject({ monto: 1400, periodo_hasta: 3 });
   });
 
   it('$ 500 por mes', () => {
     expect(sugerir(mesFijo, 14)[0]?.monto).toBe(500);
-    expect(sugerir(mesFijo, 31, 1)[0]?.monto).toBe(500);
+    expect(sugerir(mesFijo, 31, 14)[0]?.monto).toBe(500);
   });
 
   it('1 % por semana: 560 el día 14, +840 el 31, +1.120 el 61', () => {
     expect(sugerir(semana1, 14)[0]?.monto).toBe(560);
-    expect(sugerir(semana1, 31, 2)[0]?.monto).toBe(840);
-    expect(sugerir(semana1, 61, 5)[0]?.monto).toBe(1120);
+    expect(sugerir(semana1, 31, 14)[0]?.monto).toBe(840);
+    expect(sugerir(semana1, 61, 31)[0]?.monto).toBe(1120);
   });
 
   it('tramos 5/10/20 %: 1.400, +1.400 y +2.800 (el % del tramo es el total)', () => {
     expect(sugerir(tramos, 14)[0]).toMatchObject({ monto: 1400, periodo_hasta: 1 });
-    expect(sugerir(tramos, 31, 1)[0]).toMatchObject({ monto: 1400, periodo_hasta: 2 });
-    expect(sugerir(tramos, 61, 2)[0]).toMatchObject({ monto: 2800, periodo_hasta: 3 });
-    expect(sugerir(tramos, 400, 3)).toEqual([]); // después del último tramo no hay más
+    expect(sugerir(tramos, 31, 14)[0]).toMatchObject({ monto: 1400, periodo_hasta: 2 });
+    expect(sugerir(tramos, 61, 31)[0]).toMatchObject({ monto: 2800, periodo_hasta: 3 });
+    expect(sugerir(tramos, 400, 61)).toEqual([]); // después del último tramo no hay más
   });
 
   it('varios períodos sin tratar se suman en una sola sugerencia', () => {
@@ -98,7 +99,7 @@ describe('sugerencia: la tabla de la propuesta ($ 28.000 vencidos, 7 días de gr
 
   it('un pago parcial achica los períodos siguientes, sin borrar ninguno', () => {
     // Mes 1 ya sumado sobre 28.000; pagó 14.000: el mes 2 es 5 % de lo que falta.
-    expect(sugerir(mes5, 31, 1, fiado({ pendiente: 14_000 }))[0]?.monto).toBe(700);
+    expect(sugerir(mes5, 31, 14, fiado({ pendiente: 14_000 }))[0]?.monto).toBe(700);
   });
 
   it('un fiado pagado no genera recargo', () => {
@@ -125,8 +126,8 @@ describe('sugerencia: la tabla de la propuesta ($ 28.000 vencidos, 7 días de gr
     ]);
     // 14/11 es el día 30 de A: sigue en el mes 1. El 15/11 (día 31) entra en el 2; B sigue en el 1.
     const tratados = new Map([
-      [1, 1],
-      [2, 1],
+      [1, 14],
+      [2, 9],
     ]);
     expect(recargosSugeridos([a, b], tratados, mes5, '2026-11-14')).toEqual([]);
     expect(recargosSugeridos([a, b], tratados, mes5, '2026-11-15').map((s) => s.fiado_id)).toEqual([
@@ -144,10 +145,24 @@ describe('sugerencia: la tabla de la propuesta ($ 28.000 vencidos, 7 días de gr
     expect(recargosSugeridos([nuevo], new Map(), c, '2026-12-10')).toEqual([]);
   });
 
+  it('cambiar de esquema no confunde períodos: se guardan los días cubiertos', () => {
+    // Sumado por semanas hasta el día 70 ("semana 10"); después pasa a "por mes".
+    // Con días, eso cubre hasta el mes 3: el día 80 no hay nada (mes 3), el 91 sí (mes 4).
+    expect(sugerir(mes5, 80, 70)).toEqual([]);
+    expect(sugerir(mes5, 91, 70)[0]).toMatchObject({
+      periodo_desde: 4,
+      periodo_hasta: 4,
+      monto: 1400,
+    });
+    // Y de mes a tramos: lo cubierto hasta el día 45 (mes 2) es el tramo 2 (31 a 60).
+    expect(sugerir(tramos, 50, 45)).toEqual([]);
+    expect(sugerir(tramos, 61, 45)[0]).toMatchObject({ periodo_hasta: 3, monto: 2800 });
+  });
+
   it('el detalle explica la cuenta', () => {
     expect(sugerir(mes5, 14)[0]?.detalle).toBe('5 % de $ 28.000 · mes 1');
     expect(sugerir(mes5, 61)[0]?.detalle).toBe('5 % de $ 28.000 · meses 1 a 3');
-    expect(sugerir(tramos, 31, 1)[0]?.detalle).toBe(
+    expect(sugerir(tramos, 31, 14)[0]?.detalle).toBe(
       '10 % de $ 28.000 menos el tramo anterior (5 %) · 31 a 60 días',
     );
   });
@@ -309,8 +324,8 @@ describe('imputación con recargos: primero la deuda, después su recargo', () =
     const a = mov('fiado', 12_000, '2026-09-15', { vence: '2026-10-15' });
     const b = mov('fiado', 16_000, '2026-10-02', { vence: '2026-10-20' });
     const c = mov('fiado', 14_300, '2026-10-20', { vence: '2026-11-01' });
-    const ra = mov('recargo', 600, '2026-10-29', { recargo_de: a.id, recargo_periodo: 1 });
-    const rb = mov('recargo', 800, '2026-10-29', { recargo_de: b.id, recargo_periodo: 1 });
+    const ra = mov('recargo', 600, '2026-10-29', { recargo_de: a.id, recargo_dias: 14 });
+    const rb = mov('recargo', 800, '2026-10-29', { recargo_de: b.id, recargo_dias: 14 });
     const pago = mov('pago', -20_000, '2026-11-03');
     const p = imputarFiados([a, b, c, ra, rb, pago], 30);
     expect(p.map((x) => [x.id, x.pendiente])).toEqual([
@@ -326,7 +341,7 @@ describe('imputación con recargos: primero la deuda, después su recargo', () =
 
   it('un recargo perdonado (corregido) no cuenta', () => {
     const a = mov('fiado', 1000, '2026-09-01', { vence: '2026-10-01' });
-    const r = mov('recargo', 50, '2026-10-20', { recargo_de: a.id, recargo_periodo: 1 });
+    const r = mov('recargo', 50, '2026-10-20', { recargo_de: a.id, recargo_dias: 14 });
     const corr = mov('correccion', -50, '2026-10-21', { corrige_id: r.id });
     expect(imputarFiados([a, r, corr], 30).map((x) => x.id)).toEqual([a.id]);
   });

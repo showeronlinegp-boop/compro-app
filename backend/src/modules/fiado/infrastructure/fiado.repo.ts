@@ -85,8 +85,8 @@ export interface MovimientoView {
   pendiente: number | null;
   /** En un recargo: el fiado al que pertenece. */
   recargo_de: number | null;
-  /** En un recargo: último período de atraso que cubre. */
-  recargo_periodo: number | null;
+  /** En un recargo: días de atraso que cubre. */
+  recargo_dias: number | null;
 }
 
 export interface CobroView extends ClienteView {
@@ -210,7 +210,7 @@ interface RecargoCtx {
   config: ConfigRecargo | null;
   version: number;
   comercio: string;
-  /** fiado_id → último período omitido ("No cobrar"). */
+  /** fiado_id → días de atraso hasta los que se omitió ("No cobrar"). */
   omitidos: ReadonlyMap<number, number>;
 }
 
@@ -226,7 +226,7 @@ const toLedger = (m: MovRow): MovimientoLedger => ({
   vence: m.vence ? m.vence.toISOString().slice(0, 10) : null,
   created_at: m.created_at,
   recargo_de: m.recargo_de,
-  recargo_periodo: m.recargo_periodo,
+  recargo_dias: m.recargo_dias,
 });
 
 /** La configuración guardada en `fiado_ajustes.recargo` (la valida parseConfigRecargo al guardar). */
@@ -245,9 +245,9 @@ function tratadosDe(
   const out = new Map(omitidos);
   const deshechos = idsCorregidos(movs);
   for (const m of movs) {
-    if (m.tipo !== 'recargo' || m.recargo_de == null || m.recargo_periodo == null) continue;
+    if (m.tipo !== 'recargo' || m.recargo_de == null || m.recargo_dias == null) continue;
     if (deshechos.has(m.id)) continue;
-    out.set(m.recargo_de, Math.max(out.get(m.recargo_de) ?? 0, m.recargo_periodo));
+    out.set(m.recargo_de, Math.max(out.get(m.recargo_de) ?? 0, m.recargo_dias));
   }
   return out;
 }
@@ -350,12 +350,12 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
       ajustesRow(),
       prisma.fiado_recargo_omisiones.findMany({
         where: { user_id: uid(), ...(clienteId ? { cliente_id: clienteId } : {}) },
-        select: { fiado_id: true, periodo: true },
+        select: { fiado_id: true, dias: true },
       }),
     ]);
     const omitidos = new Map<number, number>();
     for (const o of omisiones) {
-      omitidos.set(o.fiado_id, Math.max(omitidos.get(o.fiado_id) ?? 0, o.periodo));
+      omitidos.set(o.fiado_id, Math.max(omitidos.get(o.fiado_id) ?? 0, o.dias));
     }
     return {
       config: configDe(row?.recargo),
@@ -399,7 +399,7 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
       vence: m.tipo === 'fiado' ? (p?.vence ?? null) : null,
       pendiente: p?.pendiente ?? null,
       recargo_de: m.recargo_de,
-      recargo_periodo: m.recargo_periodo,
+      recargo_dias: m.recargo_dias,
     };
   }
 
@@ -724,7 +724,7 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
       const recargo = await prisma.fiado_movimientos.findFirst({
         where: { id: movimientoId, user_id: uid(), tipo: 'recargo' },
       });
-      if (!recargo || recargo.recargo_de == null || recargo.recargo_periodo == null) {
+      if (!recargo || recargo.recargo_de == null || recargo.recargo_dias == null) {
         throw new FiadoError(404, 'Recargo no encontrado');
       }
       // Primero "No cobrar" (si ya estaba, no pasa nada) y después la corrección:
@@ -736,7 +736,7 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
             user_id: uid(),
             cliente_id: recargo.cliente_id,
             fiado_id: recargo.recargo_de,
-            periodo: recargo.recargo_periodo,
+            dias: recargo.recargo_dias,
           },
         });
       } catch (err) {
@@ -824,7 +824,7 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
             tipo: 'recargo',
             monto: r.monto,
             recargo_de: r.fiado_id,
-            recargo_periodo: r.periodo_hasta,
+            recargo_dias: r.dias_atraso,
             nota: r.detalle,
             idempotency_key: clave(r.fiado_id),
           })),
@@ -851,7 +851,7 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
             user_id: uid(),
             cliente_id: cliente.id,
             fiado_id: fiadoId,
-            periodo: sugerido.periodo_hasta,
+            dias: sugerido.dias_atraso,
           },
         });
       } catch (err) {
