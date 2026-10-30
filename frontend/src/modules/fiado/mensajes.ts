@@ -40,16 +40,63 @@ export function comprobante(
   vence: string | null = null,
 ): string {
   const plantilla = tipo === 'fiado' ? ajustes.plantilla_fiado : ajustes.plantilla_pago;
-  return renderPlantilla(plantilla, {
+  const texto = renderPlantilla(plantilla, {
     ...varsBase(cliente, ajustes),
     monto: formatMoney(monto),
     vence: vence ? textoDia(vence) : SIN_FECHA_COBRO,
   });
+  return tipo === 'fiado' ? antesDeLaFirma(texto, lineaCondiciones(cliente, ajustes)) : texto;
 }
 
 /** Recordatorio de pago para un cliente que debe. */
 export function recordatorio(cliente: Cliente, ajustes: Ajustes): string {
-  return renderPlantilla(ajustes.plantilla_recordatorio, varsBase(cliente, ajustes));
+  const texto = renderPlantilla(ajustes.plantilla_recordatorio, varsBase(cliente, ajustes));
+  const recargos =
+    cliente.recargos_pendientes > 0
+      ? `Del saldo, ${formatMoney(cliente.recargos_pendientes)} son recargos por atraso.`
+      : null;
+  return antesDeLaFirma(texto, recargos);
+}
+
+// ─── Recargos por atraso ──────────────────────────────────────────────────────
+
+/**
+ * Línea FIJA con las condiciones de recargo, que va en cada comprobante de
+ * fiado mientras estén activos (el comercio no la puede editar ni borrar).
+ */
+export function lineaCondiciones(cliente: Cliente, ajustes: Ajustes): string | null {
+  if (!ajustes.recargo_condiciones || cliente.sin_recargo) return null;
+  return `Si se atrasa, se cobra ${ajustes.recargo_condiciones}.`;
+}
+
+/** Suma una línea fija justo antes de la firma (si la hay). */
+function antesDeLaFirma(texto: string, linea: string | null): string {
+  if (!linea) return texto;
+  const cuerpo = texto.endsWith(FIRMA) ? texto.slice(0, -FIRMA.length).trimEnd() : texto;
+  return `${cuerpo}\n\n${linea}\n\n${FIRMA}`;
+}
+
+/** Lo mínimo de un recargo para armar el comprobante. */
+export interface RecargoComprobante {
+  monto: number;
+  /** "5 % de $ 12.000 · mes 1". */
+  detalle: string;
+  /** 'AAAA-MM-DD' en que se anotó el fiado. */
+  fiado_fecha: string;
+}
+
+/** Comprobante FIJO después de sumar recargos: cada uno con su fiado y la cuenta. */
+export function comprobanteRecargos(
+  recargos: readonly RecargoComprobante[],
+  cliente: Cliente,
+  ajustes: Ajustes,
+): string {
+  const { nombre, comercio, saldo } = varsBase(cliente, ajustes);
+  const que = recargos.length === 1 ? 'un recargo' : 'recargos';
+  const lineas = recargos.map(
+    (r) => `• ${formatMoney(r.monto)} por el fiado del ${textoDia(r.fiado_fecha)} (${r.detalle})`,
+  );
+  return `Hola ${nombre}, sumé ${que} por atraso en tu cuenta de ${comercio}:\n${lineas.join('\n')}\nTu saldo es ${saldo}.\n\n${FIRMA}`;
 }
 
 /**

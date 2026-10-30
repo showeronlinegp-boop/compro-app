@@ -54,6 +54,9 @@ const ajustes: Ajustes = {
     'Hola {nombre}, registré tu pago de {monto}. Tu saldo es {saldo}. ¡Gracias!\n\nHecho con Neggo',
   plantilla_recordatorio:
     'Hola {nombre}, te recuerdo que tenés un saldo de {saldo} en {comercio}. Podés pagar por transferencia al alias {alias}. ¡Gracias!\n\nHecho con Neggo',
+  recargo: null,
+  recargo_condiciones: null,
+  recargo_version: 0,
 };
 
 const cliente = (over: Partial<Cliente> = {}): Cliente => ({
@@ -70,6 +73,10 @@ const cliente = (over: Partial<Cliente> = {}): Cliente => ({
   vencido: 0,
   vencido_desde: null,
   proximo_vencimiento: null,
+  sin_recargo: false,
+  recargos_pendientes: 0,
+  recargo_para_sumar: 0,
+  aviso_recargo_pendiente: false,
   ...over,
 });
 
@@ -93,7 +100,7 @@ let open: { mock: { calls: unknown[][] }; mockRestore: () => void };
 beforeEach(() => {
   m.ajustes.mockResolvedValue(ajustes);
   m.avisos.mockResolvedValue({ vencidos: [], hoy: [], proximos: [], sin_recordar: 0 });
-  m.ficha.mockResolvedValue({ cliente: cliente(), historial: [] });
+  m.ficha.mockResolvedValue({ cliente: cliente(), historial: [], recargo: null });
   open = vi.spyOn(window, 'open').mockImplementation(() => null);
 });
 
@@ -153,6 +160,8 @@ describe('Listo: comprobante por WhatsApp', () => {
           corregido_por: null,
           vence: null,
           pendiente: null,
+          recargo_de: null,
+          recargo_periodo: null,
         },
         cliente: cliente(),
       },
@@ -187,7 +196,11 @@ describe('Recordar pago', () => {
   });
 
   it('sin celular válido avisa que se elige el contacto', async () => {
-    m.ficha.mockResolvedValue({ cliente: cliente({ whatsapp: null }), historial: [] });
+    m.ficha.mockResolvedValue({
+      cliente: cliente({ whatsapp: null }),
+      historial: [],
+      recargo: null,
+    });
     renderAt(['/fiado/recordar/1']);
     expect(await screen.findByText(/vas a elegir el contacto/)).toBeDefined();
   });

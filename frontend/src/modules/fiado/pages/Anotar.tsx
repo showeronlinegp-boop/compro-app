@@ -19,7 +19,7 @@ export interface EstadoListo {
 }
 
 /** Clave única por pantalla: el backend ignora el segundo envío (doble toque). */
-function nuevaClave(): string {
+export function nuevaClave(): string {
   return typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -68,7 +68,9 @@ export function Anotar({ tipo }: { tipo: TipoAnotar }) {
   const hoy = hoyAR();
   const vence = tipo === 'fiado' ? fechaDeAtajo(atajo, hoy) : null;
   const valor = Number(monto || '0');
-  const puedeConfirmar = cliente != null && valor > 0 && !enviando;
+  // Con recargos activos, primero hay que avisarle las condiciones (el backend también lo exige).
+  const faltaAviso = tipo === 'fiado' && cliente?.aviso_recargo_pendiente === true;
+  const puedeConfirmar = cliente != null && valor > 0 && !enviando && !faltaAviso;
 
   async function confirmar() {
     if (!cliente || !puedeConfirmar) return;
@@ -107,6 +109,17 @@ export function Anotar({ tipo }: { tipo: TipoAnotar }) {
       />
 
       <SelectorCliente cliente={cliente} onElegir={setCliente} onCrear={crearCliente} />
+
+      {faltaAviso && cliente && (
+        <div className="flex flex-col gap-2">
+          <Notice>
+            Antes de anotarle un fiado a {cliente.nombre}, avisale las condiciones de recargo.
+          </Notice>
+          <Button variant="outline" size="s" onClick={() => navigate(RUTAS.ficha(cliente.id))}>
+            Ir a su ficha para avisarle
+          </Button>
+        </div>
+      )}
 
       <div className="text-center" aria-live="polite">
         <p className="m-0 text-caption text-ink-muted">Monto</p>

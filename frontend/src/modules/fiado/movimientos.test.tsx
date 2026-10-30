@@ -45,6 +45,10 @@ const cliente = (over: Partial<Cliente> = {}): Cliente => ({
   vencido: 0,
   vencido_desde: null,
   proximo_vencimiento: null,
+  sin_recargo: false,
+  recargos_pendientes: 0,
+  recargo_para_sumar: 0,
+  aviso_recargo_pendiente: false,
   ...over,
 });
 
@@ -64,6 +68,8 @@ const resultado = (
     corregido_por: null,
     vence: null,
     pendiente: null,
+    recargo_de: null,
+    recargo_periodo: null,
     ...over,
   },
   cliente: c,
@@ -89,7 +95,7 @@ const tocar = (...teclas: string[]) => {
 };
 
 beforeEach(() => {
-  m.ficha.mockResolvedValue({ cliente: cliente(), historial: [] });
+  m.ficha.mockResolvedValue({ cliente: cliente(), historial: [], recargo: null });
   m.clientes.mockResolvedValue([cliente()]);
 });
 
@@ -237,7 +243,7 @@ describe('Listo y Deshacer', () => {
   });
 
   it('entrada directa sin datos → inicio', () => {
-    m.ficha.mockResolvedValue({ cliente: cliente(), historial: [] });
+    m.ficha.mockResolvedValue({ cliente: cliente(), historial: [], recargo: null });
     renderAt(['/fiado/listo']);
     expect(donde()).toBe('/fiado');
   });

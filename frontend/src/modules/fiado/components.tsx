@@ -4,7 +4,15 @@ import { formatMoney } from '../../host/ui/format';
 import { IconCheck, IconPlus } from '../../host/ui/icons';
 import { Avatar, Card, EmptyNote, ListRow, Pill } from '../../host/ui/surfaces';
 import type { Cliente, Cobro, Movimiento } from './api';
-import { DIAS_TARDE, lineaCliente, textoFecha, textoSaldo, textoTipo, textoVence } from './textos';
+import {
+  DIAS_TARDE,
+  lineaCliente,
+  textoDiaDe,
+  textoFecha,
+  textoSaldo,
+  textoTipo,
+  textoVence,
+} from './textos';
 import { hoyAR } from './vence';
 
 // ─── Fila de cliente (guía §4.3) ──────────────────────────────────────────────
@@ -64,6 +72,11 @@ export function FilaCobro({
       title={cobro.nombre}
       subtitle={
         <span>
+          {cobro.recargo_para_sumar > 0 && (
+            <span className="mr-1 inline-block">
+              <Pill tone="late">Recargo</Pill>
+            </span>
+          )}
           {formatMoney(cobro.vencido)} vencido{deuda}
           {cobro.vencido_desde && (
             <>
@@ -106,24 +119,37 @@ export function BotonRecordar({
  * Un movimiento del historial. Nada se oculta: un movimiento corregido se ve
  * tachado con la etiqueta "Corregido", y la corrección es su propia fila.
  */
+const COLOR_TIPO: Record<Movimiento['tipo'], string> = {
+  fiado: 'text-fiado',
+  pago: 'text-pago',
+  recargo: 'text-late',
+  correccion: 'text-ink-muted',
+};
+
 export function FilaMovimiento({
   movimiento: m,
   conCliente = false,
+  fiadoFecha,
+  action,
   onClick,
 }: {
   movimiento: Movimiento;
   /** Muestra el nombre del cliente (lista de últimos movimientos del inicio). */
   conCliente?: boolean;
+  /** En un recargo: cuándo se anotó su fiado ("del fiado del 15 sep"). */
+  fiadoFecha?: string;
+  /** Botón propio a la derecha (p. ej. "Perdonar" en un recargo). */
+  action?: ReactNode;
   onClick?: () => void;
 }) {
   const corregido = m.corregido_por != null;
-  const color =
-    m.tipo === 'fiado' ? 'text-fiado' : m.tipo === 'pago' ? 'text-pago' : 'text-ink-muted';
+  const color = COLOR_TIPO[m.tipo];
   const signo = m.monto > 0 ? '+' : '−';
   const titulo = conCliente ? m.cliente_nombre : textoTipo(m);
   const detalle = [
     conCliente ? textoTipo(m) : null,
     textoFecha(m.created_at),
+    m.tipo === 'recargo' && fiadoFecha ? `del fiado del ${textoDiaDe(fiadoFecha)}` : null,
     m.nota,
     textoPendiente(m),
   ]
@@ -132,6 +158,7 @@ export function FilaMovimiento({
   return (
     <ListRow
       onClick={onClick}
+      action={action}
       title={titulo}
       subtitle={m.tipo === 'correccion' ? `${detalle} · Deshace un movimiento anterior` : detalle}
       trailing={
@@ -153,7 +180,8 @@ export function FilaMovimiento({
  * si se pagó una parte, o "pagado" si los pagos ya lo taparon.
  */
 function textoPendiente(m: Movimiento): string | null {
-  if (m.tipo !== 'fiado' || m.pendiente == null || m.corregido_por != null) return null;
+  if (m.tipo !== 'fiado' && m.tipo !== 'recargo') return null;
+  if (m.pendiente == null || m.corregido_por != null) return null;
   if (m.pendiente === 0) return 'pagado';
   const vence = m.vence ? textoVence(m.vence, hoyAR()) : null;
   const falta = m.pendiente < m.monto ? `falta ${formatMoney(m.pendiente)}` : null;
@@ -170,11 +198,14 @@ export function AccionesMovimiento({
   onAnotar,
   onRecordar,
   compacto = false,
+  fiadoBloqueado = false,
 }: {
   onAnotar: (tipo: 'fiado' | 'pago') => void;
   /** Sólo en la ficha y si debe algo: tercer botón "Recordar". */
   onRecordar?: () => void;
   compacto?: boolean;
+  /** Falta avisarle las condiciones de recargo: no se le pueden anotar fiados. */
+  fiadoBloqueado?: boolean;
 }) {
   const size = compacto ? 'l' : 'xl';
   // A 320 px entran 3 botones de ~88 px: padding y texto más chicos (guía §2.2 button-m).
@@ -187,6 +218,7 @@ export function AccionesMovimiento({
         size={size}
         icon={icono}
         className={ajuste}
+        disabled={fiadoBloqueado}
         onClick={() => onAnotar('fiado')}
       >
         {compacto ? 'Fiado' : 'Anotar fiado'}
