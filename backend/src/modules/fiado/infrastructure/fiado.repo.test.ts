@@ -359,6 +359,9 @@ describe('ajustes', () => {
         plantilla_fiado: PLANTILLAS_DEFAULT.fiado,
         plantilla_pago: PLANTILLAS_DEFAULT.pago,
         plantilla_recordatorio: PLANTILLAS_DEFAULT.recordatorio,
+        recargo: null,
+        recargo_condiciones: null,
+        recargo_version: 0,
       });
       const a = await repo.putAjustes({
         comercio: 'Kiosco Lu',

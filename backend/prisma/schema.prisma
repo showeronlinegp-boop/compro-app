@@ -26,10 +26,12 @@ model users {
   interests interests[]
   profile   user_profiles?
 
-  fiado_clientes      fiado_clientes[]
-  fiado_movimientos   fiado_movimientos[]
-  fiado_recordatorios fiado_recordatorios[]
-  fiado_ajustes       fiado_ajustes?
+  fiado_clientes          fiado_clientes[]
+  fiado_movimientos       fiado_movimientos[]
+  fiado_recordatorios     fiado_recordatorios[]
+  fiado_ajustes           fiado_ajustes?
+  fiado_avisos_recargo    fiado_avisos_recargo[]
+  fiado_recargo_omisiones fiado_recargo_omisiones[]
 
   test_notes test_notes[]
 
@@ -261,20 +263,26 @@ model promo_offers {
 // fiado_clientes — clientes a los que el comercio les fía
 // ---------------------------------------------------------------------------
 model fiado_clientes {
-  id            Int       @id @default(autoincrement())
-  user_id       Int
-  nombre        String    @db.Text
-  telefono      String?   @db.Text
-  etiqueta      String?   @db.Text
+  id                    Int       @id @default(autoincrement())
+  user_id               Int
+  nombre                String    @db.Text
+  telefono              String?   @db.Text
+  etiqueta              String?   @db.Text
   /// Límite de fiado en pesos. Informa, no bloquea.
-  limite        Int?
-  proximo_cobro DateTime? @db.Date
-  created_at    DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at    DateTime  @updatedAt @db.Timestamptz(6)
+  limite                Int?
+  proximo_cobro         DateTime? @db.Date
+  /// No sugerirle recargos a este cliente.
+  sin_recargo           Boolean   @default(false)
+  /// Última versión de las condiciones de recargo que se le avisó.
+  recargo_aviso_version Int       @default(0)
+  created_at            DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime  @updatedAt @db.Timestamptz(6)
 
-  user          users                 @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  movimientos   fiado_movimientos[]
-  recordatorios fiado_recordatorios[]
+  user              users                     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  movimientos       fiado_movimientos[]
+  recordatorios     fiado_recordatorios[]
+  avisos_recargo    fiado_avisos_recargo[]
+  recargo_omisiones fiado_recargo_omisiones[]
 
   @@index([user_id, nombre])
   @@map("fiado_clientes")
@@ -289,7 +297,7 @@ model fiado_movimientos {
   id              Int       @id @default(autoincrement())
   user_id         Int
   cliente_id      Int
-  /// 'fiado' | 'pago' | 'correccion' (CHECK en la migración)
+  /// 'fiado' | 'pago' | 'correccion' | 'recargo' (CHECK en la migración)
   tipo            String    @db.Text
   monto           Int
   /// Movimiento que esta corrección deshace. Único: se corrige una sola vez.
@@ -299,15 +307,23 @@ model fiado_movimientos {
   idempotency_key String?   @db.Text
   /// Sólo en un fiado: fecha en que te lo tienen que pagar (CHECK en la migración).
   vence           DateTime? @db.Date
+  /// Sólo en un recargo: el fiado al que pertenece.
+  recargo_de      Int?
+  /// Sólo en un recargo: último período de atraso que cubre (mes, semana o tramo).
+  recargo_periodo Int?      @db.SmallInt
   created_at      DateTime  @default(now()) @db.Timestamptz(6)
 
-  user      users              @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  cliente   fiado_clientes     @relation(fields: [cliente_id], references: [id], onDelete: Cascade)
-  corrige   fiado_movimientos? @relation("correccion", fields: [corrige_id], references: [id], onDelete: Cascade)
-  corregido fiado_movimientos? @relation("correccion")
+  user      users                     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  cliente   fiado_clientes            @relation(fields: [cliente_id], references: [id], onDelete: Cascade)
+  corrige   fiado_movimientos?        @relation("correccion", fields: [corrige_id], references: [id], onDelete: Cascade)
+  corregido fiado_movimientos?        @relation("correccion")
+  fiado     fiado_movimientos?        @relation("recargo", fields: [recargo_de], references: [id], onDelete: Cascade)
+  recargos  fiado_movimientos[]       @relation("recargo")
+  omisiones fiado_recargo_omisiones[]
 
   @@unique([user_id, idempotency_key])
   @@index([user_id, cliente_id, created_at])
+  @@index([recargo_de])
   @@map("fiado_movimientos")
 }
 
@@ -338,11 +354,57 @@ model fiado_ajustes {
   plantilla_fiado        String?  @db.Text
   plantilla_pago         String?  @db.Text
   plantilla_recordatorio String?  @db.Text
+  /// Configuración del recargo por atraso (JSON); null = apagado.
+  recargo                Json?    @db.JsonB
+  /// Sube cada vez que las condiciones empeoran para el cliente.
+  recargo_version        Int      @default(0)
   updated_at             DateTime @updatedAt @db.Timestamptz(6)
 
   user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("fiado_ajustes")
+}
+
+// ---------------------------------------------------------------------------
+// fiado_avisos_recargo — APPEND-ONLY (trigger): cada vez que se le informaron
+// al cliente las condiciones de recargo, con el texto exacto de ese momento.
+// via: 'whatsapp' | 'informado' (CHECK en la migración).
+// ---------------------------------------------------------------------------
+model fiado_avisos_recargo {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  cliente_id  Int
+  version     Int
+  condiciones String   @db.Text
+  via         String   @db.VarChar(20)
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  user    users          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  cliente fiado_clientes @relation(fields: [cliente_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, cliente_id])
+  @@map("fiado_avisos_recargo")
+}
+
+// ---------------------------------------------------------------------------
+// fiado_recargo_omisiones — períodos de un fiado que el comercio decidió no
+// cobrar ("No cobrar"). Uno por (fiado, período).
+// ---------------------------------------------------------------------------
+model fiado_recargo_omisiones {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  cliente_id Int
+  fiado_id   Int
+  periodo    Int      @db.SmallInt
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  user    users             @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  cliente fiado_clientes    @relation(fields: [cliente_id], references: [id], onDelete: Cascade)
+  fiado   fiado_movimientos @relation(fields: [fiado_id], references: [id], onDelete: Cascade)
+
+  @@unique([fiado_id, periodo])
+  @@index([user_id, cliente_id])
+  @@map("fiado_recargo_omisiones")
 }
 
 // ---------------------------------------------------------------------------

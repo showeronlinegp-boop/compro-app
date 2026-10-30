@@ -7,7 +7,7 @@
  * `saldo = Σ monto` y "Deshacer" no hace desaparecer nada.
  */
 
-export type TipoMovimiento = 'fiado' | 'pago' | 'correccion';
+export type TipoMovimiento = 'fiado' | 'pago' | 'correccion' | 'recargo';
 
 /** Máximo que acepta el teclado: 9 dígitos. */
 export const MONTO_MAX = 999_999_999;
@@ -24,6 +24,10 @@ export interface MovimientoLedger {
   /** Sólo en un fiado: 'AAAA-MM-DD' en que te lo tienen que pagar. */
   vence: string | null;
   created_at: Date;
+  /** Sólo en un recargo: el fiado al que pertenece. */
+  recargo_de?: number | null;
+  /** Sólo en un recargo: último período de atraso que cubre. */
+  recargo_periodo?: number | null;
 }
 
 // ─── Errores de dominio ───────────────────────────────────────────────────────
@@ -111,20 +115,27 @@ export function excedeLimite(s: number, limite: number | null): boolean {
 
 // ─── Vencimientos (nota de prueba #3) ─────────────────────────────────────────
 
-/** Lo que falta pagar de un fiado vigente y cuándo vence. */
+/** Lo que falta pagar de un fiado (o de un recargo) vigente y cuándo vence. */
 export interface FiadoPendiente {
   id: number;
-  /** Fecha efectiva: la elegida al anotar o, sin fecha, el día +`umbralDias`. */
+  /**
+   * Fecha efectiva: la elegida al anotar o, sin fecha, el día +`umbralDias`.
+   * Un recargo vence el día que se suma.
+   */
   vence: string;
   pendiente: number;
+  /** En un recargo: el fiado al que pertenece; en un fiado, null. */
+  recargo_de: number | null;
 }
 
 /**
- * Imputa los pagos a los fiados (decisión 2026-10-18): un pago no dice qué
- * fiado paga, así que se calcula. Lo pagado tapa primero lo que vence antes
- * (empate: el más viejo). Un fiado sin fecha vence a los `umbralDias` de
- * anotado ("deuda vieja"). Los movimientos corregidos y las correcciones no
- * cuentan. Devuelve todos los fiados vigentes, en orden de vencimiento.
+ * Imputa los pagos (decisión 2026-10-18): un pago no dice qué fiado paga, así
+ * que se calcula. Lo pagado tapa primero el fiado que vence antes (empate: el
+ * más viejo) y enseguida SUS recargos; recién después pasa al siguiente fiado
+ * (recargos por atraso: primero la deuda, después su recargo, así el fiado deja
+ * de generar recargos cuanto antes). Un fiado sin fecha vence a los
+ * `umbralDias` de anotado ("deuda vieja"). Los movimientos corregidos y las
+ * correcciones no cuentan. Devuelve fiados y recargos vigentes, en ese orden.
  */
 export function imputarFiados(
   movs: readonly MovimientoLedger[],
@@ -133,20 +144,47 @@ export function imputarFiados(
   const corregidos = idsCorregidos(movs);
   const vigentes = movs.filter((m) => m.tipo !== 'correccion' && !corregidos.has(m.id));
   let pagado = -vigentes.filter((m) => m.tipo === 'pago').reduce((acc, m) => acc + m.monto, 0);
+  const porFecha = (a: MovimientoLedger, b: MovimientoLedger) =>
+    a.created_at.getTime() - b.created_at.getTime() || a.id - b.id;
   const fiados = vigentes
     .filter((m) => m.tipo === 'fiado')
     .map((m) => ({ m, vence: m.vence ?? sumarDias(fechaAR(m.created_at), umbralDias) }))
-    .sort(
-      (a, b) =>
-        a.vence.localeCompare(b.vence) ||
-        a.m.created_at.getTime() - b.m.created_at.getTime() ||
-        a.m.id - b.m.id,
-    );
-  return fiados.map(({ m, vence }) => {
+    .sort((a, b) => a.vence.localeCompare(b.vence) || porFecha(a.m, b.m));
+  const recargos = vigentes.filter((m) => m.tipo === 'recargo').sort(porFecha);
+
+  const orden: { m: MovimientoLedger; vence: string }[] = [];
+  const ubicados = new Set<number>();
+  for (const f of fiados) {
+    orden.push(f);
+    for (const r of recargos.filter((r) => r.recargo_de === f.m.id)) {
+      orden.push({ m: r, vence: fechaAR(r.created_at) });
+      ubicados.add(r.id);
+    }
+  }
+  // Un recargo cuyo fiado ya no está vigente (no debería pasar: deshacer un
+  // fiado deshace sus recargos) se cobra al final.
+  for (const r of recargos.filter((r) => !ubicados.has(r.id))) {
+    orden.push({ m: r, vence: fechaAR(r.created_at) });
+  }
+
+  return orden.map(({ m, vence }) => {
     const cubre = Math.min(pagado, m.monto);
     pagado -= cubre;
-    return { id: m.id, vence, pendiente: m.monto - cubre };
+    return {
+      id: m.id,
+      vence,
+      pendiente: m.monto - cubre,
+      recargo_de: m.tipo === 'recargo' ? (m.recargo_de ?? null) : null,
+    };
   });
+}
+
+/** La fecha más temprana de una lista, o null. */
+function minVence(ps: readonly FiadoPendiente[]): string | null {
+  return ps.reduce<string | null>(
+    (min, p) => (min === null || p.vence < min ? p.vence : min),
+    null,
+  );
 }
 
 export interface Vencimientos {
@@ -162,10 +200,10 @@ export function vencimientos(pendientes: readonly FiadoPendiente[], hoy: string)
   const deben = pendientes.filter((p) => p.pendiente > 0);
   const vencidos = deben.filter((p) => p.vence <= hoy);
   const futuros = deben.filter((p) => p.vence > hoy);
-  const fecha = futuros[0]?.vence ?? null;
+  const fecha = minVence(futuros);
   return {
     vencido: vencidos.reduce((acc, p) => acc + p.pendiente, 0),
-    vencido_desde: vencidos[0]?.vence ?? null,
+    vencido_desde: minVence(vencidos),
     proximo: fecha
       ? {
           fecha,
@@ -197,6 +235,11 @@ export function montoCorreccion(
   }
   if (yaCorregido) throw new FiadoError(409, 'Ese movimiento ya fue corregido');
   return -original.monto;
+}
+
+/** Lo que falta pagar de recargos (para el recordatorio: "incluye $ X de recargos"). */
+export function recargosPendientes(pendientes: readonly FiadoPendiente[]): number {
+  return pendientes.filter((p) => p.recargo_de !== null).reduce((acc, p) => acc + p.pendiente, 0);
 }
 
 /** Monto con signo según el tipo: fiado suma, pago resta. */
@@ -277,6 +320,8 @@ export interface ClienteInput {
   etiqueta: string | null;
   limite: number | null;
   proximo_cobro: string | null;
+  /** Sólo en la edición: no sugerirle recargos. */
+  sin_recargo?: boolean;
 }
 
 const bad = (msg: string) => new FiadoError(400, msg);
@@ -328,6 +373,10 @@ export function parseClientePatch(body: unknown): Partial<ClienteInput> {
   if ('etiqueta' in b) out.etiqueta = texto(b.etiqueta, 'etiqueta', 30, false);
   if ('limite' in b) out.limite = enteroOpcional(b.limite, 'limite');
   if ('proximo_cobro' in b) out.proximo_cobro = fechaOpcional(b.proximo_cobro, 'proximo_cobro');
+  if ('sin_recargo' in b) {
+    if (typeof b.sin_recargo !== 'boolean') throw bad('sin_recargo debe ser true o false');
+    out.sin_recargo = b.sin_recargo;
+  }
   return out;
 }
 
@@ -377,6 +426,8 @@ export interface AjustesInput {
   plantilla_fiado?: string | null;
   plantilla_pago?: string | null;
   plantilla_recordatorio?: string | null;
+  /** Configuración del recargo tal como llega (la valida el repo, que conoce la anterior). */
+  recargo?: unknown;
 }
 
 /** Body parcial de ajustes. Una plantilla vacía vuelve al texto por defecto (null). */
@@ -393,7 +444,45 @@ export function parseAjustesInput(body: unknown): AjustesInput {
   for (const k of ['plantilla_fiado', 'plantilla_pago', 'plantilla_recordatorio'] as const) {
     if (k in b) out[k] = texto(b[k], k, 1000, false);
   }
+  if ('recargo' in b) out.recargo = b.recargo ?? null;
   return out;
+}
+
+/** Body de POST /clientes/:id/recargos: todos los sugeridos o sólo algunos fiados. */
+export function parseSumarRecargos(body: unknown): {
+  fiado_ids: number[] | null;
+  idempotency_key: string | null;
+} {
+  const b = (body ?? {}) as Record<string, unknown>;
+  let fiado_ids: number[] | null = null;
+  if (b.fiado_ids !== undefined && b.fiado_ids !== null) {
+    if (!Array.isArray(b.fiado_ids) || b.fiado_ids.length === 0 || b.fiado_ids.length > 100) {
+      throw bad('fiado_ids debe ser una lista de ids');
+    }
+    fiado_ids = b.fiado_ids.map((v) => {
+      const n = Number(v);
+      if (!Number.isInteger(n) || n < 1) throw bad('fiado_ids debe ser una lista de ids');
+      return n;
+    });
+  }
+  return {
+    fiado_ids,
+    idempotency_key: texto(b.idempotency_key, 'idempotency_key', 64, false),
+  };
+}
+
+/** Body de POST /clientes/:id/recargos/omitir. */
+export function parseOmitirRecargo(body: unknown): number {
+  const n = Number(((body ?? {}) as Record<string, unknown>).fiado_id);
+  if (!Number.isInteger(n) || n < 1) throw bad('fiado_id inválido');
+  return n;
+}
+
+/** Body de POST /clientes/:id/aviso-recargo. */
+export function parseViaAviso(body: unknown): 'whatsapp' | 'informado' {
+  const via = ((body ?? {}) as Record<string, unknown>).via;
+  if (via !== 'whatsapp' && via !== 'informado') throw bad("via debe ser 'whatsapp' o 'informado'");
+  return via;
 }
 
 /** Orden de la lista de clientes. Empates: por nombre. */

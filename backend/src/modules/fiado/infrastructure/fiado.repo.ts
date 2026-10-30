@@ -19,11 +19,21 @@ import {
   montoCorreccion,
   ordenarClientes,
   paraCobrarHoy,
+  recargosPendientes,
   saldo,
   sumarDias,
   telefonoWhatsApp,
   vencimientos,
 } from '../domain/fiado.js';
+import {
+  type ConfigRecargo,
+  type RecargoSugerido,
+  condicionesTexto,
+  parseConfigRecargo,
+  recargosSugeridos,
+  requiereAviso,
+  textoAvisoRecargo,
+} from '../domain/recargo.js';
 
 // ─── Vistas que devuelve la API ───────────────────────────────────────────────
 
@@ -46,6 +56,14 @@ export interface ClienteView {
   vencido_desde: string | null;
   /** El próximo vencimiento que todavía no llegó. */
   proximo_vencimiento: { fecha: string; monto: number } | null;
+  /** No sugerirle recargos a este cliente. */
+  sin_recargo: boolean;
+  /** Parte del saldo que son recargos sin pagar. */
+  recargos_pendientes: number;
+  /** Total de recargos sugeridos para sumar hoy (0 = nada que decidir). */
+  recargo_para_sumar: number;
+  /** Hay que avisarle las condiciones antes de anotarle fiados o recargos. */
+  aviso_recargo_pendiente: boolean;
 }
 
 export interface MovimientoView {
@@ -62,8 +80,12 @@ export interface MovimientoView {
   corregido_por: number | null;
   /** En un fiado vigente: cuándo vence (la elegida o la de deuda vieja). */
   vence: string | null;
-  /** En un fiado vigente: lo que falta pagar de ese fiado. */
+  /** En un fiado o recargo vigente: lo que falta pagar. */
   pendiente: number | null;
+  /** En un recargo: el fiado al que pertenece. */
+  recargo_de: number | null;
+  /** En un recargo: último período de atraso que cubre. */
+  recargo_periodo: number | null;
 }
 
 export interface CobroView extends ClienteView {
@@ -95,14 +117,38 @@ export interface AvisosView {
   sin_recordar: number;
 }
 
+/** Estado del recargo en la ficha de un cliente. */
+export interface RecargoFichaView {
+  /** Aviso de condiciones pendiente: el texto fijo para mandarle. */
+  aviso: { texto: string } | null;
+  /** Recargos sugeridos hoy, uno por fiado (vacío si falta el aviso). */
+  sugeridos: RecargoSugerido[];
+  total: number;
+}
+
 export interface FichaView {
   cliente: ClienteView;
   historial: MovimientoView[];
+  /** null = recargos apagados o cliente "sin recargo". */
+  recargo: RecargoFichaView | null;
 }
 
 export interface MovimientoResult {
   movimiento: MovimientoView;
   cliente: ClienteView;
+}
+
+export interface RecargosResult {
+  movimientos: MovimientoView[];
+  cliente: ClienteView;
+}
+
+export interface AvisoRecargoView {
+  cliente_id: number;
+  version: number;
+  condiciones: string;
+  via: 'whatsapp' | 'informado';
+  created_at: string;
 }
 
 export interface AjustesView {
@@ -112,6 +158,11 @@ export interface AjustesView {
   plantilla_fiado: string;
   plantilla_pago: string;
   plantilla_recordatorio: string;
+  /** null = recargos apagados. */
+  recargo: ConfigRecargo | null;
+  /** Las condiciones en una frase, para mensajes y Ajustes; null si está apagado. */
+  recargo_condiciones: string | null;
+  recargo_version: number;
 }
 
 export interface FiadoRepo {
@@ -126,12 +177,39 @@ export interface FiadoRepo {
   registrarRecordatorio(clienteId: number): Promise<{ cliente_id: number; enviado_at: string }>;
   getAjustes(): Promise<AjustesView>;
   putAjustes(input: AjustesInput): Promise<AjustesView>;
+  /** Suma los recargos sugeridos (todos o los de `fiadoIds`), uno por fiado. */
+  sumarRecargos(
+    clienteId: number,
+    fiadoIds: number[] | null,
+    idempotencyKey: string | null,
+  ): Promise<RecargosResult>;
+  /** "No cobrar": saltea el período sugerido de ese fiado. */
+  omitirRecargo(clienteId: number, fiadoId: number): Promise<FichaView>;
+  /** Registra que se le avisaron las condiciones vigentes al cliente. */
+  registrarAvisoRecargo(
+    clienteId: number,
+    via: 'whatsapp' | 'informado',
+  ): Promise<AvisoRecargoView>;
 }
 
 type PrismaLike = Pick<
   PrismaClient,
-  'fiado_clientes' | 'fiado_movimientos' | 'fiado_recordatorios' | 'fiado_ajustes'
+  | 'fiado_clientes'
+  | 'fiado_movimientos'
+  | 'fiado_recordatorios'
+  | 'fiado_ajustes'
+  | 'fiado_avisos_recargo'
+  | 'fiado_recargo_omisiones'
 >;
+
+/** Lo que hace falta para calcular recargos de cualquier cliente del usuario. */
+interface RecargoCtx {
+  config: ConfigRecargo | null;
+  version: number;
+  comercio: string;
+  /** fiado_id → último período omitido ("No cobrar"). */
+  omitidos: ReadonlyMap<number, number>;
+}
 
 type ClienteRow = Prisma.fiado_clientesGetPayload<object>;
 type MovRow = Prisma.fiado_movimientosGetPayload<object>;
@@ -144,7 +222,29 @@ const toLedger = (m: MovRow): MovimientoLedger => ({
   corrige_id: m.corrige_id,
   vence: m.vence ? m.vence.toISOString().slice(0, 10) : null,
   created_at: m.created_at,
+  recargo_de: m.recargo_de,
+  recargo_periodo: m.recargo_periodo,
 });
+
+/** La configuración guardada en `fiado_ajustes.recargo` (la valida parseConfigRecargo al guardar). */
+const configDe = (v: Prisma.JsonValue | null | undefined): ConfigRecargo | null =>
+  v && typeof v === 'object' && !Array.isArray(v) ? (v as unknown as ConfigRecargo) : null;
+
+/**
+ * Último período ya tratado de cada fiado: sumado (aunque después se haya
+ * perdonado, así perdonar no hace reaparecer la sugerencia) u omitido.
+ */
+function tratadosDe(
+  movs: readonly MovimientoLedger[],
+  omitidos: ReadonlyMap<number, number>,
+): Map<number, number> {
+  const out = new Map(omitidos);
+  for (const m of movs) {
+    if (m.tipo !== 'recargo' || m.recargo_de == null || m.recargo_periodo == null) continue;
+    out.set(m.recargo_de, Math.max(out.get(m.recargo_de) ?? 0, m.recargo_periodo));
+  }
+  return out;
+}
 
 const ymd = (d: Date | null): string | null => (d ? d.toISOString().slice(0, 10) : null);
 const toDate = (s: string | null): Date | null => (s ? new Date(`${s}T00:00:00Z`) : null);
@@ -182,8 +282,11 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
     movs: readonly MovimientoLedger[],
     fecha: string,
     umbral: number,
+    ctx: RecargoCtx,
   ): ClienteView {
     const s = saldo(movs);
+    const pendientes = imputarFiados(movs, umbral);
+    const rec = estadoRecargo(c, movs, pendientes, ctx, fecha);
     return {
       id: c.id,
       nombre: c.nombre,
@@ -195,8 +298,70 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
       saldo: s,
       dias_sin_pagar: diasSinPagar(movs, fecha),
       excede_limite: excedeLimite(s, c.limite),
-      ...vencimientosView(imputarFiados(movs, umbral), fecha),
+      ...vencimientosView(pendientes, fecha),
+      sin_recargo: c.sin_recargo,
+      recargos_pendientes: recargosPendientes(pendientes),
+      recargo_para_sumar: rec?.total ?? 0,
+      aviso_recargo_pendiente: rec?.aviso != null,
     };
+  }
+
+  /**
+   * Recargo de un cliente hoy: null si están apagados o el cliente es "sin
+   * recargo"; con aviso pendiente no se sugiere nada hasta avisarle.
+   */
+  function estadoRecargo(
+    c: ClienteRow,
+    movs: readonly MovimientoLedger[],
+    pendientes: readonly FiadoPendiente[],
+    ctx: RecargoCtx,
+    fecha: string,
+  ): RecargoFichaView | null {
+    if (!ctx.config || c.sin_recargo) return null;
+    if (c.recargo_aviso_version < ctx.version) {
+      return {
+        aviso: { texto: textoAvisoRecargo(ctx.config, ctx.comercio, c.nombre) },
+        sugeridos: [],
+        total: 0,
+      };
+    }
+    const anotado = new Map(movs.map((m) => [m.id, fechaAR(m.created_at)]));
+    const fiados = pendientes
+      .filter((p) => p.recargo_de === null)
+      .map((p) => ({
+        id: p.id,
+        fecha: anotado.get(p.id) ?? p.vence,
+        vence: p.vence,
+        pendiente: p.pendiente,
+      }));
+    const sugeridos = recargosSugeridos(fiados, tratadosDe(movs, ctx.omitidos), ctx.config, fecha);
+    return { aviso: null, sugeridos, total: sugeridos.reduce((acc, r) => acc + r.monto, 0) };
+  }
+
+  /** Configuración, versión y "No cobrar" del usuario (de un cliente, si se pasa). */
+  async function recargoCtx(clienteId?: number): Promise<RecargoCtx> {
+    const [row, omisiones] = await Promise.all([
+      ajustesRow(),
+      prisma.fiado_recargo_omisiones.findMany({
+        where: { user_id: uid(), ...(clienteId ? { cliente_id: clienteId } : {}) },
+        select: { fiado_id: true, periodo: true },
+      }),
+    ]);
+    const omitidos = new Map<number, number>();
+    for (const o of omisiones) {
+      omitidos.set(o.fiado_id, Math.max(omitidos.get(o.fiado_id) ?? 0, o.periodo));
+    }
+    return {
+      config: configDe(row?.recargo),
+      version: row?.recargo_version ?? 0,
+      comercio: row?.comercio ?? '',
+      omitidos,
+    };
+  }
+
+  /** ¿Hay que avisarle las condiciones antes de anotarle fiados o recargos? */
+  function avisoPendiente(c: ClienteRow, ctx: RecargoCtx): boolean {
+    return ctx.config !== null && !c.sin_recargo && c.recargo_aviso_version < ctx.version;
   }
 
   function vencimientosView(pendientes: readonly FiadoPendiente[], fecha: string) {
@@ -225,8 +390,10 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
       created_at: m.created_at.toISOString(),
       corrige_id: m.corrige_id,
       corregido_por: correccionDe.get(m.id) ?? null,
-      vence: p?.vence ?? null,
+      vence: m.tipo === 'fiado' ? (p?.vence ?? null) : null,
       pendiente: p?.pendiente ?? null,
+      recargo_de: m.recargo_de,
+      recargo_periodo: m.recargo_periodo,
     };
   }
 
@@ -255,17 +422,60 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
   }
 
   async function resultado(mov: MovRow, cliente: ClienteRow): Promise<MovimientoResult> {
-    const [movs, u] = await Promise.all([movimientosDe(cliente.id), umbral()]);
+    const { movimientos, cliente: view } = await resultadoVarios([mov], cliente);
+    return { movimiento: movimientos[0] as MovimientoView, cliente: view };
+  }
+
+  async function resultadoVarios(
+    movsNuevos: readonly MovRow[],
+    cliente: ClienteRow,
+  ): Promise<RecargosResult> {
+    const [movs, u, ctx] = await Promise.all([
+      movimientosDe(cliente.id),
+      umbral(),
+      recargoCtx(cliente.id),
+    ]);
     const ledger = movs.map(toLedger);
+    const correcciones = mapaCorrecciones(movs);
+    const pendientes = porId(imputarFiados(ledger, u));
     return {
-      movimiento: movimientoView(
-        mov,
-        cliente.nombre,
-        mapaCorrecciones(movs),
-        porId(imputarFiados(ledger, u)),
+      movimientos: movsNuevos.map((m) =>
+        movimientoView(m, cliente.nombre, correcciones, pendientes),
       ),
-      cliente: clienteView(cliente, ledger, hoy(), u),
+      cliente: clienteView(cliente, ledger, hoy(), u, ctx),
     };
+  }
+
+  async function fichaDe(clienteId: number): Promise<FichaView> {
+    const cliente = await clienteOr404(clienteId);
+    const [movs, u, ctx] = await Promise.all([
+      movimientosDe(clienteId),
+      umbral(),
+      recargoCtx(clienteId),
+    ]);
+    const ledger = movs.map(toLedger);
+    const correcciones = mapaCorrecciones(movs);
+    const imputados = imputarFiados(ledger, u);
+    const pendientes = porId(imputados);
+    const fecha = hoy();
+    return {
+      cliente: clienteView(cliente, ledger, fecha, u, ctx),
+      historial: [...movs]
+        .reverse()
+        .map((m) => movimientoView(m, cliente.nombre, correcciones, pendientes)),
+      recargo: estadoRecargo(cliente, ledger, imputados, ctx, fecha),
+    };
+  }
+
+  /** Recargo vigente de un cliente, recalculado en el momento (para sumar u omitir). */
+  async function recargoActual(cliente: ClienteRow): Promise<RecargoFichaView | null> {
+    const [movs, u, ctx] = await Promise.all([
+      movimientosDe(cliente.id),
+      umbral(),
+      recargoCtx(cliente.id),
+    ]);
+    const ledger = movs.map(toLedger);
+    return estadoRecargo(cliente, ledger, imputarFiados(ledger, u), ctx, hoy());
   }
 
   async function ajustesRow() {
@@ -294,24 +504,32 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
       plantilla_fiado: row?.plantilla_fiado ?? PLANTILLAS_DEFAULT.fiado,
       plantilla_pago: row?.plantilla_pago ?? PLANTILLAS_DEFAULT.pago,
       plantilla_recordatorio: row?.plantilla_recordatorio ?? PLANTILLAS_DEFAULT.recordatorio,
+      recargo: configDe(row?.recargo),
+      recargo_condiciones: row?.recargo
+        ? condicionesTexto(configDe(row.recargo) as ConfigRecargo)
+        : null,
+      recargo_version: row?.recargo_version ?? 0,
     };
   }
 
   return {
     async resumen() {
       const fecha = hoy();
-      const [{ clientes, movs, porCliente }, u, recordadoHoy] = await Promise.all([
+      const [{ clientes, movs, porCliente }, u, recordadoHoy, ctx] = await Promise.all([
         cartera(),
         umbral(),
         recordadosHoy(fecha),
+        recargoCtx(),
       ]);
-      const views = clientes.map((c) => clienteView(c, porCliente.get(c.id) ?? [], fecha, u));
+      const views = clientes.map((c) => clienteView(c, porCliente.get(c.id) ?? [], fecha, u, ctx));
       const conDeuda = views.filter((v) => v.saldo > 0);
-      // Lo que venció hace más tiempo, primero.
+      // Primero los que tienen un recargo para decidir (vuelven a su lugar al
+      // sumarlo o no cobrarlo); después, lo que venció hace más tiempo.
       const para_cobrar = views
         .filter((v) => paraCobrarHoy(v))
         .sort(
           (a, b) =>
+            Number(b.recargo_para_sumar > 0) - Number(a.recargo_para_sumar > 0) ||
             (a.vencido_desde ?? '').localeCompare(b.vencido_desde ?? '') ||
             a.nombre.localeCompare(b.nombre, 'es'),
         )
@@ -371,10 +589,14 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
 
     async listClientes(q, orden) {
       const fecha = hoy();
-      const [{ clientes, porCliente }, u] = await Promise.all([cartera(), umbral()]);
+      const [{ clientes, porCliente }, u, ctx] = await Promise.all([
+        cartera(),
+        umbral(),
+        recargoCtx(),
+      ]);
       const views = clientes
         .filter((c) => !q || coincideNombre(c.nombre, q))
-        .map((c) => clienteView(c, porCliente.get(c.id) ?? [], fecha, u));
+        .map((c) => clienteView(c, porCliente.get(c.id) ?? [], fecha, u, ctx));
       return ordenarClientes(views, orden);
     },
 
@@ -389,34 +611,34 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
           proximo_cobro: toDate(input.proximo_cobro),
         },
       });
-      return clienteView(c, [], hoy(), await umbral());
+      const [u, ctx] = await Promise.all([umbral(), recargoCtx(c.id)]);
+      return clienteView(c, [], hoy(), u, ctx);
     },
 
     async ficha(clienteId) {
-      const cliente = await clienteOr404(clienteId);
-      const [movs, u] = await Promise.all([movimientosDe(clienteId), umbral()]);
-      const ledger = movs.map(toLedger);
-      const correcciones = mapaCorrecciones(movs);
-      const pendientes = porId(imputarFiados(ledger, u));
-      return {
-        cliente: clienteView(cliente, ledger, hoy(), u),
-        historial: [...movs]
-          .reverse()
-          .map((m) => movimientoView(m, cliente.nombre, correcciones, pendientes)),
-      };
+      return fichaDe(clienteId);
     },
 
     async actualizarCliente(clienteId, patch) {
-      await clienteOr404(clienteId);
+      const actual = await clienteOr404(clienteId);
       const data: Prisma.fiado_clientesUpdateInput = {};
       if (patch.nombre !== undefined) data.nombre = patch.nombre;
       if (patch.telefono !== undefined) data.telefono = patch.telefono;
       if (patch.etiqueta !== undefined) data.etiqueta = patch.etiqueta;
       if (patch.limite !== undefined) data.limite = patch.limite;
       if (patch.proximo_cobro !== undefined) data.proximo_cobro = toDate(patch.proximo_cobro);
+      if (patch.sin_recargo !== undefined) {
+        data.sin_recargo = patch.sin_recargo;
+        // Volver a activarle recargos obliga a avisarle de nuevo.
+        if (actual.sin_recargo && !patch.sin_recargo) data.recargo_aviso_version = 0;
+      }
       const c = await prisma.fiado_clientes.update({ where: { id: clienteId }, data });
-      const [movs, u] = await Promise.all([movimientosDe(clienteId), umbral()]);
-      return clienteView(c, movs.map(toLedger), hoy(), u);
+      const [movs, u, ctx] = await Promise.all([
+        movimientosDe(clienteId),
+        umbral(),
+        recargoCtx(clienteId),
+      ]);
+      return clienteView(c, movs.map(toLedger), hoy(), u, ctx);
     },
 
     async crearMovimiento(input) {
@@ -426,6 +648,9 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
           where: { user_id: uid(), idempotency_key: input.idempotency_key },
         });
         if (previo) return resultado(previo, cliente);
+      }
+      if (input.tipo === 'fiado' && avisoPendiente(cliente, await recargoCtx(cliente.id))) {
+        throw new FiadoError(409, 'Antes de anotarle un fiado, avisale las condiciones de recargo');
       }
       try {
         const mov = await prisma.fiado_movimientos.create({
@@ -460,16 +685,26 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
       if (!original) throw new FiadoError(404, 'Movimiento no encontrado');
       const monto = montoCorreccion(toLedger(original), original.corregido != null);
       const cliente = await clienteOr404(original.cliente_id);
+      // Deshacer un fiado deshace también sus recargos vigentes (si no, quedaría
+      // un recargo sobre una deuda que no existe). Todo en un solo INSERT.
+      const recargos =
+        original.tipo === 'fiado'
+          ? await prisma.fiado_movimientos.findMany({
+              where: { user_id: uid(), recargo_de: original.id, corregido: { is: null } },
+            })
+          : [];
+      const correccion = (m: { id: number; monto: number }) => ({
+        user_id: uid(),
+        cliente_id: original.cliente_id,
+        tipo: 'correccion',
+        monto: -m.monto,
+        corrige_id: m.id,
+      });
       try {
-        const mov = await prisma.fiado_movimientos.create({
-          data: {
-            user_id: uid(),
-            cliente_id: original.cliente_id,
-            tipo: 'correccion',
-            monto,
-            corrige_id: original.id,
-          },
+        const creadas = await prisma.fiado_movimientos.createManyAndReturn({
+          data: [{ ...correccion(original), monto }, ...recargos.map(correccion)],
         });
+        const mov = creadas.find((m) => m.corrige_id === original.id) as MovRow;
         return resultado(mov, cliente);
       } catch (err) {
         if (isUniqueViolation(err, 'corrige_id')) {
@@ -492,12 +727,134 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
     },
 
     async putAjustes(input) {
+      const { recargo, ...resto } = input;
+      let deRecargo: {
+        recargo?: Prisma.NullableJsonNullValueInput | Prisma.InputJsonValue;
+        recargo_version?: number;
+      } = {};
+      if (recargo !== undefined) {
+        const actual = await ajustesRow();
+        const anterior = configDe(actual?.recargo);
+        const nuevo = parseConfigRecargo(recargo, hoy(), anterior);
+        // Activar o empeorar las condiciones deja a todos los clientes pendientes de aviso.
+        const version = (actual?.recargo_version ?? 0) + (requiereAviso(anterior, nuevo) ? 1 : 0);
+        deRecargo = {
+          recargo: nuevo === null ? Prisma.DbNull : (nuevo as unknown as Prisma.InputJsonValue),
+          recargo_version: version,
+        };
+      }
       const row = await prisma.fiado_ajustes.upsert({
         where: { user_id: uid() },
-        create: { user_id: uid(), ...input, comercio: input.comercio ?? '' },
-        update: input,
+        create: {
+          user_id: uid(),
+          ...resto,
+          comercio: resto.comercio ?? '',
+          ...deRecargo,
+        },
+        update: { ...resto, ...deRecargo },
       });
       return ajustesView(row);
+    },
+
+    async sumarRecargos(clienteId, fiadoIds, idempotencyKey) {
+      const cliente = await clienteOr404(clienteId);
+      const clave = (fiadoId: number) => (idempotencyKey ? `${idempotencyKey}:${fiadoId}` : null);
+      const previos = async () =>
+        idempotencyKey
+          ? prisma.fiado_movimientos.findMany({
+              where: { user_id: uid(), idempotency_key: { startsWith: `${idempotencyKey}:` } },
+              orderBy: { id: 'asc' },
+            })
+          : [];
+      // Doble toque o reintento: devolver lo que ya se anotó.
+      const ya = await previos();
+      if (ya.length > 0) return resultadoVarios(ya, cliente);
+
+      const estado = await recargoActual(cliente);
+      if (!estado) throw new FiadoError(409, 'Los recargos no están activos para este cliente');
+      if (estado.aviso) {
+        throw new FiadoError(409, 'Antes de sumarle recargos, avisale las condiciones');
+      }
+      let elegidos = estado.sugeridos;
+      if (fiadoIds) {
+        const pedidos = new Set(fiadoIds);
+        elegidos = estado.sugeridos.filter((r) => pedidos.has(r.fiado_id));
+        if (elegidos.length !== pedidos.size) {
+          throw new FiadoError(409, 'Los recargos cambiaron: volvé a abrir la ficha');
+        }
+      }
+      if (elegidos.length === 0) throw new FiadoError(409, 'No hay recargos para sumar');
+
+      try {
+        const creados = await prisma.fiado_movimientos.createManyAndReturn({
+          data: elegidos.map((r) => ({
+            user_id: uid(),
+            cliente_id: cliente.id,
+            tipo: 'recargo',
+            monto: r.monto,
+            recargo_de: r.fiado_id,
+            recargo_periodo: r.periodo_hasta,
+            nota: r.detalle,
+            idempotency_key: clave(r.fiado_id),
+          })),
+        });
+        return resultadoVarios(creados, cliente);
+      } catch (err) {
+        // Dos envíos simultáneos con la misma clave: devolver los del que ganó.
+        if (idempotencyKey && isUniqueViolation(err, 'idempotency_key')) {
+          const ganador = await previos();
+          if (ganador.length > 0) return resultadoVarios(ganador, cliente);
+        }
+        throw err;
+      }
+    },
+
+    async omitirRecargo(clienteId, fiadoId) {
+      const cliente = await clienteOr404(clienteId);
+      const estado = await recargoActual(cliente);
+      const sugerido = estado?.sugeridos.find((r) => r.fiado_id === fiadoId);
+      if (!sugerido) throw new FiadoError(409, 'Ese recargo ya no está para sumar');
+      try {
+        await prisma.fiado_recargo_omisiones.create({
+          data: {
+            user_id: uid(),
+            cliente_id: cliente.id,
+            fiado_id: fiadoId,
+            periodo: sugerido.periodo_hasta,
+          },
+        });
+      } catch (err) {
+        // Ya estaba omitido (doble toque): no es un error.
+        if (!isUniqueViolation(err, 'fiado_id')) throw err;
+      }
+      return fichaDe(clienteId);
+    },
+
+    async registrarAvisoRecargo(clienteId, via) {
+      const cliente = await clienteOr404(clienteId);
+      const ctx = await recargoCtx(clienteId);
+      if (!ctx.config) throw new FiadoError(409, 'Los recargos están apagados');
+      if (cliente.sin_recargo) throw new FiadoError(409, 'Este cliente no tiene recargos');
+      const aviso = await prisma.fiado_avisos_recargo.create({
+        data: {
+          user_id: uid(),
+          cliente_id: cliente.id,
+          version: ctx.version,
+          condiciones: textoAvisoRecargo(ctx.config, ctx.comercio, cliente.nombre),
+          via,
+        },
+      });
+      await prisma.fiado_clientes.update({
+        where: { id: cliente.id },
+        data: { recargo_aviso_version: ctx.version },
+      });
+      return {
+        cliente_id: aviso.cliente_id,
+        version: aviso.version,
+        condiciones: aviso.condiciones,
+        via,
+        created_at: aviso.created_at.toISOString(),
+      };
     },
   };
 }

@@ -18,7 +18,10 @@ import {
   parseClienteInput,
   parseClientePatch,
   parseMovimientoInput,
+  parseOmitirRecargo,
   parseOrden,
+  parseSumarRecargos,
+  parseViaAviso,
 } from '../domain/fiado.js';
 import type { FiadoRepo } from './fiado.repo.js';
 
@@ -83,6 +86,28 @@ export class FiadoController {
   @Post('clientes/:id/recordatorios')
   registrarRecordatorio(@Param('id') id: string) {
     return run(() => this.repo.registrarRecordatorio(parseId(id, 'id')));
+  }
+
+  /** "Sumar recargos": anota los sugeridos (todos o los de `fiado_ids`), uno por fiado. */
+  @Post('clientes/:id/recargos')
+  sumarRecargos(@Param('id') id: string, @Body() body: unknown) {
+    return run(() => {
+      const { fiado_ids, idempotency_key } = parseSumarRecargos(body);
+      return this.repo.sumarRecargos(parseId(id, 'id'), fiado_ids, idempotency_key);
+    });
+  }
+
+  /** "No cobrar": saltea el período sugerido de un fiado. Devuelve la ficha. */
+  @Post('clientes/:id/recargos/omitir')
+  @HttpCode(200)
+  omitirRecargo(@Param('id') id: string, @Body() body: unknown) {
+    return run(() => this.repo.omitirRecargo(parseId(id, 'id'), parseOmitirRecargo(body)));
+  }
+
+  /** El comercio le avisó las condiciones de recargo (WhatsApp o "Cambio informado"). */
+  @Post('clientes/:id/aviso-recargo')
+  registrarAvisoRecargo(@Param('id') id: string, @Body() body: unknown) {
+    return run(() => this.repo.registrarAvisoRecargo(parseId(id, 'id'), parseViaAviso(body)));
   }
 
   @Post('movimientos')
