@@ -280,11 +280,11 @@ describe('recargos por atraso', () => {
           tipo: 'recargo',
           monto: 500,
           recargo_de: f.id,
-          recargo_periodo: 1,
+          recargo_dias: 14,
         },
       });
       await tx.fiado_recargo_omisiones.create({
-        data: { user_id: u.id, cliente_id: c.id, fiado_id: f.id, periodo: 2 },
+        data: { user_id: u.id, cliente_id: c.id, fiado_id: f.id, dias: 40 },
       });
       const rows = await makeUsoRepo(tx, []).comercios();
       expect(rows.find((r) => r.user_id === u.id)).toMatchObject({
