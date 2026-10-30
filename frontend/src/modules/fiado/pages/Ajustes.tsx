@@ -4,6 +4,7 @@ import { ScreenHeader } from '../../../host/ui/ScreenHeader';
 import { useToast } from '../../../host/ui/Toast';
 import { TextArea, TextField } from '../../../host/ui/controls';
 import { Card, Notice, Section } from '../../../host/ui/surfaces';
+import { type BorradorRecargo, SeccionRecargo, borradorDe, configDe } from '../AjustesRecargo';
 import { type Ajustes as AjustesData, fiadoApi, mensajeDeError } from '../api';
 import { Cargando, ErrorCarga } from '../components';
 import { ETIQUETA_VARIABLE, FIRMA, VARIABLES, type Variable, insertarVariable } from '../mensajes';
@@ -17,12 +18,13 @@ const PLANTILLAS: { campo: Plantilla; label: string; vars: readonly Variable[] }
   { campo: 'plantilla_recordatorio', label: 'Recordatorio', vars: VARIABLES.recordatorio },
 ];
 
-/** Ajustes de Fiado: datos del comercio, aviso de deuda vieja y mensajes. */
+/** Ajustes de Fiado: datos del comercio, aviso de deuda vieja, recargo por atraso y mensajes. */
 export default function Ajustes() {
   const carga = useCarga(() => fiadoApi.ajustes(), []);
   const toast = useToast();
   const [form, setForm] = useState<AjustesData | null>(null);
   const [dias, setDias] = useState('');
+  const [recargo, setRecargo] = useState<BorradorRecargo>(() => borradorDe(null));
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,6 +32,7 @@ export default function Ajustes() {
     if (carga.data) {
       setForm(carga.data);
       setDias(String(carga.data.dias_deuda_vieja));
+      setRecargo(borradorDe(carga.data.recargo));
     }
   }, [carga.data]);
 
@@ -67,10 +70,18 @@ export default function Ajustes() {
         plantilla_fiado: form.plantilla_fiado,
         plantilla_pago: form.plantilla_pago,
         plantilla_recordatorio: form.plantilla_recordatorio,
+        recargo: configDe(recargo),
       });
+      const hayQueAvisar =
+        guardado.recargo !== null && guardado.recargo_version > form.recargo_version;
       setForm(guardado);
       setDias(String(guardado.dias_deuda_vieja));
-      toast.show('Guardaste los cambios.');
+      setRecargo(borradorDe(guardado.recargo));
+      toast.show(
+        hayQueAvisar
+          ? 'Guardaste los cambios. Antes de anotarle algo nuevo a cada cliente, te vamos a pedir que le avises las condiciones.'
+          : 'Guardaste los cambios.',
+      );
     } catch (err) {
       setError(mensajeDeError(err));
     } finally {
@@ -117,6 +128,12 @@ export default function Ajustes() {
               </div>
             </Card>
           </Section>
+
+          <SeccionRecargo
+            borrador={recargo}
+            onChange={setRecargo}
+            condiciones={form.recargo_condiciones}
+          />
 
           <Section title="Mensajes">
             <Card>

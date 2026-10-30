@@ -17,10 +17,11 @@ export function textoSaldo(saldo: number): string {
   return saldo < 0 ? `${formatMoney(saldo)} a favor` : formatMoney(saldo);
 }
 
-/** "Fiado", "Pagó", "Corrección" — sin jerga contable (guía §5). */
+/** "Fiado", "Pagó", "Recargo", "Corrección" — sin jerga contable (guía §5). */
 export function textoTipo(m: Pick<Movimiento, 'tipo'>): string {
   if (m.tipo === 'fiado') return 'Fiado';
   if (m.tipo === 'pago') return 'Pagó';
+  if (m.tipo === 'recargo') return 'Recargo';
   return 'Corrección';
 }
 
@@ -42,6 +43,17 @@ const fechaDia = new Intl.DateTimeFormat('es-AR', {
   month: 'short',
   timeZone: 'UTC',
 });
+
+const fechaDiaAR = new Intl.DateTimeFormat('es-AR', {
+  day: 'numeric',
+  month: 'short',
+  timeZone: 'America/Argentina/Buenos_Aires',
+});
+
+/** Instante ISO → "15 sep", en hora argentina (un fiado de las 23 h sigue siendo de ese día). */
+export function textoDiaDe(iso: string): string {
+  return fechaDiaAR.format(new Date(iso));
+}
 
 /** 'AAAA-MM-DD' → "1 nov". */
 export function textoDia(ymd: string | null): string {

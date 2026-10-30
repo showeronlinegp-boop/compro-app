@@ -8,7 +8,8 @@ import { RUTAS } from '../rutas';
 import { useCarga } from '../useCarga';
 
 /**
- * Corregir los datos de un cliente (nombre, teléfono, límite). Vaciar el
+ * Corregir los datos de un cliente (nombre, teléfono, límite y, con recargos
+ * activos, "No sugerir recargos a este cliente"). Vaciar el
  * teléfono o el límite los saca. Al guardar vuelve a la ficha (que recarga).
  */
 export default function EditarCliente() {
@@ -16,8 +17,12 @@ export default function EditarCliente() {
   const clienteId = Number(id);
   const volver = useGoBack(RUTAS.ficha(clienteId));
   const toast = useToast();
-  const carga = useCarga(() => fiadoApi.ficha(clienteId), [clienteId]);
-  const c = carga.data?.cliente;
+  const carga = useCarga(
+    () => Promise.all([fiadoApi.ficha(clienteId), fiadoApi.ajustes()]),
+    [clienteId],
+  );
+  const [ficha, ajustes] = carga.data ?? [null, null];
+  const c = ficha?.cliente;
 
   return (
     <div className="flex flex-col gap-5 px-4 pt-4 pb-6">
@@ -29,6 +34,7 @@ export default function EditarCliente() {
       {c && (
         <FormCliente
           inicial={c}
+          conRecargo={ajustes?.recargo != null || c.sin_recargo}
           textoBoton="Guardar cambios"
           onGuardar={async (datos) => {
             const actualizado = await fiadoApi.actualizarCliente(clienteId, datos);

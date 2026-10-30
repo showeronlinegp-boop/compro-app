@@ -7,8 +7,9 @@ import { formatMoney } from '../../../host/ui/format';
 import { IconCheck } from '../../../host/ui/icons';
 import { Card, Notice, WhatsAppBubble } from '../../../host/ui/surfaces';
 import { registrarUso } from '../../../host/uso';
-import { fiadoApi, mensajeDeError } from '../api';
-import { abrirWhatsApp, comprobante } from '../mensajes';
+import { type Movimiento, fiadoApi, mensajeDeError } from '../api';
+import { abrirWhatsApp, comprobante, comprobanteRecargos } from '../mensajes';
+import type { EstadoListoRecargo } from '../recargos';
 import { RUTAS } from '../rutas';
 import { primerNombre, textoSaldo } from '../textos';
 import { useCarga } from '../useCarga';
@@ -18,14 +19,15 @@ import type { EstadoListo } from './Anotar';
 const DESHACER_MS = 8000;
 
 /**
- * Confirmación después de anotar (pantalla de tarea). Ofrece "Deshacer" en un
+ * Confirmación después de anotar un fiado o un pago, o de sumar recargos
+ * (pantalla de tarea). Ofrece "Deshacer" en un
  * toast: no borra nada, crea una corrección que queda visible en el historial.
  * El toast vive mientras se ve esta pantalla: al salir se cierra, así
  * "Deshacer" nunca actúa desde otra pantalla.
  */
 export default function Listo() {
   const location = useLocation();
-  const estado = location.state as EstadoListo | null;
+  const estado = location.state as EstadoListo | EstadoListoRecargo | null;
   const volver = useGoBack(RUTAS.inicio);
   const toast = useToast();
   const ajustes = useCarga(() => fiadoApi.ajustes(), []);
@@ -35,25 +37,31 @@ export default function Listo() {
     if (!estado) return;
     // Si el usuario ya salió de "Listo" cuando vuelve la respuesta, no navegar otra vez.
     let enPantalla = true;
-    const { movimiento } = estado.resultado;
-    const id = toast.show(
-      `${estado.tipo === 'fiado' ? 'Anotaste' : 'Registraste'} ${formatMoney(movimiento.monto)}.`,
-      {
-        durationMs: DESHACER_MS,
-        action: {
-          label: 'Deshacer',
-          onClick: () => {
-            fiadoApi
-              .corregir(movimiento.id)
-              .then(() => {
-                toast.show('Listo, lo deshicimos. Queda anotado en el historial como corrección.');
-                if (enPantalla) volver();
-              })
-              .catch((err) => toast.show(mensajeDeError(err)));
-          },
+    const movs = movimientosDe(estado);
+    const total = movs.reduce((acc, m) => acc + Math.abs(m.monto), 0);
+    const texto =
+      estado.tipo === 'recargo'
+        ? `Sumaste ${formatMoney(total)} de ${movs.length === 1 ? 'recargo' : 'recargos'}.`
+        : `${estado.tipo === 'fiado' ? 'Anotaste' : 'Registraste'} ${formatMoney(total)}.`;
+    const id = toast.show(texto, {
+      durationMs: DESHACER_MS,
+      action: {
+        label: 'Deshacer',
+        onClick: () => {
+          // Con varios recargos, se deshace cada uno (cada uno es su fila).
+          movs
+            .reduce<Promise<unknown>>(
+              (cadena, m) => cadena.then(() => fiadoApi.corregir(m.id)),
+              Promise.resolve(),
+            )
+            .then(() => {
+              toast.show('Listo, lo deshicimos. Queda anotado en el historial como corrección.');
+              if (enPantalla) volver();
+            })
+            .catch((err) => toast.show(mensajeDeError(err)));
         },
       },
-    );
+    });
     return () => {
       enPantalla = false;
       toast.dismiss(id);
@@ -63,13 +71,29 @@ export default function Listo() {
   // Entrada directa o recarga: no hay nada que confirmar.
   if (!estado) return <Navigate to={RUTAS.inicio} replace />;
 
-  const { tipo, resultado } = estado;
-  const { cliente, movimiento } = resultado;
+  const { cliente } = estado.resultado;
+  const movs = movimientosDe(estado);
+  const total = movs.reduce((acc, m) => acc + Math.abs(m.monto), 0);
   const nombre = primerNombre(cliente.nombre);
   const frase =
-    tipo === 'fiado'
-      ? `Anotaste ${formatMoney(movimiento.monto)} de fiado a ${nombre}.`
-      : `${nombre} pagó ${formatMoney(movimiento.monto)}.`;
+    estado.tipo === 'recargo'
+      ? `Sumaste ${formatMoney(total)} de ${movs.length === 1 ? 'recargo' : 'recargos'} por atraso a ${nombre}.`
+      : estado.tipo === 'fiado'
+        ? `Anotaste ${formatMoney(total)} de fiado a ${nombre}.`
+        : `${nombre} pagó ${formatMoney(total)}.`;
+  const textoComprobante = !ajustes.data
+    ? ''
+    : estado.tipo === 'recargo'
+      ? comprobanteRecargos(
+          estado.resultado.movimientos.map((m) => ({
+            monto: m.monto,
+            detalle: m.nota ?? '',
+            fiado_fecha: estado.fiados[m.recargo_de ?? 0] ?? '',
+          })),
+          cliente,
+          ajustes.data,
+        )
+      : comprobante(estado.tipo, total, cliente, ajustes.data, estado.resultado.movimiento.vence);
 
   return (
     <div className="flex flex-col gap-5 px-4 py-8">
@@ -97,10 +121,7 @@ export default function Listo() {
 
       {ajustes.data && (
         <>
-          <WhatsAppBubble
-            label="Comprobante"
-            text={comprobante(tipo, Math.abs(movimiento.monto), cliente, ajustes.data, movimiento.vence)}
-          />
+          <WhatsAppBubble label="Comprobante" text={textoComprobante} />
           <Button
             variant="whatsapp"
             size="l"
@@ -108,10 +129,7 @@ export default function Listo() {
             className="min-h-[58px]"
             onClick={() => {
               if (!ajustes.data) return;
-              abrirWhatsApp(
-                cliente.whatsapp,
-                comprobante(tipo, Math.abs(movimiento.monto), cliente, ajustes.data, movimiento.vence),
-              );
+              abrirWhatsApp(cliente.whatsapp, textoComprobante);
               registrarUso('comprobante', 'fiado');
               volver();
             }}
@@ -126,4 +144,9 @@ export default function Listo() {
       </Button>
     </div>
   );
+}
+
+/** Los movimientos recién anotados: uno (fiado o pago) o varios (recargos). */
+function movimientosDe(estado: EstadoListo | EstadoListoRecargo): Movimiento[] {
+  return estado.tipo === 'recargo' ? estado.resultado.movimientos : [estado.resultado.movimiento];
 }

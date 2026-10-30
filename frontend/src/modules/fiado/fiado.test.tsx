@@ -49,6 +49,10 @@ const cliente = (over: Partial<Cliente> = {}): Cliente => ({
   vencido: 0,
   vencido_desde: null,
   proximo_vencimiento: null,
+  sin_recargo: false,
+  recargos_pendientes: 0,
+  recargo_para_sumar: 0,
+  aviso_recargo_pendiente: false,
   ...over,
 });
 
@@ -64,6 +68,8 @@ const mov = (over: Partial<Movimiento> = {}): Movimiento => ({
   corregido_por: null,
   vence: null,
   pendiente: null,
+  recargo_de: null,
+  recargo_dias: null,
   ...over,
 });
 
@@ -74,6 +80,9 @@ const ajustes = {
   plantilla_fiado: '',
   plantilla_pago: '',
   plantilla_recordatorio: '',
+  recargo: null,
+  recargo_condiciones: null,
+  recargo_version: 0,
 };
 
 /** Muestra la ruta actual para afirmar navegaciones. */
@@ -131,7 +140,7 @@ describe('Inicio', () => {
       ultimos: [mov(), mov({ id: 11, tipo: 'pago', monto: -1000 })],
     };
     m.resumen.mockResolvedValue(resumen);
-    m.ficha.mockResolvedValue({ cliente: cliente(), historial: [] });
+    m.ficha.mockResolvedValue({ cliente: cliente(), historial: [], recargo: null });
     renderAt('/fiado');
 
     expect(await screen.findByText('$ 42.300', { selector: 'p' })).toBeDefined();
@@ -290,6 +299,7 @@ describe('Ficha', () => {
         mov({ id: 12, tipo: 'correccion', monto: -4200, corrige_id: 10 }),
         mov({ id: 10, corregido_por: 12 }),
       ],
+      recargo: null,
     };
     m.ficha.mockResolvedValue(ficha);
     renderAt('/fiado/clientes/1');
@@ -315,7 +325,7 @@ describe('Ficha', () => {
   });
 
   it('volver sin historial va a la lista de clientes', async () => {
-    m.ficha.mockResolvedValue({ cliente: cliente(), historial: [] });
+    m.ficha.mockResolvedValue({ cliente: cliente(), historial: [], recargo: null });
     m.clientes.mockResolvedValue([]);
     renderAt('/fiado/clientes/1');
     expect(await screen.findByText('Todavía no hay movimientos.')).toBeDefined();
@@ -329,7 +339,11 @@ describe('Ficha', () => {
 describe('Nuevo cliente', () => {
   it('guardar se habilita con nombre; crea y abre la ficha', async () => {
     m.crearCliente.mockResolvedValue(cliente({ id: 7, nombre: 'Rosa' }));
-    m.ficha.mockResolvedValue({ cliente: cliente({ id: 7, nombre: 'Rosa' }), historial: [] });
+    m.ficha.mockResolvedValue({
+      cliente: cliente({ id: 7, nombre: 'Rosa' }),
+      historial: [],
+      recargo: null,
+    });
     renderAt('/fiado/clientes/nuevo');
 
     const guardar = screen.getByRole('button', { name: 'Guardar cliente' }) as HTMLButtonElement;
@@ -371,7 +385,7 @@ describe('Nuevo cliente', () => {
 
 describe('Editar cliente', () => {
   it('desde la ficha abre el formulario con los datos cargados', async () => {
-    m.ficha.mockResolvedValue({ cliente: cliente(), historial: [] });
+    m.ficha.mockResolvedValue({ cliente: cliente(), historial: [], recargo: null });
     renderAt('/fiado/clientes/1');
     fireEvent.click(await screen.findByRole('button', { name: 'Editar' }));
     expect(donde()).toBe('/fiado/clientes/1/editar');
@@ -387,7 +401,7 @@ describe('Editar cliente', () => {
   });
 
   it('guarda los cambios (vaciar el límite lo saca) y vuelve a la ficha', async () => {
-    m.ficha.mockResolvedValue({ cliente: cliente(), historial: [] });
+    m.ficha.mockResolvedValue({ cliente: cliente(), historial: [], recargo: null });
     m.actualizarCliente.mockResolvedValue(cliente({ nombre: 'Marta Gómez', limite: null }));
     renderAt('/fiado/clientes/1/editar');
 
@@ -412,7 +426,7 @@ describe('Editar cliente', () => {
   });
 
   it('sin nombre no deja guardar; muestra el error del backend', async () => {
-    m.ficha.mockResolvedValue({ cliente: cliente(), historial: [] });
+    m.ficha.mockResolvedValue({ cliente: cliente(), historial: [], recargo: null });
     m.actualizarCliente.mockRejectedValue(new Error('400 {"error":"limite inválido"}'));
     renderAt('/fiado/clientes/1/editar');
 

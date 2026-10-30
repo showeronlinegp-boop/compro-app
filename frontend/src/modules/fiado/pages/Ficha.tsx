@@ -1,6 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '../../../host/ui/Button';
 import { ScreenHeader } from '../../../host/ui/ScreenHeader';
+import { useToast } from '../../../host/ui/Toast';
 import { formatMoney } from '../../../host/ui/format';
 import {
   Avatar,
@@ -12,11 +13,20 @@ import {
   Pill,
   Section,
 } from '../../../host/ui/surfaces';
-import { type Cliente, fiadoApi } from '../api';
+import { type Cliente, type Movimiento, fiadoApi } from '../api';
 import { AccionesMovimiento, Cargando, ErrorCarga, FilaMovimiento } from '../components';
+import { BotonPerdonar, TarjetaAvisoRecargo, TarjetaRecargos } from '../recargos';
 import { RUTAS } from '../rutas';
 import { textoDia, textoDias, textoSaldo } from '../textos';
 import { useCarga } from '../useCarga';
+
+/**
+ * Un recargo se puede perdonar mientras no se haya corregido ni pagado nada
+ * (se perdona entero: si ya pagó una parte, perdonarlo le dejaría saldo a favor).
+ */
+function perdonable(m: Movimiento): boolean {
+  return m.tipo === 'recargo' && m.corregido_por == null && m.pendiente === m.monto;
+}
 
 /** Tarjeta principal de la ficha: identidad, saldo, celdas y aviso de límite. */
 export function TarjetaFicha({
@@ -81,12 +91,18 @@ export function TarjetaFicha({
   );
 }
 
-/** Ficha del cliente: datos, saldo e historial completo (correcciones incluidas). */
+/**
+ * Ficha del cliente: datos, saldo, recargos por atraso (aviso de condiciones o
+ * sugerencia) e historial completo (correcciones incluidas).
+ */
 export default function Ficha() {
   const { id } = useParams();
   const clienteId = Number(id);
   const navigate = useNavigate();
+  const toast = useToast();
   const carga = useCarga(() => fiadoApi.ficha(clienteId), [clienteId]);
+  const recargo = carga.data?.recargo ?? null;
+  const porId = new Map((carga.data?.historial ?? []).map((m) => [m.id, m]));
 
   return (
     <div className="flex flex-col gap-5 px-4 pt-4 pb-6">
@@ -110,8 +126,29 @@ export default function Ficha() {
             onEditar={() => navigate(RUTAS.editarCliente(clienteId))}
           />
 
+          {recargo?.aviso && (
+            <TarjetaAvisoRecargo
+              cliente={carga.data.cliente}
+              texto={recargo.aviso.texto}
+              onAvisado={() => {
+                toast.show('Listo, quedó registrado que le avisaste.');
+                carga.recargar();
+              }}
+            />
+          )}
+
+          {recargo && recargo.sugeridos.length > 0 && (
+            <TarjetaRecargos
+              clienteId={clienteId}
+              recargo={recargo}
+              onCambio={carga.recargar}
+              onSumados={(estado) => navigate(RUTAS.listo, { state: estado })}
+            />
+          )}
+
           <AccionesMovimiento
             compacto
+            fiadoBloqueado={carga.data.cliente.aviso_recargo_pendiente}
             onAnotar={(tipo) => navigate(RUTAS.anotar(tipo, clienteId))}
             onRecordar={
               carga.data.cliente.saldo > 0 ? () => navigate(RUTAS.recordar(clienteId)) : undefined
@@ -125,7 +162,27 @@ export default function Ficha() {
                   <EmptyNote>Todavía no hay movimientos.</EmptyNote>
                 </li>
               ) : (
-                carga.data.historial.map((m) => <FilaMovimiento key={m.id} movimiento={m} />)
+                carga.data.historial.map((m) => (
+                  <FilaMovimiento
+                    key={m.id}
+                    movimiento={m}
+                    fiadoFecha={m.recargo_de ? porId.get(m.recargo_de)?.created_at : undefined}
+                    action={
+                      perdonable(m) ? (
+                        <BotonPerdonar
+                          recargo={m}
+                          onPerdonado={(error) => {
+                            toast.show(
+                              error ??
+                                `Perdonaste el recargo de ${formatMoney(m.monto)}. Queda en el historial como corrección.`,
+                            );
+                            if (!error) carga.recargar();
+                          }}
+                        />
+                      ) : undefined
+                    }
+                  />
+                ))
               )}
             </List>
           </Section>

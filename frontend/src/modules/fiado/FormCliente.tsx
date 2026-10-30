@@ -3,11 +3,14 @@ import { Button } from '../../host/ui/Button';
 import { TextField } from '../../host/ui/controls';
 import { Notice } from '../../host/ui/surfaces';
 import { mensajeDeError } from './api';
+import { Interruptor } from './recargos';
 
 export interface DatosCliente {
   nombre: string;
   telefono: string | null;
   limite: number | null;
+  /** Sólo si se muestra la opción de recargos. */
+  sin_recargo?: boolean;
 }
 
 /**
@@ -19,14 +22,23 @@ export function FormCliente({
   inicial,
   textoBoton,
   onGuardar,
+  conRecargo = false,
 }: {
-  inicial: { nombre?: string; telefono?: string | null; limite?: number | null };
+  inicial: {
+    nombre?: string;
+    telefono?: string | null;
+    limite?: number | null;
+    sin_recargo?: boolean;
+  };
   textoBoton: string;
   onGuardar: (datos: DatosCliente) => Promise<void>;
+  /** Muestra "No sugerir recargos a este cliente" (recargos activos o ya marcado). */
+  conRecargo?: boolean;
 }) {
   const [nombre, setNombre] = useState(inicial.nombre ?? '');
   const [telefono, setTelefono] = useState(inicial.telefono ?? '');
   const [limite, setLimite] = useState(inicial.limite != null ? String(inicial.limite) : '');
+  const [sinRecargo, setSinRecargo] = useState(inicial.sin_recargo ?? false);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,6 +54,7 @@ export function FormCliente({
         nombre: nombre.trim(),
         telefono: telefono.trim() || null,
         limite: limite ? Number(limite) : null,
+        ...(conRecargo ? { sin_recargo: sinRecargo } : {}),
       });
     } catch (err) {
       setError(mensajeDeError(err));
@@ -79,6 +92,19 @@ export function FormCliente({
         onChange={(e) => setLimite(e.target.value.replace(/\D/g, '').slice(0, 9))}
         hint="Si lo pasa, te avisamos. No te frena para anotar."
       />
+
+      {conRecargo && (
+        <Interruptor
+          label="No sugerir recargos a este cliente"
+          hint={
+            inicial.sin_recargo
+              ? 'Si se los volvés a activar, vas a tener que avisarle las condiciones.'
+              : 'Para clientes de confianza. Los recargos que ya tiene no cambian.'
+          }
+          checked={sinRecargo}
+          onChange={setSinRecargo}
+        />
+      )}
 
       {error && <Notice>{error}</Notice>}
 
