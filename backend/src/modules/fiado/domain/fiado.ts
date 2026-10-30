@@ -26,8 +26,8 @@ export interface MovimientoLedger {
   created_at: Date;
   /** Sólo en un recargo: el fiado al que pertenece. */
   recargo_de?: number | null;
-  /** Sólo en un recargo: último período de atraso que cubre. */
-  recargo_periodo?: number | null;
+  /** Sólo en un recargo: días de atraso que cubre. */
+  recargo_dias?: number | null;
 }
 
 // ─── Errores de dominio ───────────────────────────────────────────────────────

@@ -52,8 +52,8 @@ export interface Movimiento {
   pendiente: number | null;
   /** En un recargo: el fiado al que pertenece. */
   recargo_de: number | null;
-  /** En un recargo: último período de atraso que cubre. */
-  recargo_periodo: number | null;
+  /** En un recargo: días de atraso que cubre. */
+  recargo_dias: number | null;
 }
 
 export interface Cobro extends Cliente {

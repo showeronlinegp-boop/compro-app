@@ -309,8 +309,9 @@ model fiado_movimientos {
   vence           DateTime? @db.Date
   /// Sólo en un recargo: el fiado al que pertenece.
   recargo_de      Int?
-  /// Sólo en un recargo: último período de atraso que cubre (mes, semana o tramo).
-  recargo_periodo Int?      @db.SmallInt
+  /// Sólo en un recargo: días de atraso que cubre (no el número de período, que
+  /// cambia de sentido si se cambia de esquema).
+  recargo_dias    Int?      @db.SmallInt
   created_at      DateTime  @default(now()) @db.Timestamptz(6)
 
   user      users                     @relation(fields: [user_id], references: [id], onDelete: Cascade)
@@ -395,14 +396,15 @@ model fiado_recargo_omisiones {
   user_id    Int
   cliente_id Int
   fiado_id   Int
-  periodo    Int      @db.SmallInt
+  /// Días de atraso hasta los que se decidió no cobrar.
+  dias       Int      @db.SmallInt
   created_at DateTime @default(now()) @db.Timestamptz(6)
 
   user    users             @relation(fields: [user_id], references: [id], onDelete: Cascade)
   cliente fiado_clientes    @relation(fields: [cliente_id], references: [id], onDelete: Cascade)
   fiado   fiado_movimientos @relation(fields: [fiado_id], references: [id], onDelete: Cascade)
 
-  @@unique([fiado_id, periodo])
+  @@unique([fiado_id, dias])
   @@index([user_id, cliente_id])
   @@map("fiado_recargo_omisiones")
 }

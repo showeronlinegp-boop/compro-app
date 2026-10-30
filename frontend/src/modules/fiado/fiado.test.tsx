@@ -69,7 +69,7 @@ const mov = (over: Partial<Movimiento> = {}): Movimiento => ({
   vence: null,
   pendiente: null,
   recargo_de: null,
-  recargo_periodo: null,
+  recargo_dias: null,
   ...over,
 });
 

@@ -8,10 +8,12 @@
  *   SU vencimiento (o desde el día de activación, si el comercio lo eligió).
  *   La tolerancia es sólo un período de gracia: no hay sugerencias mientras
  *   dura, pero los períodos se cuentan desde el vencimiento.
- * - Se guardan PERÍODOS, no montos: cada recargo y cada "No cobrar" cubren
- *   hasta un período (mes, semana o tramo). Lo que se sugiere son los períodos
- *   todavía no tratados, sobre lo que falta pagar de ese fiado. Así un pago
- *   parcial achica los recargos siguientes sin hacer desaparecer ninguno.
+ * - Se guardan DÍAS de atraso, no montos ni números de período: cada recargo
+ *   y cada "No cobrar" cubren el atraso hasta un día. Con el esquema vigente
+ *   eso se traduce al período ya tratado (un cambio de esquema no confunde
+ *   "semana 10" con "mes 10"). Lo que se sugiere son los períodos todavía no
+ *   tratados, sobre lo que falta pagar de ese fiado: un pago parcial achica
+ *   los recargos siguientes sin hacer desaparecer ninguno.
  * - Nunca hay recargo sobre recargo: la base es sólo el capital pendiente.
  * - Montos redondeados a múltiplos de $ 10, siempre hacia abajo (a favor del cliente).
  */
@@ -255,6 +257,7 @@ export interface RecargoSugerido {
   vence: string;
   /** Capital sobre el que se calcula. */
   base: number;
+  /** Días de atraso hoy: es lo que se guarda en el recargo (o en "No cobrar"). */
   dias_atraso: number;
   periodo_desde: number;
   periodo_hasta: number;
@@ -264,8 +267,8 @@ export interface RecargoSugerido {
 }
 
 /**
- * Recargos que corresponde sugerir hoy, uno por fiado. `tratados` = último
- * período ya tratado de cada fiado (sumado, perdonado o "No cobrar").
+ * Recargos que corresponde sugerir hoy, uno por fiado. `tratados` = días de
+ * atraso ya tratados de cada fiado (con un recargo vigente o "No cobrar").
  */
 export function recargosSugeridos(
   fiados: readonly FiadoParaRecargo[],
@@ -279,7 +282,7 @@ export function recargosSugeridos(
     const dias = diasEntre(inicioAtraso(f.vence, c), hoy);
     if (dias <= c.tolerancia) continue;
     const periodo = periodoDe(dias, c);
-    const tratado = tratados.get(f.id) ?? 0;
+    const tratado = periodoDe(tratados.get(f.id) ?? 0, c);
     if (periodo <= tratado) continue;
 
     let bruto: number;
