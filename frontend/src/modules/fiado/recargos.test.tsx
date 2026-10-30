@@ -59,6 +59,8 @@ const ajustes = (over: Partial<Ajustes> = {}): Ajustes => ({
   },
   recargo_condiciones: CONDICIONES,
   recargo_version: 1,
+  recargo_terminos_version: '2026-10-30',
+  recargo_terminos_aceptados: true,
   ...over,
 });
 
@@ -449,6 +451,91 @@ describe('ajustes: recargo por atraso', () => {
       ),
     );
     expect(await screen.findByText(/te vamos a pedir que le avises las condiciones/)).toBeDefined();
+  });
+
+  it('prenderlo por primera vez pide aceptar los términos; cancelar lo deja apagado', async () => {
+    m.ajustes.mockResolvedValue(
+      ajustes({
+        recargo: null,
+        recargo_condiciones: null,
+        recargo_version: 0,
+        recargo_terminos_aceptados: false,
+      }),
+    );
+    renderAt('/fiado/ajustes');
+
+    const interruptor = await screen.findByRole('switch', { name: /Sugerir recargos/ });
+    fireEvent.click(interruptor);
+    const dialogo = screen.getByRole('dialog', { name: 'Antes de activar los recargos' });
+    expect(
+      within(dialogo).getByRole('link', { name: 'Leer los términos completos' }).getAttribute('href'),
+    ).toBe('/terminos#recargos');
+    fireEvent.click(within(dialogo).getByRole('button', { name: 'Cancelar' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(interruptor.getAttribute('aria-checked')).toBe('false');
+  });
+
+  it('aceptar los términos prende el recargo y los manda al guardar', async () => {
+    m.ajustes.mockResolvedValue(
+      ajustes({
+        recargo: null,
+        recargo_condiciones: null,
+        recargo_version: 0,
+        recargo_terminos_aceptados: false,
+      }),
+    );
+    m.guardarAjustes.mockResolvedValue(ajustes());
+    renderAt('/fiado/ajustes');
+
+    const interruptor = await screen.findByRole('switch', { name: /Sugerir recargos/ });
+    fireEvent.click(interruptor);
+    const dialogo = screen.getByRole('dialog');
+    const aceptar = within(dialogo).getByRole('button', { name: 'Aceptar y activar' });
+    expect((aceptar as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(within(dialogo).getByRole('checkbox', { name: /Leí y acepto/ }));
+    fireEvent.click(aceptar);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(interruptor.getAttribute('aria-checked')).toBe('true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+    await waitFor(() =>
+      expect(m.guardarAjustes).toHaveBeenCalledWith(
+        expect.objectContaining({
+          recargo: expect.objectContaining({ esquema: 'mes' }),
+          terminos_recargo: '2026-10-30',
+        }),
+      ),
+    );
+  });
+
+  it('con términos nuevos sin aceptar, guardar con recargos prendidos los pide antes', async () => {
+    m.ajustes.mockResolvedValue(ajustes({ recargo_terminos_aceptados: false }));
+    m.guardarAjustes.mockResolvedValue(ajustes());
+    renderAt('/fiado/ajustes');
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Guardar cambios' }));
+    const dialogo = screen.getByRole('dialog');
+    expect(m.guardarAjustes).not.toHaveBeenCalled();
+    fireEvent.click(within(dialogo).getByRole('checkbox', { name: /Leí y acepto/ }));
+    fireEvent.click(within(dialogo).getByRole('button', { name: 'Aceptar y activar' }));
+    await waitFor(() =>
+      expect(m.guardarAjustes).toHaveBeenCalledWith(
+        expect.objectContaining({ terminos_recargo: '2026-10-30' }),
+      ),
+    );
+  });
+
+  it('ya aceptados, prender y guardar no muestra el diálogo ni reenvía la aceptación', async () => {
+    m.ajustes.mockResolvedValue(
+      ajustes({ recargo: null, recargo_condiciones: null, recargo_version: 0 }),
+    );
+    m.guardarAjustes.mockResolvedValue(ajustes());
+    renderAt('/fiado/ajustes');
+    fireEvent.click(await screen.findByRole('switch', { name: /Sugerir recargos/ }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+    await waitFor(() => expect(m.guardarAjustes).toHaveBeenCalled());
+    expect(m.guardarAjustes.mock.calls[0]?.[0]).not.toHaveProperty('terminos_recargo');
   });
 
   it('apagado, guardar manda recargo: null', async () => {

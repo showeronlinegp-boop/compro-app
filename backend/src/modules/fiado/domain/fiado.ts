@@ -428,6 +428,8 @@ export interface AjustesInput {
   plantilla_recordatorio?: string | null;
   /** Configuración del recargo tal como llega (la valida el repo, que conoce la anterior). */
   recargo?: unknown;
+  /** Versión de los términos del recargo que el comercio acaba de aceptar. */
+  terminos_recargo?: string;
 }
 
 /** Body parcial de ajustes. Una plantilla vacía vuelve al texto por defecto (null). */
@@ -445,6 +447,9 @@ export function parseAjustesInput(body: unknown): AjustesInput {
     if (k in b) out[k] = texto(b[k], k, 1000, false);
   }
   if ('recargo' in b) out.recargo = b.recargo ?? null;
+  if ('terminos_recargo' in b) {
+    out.terminos_recargo = texto(b.terminos_recargo, 'terminos_recargo', 20, false) ?? undefined;
+  }
   return out;
 }
 

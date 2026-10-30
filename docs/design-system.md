@@ -44,6 +44,7 @@ Los componentes usan **siempre** el token, nunca el hex ni la paleta default de 
 | `--on-dark-muted` | `#C9D2D0` | Texto chico sobre `--ink` |
 | `--on-dark-body` | `#DCE3E1` | Texto de cuerpo sobre `--ink` |
 | `--focus` | `#1B4FA8` | Anillo/borde de foco (mismo valor que `--pago`) |
+| `--scrim` | `rgba(21, 25, 27, 0.5)` | Fondo detrás de un diálogo (`--ink` al 50 %) |
 
 **Estados (compartidos)**
 

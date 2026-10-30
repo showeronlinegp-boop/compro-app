@@ -3,6 +3,7 @@ import { HostLayout } from './HostLayout';
 import { ModuleProviders } from './ModuleProviders';
 import { MorePage } from './MorePage';
 import PrivacidadPage from './PrivacidadPage';
+import TerminosPage from './TerminosPage';
 import { AdminPage } from './admin/AdminPage';
 import SignInPage from './auth/SignInPage';
 import SignUpPage from './auth/SignUpPage';
@@ -43,6 +44,8 @@ export function HostApp({ modules, tools = hostTools }: HostAppProps) {
       <Route path="/sign-up/*" element={<SignUpPage />} />
       {/* Pública y sin links desde la app: sólo se llega por URL (la pide Google). */}
       <Route path="/privacidad" element={<PrivacidadPage />} />
+      {/* Pública: se enlaza desde el diálogo que activa los recargos por atraso. */}
+      <Route path="/terminos" element={<TerminosPage />} />
 
       {/* Everything else renders for everyone — browsing is public.
           User-specific routes are gated individually (auth: 'required'). */}

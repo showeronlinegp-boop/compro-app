@@ -155,6 +155,9 @@ export interface Ajustes {
   /** Las condiciones en una frase (la misma que va en el aviso y los comprobantes). */
   recargo_condiciones: string | null;
   recargo_version: number;
+  /** Versión vigente de los términos del recargo y si el comercio ya la aceptó. */
+  recargo_terminos_version: string;
+  recargo_terminos_aceptados: boolean;
 }
 
 export interface ClienteInput {
@@ -204,8 +207,13 @@ export const fiadoApi = {
       method: 'POST',
     }),
   ajustes: () => req<Ajustes>('/fiado/ajustes'),
-  guardarAjustes: (patch: Partial<Omit<Ajustes, 'recargo'>> & { recargo?: ConfigRecargo | null }) =>
-    req<Ajustes>('/fiado/ajustes', json('PUT', patch)),
+  /** `terminos_recargo`: la versión de los términos que el comercio acaba de aceptar. */
+  guardarAjustes: (
+    patch: Partial<Omit<Ajustes, 'recargo'>> & {
+      recargo?: ConfigRecargo | null;
+      terminos_recargo?: string;
+    },
+  ) => req<Ajustes>('/fiado/ajustes', json('PUT', patch)),
   /** "Sumar recargos": todos los sugeridos o los de `fiadoIds`. */
   sumarRecargos: (clienteId: number, idempotencyKey: string, fiadoIds?: number[]) =>
     req<RecargosResult>(

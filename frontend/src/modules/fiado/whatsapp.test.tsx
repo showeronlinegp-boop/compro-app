@@ -57,6 +57,8 @@ const ajustes: Ajustes = {
   recargo: null,
   recargo_condiciones: null,
   recargo_version: 0,
+  recargo_terminos_version: '2026-10-30',
+  recargo_terminos_aceptados: false,
 };
 
 const cliente = (over: Partial<Cliente> = {}): Cliente => ({

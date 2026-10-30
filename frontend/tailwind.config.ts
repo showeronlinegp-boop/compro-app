@@ -30,6 +30,7 @@ export default {
         disabled: 'var(--disabled)',
         'on-dark': { muted: 'var(--on-dark-muted)', body: 'var(--on-dark-body)' },
         focus: 'var(--focus)',
+        scrim: 'var(--scrim)',
         ok: { DEFAULT: 'var(--ok)', bg: 'var(--ok-bg)' },
         warn: { DEFAULT: 'var(--warn)', strong: 'var(--warn-strong)', bg: 'var(--warn-bg)' },
         late: { DEFAULT: 'var(--late)', bg: 'var(--late-bg)' },

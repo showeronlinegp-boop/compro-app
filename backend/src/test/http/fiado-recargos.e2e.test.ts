@@ -20,6 +20,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AppModule } from '../../app.module.js';
 import { AllExceptionsFilter } from '../../common/all-exceptions.filter.js';
 import { fechaAR, sumarDias } from '../../modules/fiado/domain/fiado.js';
+import { TERMINOS_RECARGO_VERSION } from '../../modules/fiado/domain/recargo.js';
 import { TEST_CLERK_ISSUER } from '../helpers/auth-mock.js';
 import { testPrisma } from '../helpers/test-client.js';
 
@@ -88,12 +89,34 @@ describe('recargos por HTTP', () => {
       },
     });
 
+    // Sin aceptar los términos no se activa; con otra versión tampoco.
+    const mes5 = { esquema: 'mes', tipo: 'pct', valor: 5, tolerancia: 7 };
+    const sinTerminos = await api()
+      .put('/api/fiado/ajustes')
+      .set(...A)
+      .send({ recargo: mes5 });
+    expect(sinTerminos.status).toBe(409);
+    expect(JSON.stringify(sinTerminos.body)).toMatch(/aceptar los términos/);
+    const viejos = await api()
+      .put('/api/fiado/ajustes')
+      .set(...A)
+      .send({ recargo: mes5, terminos_recargo: '2020-01-01' });
+    expect(viejos.status).toBe(409);
+    const antes = await api()
+      .get('/api/fiado/ajustes')
+      .set(...A);
+    expect(antes.body).toMatchObject({
+      recargo: null,
+      recargo_terminos_version: TERMINOS_RECARGO_VERSION,
+      recargo_terminos_aceptados: false,
+    });
+
     const ajustes = await api()
       .put('/api/fiado/ajustes')
       .set(...A)
-      .send({ recargo: { esquema: 'mes', tipo: 'pct', valor: 5, tolerancia: 7 } });
+      .send({ recargo: mes5, terminos_recargo: TERMINOS_RECARGO_VERSION });
     expect(ajustes.status).toBe(200);
-    expect(ajustes.body).toMatchObject({ recargo_version: 1 });
+    expect(ajustes.body).toMatchObject({ recargo_version: 1, recargo_terminos_aceptados: true });
 
     // Sin aviso: la ficha trae el texto y no se le pueden anotar fiados.
     const ficha = await api()

@@ -33,6 +33,7 @@ import {
   parseConfigRecargo,
   recargosSugeridos,
   requiereAviso,
+  TERMINOS_RECARGO_VERSION,
   textoAvisoRecargo,
 } from '../domain/recargo.js';
 
@@ -164,6 +165,9 @@ export interface AjustesView {
   /** Las condiciones en una frase, para mensajes y Ajustes; null si está apagado. */
   recargo_condiciones: string | null;
   recargo_version: number;
+  /** Versión vigente de los términos del recargo y si el comercio ya la aceptó. */
+  recargo_terminos_version: string;
+  recargo_terminos_aceptados: boolean;
 }
 
 export interface FiadoRepo {
@@ -203,6 +207,7 @@ type PrismaLike = Pick<
   | 'fiado_ajustes'
   | 'fiado_avisos_recargo'
   | 'fiado_recargo_omisiones'
+  | 'fiado_terminos_aceptados'
 >;
 
 /** Lo que hace falta para calcular recargos de cualquier cliente del usuario. */
@@ -502,7 +507,18 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
     );
   }
 
-  function ajustesView(row: Awaited<ReturnType<typeof ajustesRow>>): AjustesView {
+  /** ¿El comercio aceptó la versión vigente de los términos del recargo? */
+  async function aceptoTerminos(): Promise<boolean> {
+    const n = await prisma.fiado_terminos_aceptados.count({
+      where: { user_id: uid(), documento: 'recargo', version: TERMINOS_RECARGO_VERSION },
+    });
+    return n > 0;
+  }
+
+  function ajustesView(
+    row: Awaited<ReturnType<typeof ajustesRow>>,
+    terminosAceptados: boolean,
+  ): AjustesView {
     return {
       comercio: row?.comercio ?? '',
       alias: row?.alias ?? null,
@@ -515,6 +531,8 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
         ? condicionesTexto(configDe(row.recargo) as ConfigRecargo)
         : null,
       recargo_version: row?.recargo_version ?? 0,
+      recargo_terminos_version: TERMINOS_RECARGO_VERSION,
+      recargo_terminos_aceptados: terminosAceptados,
     };
   }
 
@@ -754,11 +772,13 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
     },
 
     async getAjustes() {
-      return ajustesView(await ajustesRow());
+      const [row, aceptados] = await Promise.all([ajustesRow(), aceptoTerminos()]);
+      return ajustesView(row, aceptados);
     },
 
     async putAjustes(input) {
-      const { recargo, ...resto } = input;
+      const { recargo, terminos_recargo, ...resto } = input;
+      let aceptados = await aceptoTerminos();
       let deRecargo: {
         recargo?: Prisma.NullableJsonNullValueInput | Prisma.InputJsonValue;
         recargo_version?: number;
@@ -767,6 +787,20 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
         const actual = await ajustesRow();
         const anterior = configDe(actual?.recargo);
         const nuevo = parseConfigRecargo(recargo, hoy(), anterior);
+        // Para tener recargos activos hay que aceptar los términos vigentes
+        // (quedan registrados, con fecha, en una tabla append-only).
+        if (nuevo !== null && !aceptados) {
+          if (!terminos_recargo) {
+            throw new FiadoError(409, 'Para activar los recargos tenés que aceptar los términos');
+          }
+          if (terminos_recargo !== TERMINOS_RECARGO_VERSION) {
+            throw new FiadoError(409, 'Los términos cambiaron: volvé a abrir Ajustes y aceptalos');
+          }
+          await prisma.fiado_terminos_aceptados.create({
+            data: { user_id: uid(), documento: 'recargo', version: terminos_recargo },
+          });
+          aceptados = true;
+        }
         // Activar o empeorar las condiciones deja a todos los clientes pendientes de aviso.
         const version = (actual?.recargo_version ?? 0) + (requiereAviso(anterior, nuevo) ? 1 : 0);
         deRecargo = {
@@ -784,7 +818,7 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
         },
         update: { ...resto, ...deRecargo },
       });
-      return ajustesView(row);
+      return ajustesView(row, aceptados);
     },
 
     async sumarRecargos(clienteId, fiadoIds, idempotencyKey) {

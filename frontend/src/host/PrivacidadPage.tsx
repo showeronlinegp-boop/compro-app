@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect } from 'react';
+import { CUIT, Lista, P, RESPONSABLE, Seccion, mail, useNoIndex } from './legal';
 import { ScreenHeader } from './ui/ScreenHeader';
 
 /**
@@ -8,51 +8,7 @@ import { ScreenHeader } from './ui/ScreenHeader';
  * un dato nuevo, este texto se actualiza en el mismo PR.
  */
 
-/** `<meta name="robots" content="noindex">` mientras la página está montada. */
-function useNoIndex() {
-  useEffect(() => {
-    const meta = document.createElement('meta');
-    meta.name = 'robots';
-    meta.content = 'noindex';
-    document.head.appendChild(meta);
-    return () => meta.remove();
-  }, []);
-}
-
-const VIGENCIA = '29 de octubre de 2026';
-const RESPONSABLE = 'Mariano Menéndez';
-const CUIT = '20-39963857-8';
-const CONTACTO = 'showeronlinegp@gmail.com';
-
-function Seccion({ titulo, children }: { titulo: string; children: ReactNode }) {
-  return (
-    <section className="flex flex-col gap-2">
-      <h2 className="m-0 font-display text-title-s text-ink">{titulo}</h2>
-      {children}
-    </section>
-  );
-}
-
-function P({ children }: { children: ReactNode }) {
-  return <p className="m-0 text-body text-ink">{children}</p>;
-}
-
-function Lista({ items }: { items: ReactNode[] }) {
-  return (
-    <ul className="m-0 flex list-disc flex-col gap-1 pl-5 text-body text-ink">
-      {items.map((item, i) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: lista estática
-        <li key={i}>{item}</li>
-      ))}
-    </ul>
-  );
-}
-
-const mail = (
-  <a className="text-ink underline" href={`mailto:${CONTACTO}`}>
-    {CONTACTO}
-  </a>
-);
+const VIGENCIA = '30 de octubre de 2026';
 
 export default function PrivacidadPage() {
   useNoIndex();
@@ -79,7 +35,8 @@ export default function PrivacidadPage() {
           <Lista
             items={[
               'El email con el que se registra. Si entra con Google, también recibimos su nombre y foto de perfil.',
-              'El nombre del comercio, el alias para cobrar y los textos de los mensajes que configura.',
+              'El nombre del comercio, el alias para cobrar, los textos de los mensajes y, si los usa, las condiciones del recargo por atraso.',
+              'La fecha en que aceptó los términos del recargo por atraso, si lo activa.',
               'Cómo usa la app: qué pantallas abre y cuándo, si envió un comprobante por WhatsApp, si la instaló y si la usa desde el celular o la compu. Esto no incluye datos de sus clientes.',
             ]}
           />
@@ -87,8 +44,8 @@ export default function PrivacidadPage() {
           <Lista
             items={[
               'Nombre y, si el comercio lo agrega, teléfono, una etiqueta, un límite de fiado y la fecha del próximo cobro.',
-              'Cada fiado, pago o corrección, con su monto, una nota opcional y la fecha.',
-              'La fecha de cada recordatorio de pago que el comercio prepara.',
+              'Cada fiado, pago, recargo o corrección, con su monto, una nota opcional y la fecha.',
+              'La fecha de cada recordatorio de pago que el comercio prepara y de cada aviso de las condiciones de recargo, con el texto que se le informó.',
             ]}
           />
           <P>
@@ -167,9 +124,9 @@ export default function PrivacidadPage() {
         <Seccion titulo="Tus derechos">
           <P>
             Podés pedir acceso a tus datos, corregirlos, actualizarlos o pedir que los borremos,
-            escribiendo a {mail}. Es gratis. Respondemos los pedidos de acceso dentro de los 10
-            días corridos y los de corrección o borrado dentro de los 5 días hábiles, como indica la
-            Ley 25.326 de Protección de Datos Personales.
+            escribiendo a {mail}. Es gratis. Respondemos los pedidos de acceso dentro de los 10 días
+            corridos y los de corrección o borrado dentro de los 5 días hábiles, como indica la Ley
+            25.326 de Protección de Datos Personales.
           </P>
           <P>
             Si sos cliente de un comercio que usa Neggo, podés pedírselo al comercio o escribirnos:

@@ -7,6 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { testPrisma } from '../../../test/helpers/test-client.js';
 import { withRollback } from '../../../test/helpers/with-rollback.js';
 import { FiadoError, PLANTILLAS_DEFAULT } from '../domain/fiado.js';
+import { TERMINOS_RECARGO_VERSION } from '../domain/recargo.js';
 import { makeFiadoRepo } from './fiado.repo.js';
 
 type Tx = Parameters<Parameters<typeof testPrisma.$transaction>[0]>[0];
@@ -362,6 +363,8 @@ describe('ajustes', () => {
         recargo: null,
         recargo_condiciones: null,
         recargo_version: 0,
+        recargo_terminos_version: TERMINOS_RECARGO_VERSION,
+        recargo_terminos_aceptados: false,
       });
       const a = await repo.putAjustes({
         comercio: 'Kiosco Lu',

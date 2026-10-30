@@ -274,6 +274,19 @@ describe('HostApp', () => {
     expect(document.head.querySelector('meta[name="robots"][content="noindex"]')).not.toBeNull();
   });
 
+  it('términos: abren sin sesión, fuera del layout y con la sección de recargos', () => {
+    auth.signedIn = false;
+    // jsdom no implementa scrollIntoView; la página baja hasta #recargos.
+    const scroll = vi.fn();
+    Element.prototype.scrollIntoView = scroll;
+    renderAt('/terminos#recargos');
+    expect(scroll).toHaveBeenCalled();
+    expect(screen.getByRole('heading', { name: 'Términos y condiciones' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Recargo por atraso' })).toBeDefined();
+    expect(screen.queryByTestId('redirect-sign-in')).toBeNull();
+    expect(bottomNav()).toBeNull();
+  });
+
   it('H1: ruta desconocida → layout con main vacío y barra', () => {
     renderAt('/no-existe');
     expect(screen.getByRole('main').innerHTML).toBe('');
