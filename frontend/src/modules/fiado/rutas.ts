@@ -14,6 +14,8 @@ export const RUTAS = {
   inicio: BASE,
   /** Primera vez: nombre del comercio y primer cliente. */
   bienvenida: `${BASE}/bienvenida`,
+  /** Modo prueba sin cuenta: clientes de ejemplo, nada se guarda. */
+  probar: `${BASE}/probar`,
   clientes: `${BASE}/clientes`,
   /**
    * Alta de cliente. `siguiente`: ruta a la que vuelve con `cliente=<id>`

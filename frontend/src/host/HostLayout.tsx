@@ -1,3 +1,4 @@
+import { SignedIn } from '@clerk/clerk-react';
 import type { ReactNode } from 'react';
 import { AccountMenu } from './auth/AccountMenu';
 import type { AppModule, HostTool } from './contract';
@@ -25,6 +26,8 @@ export function HostLayout({ modules, tools = hostTools, children }: HostLayoutP
   const chrome = chromeOf(location);
   const HeaderActions = location?.module.slots?.headerActions;
   const withBottomNav = chrome === 'full';
+  // Sin sesión, una ruta puede pedir otro chrome (la página pública de Fiado, sin barra).
+  const navSoloConSesion = withBottomNav && location?.route.chromeSignedOut === 'task';
   useRegistrarPantallas(location?.module.id, location?.route.id);
 
   return (
@@ -52,7 +55,14 @@ export function HostLayout({ modules, tools = hostTools, children }: HostLayoutP
         return Overlays ? <Overlays key={id} /> : null;
       })}
 
-      {withBottomNav && <BottomNav />}
+      {withBottomNav &&
+        (navSoloConSesion ? (
+          <SignedIn>
+            <BottomNav />
+          </SignedIn>
+        ) : (
+          <BottomNav />
+        ))}
 
       <ToastViewport withBottomNav={withBottomNav} />
 

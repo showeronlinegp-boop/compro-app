@@ -25,6 +25,11 @@ export interface ModuleRoute {
   title: string;
   /** H8; omitido = 'full'. */
   chrome?: RouteChrome;
+  /**
+   * Sólo rutas 'public' que muestran otra cosa sin sesión (p. ej. la página
+   * pública de Fiado): el chrome para quien no inició sesión. Omitido = `chrome`.
+   */
+  chromeSignedOut?: RouteChrome;
 }
 
 export interface NavItem {
