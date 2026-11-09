@@ -77,25 +77,35 @@ describe('datos de prueba', () => {
 });
 
 describe('Página pública de Fiado', () => {
-  it('sin sesión, /fiado muestra qué es en vez de mandar al login, sin barra inferior', () => {
+  it('sin sesión, /fiado muestra la home en vez de mandar al login, sin barra inferior', () => {
     renderAt('/fiado');
-    expect(screen.getByRole('heading', { name: /lo que te debe por WhatsApp/ })).toBeTruthy();
-    const burbuja = screen.getByText(/anoté \$ 3\.500 en tu cuenta de Kiosco Lu/);
-    expect(burbuja.textContent).toContain('Hecho con Neggo');
-    expect(screen.getByRole('button', { name: 'Probar sin cuenta' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Empezar gratis' })).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 1, name: /sin cuaderno/ })).toBeTruthy();
+    // El chat de ejemplo usa los mismos textos que la app: comprobante y recordatorio.
+    const chat = screen.getByRole('figure');
+    expect(chat.textContent).toContain('anoté $ 3.500 en tu cuenta de Kiosco Lu');
+    expect(chat.textContent).toContain('te recuerdo que tenés un saldo de $ 12.300');
+    expect(chat.textContent).toContain('Hecho con Neggo');
+    expect(screen.getAllByRole('button', { name: 'Probala ahora, sin cuenta' })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: 'Crear mi cuenta gratis' })).toHaveLength(2);
+    expect(screen.getByRole('heading', { name: 'Preguntas frecuentes' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Privacidad' }).getAttribute('href')).toBe(
       '/privacidad',
     );
+    expect(screen.getByRole('link', { name: 'Términos' }).getAttribute('href')).toBe('/terminos');
     expect(screen.queryByText('Ir al login')).toBeNull();
     expect(barra()).toBeNull();
     expect(m.resumen).not.toHaveBeenCalled();
   });
 
-  it('"Empezar gratis" lleva al registro', () => {
+  it('"Crear mi cuenta gratis" lleva al registro e "Ingresar" al login', () => {
     renderAt('/fiado');
-    fireEvent.click(screen.getByRole('button', { name: 'Empezar gratis' }));
+    const [crear] = screen.getAllByRole('button', { name: 'Crear mi cuenta gratis' });
+    fireEvent.click(crear as HTMLElement);
     expect(donde()).toBe('/sign-up');
+    cleanup();
+    renderAt('/fiado');
+    fireEvent.click(screen.getByRole('button', { name: 'Ingresar' }));
+    expect(donde()).toBe('/sign-in');
   });
 
   it('con sesión, /fiado sigue siendo el Inicio con su barra', async () => {
@@ -111,7 +121,7 @@ describe('Página pública de Fiado', () => {
     m.avisos.mockResolvedValue({ vencidos: [], hoy: [], proximos: [], sin_recordar: 0 });
     renderAt('/fiado');
     await act(async () => {});
-    expect(screen.queryByRole('button', { name: 'Probar sin cuenta' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Probala ahora, sin cuenta' })).toBeNull();
     expect(barra()).toBeTruthy();
   });
 
@@ -124,7 +134,8 @@ describe('Página pública de Fiado', () => {
 describe('Modo prueba', () => {
   it('se llega desde la página pública y avisa que es una prueba', () => {
     renderAt('/fiado');
-    fireEvent.click(screen.getByRole('button', { name: 'Probar sin cuenta' }));
+    const [probar] = screen.getAllByRole('button', { name: 'Probala ahora, sin cuenta' });
+    fireEvent.click(probar as HTMLElement);
     expect(donde()).toBe('/fiado/probar');
     expect(screen.getByText(/^Estás probando\. Para guardar tus clientes/)).toBeTruthy();
     expect(screen.getByText('Marta Giménez')).toBeTruthy();
