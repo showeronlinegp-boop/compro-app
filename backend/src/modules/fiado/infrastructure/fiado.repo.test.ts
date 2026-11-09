@@ -56,6 +56,80 @@ describe('clientes', () => {
     });
   });
 
+  it('con saldo inicial anota un fiado "Saldo anterior" junto con el cliente', async () => {
+    await withRollback(async (tx) => {
+      const repo = makeFiadoRepo(tx, await seedUser(tx));
+      const base = { telefono: null, etiqueta: null, limite: 5_000, proximo_cobro: null };
+      const c = await repo.crearCliente({ ...base, nombre: 'Marta', saldo_inicial: 8_500 });
+      expect(c).toMatchObject({ saldo: 8_500, excede_limite: true });
+
+      const { historial } = await repo.ficha(c.id);
+      expect(historial).toHaveLength(1);
+      expect(historial[0]).toMatchObject({ tipo: 'fiado', monto: 8_500, nota: 'Saldo anterior' });
+
+      const resumen = await repo.resumen();
+      expect(resumen).toMatchObject({ total: 8_500, clientes: 1, clientes_con_deuda: 1 });
+    });
+  });
+
+  it('un alta reenviada con la misma clave no duplica el cliente ni el saldo', async () => {
+    await withRollback(async (tx) => {
+      const repo = makeFiadoRepo(tx, await seedUser(tx));
+      const alta = {
+        nombre: 'Marta',
+        telefono: null,
+        etiqueta: null,
+        limite: null,
+        proximo_cobro: null,
+        saldo_inicial: 1_000,
+        idempotency_key: 'alta-1',
+      };
+      const a = await repo.crearCliente(alta);
+      const b = await repo.crearCliente(alta);
+      expect(b.id).toBe(a.id);
+      expect(b.saldo).toBe(1_000);
+      expect(await repo.listClientes('', 'deuda')).toHaveLength(1);
+    });
+  });
+
+  it('sin saldo inicial no anota ningún movimiento', async () => {
+    await withRollback(async (tx) => {
+      const repo = makeFiadoRepo(tx, await seedUser(tx));
+      const c = await repo.crearCliente({
+        nombre: 'Ana',
+        telefono: null,
+        etiqueta: null,
+        limite: null,
+        proximo_cobro: null,
+      });
+      expect((await repo.ficha(c.id)).historial).toHaveLength(0);
+    });
+  });
+
+  it('con recargos activos, el saldo inicial pide avisar antes (409) y no crea nada', async () => {
+    await withRollback(async (tx) => {
+      const uid = await seedUser(tx);
+      const repo = makeFiadoRepo(tx, uid);
+      await tx.fiado_terminos_aceptados.create({
+        data: { user_id: uid, documento: 'recargo', version: TERMINOS_RECARGO_VERSION },
+      });
+      await repo.putAjustes({
+        recargo: { esquema: 'mes', tipo: 'pct', valor: 5, tolerancia: 7 },
+      });
+      await expect(
+        repo.crearCliente({
+          nombre: 'Marta',
+          telefono: null,
+          etiqueta: null,
+          limite: null,
+          proximo_cobro: null,
+          saldo_inicial: 1_000,
+        }),
+      ).rejects.toMatchObject({ status: 409 });
+      expect(await repo.listClientes('', 'deuda')).toHaveLength(0);
+    });
+  });
+
   it('busca sin tildes y ordena por deuda', async () => {
     await withRollback(async (tx) => {
       const repo = makeFiadoRepo(tx, await seedUser(tx));

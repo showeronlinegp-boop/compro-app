@@ -12,6 +12,8 @@ const conQuery = (path: string, params: Record<string, string | undefined>) => {
 
 export const RUTAS = {
   inicio: BASE,
+  /** Primera vez: nombre del comercio y primer cliente. */
+  bienvenida: `${BASE}/bienvenida`,
   clientes: `${BASE}/clientes`,
   /**
    * Alta de cliente. `siguiente`: ruta a la que vuelve con `cliente=<id>`

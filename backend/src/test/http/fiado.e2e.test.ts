@@ -118,6 +118,42 @@ describe('flujo fiado → pago → deshacer', () => {
   });
 });
 
+describe('alta con saldo inicial', () => {
+  it('crea el cliente con su "Saldo anterior"; reenviar el alta no lo duplica', async () => {
+    const nombre = unico('Deudor');
+    const body = { nombre, saldo_inicial: 8500, idempotency_key: unico('alta') };
+    const a = await api()
+      .post('/api/fiado/clientes')
+      .set(...TEST_AUTH_HEADER)
+      .send(body);
+    expect(a.status).toBe(201);
+    expect(a.body).toMatchObject({ nombre, saldo: 8500 });
+
+    const b = await api()
+      .post('/api/fiado/clientes')
+      .set(...TEST_AUTH_HEADER)
+      .send(body);
+    expect(b.body.id).toBe(a.body.id);
+
+    const ficha = await api()
+      .get(`/api/fiado/clientes/${a.body.id}`)
+      .set(...TEST_AUTH_HEADER);
+    expect(ficha.body.historial).toEqual([
+      expect.objectContaining({ tipo: 'fiado', monto: 8500, nota: 'Saldo anterior' }),
+    ]);
+  });
+
+  it('400 con un saldo inicial negativo o con coma', async () => {
+    for (const saldo_inicial of [-1, 10.5, 'mucho']) {
+      const res = await api()
+        .post('/api/fiado/clientes')
+        .set(...TEST_AUTH_HEADER)
+        .send({ nombre: unico('X'), saldo_inicial });
+      expect(res.status).toBe(400);
+    }
+  });
+});
+
 describe('validación y rutas', () => {
   it('400 con monto inválido, tipo inválido o nombre vacío', async () => {
     const cliente = await crearCliente();

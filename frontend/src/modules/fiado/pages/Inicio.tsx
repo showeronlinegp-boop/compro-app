@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { TarjetaInstalar } from '../../../host/install/InstalarApp';
 import { IconBell } from '../../../host/ui/icons';
 import { FOCUS_RING } from '../../../host/ui/styles';
@@ -16,6 +16,7 @@ import {
 import { RUTAS } from '../rutas';
 import { saludo } from '../textos';
 import { useCarga } from '../useCarga';
+import { bienvenidaSalteada } from './Bienvenida';
 
 const NEGGO_URL = import.meta.env.VITE_NEGGO_PEDIDOS_URL as string | undefined;
 
@@ -32,6 +33,11 @@ export default function Inicio() {
 
   const [resumen, ajustes] = carga.data ?? [null, null];
   const sinRecordar = avisos.data?.sin_recordar ?? 0;
+
+  // Comercio recién registrado (sin nombre ni clientes): a la bienvenida guiada.
+  if (resumen && ajustes && !ajustes.comercio && resumen.clientes === 0 && !bienvenidaSalteada()) {
+    return <Navigate to={RUTAS.bienvenida} replace />;
+  }
 
   return (
     <div className="flex flex-col gap-5 px-4 py-6">

@@ -183,7 +183,13 @@ describe('Listo: comprobante por WhatsApp', () => {
 describe('Recordar pago', () => {
   it('abre WhatsApp con el recordatorio, marca recordado y vuelve', async () => {
     m.recordar.mockResolvedValue({ cliente_id: 1, enviado_at: '2026-10-13T17:00:00Z' });
-    m.resumen.mockResolvedValue({ total: 0, clientes_con_deuda: 0, para_cobrar: [], ultimos: [] });
+    m.resumen.mockResolvedValue({
+      total: 0,
+      clientes_con_deuda: 0,
+      clientes: 0,
+      para_cobrar: [],
+      ultimos: [],
+    });
     renderAt(['/fiado', '/fiado/recordar/1']);
 
     expect(await screen.findByText(/te recuerdo que tenés un saldo de \$ 42\.300/)).toBeDefined();
@@ -212,7 +218,7 @@ describe('Para cobrar hoy', () => {
   it('"Recordar" abre la pantalla y "Recordado" se muestra en verde', async () => {
     const resumen: Resumen = {
       total: 50000,
-      clientes_con_deuda: 2,
+      clientes_con_deuda: 2, clientes: 2,
       para_cobrar: [
         { ...cliente(), recordado_hoy: false },
         { ...cliente({ id: 2, nombre: 'Beto' }), recordado_hoy: true },

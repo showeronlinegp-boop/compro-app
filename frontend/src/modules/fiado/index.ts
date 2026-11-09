@@ -4,6 +4,7 @@ import { IconClients, IconHome, IconSettings } from '../../host/ui/icons';
 import Ajustes from './pages/Ajustes';
 import { AnotarFiado, RegistrarPago } from './pages/Anotar';
 import Avisos from './pages/Avisos';
+import Bienvenida from './pages/Bienvenida';
 import Clientes from './pages/Clientes';
 import EditarCliente from './pages/EditarCliente';
 import Ficha from './pages/Ficha';
@@ -30,6 +31,14 @@ export const fiado: AppModule = {
   basePath: BASE,
   routes: [
     { id: 'inicio', path: '', component: Inicio, auth: 'required', title: 'Inicio' },
+    {
+      id: 'bienvenida',
+      path: 'bienvenida',
+      component: Bienvenida,
+      auth: 'required',
+      title: 'Bienvenida',
+      chrome: 'task',
+    },
     { id: 'clientes', path: 'clientes', component: Clientes, auth: 'required', title: 'Clientes' },
     {
       id: 'nuevo-cliente',

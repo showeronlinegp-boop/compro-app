@@ -140,7 +140,13 @@ let open: { mock: { calls: unknown[][] }; mockRestore: () => void };
 beforeEach(() => {
   m.ajustes.mockResolvedValue(ajustes());
   m.avisos.mockResolvedValue({ vencidos: [], hoy: [], proximos: [], sin_recordar: 0 });
-  m.resumen.mockResolvedValue({ total: 0, clientes_con_deuda: 0, para_cobrar: [], ultimos: [] });
+  m.resumen.mockResolvedValue({
+    total: 0,
+    clientes_con_deuda: 0,
+    clientes: 0,
+    para_cobrar: [],
+    ultimos: [],
+  });
   m.ficha.mockResolvedValue(ficha());
   open = vi.spyOn(window, 'open').mockImplementation(() => null);
 });
@@ -608,7 +614,7 @@ describe('inicio', () => {
   it('"Para cobrar hoy" marca con "Recargo" a quien tiene uno para decidir', async () => {
     m.resumen.mockResolvedValue({
       total: 28000,
-      clientes_con_deuda: 1,
+      clientes_con_deuda: 1, clientes: 1,
       para_cobrar: [{ ...cliente({ recargo_para_sumar: 600 }), recordado_hoy: false }],
       ultimos: [],
     });

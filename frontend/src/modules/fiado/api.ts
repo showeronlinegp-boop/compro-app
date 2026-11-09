@@ -63,6 +63,8 @@ export interface Cobro extends Cliente {
 export interface Resumen {
   total: number;
   clientes_con_deuda: number;
+  /** Todos los clientes cargados (con o sin deuda). */
+  clientes: number;
   para_cobrar: Cobro[];
   ultimos: Movimiento[];
 }
@@ -167,6 +169,10 @@ export interface ClienteInput {
   limite?: number | null;
   /** Sólo al editar: no sugerirle recargos. */
   sin_recargo?: boolean;
+  /** Sólo en el alta: lo que ya le debía. Se anota como un fiado "Saldo anterior". */
+  saldo_inicial?: number;
+  /** Con `saldo_inicial`: un reenvío del alta no duplica el cliente. */
+  idempotency_key?: string;
 }
 
 export interface MovimientoInput {

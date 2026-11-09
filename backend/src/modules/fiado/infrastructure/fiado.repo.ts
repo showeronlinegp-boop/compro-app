@@ -7,6 +7,7 @@ import {
   type FiadoPendiente,
   type MovimientoInput,
   type MovimientoLedger,
+  NOTA_SALDO_INICIAL,
   type OrdenClientes,
   PLANTILLAS_DEFAULT,
   type TipoMovimiento,
@@ -97,6 +98,8 @@ export interface CobroView extends ClienteView {
 export interface ResumenView {
   total: number;
   clientes_con_deuda: number;
+  /** Todos los clientes cargados (con o sin deuda): 0 = comercio recién registrado. */
+  clientes: number;
   para_cobrar: CobroView[];
   ultimos: MovimientoView[];
 }
@@ -569,6 +572,7 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
       return {
         total: conDeuda.reduce((acc, v) => acc + v.saldo, 0),
         clientes_con_deuda: conDeuda.length,
+        clientes: views.length,
         para_cobrar,
         ultimos,
       };
@@ -625,18 +629,72 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
     },
 
     async crearCliente(input) {
-      const c = await prisma.fiado_clientes.create({
-        data: {
-          user_id: uid(),
-          nombre: input.nombre,
-          telefono: input.telefono,
-          etiqueta: input.etiqueta,
-          limite: input.limite,
-          proximo_cobro: toDate(input.proximo_cobro),
-        },
-      });
-      const [u, ctx] = await Promise.all([umbral(), recargoCtx(c.id)]);
-      return clienteView(c, [], hoy(), u, ctx);
+      const saldo = input.saldo_inicial;
+      const clave = saldo ? (input.idempotency_key ?? null) : null;
+
+      // Alta reenviada (doble toque, reintento): devolver el cliente que ya se creó.
+      const previo = async () => {
+        if (!clave) return null;
+        const mov = await prisma.fiado_movimientos.findFirst({
+          where: { user_id: uid(), idempotency_key: clave },
+          select: { cliente_id: true },
+        });
+        return mov ? clienteOr404(mov.cliente_id) : null;
+      };
+
+      let c = await previo();
+      if (!c) {
+        if (saldo) {
+          // Con recargos prendidos, a un cliente nuevo hay que avisarle las
+          // condiciones antes de anotarle un fiado (mismo 409 que Anotar).
+          const { config } = await recargoCtx();
+          if (config !== null) {
+            throw new FiadoError(
+              409,
+              'Con recargos activos, avisale las condiciones antes de anotarle lo que te debe',
+            );
+          }
+        }
+        try {
+          // Un solo INSERT anidado: el cliente y su saldo anterior entran juntos
+          // o no entra ninguno.
+          c = await prisma.fiado_clientes.create({
+            data: {
+              user_id: uid(),
+              nombre: input.nombre,
+              telefono: input.telefono,
+              etiqueta: input.etiqueta,
+              limite: input.limite,
+              proximo_cobro: toDate(input.proximo_cobro),
+              ...(saldo
+                ? {
+                    movimientos: {
+                      create: {
+                        user_id: uid(),
+                        tipo: 'fiado',
+                        monto: montoConSigno('fiado', saldo),
+                        nota: NOTA_SALDO_INICIAL,
+                        idempotency_key: clave,
+                      },
+                    },
+                  }
+                : {}),
+            },
+          });
+        } catch (err) {
+          // Dos altas simultáneas con la misma clave: devolver la que ganó.
+          const ganador =
+            clave && isUniqueViolation(err, 'idempotency_key') ? await previo() : null;
+          if (!ganador) throw err;
+          c = ganador;
+        }
+      }
+      const [movs, u, ctx] = await Promise.all([
+        saldo ? movimientosDe(c.id) : Promise.resolve([]),
+        umbral(),
+        recargoCtx(c.id),
+      ]);
+      return clienteView(c, movs.map(toLedger), hoy(), u, ctx);
     },
 
     async ficha(clienteId) {
