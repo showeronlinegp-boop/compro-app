@@ -3,6 +3,7 @@ import { Button } from '../../host/ui/Button';
 import { TextField } from '../../host/ui/controls';
 import { Notice } from '../../host/ui/surfaces';
 import { mensajeDeError } from './api';
+import { BotonContactos } from './contactos';
 import { Interruptor } from './recargos';
 
 export interface DatosCliente {
@@ -29,6 +30,7 @@ export function FormCliente({
   onGuardar,
   conRecargo = false,
   conSaldoInicial = false,
+  conContactos = false,
 }: {
   inicial: {
     nombre?: string;
@@ -42,6 +44,8 @@ export function FormCliente({
   conRecargo?: boolean;
   /** Muestra "¿Ya te debe algo?" (sólo en el alta y con recargos apagados). */
   conSaldoInicial?: boolean;
+  /** Muestra "Elegir de mis contactos" (sólo en el alta y si el celu lo permite). */
+  conContactos?: boolean;
 }) {
   const [nombre, setNombre] = useState(inicial.nombre ?? '');
   const [telefono, setTelefono] = useState(inicial.telefono ?? '');
@@ -76,6 +80,14 @@ export function FormCliente({
 
   return (
     <form onSubmit={guardar} className="flex flex-col gap-5" noValidate>
+      {conContactos && (
+        <BotonContactos
+          onElegir={(c) => {
+            if (c.nombre) setNombre(c.nombre);
+            if (c.telefono) setTelefono(c.telefono);
+          }}
+        />
+      )}
       <TextField
         label="Nombre"
         labelTone="question"

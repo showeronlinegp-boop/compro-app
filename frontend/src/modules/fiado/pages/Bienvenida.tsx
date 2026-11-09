@@ -5,6 +5,7 @@ import { TextField } from '../../../host/ui/controls';
 import { useToast } from '../../../host/ui/Toast';
 import { Notice } from '../../../host/ui/surfaces';
 import { soloDigitos } from '../FormCliente';
+import { BotonContactos } from '../contactos';
 import { fiadoApi, mensajeDeError } from '../api';
 import { RUTAS } from '../rutas';
 import { useCarga } from '../useCarga';
@@ -99,6 +100,12 @@ export default function Bienvenida() {
           onChange={(e) => setComercio(e.target.value)}
           maxLength={60}
           required
+        />
+        <BotonContactos
+          onElegir={(c) => {
+            if (c.nombre) setNombre(c.nombre);
+            if (c.telefono) setTelefono(c.telefono);
+          }}
         />
         <TextField
           label="¿Quién te debe más?"

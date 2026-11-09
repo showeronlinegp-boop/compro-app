@@ -31,6 +31,7 @@ export default function NuevoCliente() {
       <FormCliente
         inicial={{ nombre: params.get('nombre') ?? '' }}
         textoBoton="Guardar cliente"
+        conContactos
         conSaldoInicial={ajustes.data != null && ajustes.data.recargo === null}
         onGuardar={async (datos) => {
           const c = await fiadoApi.crearCliente(
