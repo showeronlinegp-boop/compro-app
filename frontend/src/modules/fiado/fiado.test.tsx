@@ -179,6 +179,30 @@ describe('Inicio', () => {
     renderAt('/fiado');
     expect(await screen.findByText('Nadie para cobrar hoy.')).toBeDefined();
     expect(screen.getByText('Todavía no hay movimientos.')).toBeDefined();
+    expect(screen.queryByRole('list', { name: 'Los que más te deben' })).toBeNull();
+  });
+
+  it('sin nada para cobrar hoy, muestra los que más te deben', async () => {
+    m.resumen.mockResolvedValue({
+      total: 15000,
+      clientes_con_deuda: 2,
+      clientes: 2,
+      para_cobrar: [],
+      mas_deben: [
+        cliente({ id: 3, nombre: 'Rosa', saldo: 9000 }),
+        cliente({ id: 4, nombre: 'Juan', saldo: 6000 }),
+      ],
+      ultimos: [],
+    });
+    renderAt('/fiado');
+    expect(await screen.findByText('Nadie para cobrar hoy.')).toBeDefined();
+    const lista = screen.getByRole('list', { name: 'Los que más te deben' });
+    expect(within(lista).getAllByRole('button').map((b) => b.textContent)).toEqual([
+      expect.stringContaining('Rosa'),
+      expect.stringContaining('Juan'),
+    ]);
+    fireEvent.click(within(lista).getByRole('button', { name: /Rosa/ }));
+    expect(donde()).toBe('/fiado/clientes/3');
   });
 
   it('error de red con reintento', async () => {

@@ -95,12 +95,19 @@ export interface CobroView extends ClienteView {
   recordado_hoy: boolean;
 }
 
+/** Días de deuda vieja de un comercio nuevo (antes 30; con 15 el Inicio se llena antes). */
+export const DIAS_DEUDA_VIEJA_DEFAULT = 15;
+/** Cuántos muestra "Los que más te deben". */
+const MAS_DEBEN = 3;
+
 export interface ResumenView {
   total: number;
   clientes_con_deuda: number;
   /** Todos los clientes cargados (con o sin deuda): 0 = comercio recién registrado. */
   clientes: number;
   para_cobrar: CobroView[];
+  /** Los 3 que más deben, para que el Inicio tenga algo que hacer si no hay nada para cobrar hoy. */
+  mas_deben: ClienteView[];
   ultimos: MovimientoView[];
 }
 
@@ -498,7 +505,7 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
 
   /** Días de "deuda vieja": a cuántos días vence un fiado sin fecha. */
   async function umbral(): Promise<number> {
-    return (await ajustesRow())?.dias_deuda_vieja ?? 30;
+    return (await ajustesRow())?.dias_deuda_vieja ?? DIAS_DEUDA_VIEJA_DEFAULT;
   }
 
   async function recordadosHoy(fecha: string): Promise<Set<number>> {
@@ -525,7 +532,7 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
     return {
       comercio: row?.comercio ?? '',
       alias: row?.alias ?? null,
-      dias_deuda_vieja: row?.dias_deuda_vieja ?? 30,
+      dias_deuda_vieja: row?.dias_deuda_vieja ?? DIAS_DEUDA_VIEJA_DEFAULT,
       plantilla_fiado: row?.plantilla_fiado ?? PLANTILLAS_DEFAULT.fiado,
       plantilla_pago: row?.plantilla_pago ?? PLANTILLAS_DEFAULT.pago,
       plantilla_recordatorio: row?.plantilla_recordatorio ?? PLANTILLAS_DEFAULT.recordatorio,
@@ -574,6 +581,9 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
         clientes_con_deuda: conDeuda.length,
         clientes: views.length,
         para_cobrar,
+        mas_deben: [...conDeuda]
+          .sort((a, b) => b.saldo - a.saldo || a.nombre.localeCompare(b.nombre, 'es'))
+          .slice(0, MAS_DEBEN),
         ultimos,
       };
     },

@@ -388,6 +388,12 @@ describe('resumen y avisos', () => {
         ['Vieja', 3000, true],
         ['Vence', 2000, false],
       ]);
+      // Los que más deben: los 3 de mayor saldo, de mayor a menor.
+      expect(r.mas_deben).toHaveLength(3);
+      expect(r.mas_deben.map((c) => c.nombre).slice(0, 2)).toEqual(['Vieja', 'Vence']);
+      expect(r.mas_deben.map((c) => c.saldo)).toEqual(
+        [...r.mas_deben.map((c) => c.saldo)].sort((a, b) => b - a),
+      );
       expect(r.ultimos.length).toBeLessThanOrEqual(4);
 
       const f = await repo.ficha(pago.id);
@@ -430,7 +436,7 @@ describe('ajustes', () => {
       expect(await repo.getAjustes()).toEqual({
         comercio: '',
         alias: null,
-        dias_deuda_vieja: 30,
+        dias_deuda_vieja: 15,
         plantilla_fiado: PLANTILLAS_DEFAULT.fiado,
         plantilla_pago: PLANTILLAS_DEFAULT.pago,
         plantilla_recordatorio: PLANTILLAS_DEFAULT.recordatorio,

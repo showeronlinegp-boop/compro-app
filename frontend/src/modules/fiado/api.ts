@@ -66,6 +66,8 @@ export interface Resumen {
   /** Todos los clientes cargados (con o sin deuda). */
   clientes: number;
   para_cobrar: Cobro[];
+  /** Los 3 que más deben (para el Inicio cuando no hay nada para cobrar hoy). */
+  mas_deben?: Cliente[];
   ultimos: Movimiento[];
 }
 

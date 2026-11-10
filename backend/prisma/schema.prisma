@@ -352,7 +352,7 @@ model fiado_ajustes {
   user_id                Int      @id
   comercio               String   @default("") @db.Text
   alias                  String?  @db.Text
-  dias_deuda_vieja       Int      @default(30)
+  dias_deuda_vieja       Int      @default(15)
   plantilla_fiado        String?  @db.Text
   plantilla_pago         String?  @db.Text
   plantilla_recordatorio String?  @db.Text
