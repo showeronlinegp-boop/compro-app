@@ -137,7 +137,7 @@ describe('Modo prueba', () => {
     const [probar] = screen.getAllByRole('button', { name: 'Probala ahora' });
     fireEvent.click(probar as HTMLElement);
     expect(donde()).toBe('/fiado/probar');
-    expect(screen.getByText(/^Estás probando\. Para guardar tus clientes/)).toBeTruthy();
+    expect(screen.getByText(/^Estás probando\. Nada se guarda/)).toBeTruthy();
     expect(screen.getByText('Marta Giménez')).toBeTruthy();
     expect(barra()).toBeNull();
   });

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../../../host/ui/Button';
 import { Keypad } from '../../../host/ui/Keypad';
 import { formatMoney } from '../../../host/ui/format';
-import { IconBack, IconCheck } from '../../../host/ui/icons';
+import { IconBack, IconCheck, IconChevron } from '../../../host/ui/icons';
 import { FOCUS_RING } from '../../../host/ui/styles';
 import { Card, List, WhatsAppBubble } from '../../../host/ui/surfaces';
 import type { Cliente } from '../api';
@@ -21,8 +21,7 @@ type Paso =
   | { en: 'listo'; tipo: Tipo; monto: number; clienteId: number };
 
 /** Marca lo que hay que tocar en este paso de la guía. */
-const DESTACADO = 'outline outline-[3px] outline-fiado outline-offset-4 rounded-m';
-const destacar = (si: boolean) => (si ? DESTACADO : '');
+const DESTACADO = 'outline outline-4 outline-fiado outline-offset-4 rounded-m';
 
 const TOTAL_PASOS = 4;
 
@@ -64,6 +63,7 @@ export default function Probar() {
   };
 
   let pantalla: ReactNode = null;
+  let cartel: ReactNode = null;
   if (paso.en === 'anotar') {
     const valor = Number(monto) || 0;
     const elegido = paso.clienteId != null;
@@ -81,6 +81,7 @@ export default function Probar() {
                   : 'Marcá con el teclado cuánto te pagó.',
             }
           : { n: 3, texto: `Tocá “${verbo}” para guardarlo.` };
+    if (guiaAhora) cartel = <Guia n={guiaAhora.n} texto={guiaAhora.texto} onSaltear={saltear} />;
     pantalla = (
       <AnotarPrueba
         tipo={paso.tipo}
@@ -90,7 +91,6 @@ export default function Probar() {
         onMonto={setMonto}
         onCliente={(id) => setPaso({ ...paso, clienteId: id })}
         onVolver={() => setPaso({ en: 'inicio' })}
-        guia={guiaAhora && <Guia n={guiaAhora.n} texto={guiaAhora.texto} onSaltear={saltear} />}
         destacar={guiaAhora ? (QUE_DESTACAR[guiaAhora.n] ?? null) : null}
         onConfirmar={(clienteId, total) => {
           setClientes((cs) =>
@@ -104,20 +104,19 @@ export default function Probar() {
     const cliente = clientes.find((c) => c.id === paso.clienteId);
     const guiaAhora = guia && !enviado;
     if (cliente) {
+      if (guiaAhora)
+        cartel = (
+          <Guia
+            n={4}
+            texto="Así le llega el comprobante a tu cliente. Tocá “Enviar por WhatsApp”."
+            onSaltear={saltear}
+          />
+        );
       pantalla = (
         <ListoPrueba
           tipo={paso.tipo}
           monto={paso.monto}
           cliente={cliente}
-          guia={
-            guiaAhora && (
-              <Guia
-                n={4}
-                texto="Así le llega el comprobante a tu cliente. Tocá “Enviar por WhatsApp”."
-                onSaltear={saltear}
-              />
-            )
-          }
           destacarEnviar={guiaAhora}
           onEnviar={() => setEnviado(true)}
           onSeguir={() => setPaso({ en: 'inicio' })}
@@ -125,32 +124,28 @@ export default function Probar() {
       );
     }
   } else {
+    if (guia)
+      cartel = enviado ? (
+        <GuiaFinal onCuenta={() => navigate('/sign-up')} onCerrar={saltear} />
+      ) : (
+        <Guia n={1} texto="Tocá a Marta Giménez para anotarle un fiado." onSaltear={saltear} />
+      );
     pantalla = (
       <InicioPrueba
         clientes={clientes}
         onAnotar={anotar}
         destacarMarta={guia && !enviado}
-        guia={
-          !guia ? null : enviado ? (
-            <GuiaFinal
-              onCuenta={() => navigate('/sign-up')}
-              onCerrar={saltear}
-            />
-          ) : (
-            <Guia
-              n={1}
-              texto="Tocá a Marta Giménez para anotarle un fiado."
-              onSaltear={saltear}
-            />
-          )
-        }
       />
     );
   }
 
   return (
     <div ref={arriba} className="flex flex-col min-h-full">
-      <BannerPrueba />
+      {/* El aviso de prueba y la guía quedan fijos arriba: la guía no se pierde al bajar. */}
+      <div className="sticky top-0 z-10">
+        <BannerPrueba />
+        {cartel}
+      </div>
       {pantalla}
     </div>
   );
@@ -160,9 +155,9 @@ export default function Probar() {
 function BannerPrueba() {
   const navigate = useNavigate();
   return (
-    <div className="sticky top-0 z-10 flex items-center gap-3 px-4 py-3 bg-ink text-surface">
+    <div className="flex items-center gap-3 px-4 py-2 bg-ink text-surface">
       <p className="m-0 flex-1 text-body-s">
-        Estás probando. Para guardar tus clientes, creá tu cuenta gratis.
+        Estás probando. Nada se guarda.
       </p>
       <Button variant="on-dark" size="s" onClick={() => navigate('/sign-up')}>
         Crear cuenta
@@ -171,61 +166,100 @@ function BannerPrueba() {
   );
 }
 
-/** Cartel de la guía: en qué paso va y qué tocar. Se anuncia al cambiar. */
+/** Cartel de la guía: en qué paso va y qué tocar. Naranja y fijo arriba. */
 function Guia({ n, texto, onSaltear }: { n: number; texto: string; onSaltear: () => void }) {
   return (
     <section
       aria-label="Guía"
       aria-live="polite"
-      className="flex flex-col gap-1 rounded-m border-2 border-fiado bg-surface px-4 py-3"
+      className="flex flex-col gap-1 px-4 pt-1 pb-3 bg-fiado text-surface"
     >
-      <p className="m-0 text-caption font-bold text-fiado">
-        Paso {n} de {TOTAL_PASOS}
-      </p>
-      <p className="m-0 text-body text-ink">{texto}</p>
-      <button
-        type="button"
-        onClick={onSaltear}
-        className={`self-start min-h-touch text-body-s text-ink-muted underline ${FOCUS_RING}`}
-      >
-        Saltear la guía
-      </button>
+      <div className="flex items-center gap-3">
+        <p className="m-0 flex-none text-caption font-bold">
+          Paso {n} de {TOTAL_PASOS}
+        </p>
+        <div aria-hidden="true" className="flex flex-1 gap-1">
+          {PASOS_GUIA.map((i) => (
+            <span
+              key={i}
+              className={`h-2 flex-1 rounded-pill border-2 border-surface ${i <= n ? 'bg-surface' : ''}`}
+            />
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={onSaltear}
+          className={`flex-none min-h-touch px-1 text-body-s underline ${FOCUS_RING}`}
+        >
+          Saltear la guía
+        </button>
+      </div>
+      <p className="m-0 font-display text-title-s">{texto}</p>
     </section>
   );
 }
+
+const PASOS_GUIA = Array.from({ length: TOTAL_PASOS }, (_, i) => i + 1);
 
 function GuiaFinal({ onCuenta, onCerrar }: { onCuenta: () => void; onCerrar: () => void }) {
   return (
     <section
       aria-label="Guía"
       aria-live="polite"
-      className="flex flex-col gap-3 rounded-m border-2 border-fiado bg-surface px-4 py-3"
+      className="flex flex-col gap-3 px-4 py-4 bg-fiado text-surface"
     >
-      <p className="m-0 text-body text-ink">
-        <strong>¡Ya sabés usarlo!</strong> Así de simple es anotar un fiado y mandarle el
-        comprobante. Seguí probando con un pago, o creá tu cuenta para anotar a tus clientes.
+      <p className="m-0 font-display text-title-s">¡Ya sabés usarlo!</p>
+      <p className="m-0 text-body">
+        Así de simple es anotar un fiado y mandarle el comprobante. Seguí probando, o creá tu
+        cuenta para anotar a tus clientes.
       </p>
-      <div className="flex gap-2">
-        <Button variant="primary" size="m" onClick={onCuenta}>
+      <div className="flex items-center gap-2">
+        <Button variant="on-dark" size="m" onClick={onCuenta}>
           Crear mi cuenta
         </Button>
-        <Button variant="soft" size="m" onClick={onCerrar}>
+        <button
+          type="button"
+          onClick={onCerrar}
+          className={`min-h-touch px-3 text-body font-bold underline ${FOCUS_RING}`}
+        >
           Seguir probando
-        </Button>
+        </button>
       </div>
     </section>
+  );
+}
+
+/** Marca lo que hay que tocar: borde naranja y un cartelito arriba ("Tocá acá"). */
+function Senalado({
+  si,
+  texto = 'Tocá acá',
+  children,
+}: {
+  si: boolean;
+  texto?: string;
+  children: ReactNode;
+}) {
+  if (!si) return <>{children}</>;
+  return (
+    <div className="flex flex-col gap-3">
+      <span className="self-start inline-flex items-center gap-1 rounded-pill bg-fiado px-3 py-1 text-caption font-bold text-surface">
+        {texto}
+        <span aria-hidden="true" className="inline-flex rotate-90">
+          <IconChevron size={14} />
+        </span>
+      </span>
+      <div className={DESTACADO}>{children}</div>
+    </div>
   );
 }
 
 function InicioPrueba({
   clientes,
   onAnotar,
-  guia,
   destacarMarta,
 }: {
   clientes: readonly Cliente[];
   onAnotar: (tipo: Tipo, clienteId?: number) => void;
-  guia: ReactNode;
   destacarMarta: boolean;
 }) {
   const navigate = useNavigate();
@@ -249,19 +283,17 @@ function InicioPrueba({
         </div>
       </header>
 
-      {guia}
-
       <TarjetaTeDeben total={total} clientes={conDeuda.length} />
 
       <AccionesMovimiento onAnotar={(tipo) => onAnotar(tipo)} />
 
       <div className="flex flex-col gap-2">
         {primero && (
-          <div className={destacar(destacarMarta)}>
+          <Senalado si={destacarMarta}>
             <List label="Primer cliente de ejemplo">
               <FilaCliente cliente={primero} onClick={() => onAnotar('fiado', primero.id)} />
             </List>
-          </div>
+          </Senalado>
         )}
         <List label="Clientes de ejemplo">
           {resto.map((c) => (
@@ -285,7 +317,6 @@ function AnotarPrueba({
   onCliente,
   onVolver,
   onConfirmar,
-  guia,
   destacar: que,
 }: {
   tipo: Tipo;
@@ -296,7 +327,6 @@ function AnotarPrueba({
   onCliente: (id: number) => void;
   onVolver: () => void;
   onConfirmar: (clienteId: number, monto: number) => void;
-  guia: ReactNode;
   destacar: 'clientes' | 'teclado' | 'confirmar' | null;
 }) {
   const valor = Number(monto) || 0;
@@ -312,11 +342,8 @@ function AnotarPrueba({
         <h1 className={`m-0 font-display text-title-m ${color}`}>{titulo}</h1>
       </header>
 
-      {guia}
-
-      <fieldset
-        className={`m-0 p-0 border-0 flex flex-col gap-2 ${destacar(que === 'clientes')}`}
-      >
+      <Senalado si={que === 'clientes'} texto="Elegí uno">
+      <fieldset className="m-0 p-0 border-0 flex flex-col gap-2">
         <legend className="mb-2 text-caption text-ink-muted">Cliente</legend>
         <div className="flex flex-wrap gap-2">
           {clientes.map((c) => (
@@ -333,6 +360,7 @@ function AnotarPrueba({
           ))}
         </div>
       </fieldset>
+      </Senalado>
 
       <div className="text-center" aria-live="polite">
         <p className="m-0 text-caption text-ink-muted">Monto</p>
@@ -341,20 +369,21 @@ function AnotarPrueba({
         </p>
       </div>
 
-      <div className={destacar(que === 'teclado')}>
+      <Senalado si={que === 'teclado'} texto="Marcá el monto">
         <Keypad value={monto} onChange={onMonto} />
-      </div>
+      </Senalado>
 
+      <Senalado si={que === 'confirmar'}>
       <Button
         variant={tipo}
         size="l"
         block
-        className={destacar(que === 'confirmar')}
         disabled={clienteId == null || valor <= 0}
         onClick={() => clienteId != null && onConfirmar(clienteId, valor)}
       >
         {titulo}
       </Button>
+      </Senalado>
     </div>
   );
 }
@@ -363,7 +392,6 @@ function ListoPrueba({
   tipo,
   monto,
   cliente,
-  guia,
   destacarEnviar,
   onEnviar,
   onSeguir,
@@ -371,7 +399,6 @@ function ListoPrueba({
   tipo: Tipo;
   monto: number;
   cliente: Cliente;
-  guia: ReactNode;
   destacarEnviar: boolean;
   onEnviar: () => void;
   onSeguir: () => void;
@@ -399,14 +426,13 @@ function ListoPrueba({
         <p className="m-0 font-display text-amount-m text-ink">{textoSaldo(cliente.saldo)}</p>
       </Card>
 
-      {guia}
-
       <WhatsAppBubble label="Comprobante" text={texto} />
+      <Senalado si={destacarEnviar}>
       <Button
         variant="whatsapp"
         size="l"
         block
-        className={`min-h-[58px] ${destacar(destacarEnviar)}`}
+        className="min-h-[58px]"
         onClick={() => {
           abrirWhatsApp(null, texto);
           onEnviar();
@@ -414,6 +440,7 @@ function ListoPrueba({
       >
         Enviar por WhatsApp
       </Button>
+      </Senalado>
       <p className="m-0 -mt-3 text-caption text-ink-muted text-center">
         Como es una prueba, elegís a quién mandárselo (podés mandártelo a vos).
       </p>
