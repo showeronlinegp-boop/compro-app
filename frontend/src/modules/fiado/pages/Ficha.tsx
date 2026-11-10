@@ -10,7 +10,6 @@ import {
   EmptyNote,
   List,
   Notice,
-  Pill,
   Section,
 } from '../../../host/ui/surfaces';
 import { type Cliente, type Movimiento, fiadoApi } from '../api';
@@ -44,11 +43,8 @@ export function TarjetaFicha({
         <div className="min-w-0 flex-1">
           <h2 className="m-0 font-display text-title-m text-ink truncate">{c.nombre}</h2>
           {c.telefono && <p className="m-0 text-body-s text-ink-muted">{c.telefono}</p>}
-          {c.etiqueta && (
-            <span className="mt-1 inline-block">
-              <Pill>{c.etiqueta}</Pill>
-            </span>
-          )}
+          {/* La etiqueta del cliente no se muestra (0 % de uso, plan de adopción punto 10);
+              la columna sigue en la base. */}
         </div>
         {onEditar && (
           <Button variant="text" size="s" onClick={onEditar}>
