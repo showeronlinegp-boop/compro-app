@@ -45,6 +45,7 @@ export default function Probar() {
   const navigate = useNavigate();
   const [clientes, setClientes] = useState<Cliente[]>(clientesIniciales);
   const [paso, setPaso] = useState<Paso>({ en: 'inicio' });
+  const [presentacion, setPresentacion] = useState(true);
   const [guia, setGuia] = useState(true);
   const [enviado, setEnviado] = useState(false);
   const [monto, setMonto] = useState('');
@@ -54,7 +55,7 @@ export default function Probar() {
   // biome-ignore lint/correctness/useExhaustiveDependencies: sólo al cambiar de pantalla
   useEffect(() => {
     arriba.current?.scrollIntoView?.({ block: 'start' });
-  }, [paso.en]);
+  }, [paso.en, presentacion]);
 
   const saltear = () => setGuia(false);
   const anotar = (tipo: Tipo, clienteId: number | null = null) => {
@@ -64,7 +65,18 @@ export default function Probar() {
 
   let pantalla: ReactNode = null;
   let cartel: ReactNode = null;
-  if (paso.en === 'anotar') {
+  if (presentacion) {
+    pantalla = (
+      <Presentacion
+        onEmpezar={() => setPresentacion(false)}
+        onSinGuia={() => {
+          setGuia(false);
+          setPresentacion(false);
+        }}
+        onVolver={() => navigate(RUTAS.inicio)}
+      />
+    );
+  } else if (paso.en === 'anotar') {
     const valor = Number(monto) || 0;
     const elegido = paso.clienteId != null;
     const verbo = paso.tipo === 'fiado' ? 'Anotar fiado' : 'Registrar pago';
@@ -162,6 +174,73 @@ function BannerPrueba() {
       <Button variant="on-dark" size="s" onClick={() => navigate('/sign-up')}>
         Crear cuenta
       </Button>
+    </div>
+  );
+}
+
+const QUE_VAS_A_APRENDER = [
+  'Elegir a quién le fiás.',
+  'Marcar cuánto se llevó.',
+  'Anotarlo en la libreta.',
+  'Mandarle el comprobante por WhatsApp.',
+] as const;
+
+/** Antes de la guía: qué se va a aprender y con qué clientes. */
+function Presentacion({
+  onEmpezar,
+  onSinGuia,
+  onVolver,
+}: {
+  onEmpezar: () => void;
+  onSinGuia: () => void;
+  onVolver: () => void;
+}) {
+  return (
+    <div className="flex flex-col gap-6 px-4 pt-4 pb-8">
+      <header>
+        <button type="button" aria-label="Volver" onClick={onVolver} className={BOTON_VOLVER}>
+          <IconBack />
+        </button>
+      </header>
+
+      <div className="flex flex-col gap-3">
+        <p className="m-0 self-start rounded-pill bg-fiado px-3 py-1 text-caption font-bold text-surface">
+          Guía · 1 minuto
+        </p>
+        <h1 className="m-0 font-display text-amount-m text-ink">
+          Vamos a aprender a usar la app
+        </h1>
+        <p className="m-0 text-body-l text-ink-muted">
+          Te mostramos paso a paso cómo anotar un fiado, con clientes de ejemplo. No se guarda
+          nada.
+        </p>
+      </div>
+
+      <Card>
+        <p className="m-0 mb-4 text-body font-bold text-ink">Vas a aprender a:</p>
+        <ol className="m-0 p-0 list-none flex flex-col gap-4">
+          {QUE_VAS_A_APRENDER.map((t, i) => (
+            <li key={t} className="flex items-center gap-3">
+              <span
+                aria-hidden="true"
+                className="flex-none w-9 h-9 rounded-pill bg-fiado text-surface font-display text-body-l inline-flex items-center justify-center"
+              >
+                {i + 1}
+              </span>
+              <span className="text-body-l text-ink">{t}</span>
+            </li>
+          ))}
+        </ol>
+      </Card>
+
+      <div className="flex flex-col gap-2">
+        <Button variant="fiado" size="xl" block onClick={onEmpezar}>
+          Empezar
+        </Button>
+        <Button variant="text" size="m" block onClick={onSinGuia}>
+          Prefiero probar sin la guía
+        </Button>
+      </div>
     </div>
   );
 }

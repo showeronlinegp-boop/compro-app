@@ -48,7 +48,8 @@ function renderAt(path: string) {
 }
 
 const donde = () => screen.getByTestId('donde').textContent;
-const barra = () => screen.queryByRole('navigation', { name: 'Navegación inferior' });
+const empezar = () => fireEvent.click(screen.getByRole('button', { name: 'Empezar' }));
+const barra =() => screen.queryByRole('navigation', { name: 'Navegación inferior' });
 
 /** Toca las teclas del teclado numérico, una por una. */
 function teclear(digitos: string) {
@@ -138,6 +139,8 @@ describe('Modo prueba', () => {
     fireEvent.click(probar as HTMLElement);
     expect(donde()).toBe('/fiado/probar');
     expect(screen.getByText(/^Estás probando\. Nada se guarda/)).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Vamos a aprender a usar la app' })).toBeTruthy();
+    empezar();
     expect(screen.getByText('Marta Giménez')).toBeTruthy();
     expect(barra()).toBeNull();
   });
@@ -145,6 +148,8 @@ describe('Modo prueba', () => {
   it('la guía lleva paso a paso: cliente, monto, anotar y comprobante', () => {
     const abrir = vi.spyOn(window, 'open').mockReturnValue(null);
     renderAt('/fiado/probar');
+    expect(screen.queryByRole('region', { name: 'Guía' })).toBeNull();
+    empezar();
     const guia = () => screen.getByRole('region', { name: 'Guía' }).textContent;
 
     expect(guia()).toContain('Paso 1 de 4');
@@ -180,8 +185,16 @@ describe('Modo prueba', () => {
     expect(m.crearCliente).not.toHaveBeenCalled();
   });
 
+  it('se puede probar sin la guía desde la presentación', () => {
+    renderAt('/fiado/probar');
+    fireEvent.click(screen.getByRole('button', { name: 'Prefiero probar sin la guía' }));
+    expect(screen.getByText('Marta Giménez')).toBeTruthy();
+    expect(screen.queryByRole('region', { name: 'Guía' })).toBeNull();
+  });
+
   it('la guía se puede saltear', () => {
     renderAt('/fiado/probar');
+    empezar();
     fireEvent.click(screen.getByRole('button', { name: 'Saltear la guía' }));
     expect(screen.queryByRole('region', { name: 'Guía' })).toBeNull();
     fireEvent.click(screen.getByText('Marta Giménez'));
@@ -190,6 +203,7 @@ describe('Modo prueba', () => {
 
   it('registrar un pago pide elegir el cliente y baja el saldo', () => {
     renderAt('/fiado/probar');
+    empezar();
     fireEvent.click(screen.getByRole('button', { name: /Registrar pago/ }));
     const confirmar = () =>
       screen.getAllByRole('button', { name: 'Registrar pago' }).at(-1) as HTMLButtonElement;
