@@ -85,8 +85,8 @@ describe('Página pública de Fiado', () => {
     expect(chat.textContent).toContain('anoté $ 3.500 en tu cuenta de Kiosco Lu');
     expect(chat.textContent).toContain('te recuerdo que tenés un saldo de $ 12.300');
     expect(chat.textContent).toContain('Hecho con Neggo');
-    expect(screen.getAllByRole('button', { name: 'Probala ahora, sin cuenta' })).toHaveLength(2);
-    expect(screen.getAllByRole('button', { name: 'Crear mi cuenta gratis' })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: 'Probala ahora' })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: 'Registrarme gratis' })).toHaveLength(2);
     expect(screen.getByRole('heading', { name: 'Preguntas frecuentes' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Privacidad' }).getAttribute('href')).toBe(
       '/privacidad',
@@ -97,14 +97,14 @@ describe('Página pública de Fiado', () => {
     expect(m.resumen).not.toHaveBeenCalled();
   });
 
-  it('"Crear mi cuenta gratis" lleva al registro e "Ingresar" al login', () => {
+  it('"Registrarme gratis" lleva al registro y "Ya tengo cuenta" al login', () => {
     renderAt('/fiado');
-    const [crear] = screen.getAllByRole('button', { name: 'Crear mi cuenta gratis' });
+    const [crear] = screen.getAllByRole('button', { name: 'Registrarme gratis' });
     fireEvent.click(crear as HTMLElement);
     expect(donde()).toBe('/sign-up');
     cleanup();
     renderAt('/fiado');
-    fireEvent.click(screen.getByRole('button', { name: 'Ingresar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ya tengo cuenta' }));
     expect(donde()).toBe('/sign-in');
   });
 
@@ -121,7 +121,7 @@ describe('Página pública de Fiado', () => {
     m.avisos.mockResolvedValue({ vencidos: [], hoy: [], proximos: [], sin_recordar: 0 });
     renderAt('/fiado');
     await act(async () => {});
-    expect(screen.queryByRole('button', { name: 'Probala ahora, sin cuenta' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Probala ahora' })).toBeNull();
     expect(barra()).toBeTruthy();
   });
 
@@ -134,7 +134,7 @@ describe('Página pública de Fiado', () => {
 describe('Modo prueba', () => {
   it('se llega desde la página pública y avisa que es una prueba', () => {
     renderAt('/fiado');
-    const [probar] = screen.getAllByRole('button', { name: 'Probala ahora, sin cuenta' });
+    const [probar] = screen.getAllByRole('button', { name: 'Probala ahora' });
     fireEvent.click(probar as HTMLElement);
     expect(donde()).toBe('/fiado/probar');
     expect(screen.getByText(/^Estás probando\. Para guardar tus clientes/)).toBeTruthy();
