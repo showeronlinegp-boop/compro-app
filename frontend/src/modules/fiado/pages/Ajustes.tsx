@@ -8,6 +8,7 @@ import { TextArea, TextField } from '../../../host/ui/controls';
 import { Card, Notice, Section } from '../../../host/ui/surfaces';
 import { type BorradorRecargo, SeccionRecargo, borradorDe, configDe } from '../AjustesRecargo';
 import { DialogoTerminosRecargo } from '../TerminosRecargo';
+import { SeccionTutoriales } from '../Tutoriales';
 import { type Ajustes as AjustesData, fiadoApi, mensajeDeError } from '../api';
 import { Cargando, ErrorCarga } from '../components';
 import {
@@ -139,6 +140,8 @@ export default function Ajustes() {
   return (
     <form ref={formRef} onSubmit={guardar} className="flex flex-col gap-5 px-4 py-6" noValidate>
       <ScreenHeader variant="place" title="Ajustes" />
+
+      <SeccionTutoriales />
 
       {carga.error && !carga.data && (
         <ErrorCarga mensaje={carga.error} onReintentar={carga.recargar} />
