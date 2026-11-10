@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../../../host/ui/Button';
 import { TextField } from '../../../host/ui/controls';
 import { useToast } from '../../../host/ui/Toast';
+import { registrarUso } from '../../../host/uso';
 import { Notice } from '../../../host/ui/surfaces';
 import { soloDigitos } from '../FormCliente';
 import { BotonContactos } from '../contactos';
@@ -67,6 +68,8 @@ export default function Bienvenida() {
         telefono: telefono.trim() || null,
         ...(saldo > 0 ? { saldo_inicial: saldo, idempotency_key: clave.current } : {}),
       });
+      // Para el embudo del panel; que la vio ya queda como su 'pantalla'.
+      registrarUso('bienvenida_hecha', 'fiado');
       toast.show(`Listo, ya anotaste a ${c.nombre}.`);
       navigate(RUTAS.inicio, { replace: true });
     } catch (err) {

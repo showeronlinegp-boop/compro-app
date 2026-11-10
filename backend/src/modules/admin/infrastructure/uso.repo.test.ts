@@ -206,6 +206,31 @@ describe('eventos de uso', () => {
         ultima_vista: null,
         uso_instalada: false,
         uso_movil: false,
+        bienvenida_vista: false,
+        bienvenida_hecha: false,
+      });
+    });
+  });
+
+  it('marca si vio y si completó la bienvenida', async () => {
+    await withRollback(async (tx) => {
+      const vio = await seedUser(tx);
+      const completo = await seedUser(tx);
+      await tx.uso_eventos.createMany({
+        data: [
+          vista(vio.id, 'bienvenida', '2026-10-27T15:00:00Z'),
+          vista(completo.id, 'bienvenida', '2026-10-27T15:00:00Z'),
+          { user_id: completo.id, evento: 'bienvenida_hecha', modulo: 'fiado' },
+        ],
+      });
+      const filas = await makeUsoRepo(tx, []).comercios();
+      expect(filas.find((r) => r.user_id === vio.id)).toMatchObject({
+        bienvenida_vista: true,
+        bienvenida_hecha: false,
+      });
+      expect(filas.find((r) => r.user_id === completo.id)).toMatchObject({
+        bienvenida_vista: true,
+        bienvenida_hecha: true,
       });
     });
   });

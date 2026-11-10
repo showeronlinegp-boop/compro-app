@@ -34,6 +34,12 @@ vi.mock('./api', async (importOriginal) => {
   return { ...actual, fiadoApi: { ...actual.fiadoApi, ...m } };
 });
 
+const uso = vi.hoisted(() => ({ registrarUso: vi.fn() }));
+vi.mock('../../host/uso', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../host/uso')>()),
+  registrarUso: uso.registrarUso,
+}));
+
 // ─── Datos ────────────────────────────────────────────────────────────────────
 
 const cliente = (over: Partial<Cliente> = {}): Cliente => ({
@@ -510,6 +516,7 @@ describe('Bienvenida', () => {
     await waitFor(() => expect(donde()).toBe('/fiado'));
     expect(await screen.findByText('$ 8.500', { selector: 'p' })).toBeDefined();
     expect(screen.getByTestId('toast-region').textContent).toContain('Listo, ya anotaste a Rosa.');
+    expect(uso.registrarUso).toHaveBeenCalledWith('bienvenida_hecha', 'fiado');
   });
 
   it('sin monto crea el cliente sin saldo; un error se muestra y deja reintentar', async () => {
@@ -528,6 +535,7 @@ describe('Bienvenida', () => {
     expect(await screen.findByText('Se cortó la conexión')).toBeDefined();
     expect(m.crearCliente).toHaveBeenCalledWith({ nombre: 'Rosa', telefono: null });
     expect(donde()).toBe('/fiado/bienvenida');
+    expect(uso.registrarUso).not.toHaveBeenCalledWith('bienvenida_hecha', 'fiado');
   });
 
   it('"Lo hago después" vuelve al Inicio y no insiste', async () => {
@@ -535,6 +543,7 @@ describe('Bienvenida', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Lo hago después' }));
     expect(await screen.findByText('Nadie para cobrar hoy.')).toBeDefined();
     expect(donde()).toBe('/fiado');
+    expect(uso.registrarUso).not.toHaveBeenCalledWith('bienvenida_hecha', 'fiado');
   });
 });
 
