@@ -210,6 +210,15 @@ export function condicionesTexto(c: ConfigRecargo): string {
   return `un recargo ${cuanto} por cada ${periodo} de atraso, ${gracia(c.tolerancia)}`;
 }
 
+/**
+ * Línea fija con la que el comprobante de un fiado le avisa las condiciones a
+ * un cliente que todavía no las conocía. El front la arma igual (con
+ * `recargo_condiciones` de Ajustes) y es el texto que queda registrado.
+ */
+export function lineaAvisoComprobante(c: ConfigRecargo): string {
+  return `Te aviso que si un fiado se atrasa, se cobra ${condicionesTexto(c)}.`;
+}
+
 /** Mensaje fijo del aviso de condiciones (no editable). */
 export function textoAvisoRecargo(
   c: ConfigRecargo,

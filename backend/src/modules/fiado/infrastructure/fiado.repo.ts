@@ -11,6 +11,7 @@ import {
   type OrdenClientes,
   PLANTILLAS_DEFAULT,
   type TipoMovimiento,
+  type ViaAviso,
   coincideNombre,
   diasSinPagar,
   excedeLimite,
@@ -31,6 +32,7 @@ import {
   type ConfigRecargo,
   type RecargoSugerido,
   condicionesTexto,
+  lineaAvisoComprobante,
   parseConfigRecargo,
   recargosSugeridos,
   requiereAviso,
@@ -159,7 +161,7 @@ export interface AvisoRecargoView {
   cliente_id: number;
   version: number;
   condiciones: string;
-  via: 'whatsapp' | 'informado';
+  via: ViaAviso;
   created_at: string;
 }
 
@@ -203,10 +205,7 @@ export interface FiadoRepo {
   /** "No cobrar": saltea el período sugerido de ese fiado. */
   omitirRecargo(clienteId: number, fiadoId: number): Promise<FichaView>;
   /** Registra que se le avisaron las condiciones vigentes al cliente. */
-  registrarAvisoRecargo(
-    clienteId: number,
-    via: 'whatsapp' | 'informado',
-  ): Promise<AvisoRecargoView>;
+  registrarAvisoRecargo(clienteId: number, via: ViaAviso): Promise<AvisoRecargoView>;
 }
 
 type PrismaLike = Pick<
@@ -380,7 +379,10 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
     };
   }
 
-  /** ¿Hay que avisarle las condiciones antes de anotarle fiados o recargos? */
+  /**
+   * ¿Falta avisarle las condiciones? Se le pueden anotar fiados igual (el
+   * comprobante lleva el aviso); lo que no se puede es sumarle recargos.
+   */
   function avisoPendiente(c: ClienteRow, ctx: RecargoCtx): boolean {
     return ctx.config !== null && !c.sin_recargo && c.recargo_aviso_version < ctx.version;
   }
@@ -654,17 +656,6 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
 
       let c = await previo();
       if (!c) {
-        if (saldo) {
-          // Con recargos prendidos, a un cliente nuevo hay que avisarle las
-          // condiciones antes de anotarle un fiado (mismo 409 que Anotar).
-          const { config } = await recargoCtx();
-          if (config !== null) {
-            throw new FiadoError(
-              409,
-              'Con recargos activos, avisale las condiciones antes de anotarle lo que te debe',
-            );
-          }
-        }
         try {
           // Un solo INSERT anidado: el cliente y su saldo anterior entran juntos
           // o no entra ninguno.
@@ -740,9 +731,6 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
           where: { user_id: uid(), idempotency_key: input.idempotency_key },
         });
         if (previo) return resultado(previo, cliente);
-      }
-      if (input.tipo === 'fiado' && avisoPendiente(cliente, await recargoCtx(cliente.id))) {
-        throw new FiadoError(409, 'Antes de anotarle un fiado, avisale las condiciones de recargo');
       }
       try {
         const mov = await prisma.fiado_movimientos.create({
@@ -973,7 +961,10 @@ export function makeFiadoRepo(prisma: PrismaLike, userId: number | (() => number
           user_id: uid(),
           cliente_id: cliente.id,
           version: ctx.version,
-          condiciones: textoAvisoRecargo(ctx.config, ctx.comercio, cliente.nombre),
+          condiciones:
+            via === 'comprobante'
+              ? lineaAvisoComprobante(ctx.config)
+              : textoAvisoRecargo(ctx.config, ctx.comercio, cliente.nombre),
           via,
         },
       });

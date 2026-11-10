@@ -40,9 +40,10 @@ export function sinCortes(texto: string): string {
 // ─── Aviso de condiciones ─────────────────────────────────────────────────────
 
 /**
- * Hay que avisarle las condiciones antes de anotarle fiados o recargos. El
- * texto es fijo (lo arma el backend). Se registra al abrir WhatsApp o al
- * tocar "Cambio informado"; los dos quedan guardados sin poder borrarse.
+ * Hay que avisarle las condiciones antes de sumarle recargos (los fiados se
+ * pueden anotar igual: el comprobante lleva el aviso). El texto es fijo (lo
+ * arma el backend). Se registra al abrir WhatsApp o al tocar "Ya se lo dije";
+ * los dos quedan guardados sin poder borrarse.
  */
 export function TarjetaAvisoRecargo({
   cliente,
@@ -80,7 +81,8 @@ export function TarjetaAvisoRecargo({
       </h2>
       <WhatsAppBubble text={sinCortes(texto)} />
       <p className="m-0 text-body-s text-warn">
-        Hasta que le avises, podés registrarle pagos, pero no fiados nuevos ni recargos.
+        Si le anotás un fiado, el aviso va en el comprobante. Hasta que esté avisado no le podés
+        sumar recargos.
       </p>
       {error && <Notice>{error}</Notice>}
       <div className="grid grid-cols-2 gap-2">
@@ -98,7 +100,7 @@ export function TarjetaAvisoRecargo({
           disabled={enviando}
           onClick={() => void registrar('informado')}
         >
-          Cambio informado
+          Ya se lo dije
         </Button>
       </div>
     </section>

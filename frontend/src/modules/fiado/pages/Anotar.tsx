@@ -68,9 +68,9 @@ export function Anotar({ tipo }: { tipo: TipoAnotar }) {
   const hoy = hoyAR();
   const vence = tipo === 'fiado' ? fechaDeAtajo(atajo, hoy) : null;
   const valor = Number(monto || '0');
-  // Con recargos activos, primero hay que avisarle las condiciones (el backend también lo exige).
-  const faltaAviso = tipo === 'fiado' && cliente?.aviso_recargo_pendiente === true;
-  const puedeConfirmar = cliente != null && valor > 0 && !enviando && !faltaAviso;
+  // Sin avisar las condiciones de recargo se puede anotar igual: el comprobante lleva el aviso.
+  const avisoEnComprobante = tipo === 'fiado' && cliente?.aviso_recargo_pendiente === true;
+  const puedeConfirmar = cliente != null && valor > 0 && !enviando;
 
   async function confirmar() {
     if (!cliente || !puedeConfirmar) return;
@@ -110,15 +110,11 @@ export function Anotar({ tipo }: { tipo: TipoAnotar }) {
 
       <SelectorCliente cliente={cliente} onElegir={setCliente} onCrear={crearCliente} />
 
-      {faltaAviso && cliente && (
-        <div className="flex flex-col gap-2">
-          <Notice>
-            Antes de anotarle un fiado a {cliente.nombre}, avisale las condiciones de recargo.
-          </Notice>
-          <Button variant="outline" size="s" onClick={() => navigate(RUTAS.ficha(cliente.id))}>
-            Ir a su ficha para avisarle
-          </Button>
-        </div>
+      {avisoEnComprobante && cliente && (
+        <p className="m-0 rounded-m bg-warn-bg p-3 text-body-s text-warn">
+          {cliente.nombre} todavía no conoce tus condiciones de recargo: van a ir en el comprobante
+          de este fiado.
+        </p>
       )}
 
       <div className="text-center" aria-live="polite">

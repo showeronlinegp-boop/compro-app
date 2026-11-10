@@ -73,10 +73,14 @@ export function recordatorio(cliente: Cliente, ajustes: Ajustes): string {
 /**
  * Línea FIJA con las condiciones de recargo, que va en cada comprobante de
  * fiado mientras estén activos (el comercio no la puede editar ni borrar).
+ * Si al cliente todavía no se le avisaron, la línea es el aviso: es el mismo
+ * texto que el backend registra (`lineaAvisoComprobante`) al mandarlo.
  */
 export function lineaCondiciones(cliente: Cliente, ajustes: Ajustes): string | null {
   if (!ajustes.recargo_condiciones || cliente.sin_recargo) return null;
-  return `Si se atrasa, se cobra ${ajustes.recargo_condiciones}.`;
+  return cliente.aviso_recargo_pendiente
+    ? `Te aviso que si un fiado se atrasa, se cobra ${ajustes.recargo_condiciones}.`
+    : `Si se atrasa, se cobra ${ajustes.recargo_condiciones}.`;
 }
 
 /** Suma una línea fija justo antes de la firma (si la hay). */

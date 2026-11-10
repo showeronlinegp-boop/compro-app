@@ -234,8 +234,11 @@ export const fiadoApi = {
   /** "No cobrar" el período sugerido de un fiado. Devuelve la ficha actualizada. */
   omitirRecargo: (clienteId: number, fiadoId: number) =>
     req<Ficha>(`/fiado/clientes/${clienteId}/recargos/omitir`, json('POST', { fiado_id: fiadoId })),
-  /** El comercio le avisó las condiciones (por WhatsApp o "Cambio informado"). */
-  avisarRecargo: (clienteId: number, via: 'whatsapp' | 'informado') =>
+  /**
+   * El comercio le avisó las condiciones: con el mensaje de aviso por WhatsApp,
+   * en persona ("Ya se lo dije") o dentro del comprobante de un fiado.
+   */
+  avisarRecargo: (clienteId: number, via: 'whatsapp' | 'informado' | 'comprobante') =>
     req<{ cliente_id: number; version: number; via: string }>(
       `/fiado/clientes/${clienteId}/aviso-recargo`,
       json('POST', { via }),

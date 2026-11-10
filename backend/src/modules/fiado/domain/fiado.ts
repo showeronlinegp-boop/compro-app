@@ -501,11 +501,20 @@ export function parseOmitirRecargo(body: unknown): number {
   return n;
 }
 
+/**
+ * Cómo se le avisaron las condiciones de recargo: el mensaje de aviso por
+ * WhatsApp, "Ya se lo dije" (en persona), o dentro del comprobante de un fiado.
+ */
+export type ViaAviso = 'whatsapp' | 'informado' | 'comprobante';
+const VIAS_AVISO: readonly ViaAviso[] = ['whatsapp', 'informado', 'comprobante'];
+
 /** Body de POST /clientes/:id/aviso-recargo. */
-export function parseViaAviso(body: unknown): 'whatsapp' | 'informado' {
+export function parseViaAviso(body: unknown): ViaAviso {
   const via = ((body ?? {}) as Record<string, unknown>).via;
-  if (via !== 'whatsapp' && via !== 'informado') throw bad("via debe ser 'whatsapp' o 'informado'");
-  return via;
+  if (!VIAS_AVISO.includes(via as ViaAviso)) {
+    throw bad("via debe ser 'whatsapp', 'informado' o 'comprobante'");
+  }
+  return via as ViaAviso;
 }
 
 /** Orden de la lista de clientes. Empates: por nombre. */

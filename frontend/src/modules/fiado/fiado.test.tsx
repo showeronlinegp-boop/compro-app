@@ -449,15 +449,13 @@ describe('Nuevo cliente', () => {
     });
   });
 
-  it('con recargos activos no ofrece el saldo inicial', async () => {
+  it('con recargos activos también ofrece el saldo inicial (el aviso queda en la ficha)', async () => {
     m.ajustes.mockResolvedValue({
       ...ajustes,
       recargo: { esquema: 'mes', tipo: 'pct', valor: 5, tolerancia: 7 },
     });
     renderAt('/fiado/clientes/nuevo');
-    await waitFor(() => expect(m.ajustes).toHaveBeenCalled());
-    await act(async () => {});
-    expect(screen.queryByLabelText('¿Ya te debe algo? (opcional)')).toBeNull();
+    expect(await screen.findByLabelText('¿Ya te debe algo? (opcional)')).toBeDefined();
   });
 
   it('precarga ?nombre= y muestra el error del backend', async () => {

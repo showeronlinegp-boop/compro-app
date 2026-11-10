@@ -36,6 +36,7 @@ const m = vi.hoisted(() => ({
   sumarRecargos: vi.fn(),
   omitirRecargo: vi.fn(),
   avisarRecargo: vi.fn(),
+  crearMovimiento: vi.fn(),
   actualizarCliente: vi.fn(),
 }));
 
@@ -242,11 +243,11 @@ describe('ficha: aviso de condiciones', () => {
     );
   });
 
-  it('"Cambio informado" registra el aviso sin abrir WhatsApp', async () => {
+  it('"Ya se lo dije" registra el aviso sin abrir WhatsApp', async () => {
     m.ficha.mockResolvedValueOnce(conAviso()).mockResolvedValue(ficha());
     m.avisarRecargo.mockResolvedValue({ cliente_id: 1, version: 1, via: 'informado' });
     renderAt('/fiado/clientes/1');
-    fireEvent.click(await screen.findByRole('button', { name: 'Cambio informado' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Ya se lo dije' }));
     await waitFor(() => expect(m.avisarRecargo).toHaveBeenCalledWith(1, 'informado'));
     expect(open).not.toHaveBeenCalled();
   });
@@ -626,12 +627,24 @@ describe('ajustes: recargo por atraso', () => {
 });
 
 describe('anotar y editar con recargos', () => {
-  it('a un cliente sin aviso no se le puede anotar un fiado (lleva a su ficha)', async () => {
-    m.ficha.mockResolvedValue(ficha({ cliente: cliente({ aviso_recargo_pendiente: true }) }));
+  it('a un cliente sin aviso se le anota igual: el comprobante lleva el aviso', async () => {
+    const sinAviso = cliente({ aviso_recargo_pendiente: true });
+    m.ficha.mockResolvedValue(ficha({ cliente: sinAviso }));
+    m.crearMovimiento.mockResolvedValue({
+      movimiento: mov({ id: 9, monto: 2000 }),
+      cliente: { ...sinAviso, saldo: sinAviso.saldo + 2000 },
+    });
+    m.avisarRecargo.mockResolvedValue({ cliente_id: 1, version: 1, via: 'comprobante' });
     renderAt('/fiado/anotar?cliente=1');
-    expect(await screen.findByText(/avisale las condiciones de recargo/)).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Ir a su ficha para avisarle' }));
-    expect(screen.getByTestId('donde').textContent).toBe('/fiado/clientes/1');
+    expect(await screen.findByText(/van a ir en el comprobante/)).toBeDefined();
+    for (const d of '2000') fireEvent.click(screen.getByRole('button', { name: d }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Anotar fiado' }).at(-1) as HTMLElement);
+
+    const burbuja = await screen.findByText(/Te aviso que si un fiado se atrasa, se cobra/);
+    expect(burbuja.textContent).not.toMatch(/\nSi se atrasa/);
+    expect(screen.getByText(/también le avisa las condiciones/)).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar por WhatsApp' }));
+    await waitFor(() => expect(m.avisarRecargo).toHaveBeenCalledWith(1, 'comprobante'));
   });
 
   it('editar cliente: "No sugerir recargos" sólo con recargos activos, y se guarda', async () => {

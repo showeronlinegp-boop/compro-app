@@ -113,12 +113,30 @@ describe('aviso obligatorio', () => {
         vence: null,
         idempotency_key: null,
       };
-      await expect(repo.crearMovimiento(fiadoNuevo)).rejects.toEqual(conflicto(/avisale/));
+      // Sin avisar se le puede anotar un fiado (el comprobante lleva el aviso),
+      // pero no sumarle recargos.
+      const anotado = await repo.crearMovimiento(fiadoNuevo);
+      expect(anotado.movimiento.tipo).toBe('fiado');
+      expect(anotado.cliente.aviso_recargo_pendiente).toBe(true);
       await expect(repo.sumarRecargos(cliente.id, null, null)).rejects.toEqual(
         conflicto(/avisale/),
       );
       const pago = await repo.crearMovimiento({ ...fiadoNuevo, tipo: 'pago' });
       expect(pago.movimiento.tipo).toBe('pago');
+    });
+  });
+
+  it('avisado en el comprobante: queda la línea que se mandó y destraba al cliente', async () => {
+    await withRollback(async (tx) => {
+      const { repo, cliente } = await preparar(tx);
+      await repo.putAjustes({ recargo: mes5 });
+      const aviso = await repo.registrarAvisoRecargo(cliente.id, 'comprobante');
+      expect(aviso).toMatchObject({
+        via: 'comprobante',
+        condiciones:
+          'Te aviso que si un fiado se atrasa, se cobra un recargo del 5 % por cada mes de atraso, después de 7 días de gracia.',
+      });
+      expect((await repo.ficha(cliente.id)).cliente.aviso_recargo_pendiente).toBe(false);
     });
   });
 

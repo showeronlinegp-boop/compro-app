@@ -370,7 +370,7 @@ model fiado_ajustes {
 // ---------------------------------------------------------------------------
 // fiado_avisos_recargo — APPEND-ONLY (trigger): cada vez que se le informaron
 // al cliente las condiciones de recargo, con el texto exacto de ese momento.
-// via: 'whatsapp' | 'informado' (CHECK en la migración).
+// via: 'whatsapp' | 'informado' | 'comprobante' (CHECK en la migración).
 // ---------------------------------------------------------------------------
 model fiado_avisos_recargo {
   id          Int      @id @default(autoincrement())

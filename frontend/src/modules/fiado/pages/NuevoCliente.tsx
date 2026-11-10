@@ -5,7 +5,6 @@ import { useToast } from '../../../host/ui/Toast';
 import { FormCliente } from '../FormCliente';
 import { fiadoApi } from '../api';
 import { RUTAS, conCliente, esRutaDelModulo } from '../rutas';
-import { useCarga } from '../useCarga';
 import { nuevaClave } from './Anotar';
 
 /**
@@ -15,14 +14,12 @@ import { nuevaClave } from './Anotar';
  * Sin `siguiente`, abre la ficha del cliente nuevo.
  *
  * "¿Ya te debe algo?" pasa la deuda del cuaderno en un solo paso. Con
- * recargos prendidos no aparece: antes del primer fiado hay que avisarle las
- * condiciones, y eso se hace desde la ficha.
+ * recargos prendidos, el aviso de condiciones queda pendiente en la ficha.
  */
 export default function NuevoCliente() {
   const navigate = useNavigate();
   const toast = useToast();
   const [params] = useSearchParams();
-  const ajustes = useCarga(() => fiadoApi.ajustes(), []);
   const clave = useRef(nuevaClave());
 
   return (
@@ -32,7 +29,7 @@ export default function NuevoCliente() {
         inicial={{ nombre: params.get('nombre') ?? '' }}
         textoBoton="Guardar cliente"
         conContactos
-        conSaldoInicial={ajustes.data != null && ajustes.data.recargo === null}
+        conSaldoInicial
         onGuardar={async (datos) => {
           const c = await fiadoApi.crearCliente(
             datos.saldo_inicial ? { ...datos, idempotency_key: clave.current } : datos,

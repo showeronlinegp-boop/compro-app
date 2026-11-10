@@ -106,7 +106,7 @@ describe('clientes', () => {
     });
   });
 
-  it('con recargos activos, el saldo inicial pide avisar antes (409) y no crea nada', async () => {
+  it('con recargos activos, el saldo inicial se anota y el aviso queda pendiente', async () => {
     await withRollback(async (tx) => {
       const uid = await seedUser(tx);
       const repo = makeFiadoRepo(tx, uid);
@@ -116,17 +116,16 @@ describe('clientes', () => {
       await repo.putAjustes({
         recargo: { esquema: 'mes', tipo: 'pct', valor: 5, tolerancia: 7 },
       });
-      await expect(
-        repo.crearCliente({
-          nombre: 'Marta',
-          telefono: null,
-          etiqueta: null,
-          limite: null,
-          proximo_cobro: null,
-          saldo_inicial: 1_000,
-        }),
-      ).rejects.toMatchObject({ status: 409 });
-      expect(await repo.listClientes('', 'deuda')).toHaveLength(0);
+      const c = await repo.crearCliente({
+        nombre: 'Marta',
+        telefono: null,
+        etiqueta: null,
+        limite: null,
+        proximo_cobro: null,
+        saldo_inicial: 1_000,
+      });
+      expect(c.saldo).toBe(1_000);
+      expect(c.aviso_recargo_pendiente).toBe(true);
     });
   });
 

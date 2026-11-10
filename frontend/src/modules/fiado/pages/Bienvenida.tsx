@@ -9,7 +9,6 @@ import { soloDigitos } from '../FormCliente';
 import { BotonContactos } from '../contactos';
 import { fiadoApi, mensajeDeError } from '../api';
 import { RUTAS } from '../rutas';
-import { useCarga } from '../useCarga';
 import { nuevaClave } from './Anotar';
 
 const KEY_SALTEADA = 'neggo.fiado-bienvenida-salteada';
@@ -41,7 +40,6 @@ function saltearBienvenida() {
 export default function Bienvenida() {
   const navigate = useNavigate();
   const toast = useToast();
-  const ajustes = useCarga(() => fiadoApi.ajustes(), []);
   const clave = useRef(nuevaClave());
   const [comercio, setComercio] = useState('');
   const [nombre, setNombre] = useState('');
@@ -50,9 +48,6 @@ export default function Bienvenida() {
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Con recargos prendidos (raro en un comercio nuevo), el primer fiado
-  // necesita el aviso de condiciones: se carga el cliente sin saldo.
-  const conMonto = ajustes.data?.recargo == null;
   const listo = comercio.trim().length > 0 && nombre.trim().length > 0 && !enviando;
 
   async function guardar(e: FormEvent) {
@@ -62,7 +57,7 @@ export default function Bienvenida() {
     setError(null);
     try {
       await fiadoApi.guardarAjustes({ comercio: comercio.trim() });
-      const saldo = conMonto ? Number(monto) : 0;
+      const saldo = Number(monto);
       const c = await fiadoApi.crearCliente({
         nombre: nombre.trim(),
         telefono: telefono.trim() || null,
@@ -131,17 +126,15 @@ export default function Bienvenida() {
           onChange={(e) => setTelefono(e.target.value)}
           hint="Para mandarle el comprobante por WhatsApp."
         />
-        {conMonto && (
-          <TextField
-            label="¿Cuánto te debe hoy?"
-            labelTone="question"
-            inputMode="numeric"
-            placeholder="$ 0"
-            value={monto}
-            onChange={(e) => setMonto(soloDigitos(e.target.value))}
-            hint="Lo que tenés anotado en el cuaderno. Queda como “Saldo anterior”."
-          />
-        )}
+        <TextField
+          label="¿Cuánto te debe hoy?"
+          labelTone="question"
+          inputMode="numeric"
+          placeholder="$ 0"
+          value={monto}
+          onChange={(e) => setMonto(soloDigitos(e.target.value))}
+          hint="Lo que tenés anotado en el cuaderno. Queda como “Saldo anterior”."
+        />
 
         {error && <Notice>{error}</Notice>}
 
