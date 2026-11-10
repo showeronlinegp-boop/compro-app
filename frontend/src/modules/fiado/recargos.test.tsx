@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HostApp } from '../../host/HostApp';
-import { borradorDe, configDe, equivalenteMensual } from './AjustesRecargo';
+import { borradorDe, configDe, ejemploRecargo, equivalenteMensual } from './AjustesRecargo';
 import type { Ajustes, Cliente, Ficha, Movimiento, RecargoSugerido } from './api';
 import { fiado } from './index';
 import {
@@ -595,6 +595,14 @@ describe('ajustes: recargo por atraso', () => {
   it('por día muestra el equivalente mensual del porcentaje', () => {
     const b = { ...borradorDe(null), activo: true, esquema: 'dia' as const };
     expect(equivalenteMensual({ ...b, valor: '0,5' })).toBe('Equivale a 15 % por mes.');
+    const mes = { ...borradorDe(null), activo: true };
+    expect(ejemploRecargo(mes)).toBe(
+      'Ejemplo: si un fiado de $ 10.000 se atrasa un mes (pasados los días de espera), se le suman $ 500.',
+    );
+    expect(ejemploRecargo({ ...mes, tipo: 'fijo', valor: '1.255' })).toBeNull();
+    expect(ejemploRecargo({ ...mes, tipo: 'fijo', valor: '1255' })).toContain('se le suman $ 1.250');
+    expect(ejemploRecargo({ ...mes, esquema: 'tramos' })).toContain('hasta 30 días');
+    expect(ejemploRecargo({ ...mes, valor: '' })).toBeNull();
     expect(equivalenteMensual({ ...b, tipo: 'fijo', valor: '50' })).toBeNull();
     expect(equivalenteMensual({ ...b, esquema: 'mes' })).toBeNull();
   });
@@ -602,9 +610,14 @@ describe('ajustes: recargo por atraso', () => {
   it('elegir "Por día" guarda ese esquema', async () => {
     m.guardarAjustes.mockResolvedValue(ajustes());
     renderAt('/fiado/ajustes');
-    fireEvent.click(await screen.findByRole('button', { name: 'Por día' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Cada día' }));
     expect(screen.getByLabelText('Recargo por cada día de atraso (%)')).toBeDefined();
     expect(screen.getByText(/Equivale a 150 % por mes/)).toBeDefined();
+    expect(
+      screen.getByText(
+        'Ejemplo: si un fiado de $ 10.000 se atrasa un día (pasados los días de espera), se le suman $ 500.',
+      ),
+    ).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
     await waitFor(() =>
       expect(m.guardarAjustes).toHaveBeenCalledWith(
