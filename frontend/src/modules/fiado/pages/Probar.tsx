@@ -442,7 +442,7 @@ function AnotarPrueba({
       </Senalado>
 
       <div className="text-center" aria-live="polite">
-        <p className="m-0 text-caption text-ink-muted">Monto</p>
+        <p className="m-0 text-caption text-ink-muted">¿Cuánto?</p>
         <p className={`m-0 font-display text-amount-l ${valor > 0 ? color : 'text-ink-disabled'}`}>
           {formatMoney(valor)}
         </p>
@@ -500,7 +500,7 @@ function ListoPrueba({
 
       <Card>
         <p className="m-0 text-body text-ink-muted">
-          {cliente.saldo < 0 ? 'Ahora tiene a favor' : 'Ahora te debe'}
+          {cliente.saldo < 0 ? 'Ahora te pagó de más' : 'Ahora te debe'}
         </p>
         <p className="m-0 font-display text-amount-m text-ink">{textoSaldo(cliente.saldo)}</p>
       </Card>

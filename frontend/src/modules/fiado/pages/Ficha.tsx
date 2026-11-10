@@ -54,7 +54,7 @@ export function TarjetaFicha({
       </div>
 
       <p className="m-0 mt-4 text-body text-ink-muted">
-        {c.saldo < 0 ? 'Tiene a favor' : 'Te debe'}
+        {c.saldo < 0 ? 'Te pagó de más' : 'Te debe'}
       </p>
       <p className="m-0 mb-4 font-display text-amount-m text-ink">{textoSaldo(c.saldo)}</p>
 
@@ -65,7 +65,7 @@ export function TarjetaFicha({
             label: 'Sin pagar',
             value: textoDias(c.dias_sin_pagar)?.replace(' sin pagar', '') ?? '—',
           },
-          { label: 'Próx. vence', value: textoDia(c.proximo_vencimiento?.fecha ?? null) },
+          { label: 'Próximo pago', value: textoDia(c.proximo_vencimiento?.fecha ?? null) },
         ]}
       />
 
@@ -151,8 +151,8 @@ export default function Ficha() {
             }
           />
 
-          <Section title="Historial">
-            <List label="Historial">
+          <Section title="Todo lo anotado">
+            <List label="Todo lo anotado">
               {carga.data.historial.length === 0 ? (
                 <li>
                   <EmptyNote>Todavía no hay movimientos.</EmptyNote>

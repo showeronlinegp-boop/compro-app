@@ -166,11 +166,11 @@ export default function Ajustes() {
                   hint="Va en el recordatorio de pago."
                 />
                 <TextField
-                  label="Aviso de deuda vieja (días)"
+                  label="¿A los cuántos días te avisamos de una deuda?"
                   inputMode="numeric"
                   value={dias}
                   onChange={(e) => setDias(e.target.value.replace(/\D/g, '').slice(0, 3))}
-                  hint="Con esos días sin pagar, el cliente aparece en “Para cobrar hoy”."
+                  hint="Si un fiado no tiene fecha, a esos días aparece en “Para cobrar hoy”."
                 />
               </div>
             </Card>

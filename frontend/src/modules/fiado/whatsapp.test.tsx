@@ -289,7 +289,7 @@ describe('Ajustes', () => {
     const comercio = (await screen.findByLabelText('Nombre del comercio')) as HTMLInputElement;
     expect(comercio.value).toBe('Kiosco Lu');
     fireEvent.change(comercio, { target: { value: 'Almacén Rosa' } });
-    fireEvent.change(screen.getByLabelText('Aviso de deuda vieja (días)'), {
+    fireEvent.change(screen.getByLabelText('¿A los cuántos días te avisamos de una deuda?'), {
       target: { value: '45 días' },
     });
     fireEvent.click(

@@ -11,8 +11,8 @@ import { RUTAS } from '../rutas';
 import { useCarga } from '../useCarga';
 
 const ORDENES: { value: OrdenClientes; label: string }[] = [
-  { value: 'deuda', label: 'Más deuda' },
-  { value: 'dias', label: 'Más días sin pagar' },
+  { value: 'deuda', label: 'Los que más deben' },
+  { value: 'dias', label: 'Hace más que no pagan' },
   { value: 'az', label: 'A a Z' },
 ];
 

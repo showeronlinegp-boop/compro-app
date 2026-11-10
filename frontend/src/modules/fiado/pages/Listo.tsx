@@ -55,7 +55,7 @@ export default function Listo() {
               Promise.resolve(),
             )
             .then(() => {
-              toast.show('Listo, lo deshicimos. Queda anotado en el historial como corrección.');
+              toast.show('Listo, lo borramos. Queda anotado que lo corregiste.');
               if (enPantalla) volver();
             })
             .catch((err) => toast.show(mensajeDeError(err)));
@@ -107,7 +107,7 @@ export default function Listo() {
 
       <Card>
         <p className="m-0 text-body text-ink-muted">
-          {cliente.saldo < 0 ? 'Ahora tiene a favor' : 'Ahora te debe'}
+          {cliente.saldo < 0 ? 'Ahora te pagó de más' : 'Ahora te debe'}
         </p>
         <p className="m-0 font-display text-amount-m text-ink">{textoSaldo(cliente.saldo)}</p>
       </Card>

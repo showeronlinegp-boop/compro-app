@@ -109,12 +109,12 @@ export function FormCliente({
         hint="Para mandarle el comprobante por WhatsApp."
       />
       <TextField
-        label="Límite de fiado (opcional)"
+        label="¿Hasta cuánto le fiás? (opcional)"
         inputMode="numeric"
         placeholder="Sin límite"
         value={limite}
         onChange={(e) => setLimite(soloDigitos(e.target.value))}
-        hint="Si lo pasa, te avisamos. No te frena para anotar."
+        hint="Si lo pasa, te avisamos. Igual podés seguir anotando."
       />
 
       {conSaldoInicial && (

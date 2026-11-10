@@ -122,7 +122,7 @@ export function Anotar({ tipo }: { tipo: TipoAnotar }) {
       )}
 
       <div className="text-center" aria-live="polite">
-        <p className="m-0 text-caption text-ink-muted">Monto</p>
+        <p className="m-0 text-caption text-ink-muted">¿Cuánto?</p>
         <p
           className={`m-0 font-display text-amount-l ${valor > 0 ? t.color : 'text-ink-disabled'}`}
         >
@@ -163,8 +163,8 @@ export function Anotar({ tipo }: { tipo: TipoAnotar }) {
           />
           <p className="m-0 text-caption text-ink-muted" aria-live="polite">
             {vence
-              ? `Vence el ${textoDia(vence)}. Ese día aparece en “Para cobrar hoy”.`
-              : 'Sin fecha: vence a los días de deuda vieja que pusiste en Ajustes.'}
+              ? `Te lo paga el ${textoDia(vence)}. Ese día te lo recordamos en el Inicio.`
+              : 'Si no ponés fecha, te avisamos cuando pase mucho tiempo sin pagar.'}
           </p>
         </div>
       )}

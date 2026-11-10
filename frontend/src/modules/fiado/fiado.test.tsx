@@ -318,7 +318,7 @@ describe('Clientes', () => {
     renderAt('/fiado/clientes');
 
     expect(await screen.findByRole('button', { name: /Marta Giménez/ })).toBeDefined();
-    expect(screen.getByText('a favor')).toBeDefined();
+    expect(screen.getByText('Pagó de más')).toBeDefined();
     expect(m.clientes).toHaveBeenLastCalledWith('', 'deuda');
 
     fireEvent.change(screen.getByLabelText('Buscar'), { target: { value: 'mar' } });
@@ -373,7 +373,7 @@ describe('Ficha', () => {
     expect(screen.getByText('Tiene $ 1.200 vencido.')).toBeDefined();
     expect(screen.getByText(/Pasó el límite de \$ 40\.000/).tagName).toBe('OUTPUT');
 
-    const historial = screen.getByRole('list', { name: 'Historial' });
+    const historial = screen.getByRole('list', { name: 'Todo lo anotado' });
     expect(within(historial).getByText('Corregido')).toBeDefined();
     expect(within(historial).getByText('+ $ 4.200').className).toContain('line-through');
     expect(within(historial).getByText(/Deshace un movimiento anterior/)).toBeDefined();
@@ -411,7 +411,7 @@ describe('Nuevo cliente', () => {
     expect(guardar.disabled).toBe(true);
 
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: ' Rosa ' } });
-    fireEvent.change(screen.getByLabelText('Límite de fiado (opcional)'), {
+    fireEvent.change(screen.getByLabelText('¿Hasta cuánto le fiás? (opcional)'), {
       target: { value: '$ 50.000' },
     });
     expect(guardar.disabled).toBe(false);
@@ -585,7 +585,7 @@ describe('Editar cliente', () => {
     expect((screen.getByLabelText('Teléfono (opcional)') as HTMLInputElement).value).toBe(
       '11 1234-5678',
     );
-    expect((screen.getByLabelText('Límite de fiado (opcional)') as HTMLInputElement).value).toBe(
+    expect((screen.getByLabelText('¿Hasta cuánto le fiás? (opcional)') as HTMLInputElement).value).toBe(
       '40000',
     );
   });
@@ -598,7 +598,7 @@ describe('Editar cliente', () => {
     fireEvent.change(await screen.findByLabelText('Nombre'), {
       target: { value: ' Marta Gómez ' },
     });
-    fireEvent.change(screen.getByLabelText('Límite de fiado (opcional)'), {
+    fireEvent.change(screen.getByLabelText('¿Hasta cuánto le fiás? (opcional)'), {
       target: { value: '' },
     });
     await act(async () => {

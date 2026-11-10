@@ -40,7 +40,7 @@ export function FilaCliente({ cliente, onClick, accion }: FilaClienteProps) {
               {formatMoney(cliente.saldo)}
             </span>
             {cliente.excede_limite && <Pill tone="warn">Pasó el límite</Pill>}
-            {cliente.saldo < 0 && <Pill tone="ok">a favor</Pill>}
+            {cliente.saldo < 0 && <Pill tone="ok">Pagó de más</Pill>}
           </span>
         )
       }

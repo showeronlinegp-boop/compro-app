@@ -82,7 +82,7 @@ export function saludo(ahora = new Date()): string {
 
 /** Línea secundaria de un cliente en listas. */
 export function lineaCliente(c: Pick<Cliente, 'dias_sin_pagar' | 'saldo'>): string {
-  if (c.saldo < 0) return 'Tiene saldo a favor';
+  if (c.saldo < 0) return 'Te pagó de más';
   if (c.saldo === 0) return 'Al día';
   return textoDias(c.dias_sin_pagar) ?? '';
 }
