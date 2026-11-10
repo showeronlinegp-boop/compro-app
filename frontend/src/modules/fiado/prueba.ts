@@ -1,21 +1,17 @@
 import type { Ajustes, Cliente } from './api';
+import { PLANTILLAS_ORIGINALES } from './mensajes';
 
 /**
  * Datos de ejemplo de la página pública y del modo prueba (plan de adopción,
  * fase 2). Viven sólo en el navegador: nunca se mandan al backend.
  */
 
-/** Las plantillas por defecto del backend (`PLANTILLAS_DEFAULT`). */
+/** Kiosco de ejemplo, con los mensajes originales. */
 export const AJUSTES_PRUEBA: Ajustes = {
   comercio: 'Kiosco Lu',
   alias: 'kiosco.lu',
   dias_deuda_vieja: 30,
-  plantilla_fiado:
-    'Hola {nombre}, anoté {monto} en tu cuenta de {comercio}. Tu saldo es {saldo}.\n\nHecho con Neggo',
-  plantilla_pago:
-    'Hola {nombre}, registré tu pago de {monto}. Tu saldo es {saldo}. ¡Gracias!\n\nHecho con Neggo',
-  plantilla_recordatorio:
-    'Hola {nombre}, te recuerdo que tenés un saldo de {saldo} en {comercio}. Podés pagar por transferencia al alias {alias}. ¡Gracias!\n\nHecho con Neggo',
+  ...PLANTILLAS_ORIGINALES,
   recargo: null,
   recargo_condiciones: null,
   recargo_version: 0,

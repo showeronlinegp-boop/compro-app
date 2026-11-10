@@ -6,7 +6,12 @@ import { HostApp } from '../../host/HostApp';
 import { borradorDe, configDe, equivalenteMensual } from './AjustesRecargo';
 import type { Ajustes, Cliente, Ficha, Movimiento, RecargoSugerido } from './api';
 import { fiado } from './index';
-import { comprobante, comprobanteRecargos, recordatorio } from './mensajes';
+import {
+  PLANTILLAS_ORIGINALES,
+  comprobante,
+  comprobanteRecargos,
+  recordatorio,
+} from './mensajes';
 import { sinCortes } from './recargos';
 
 vi.mock('@clerk/clerk-react', () => ({
@@ -435,6 +440,32 @@ describe('ajustes: recargo por atraso', () => {
       { hasta: 60, pct: 10 },
       { hasta: null, pct: 20 },
     ]);
+  });
+
+  it('mensajes y recargos van plegados y cerrados; el comercio queda a la vista', async () => {
+    m.ajustes.mockResolvedValue(
+      ajustes({
+        ...PLANTILLAS_ORIGINALES,
+        recargo: null,
+        recargo_condiciones: null,
+        recargo_version: 0,
+      }),
+    );
+    renderAt('/fiado/ajustes');
+    expect(await screen.findByLabelText('Nombre del comercio')).toBeDefined();
+    const plegables = document.querySelectorAll('details');
+    expect([...plegables].map((d) => d.querySelector('summary')?.textContent)).toEqual([
+      'Personalizar mensajesCambiá lo que dicen el comprobante y el recordatorio.',
+      'AvanzadoRecargo por atraso.',
+    ]);
+    expect([...plegables].every((d) => !d.open)).toBe(true);
+  });
+
+  it('el resumen avisa si hay mensajes propios o el recargo está prendido', async () => {
+    m.ajustes.mockResolvedValue(ajustes());
+    renderAt('/fiado/ajustes');
+    expect(await screen.findByText('Usás mensajes propios.')).toBeDefined();
+    expect(screen.getByText('Recargo por atraso: prendido.')).toBeDefined();
   });
 
   it('prenderlo y guardar manda la configuración y avisa que hay que informar a los clientes', async () => {

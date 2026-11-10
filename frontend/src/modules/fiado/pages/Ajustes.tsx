@@ -1,6 +1,8 @@
-import { type FormEvent, useEffect, useRef, useState } from 'react';
+import { type FormEvent, type ReactNode, useEffect, useRef, useState } from 'react';
 import { Button } from '../../../host/ui/Button';
 import { ScreenHeader } from '../../../host/ui/ScreenHeader';
+import { IconChevron } from '../../../host/ui/icons';
+import { FOCUS_RING } from '../../../host/ui/styles';
 import { useToast } from '../../../host/ui/Toast';
 import { TextArea, TextField } from '../../../host/ui/controls';
 import { Card, Notice, Section } from '../../../host/ui/surfaces';
@@ -8,7 +10,14 @@ import { type BorradorRecargo, SeccionRecargo, borradorDe, configDe } from '../A
 import { DialogoTerminosRecargo } from '../TerminosRecargo';
 import { type Ajustes as AjustesData, fiadoApi, mensajeDeError } from '../api';
 import { Cargando, ErrorCarga } from '../components';
-import { ETIQUETA_VARIABLE, FIRMA, VARIABLES, type Variable, insertarVariable } from '../mensajes';
+import {
+  ETIQUETA_VARIABLE,
+  FIRMA,
+  PLANTILLAS_ORIGINALES,
+  VARIABLES,
+  type Variable,
+  insertarVariable,
+} from '../mensajes';
 import { useCarga } from '../useCarga';
 
 type Plantilla = 'plantilla_fiado' | 'plantilla_pago' | 'plantilla_recordatorio';
@@ -19,7 +28,11 @@ const PLANTILLAS: { campo: Plantilla; label: string; vars: readonly Variable[] }
   { campo: 'plantilla_recordatorio', label: 'Recordatorio', vars: VARIABLES.recordatorio },
 ];
 
-/** Ajustes de Fiado: datos del comercio, aviso de deuda vieja, recargo por atraso y mensajes. */
+/**
+ * Ajustes de Fiado. A la vista, lo que todos usan: nombre del comercio, alias y
+ * días de deuda vieja. Los mensajes y el recargo por atraso van plegados
+ * (plan de adopción, punto 9): casi nadie los toca y alargaban la pantalla.
+ */
 export default function Ajustes() {
   const carga = useCarga(() => fiadoApi.ajustes(), []);
   const toast = useToast();
@@ -163,13 +176,18 @@ export default function Ajustes() {
             </Card>
           </Section>
 
-          <SeccionRecargo
-            borrador={recargo}
-            onChange={cambiarRecargo}
-            condiciones={form.recargo_condiciones}
-          />
-
-          <Section title="Mensajes">
+          <Plegable
+            titulo="Personalizar mensajes"
+            resumen={
+              PLANTILLAS.some(
+                (p) =>
+                  form[p.campo].trim() !== '' &&
+                  form[p.campo] !== PLANTILLAS_ORIGINALES[p.campo],
+              )
+                ? 'Usás mensajes propios.'
+                : 'Cambiá lo que dicen el comprobante y el recordatorio.'
+            }
+          >
             <Card>
               <div className="flex flex-col gap-5">
                 {PLANTILLAS.map((p) => (
@@ -209,7 +227,18 @@ export default function Ajustes() {
                 ))}
               </div>
             </Card>
-          </Section>
+          </Plegable>
+
+          <Plegable
+            titulo="Avanzado"
+            resumen={recargo.activo ? 'Recargo por atraso: prendido.' : 'Recargo por atraso.'}
+          >
+            <SeccionRecargo
+              borrador={recargo}
+              onChange={cambiarRecargo}
+              condiciones={form.recargo_condiciones}
+            />
+          </Plegable>
 
           {error && <Notice>{error}</Notice>}
 
@@ -228,5 +257,33 @@ export default function Ajustes() {
         </>
       )}
     </form>
+  );
+}
+
+/** Sección plegada, cerrada al entrar: un toque la abre. */
+function Plegable({
+  titulo,
+  resumen,
+  children,
+}: {
+  titulo: string;
+  resumen: string;
+  children: ReactNode;
+}) {
+  return (
+    <details className="group rounded-l bg-surface">
+      <summary
+        className={`flex items-center justify-between gap-3 min-h-touch px-4 py-3 cursor-pointer list-none rounded-l ${FOCUS_RING}`}
+      >
+        <span className="flex flex-col">
+          <span className="font-display text-title-s text-ink">{titulo}</span>
+          <span className="text-body-s text-ink-muted">{resumen}</span>
+        </span>
+        <span aria-hidden="true" className="flex-none text-ink transition-transform group-open:rotate-90">
+          <IconChevron size={20} />
+        </span>
+      </summary>
+      <div className="flex flex-col gap-5 px-2 pb-3">{children}</div>
+    </details>
   );
 }
