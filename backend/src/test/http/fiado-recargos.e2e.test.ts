@@ -118,16 +118,27 @@ describe('recargos por HTTP', () => {
     expect(ajustes.status).toBe(200);
     expect(ajustes.body).toMatchObject({ recargo_version: 1, recargo_terminos_aceptados: true });
 
-    // Sin aviso: la ficha trae el texto y no se le pueden anotar fiados.
+    // Sin aviso: la ficha trae el texto; se le puede anotar un fiado (el aviso va en el comprobante).
     const ficha = await api()
       .get(`/api/fiado/clientes/${cliente.body.id}`)
       .set(...A);
     expect(ficha.body.recargo.aviso.texto).toContain('5 % por cada mes de atraso');
-    const bloqueado = await api()
+    const sinAvisar = await api()
       .post('/api/fiado/movimientos')
       .set(...A)
       .send({ cliente_id: cliente.body.id, tipo: 'fiado', monto: 100 });
-    expect(bloqueado.status).toBe(409);
+    expect(sinAvisar.status).toBe(201);
+    expect(sinAvisar.body.cliente.aviso_recargo_pendiente).toBe(true);
+    // Se deshace para que el resto del circuito siga con las mismas cuentas.
+    const deshacer = await api()
+      .post(`/api/fiado/movimientos/${sinAvisar.body.movimiento.id}/correccion`)
+      .set(...A);
+    expect(deshacer.status).toBe(201);
+    const sinAvisarRecargos = await api()
+      .post(`/api/fiado/clientes/${cliente.body.id}/recargos`)
+      .set(...A)
+      .send({});
+    expect(sinAvisarRecargos.status).toBe(409);
 
     const viaMala = await api()
       .post(`/api/fiado/clientes/${cliente.body.id}/aviso-recargo`)

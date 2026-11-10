@@ -4,6 +4,16 @@ import { primerNombre, textoDia, textoSaldo } from './textos';
 
 export const FIRMA = 'Hecho con Neggo';
 
+/** Los mensajes originales: copia de `PLANTILLAS_DEFAULT` del backend. */
+export const PLANTILLAS_ORIGINALES = {
+  plantilla_fiado:
+    'Hola {nombre}, anoté {monto} en tu cuenta de {comercio}. Tu saldo es {saldo}.\n\nHecho con Neggo',
+  plantilla_pago:
+    'Hola {nombre}, registré tu pago de {monto}. Tu saldo es {saldo}. ¡Gracias!\n\nHecho con Neggo',
+  plantilla_recordatorio:
+    'Hola {nombre}, te recuerdo que tenés un saldo de {saldo} en {comercio}. Podés pagar por transferencia al alias {alias}. ¡Gracias!\n\nHecho con Neggo',
+} as const;
+
 /**
  * Reemplaza `{variable}` por su valor (las desconocidas quedan como están) y
  * asegura la firma al final, aunque la plantilla la haya borrado (guía §4.9).
@@ -63,10 +73,14 @@ export function recordatorio(cliente: Cliente, ajustes: Ajustes): string {
 /**
  * Línea FIJA con las condiciones de recargo, que va en cada comprobante de
  * fiado mientras estén activos (el comercio no la puede editar ni borrar).
+ * Si al cliente todavía no se le avisaron, la línea es el aviso: es el mismo
+ * texto que el backend registra (`lineaAvisoComprobante`) al mandarlo.
  */
 export function lineaCondiciones(cliente: Cliente, ajustes: Ajustes): string | null {
   if (!ajustes.recargo_condiciones || cliente.sin_recargo) return null;
-  return `Si se atrasa, se cobra ${ajustes.recargo_condiciones}.`;
+  return cliente.aviso_recargo_pendiente
+    ? `Te aviso que si un fiado se atrasa, se cobra ${ajustes.recargo_condiciones}.`
+    : `Si se atrasa, se cobra ${ajustes.recargo_condiciones}.`;
 }
 
 /** Suma una línea fija justo antes de la firma (si la hay). */

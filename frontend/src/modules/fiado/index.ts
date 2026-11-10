@@ -4,12 +4,14 @@ import { IconClients, IconHome, IconSettings } from '../../host/ui/icons';
 import Ajustes from './pages/Ajustes';
 import { AnotarFiado, RegistrarPago } from './pages/Anotar';
 import Avisos from './pages/Avisos';
+import Bienvenida from './pages/Bienvenida';
 import Clientes from './pages/Clientes';
 import EditarCliente from './pages/EditarCliente';
 import Ficha from './pages/Ficha';
-import Inicio from './pages/Inicio';
+import InicioOPublica from './pages/Landing';
 import Listo from './pages/Listo';
 import NuevoCliente from './pages/NuevoCliente';
+import Probar from './pages/Probar';
 import Recordar from './pages/Recordar';
 import { BASE, RUTAS } from './rutas';
 
@@ -22,14 +24,39 @@ const nav: NavItem[] = [
 /**
  * Manifest de Fiado: libreta de fiado del comercio (openspec/changes/fiado).
  * Sin `headerActions`: cada pantalla trae su propio encabezado (guía §3.1).
- * Todas las rutas piden sesión: los datos son del comercio.
+ * Todas las rutas piden sesión (los datos son del comercio), salvo el Inicio,
+ * que sin sesión muestra la página pública, y el modo prueba, sin datos reales.
  */
 export const fiado: AppModule = {
   id: 'fiado',
   label: 'Fiado',
   basePath: BASE,
   routes: [
-    { id: 'inicio', path: '', component: Inicio, auth: 'required', title: 'Inicio' },
+    // Sin sesión muestra la página pública (sin barra inferior); con sesión, el Inicio.
+    {
+      id: 'inicio',
+      path: '',
+      component: InicioOPublica,
+      auth: 'public',
+      title: 'Inicio',
+      chromeSignedOut: 'task',
+    },
+    {
+      id: 'probar',
+      path: 'probar',
+      component: Probar,
+      auth: 'public',
+      title: 'Probar sin cuenta',
+      chrome: 'task',
+    },
+    {
+      id: 'bienvenida',
+      path: 'bienvenida',
+      component: Bienvenida,
+      auth: 'required',
+      title: 'Bienvenida',
+      chrome: 'task',
+    },
     { id: 'clientes', path: 'clientes', component: Clientes, auth: 'required', title: 'Clientes' },
     {
       id: 'nuevo-cliente',

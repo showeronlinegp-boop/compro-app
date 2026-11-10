@@ -6,8 +6,11 @@
  * ('ficha') y no como path ('/fiado/clientes/12').
  */
 
-/** 'pantalla' = abrió una pantalla; el resto, acciones que no dejan otro rastro. */
-export const EVENTOS = ['pantalla', 'comprobante', 'instalar'] as const;
+/**
+ * 'pantalla' = abrió una pantalla; el resto, acciones que no dejan otro rastro.
+ * 'bienvenida_hecha' = completó la bienvenida guiada de Fiado (que la vio es su 'pantalla').
+ */
+export const EVENTOS = ['pantalla', 'comprobante', 'instalar', 'bienvenida_hecha'] as const;
 export type Evento = (typeof EVENTOS)[number];
 
 /** Máximo de eventos por envío: el front junta unos segundos y manda. */

@@ -248,6 +248,28 @@ describe('validación de entrada', () => {
     expect(() => parseClienteInput({ nombre: 'A', limite: -1 })).toThrow('limite inválido');
   });
 
+  it('cliente: saldo inicial opcional; 0 o vacío no anota nada', () => {
+    expect(
+      parseClienteInput({ nombre: 'A', saldo_inicial: '8500', idempotency_key: 'k1' }),
+    ).toMatchObject({ saldo_inicial: 8500, idempotency_key: 'k1' });
+    expect(parseClienteInput({ nombre: 'A', saldo_inicial: 0 })).not.toHaveProperty(
+      'saldo_inicial',
+    );
+    expect(parseClienteInput({ nombre: 'A', saldo_inicial: '' })).not.toHaveProperty(
+      'saldo_inicial',
+    );
+    // Sin saldo, la clave no sirve para nada: se descarta.
+    expect(parseClienteInput({ nombre: 'A', idempotency_key: 'k1' })).not.toHaveProperty(
+      'idempotency_key',
+    );
+    expect(() => parseClienteInput({ nombre: 'A', saldo_inicial: -5 })).toThrow(
+      'saldo_inicial inválido',
+    );
+    expect(() => parseClienteInput({ nombre: 'A', saldo_inicial: 1.5 })).toThrow(
+      'saldo_inicial inválido',
+    );
+  });
+
   it('patch: sólo los campos presentes; null borra', () => {
     expect(parseClientePatch({ limite: null })).toEqual({ limite: null });
     expect(parseClientePatch({})).toEqual({});

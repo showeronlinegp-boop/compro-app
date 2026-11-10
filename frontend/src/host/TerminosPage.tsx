@@ -85,7 +85,7 @@ export default function TerminosPage() {
           <Lista
             items={[
               'Las condiciones (porcentaje o monto, esquema y días de gracia) las fijás vos. Sos el único responsable de que sean legales y razonables, y de cumplir las normas que correspondan, como las de defensa del consumidor. Los jueces pueden reducir recargos o intereses que consideren desproporcionados.',
-              'Antes de cobrarle un recargo a un cliente tenés que informarle las condiciones, y volver a hacerlo cada vez que las cambies en su contra. La app te pide registrar ese aviso, por WhatsApp o con “Cambio informado”. Ese registro es una declaración tuya: Neggo no verifica que el cliente lo haya recibido ni aceptado.',
+              'Antes de cobrarle un recargo a un cliente tenés que informarle las condiciones, y volver a hacerlo cada vez que las cambies en su contra. La app te pide registrar ese aviso: por WhatsApp, dentro del comprobante de un fiado o con “Ya se lo dije”. Ese registro es una declaración tuya: Neggo no verifica que el cliente lo haya recibido ni aceptado.',
               'Los recargos son sugerencias calculadas con las reglas que muestra la app. Revisá cada uno antes de sumarlo: podés no cobrarlo o perdonarlo después. Si encontrás un error, avisanos.',
               'Neggo no da asesoramiento legal, contable ni impositivo. Si tenés dudas sobre qué recargo podés cobrar, consultá con un profesional.',
               'Neggo no responde por reclamos, multas ni sanciones que surjan de los recargos que cobres. Si un cliente le reclama a Neggo por un recargo tuyo, te hacés cargo de ese reclamo.',

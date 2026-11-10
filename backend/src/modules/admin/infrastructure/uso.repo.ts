@@ -47,6 +47,7 @@ export function makeUsoRepo(prisma: PrismaLike, excluir: readonly string[]): Uso
           m.fiados, m.fiados_con_vence, m.pagos, m.correcciones, m.primer_fiado, m.primer_pago,
           r.recordatorios, r.primer_recordatorio,
           e.comprobantes, e.ultima_vista, e.uso_instalada, e.uso_movil,
+          e.bienvenida_vista, e.bienvenida_hecha,
           (a.recargo IS NOT NULL) AS recargos_activos,
           m.recargos_sumados, o.recargos_no_cobrados,
           GREATEST(c.ultimo_cliente, m.ultimo_movimiento, r.ultimo_recordatorio, a.updated_at)
@@ -93,7 +94,11 @@ export function makeUsoRepo(prisma: PrismaLike, excluir: readonly string[]): Uso
           SELECT count(*) FILTER (WHERE evento = 'comprobante')::int AS comprobantes,
             max(created_at) FILTER (WHERE evento = 'pantalla') AS ultima_vista,
             COALESCE(bool_or(standalone), false) AS uso_instalada,
-            COALESCE(bool_or(movil), false) AS uso_movil
+            COALESCE(bool_or(movil), false) AS uso_movil,
+            COALESCE(
+              bool_or(evento = 'pantalla' AND modulo = 'fiado' AND ruta_id = 'bienvenida'), false
+            ) AS bienvenida_vista,
+            COALESCE(bool_or(evento = 'bienvenida_hecha'), false) AS bienvenida_hecha
           FROM uso_eventos WHERE user_id = u.id
         ) e
         WHERE u.id IN (${incluidos})

@@ -3,6 +3,7 @@ import { Button } from '../../host/ui/Button';
 import { TextField } from '../../host/ui/controls';
 import { Notice } from '../../host/ui/surfaces';
 import { mensajeDeError } from './api';
+import { BotonContactos } from './contactos';
 import { Interruptor } from './recargos';
 
 export interface DatosCliente {
@@ -11,7 +12,12 @@ export interface DatosCliente {
   limite: number | null;
   /** Sólo si se muestra la opción de recargos. */
   sin_recargo?: boolean;
+  /** Sólo si se muestra "¿Ya te debe algo?" y se completó. */
+  saldo_inicial?: number;
 }
+
+/** Deja sólo dígitos (hasta $ 999.999.999), como el límite. */
+export const soloDigitos = (v: string) => v.replace(/\D/g, '').slice(0, 9);
 
 /**
  * Campos de un cliente (nombre, teléfono, límite), compartidos por el alta y
@@ -23,6 +29,8 @@ export function FormCliente({
   textoBoton,
   onGuardar,
   conRecargo = false,
+  conSaldoInicial = false,
+  conContactos = false,
 }: {
   inicial: {
     nombre?: string;
@@ -34,11 +42,16 @@ export function FormCliente({
   onGuardar: (datos: DatosCliente) => Promise<void>;
   /** Muestra "No sugerir recargos a este cliente" (recargos activos o ya marcado). */
   conRecargo?: boolean;
+  /** Muestra "¿Ya te debe algo?" (sólo en el alta y con recargos apagados). */
+  conSaldoInicial?: boolean;
+  /** Muestra "Elegir de mis contactos" (sólo en el alta y si el celu lo permite). */
+  conContactos?: boolean;
 }) {
   const [nombre, setNombre] = useState(inicial.nombre ?? '');
   const [telefono, setTelefono] = useState(inicial.telefono ?? '');
   const [limite, setLimite] = useState(inicial.limite != null ? String(inicial.limite) : '');
   const [sinRecargo, setSinRecargo] = useState(inicial.sin_recargo ?? false);
+  const [saldoInicial, setSaldoInicial] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,6 +68,9 @@ export function FormCliente({
         telefono: telefono.trim() || null,
         limite: limite ? Number(limite) : null,
         ...(conRecargo ? { sin_recargo: sinRecargo } : {}),
+        ...(conSaldoInicial && Number(saldoInicial) > 0
+          ? { saldo_inicial: Number(saldoInicial) }
+          : {}),
       });
     } catch (err) {
       setError(mensajeDeError(err));
@@ -64,6 +80,14 @@ export function FormCliente({
 
   return (
     <form onSubmit={guardar} className="flex flex-col gap-5" noValidate>
+      {conContactos && (
+        <BotonContactos
+          onElegir={(c) => {
+            if (c.nombre) setNombre(c.nombre);
+            if (c.telefono) setTelefono(c.telefono);
+          }}
+        />
+      )}
       <TextField
         label="Nombre"
         labelTone="question"
@@ -85,13 +109,24 @@ export function FormCliente({
         hint="Para mandarle el comprobante por WhatsApp."
       />
       <TextField
-        label="Límite de fiado (opcional)"
+        label="¿Hasta cuánto le fiás? (opcional)"
         inputMode="numeric"
         placeholder="Sin límite"
         value={limite}
-        onChange={(e) => setLimite(e.target.value.replace(/\D/g, '').slice(0, 9))}
-        hint="Si lo pasa, te avisamos. No te frena para anotar."
+        onChange={(e) => setLimite(soloDigitos(e.target.value))}
+        hint="Si lo pasa, te avisamos. Igual podés seguir anotando."
       />
+
+      {conSaldoInicial && (
+        <TextField
+          label="¿Ya te debe algo? (opcional)"
+          inputMode="numeric"
+          placeholder="No me debe nada"
+          value={saldoInicial}
+          onChange={(e) => setSaldoInicial(soloDigitos(e.target.value))}
+          hint="Lo que tenés anotado en el cuaderno. Queda como “Saldo anterior”."
+        />
+      )}
 
       {conRecargo && (
         <Interruptor

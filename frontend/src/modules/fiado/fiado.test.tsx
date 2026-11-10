@@ -26,12 +26,19 @@ const m = vi.hoisted(() => ({
   ficha: vi.fn(),
   crearCliente: vi.fn(),
   actualizarCliente: vi.fn(),
+  guardarAjustes: vi.fn(),
 }));
 
 vi.mock('./api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./api')>();
   return { ...actual, fiadoApi: { ...actual.fiadoApi, ...m } };
 });
+
+const uso = vi.hoisted(() => ({ registrarUso: vi.fn() }));
+vi.mock('../../host/uso', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../host/uso')>()),
+  registrarUso: uso.registrarUso,
+}));
 
 // ─── Datos ────────────────────────────────────────────────────────────────────
 
@@ -133,7 +140,7 @@ describe('Inicio', () => {
   it('muestra comercio, total, para cobrar hoy y últimos movimientos', async () => {
     const resumen: Resumen = {
       total: 42300,
-      clientes_con_deuda: 3,
+      clientes_con_deuda: 3, clientes: 3,
       para_cobrar: [
         { ...cliente({ vencido: 30000, vencido_desde: '2026-09-01' }), recordado_hoy: false },
       ],
@@ -162,23 +169,65 @@ describe('Inicio', () => {
   });
 
   it('estados vacíos escritos', async () => {
-    m.resumen.mockResolvedValue({ total: 0, clientes_con_deuda: 0, para_cobrar: [], ultimos: [] });
+    m.resumen.mockResolvedValue({
+      total: 0,
+      clientes_con_deuda: 0,
+      clientes: 0,
+      para_cobrar: [],
+      ultimos: [],
+    });
     renderAt('/fiado');
     expect(await screen.findByText('Nadie para cobrar hoy.')).toBeDefined();
     expect(screen.getByText('Todavía no hay movimientos.')).toBeDefined();
+    expect(screen.queryByRole('list', { name: 'Los que más te deben' })).toBeNull();
+  });
+
+  it('sin nada para cobrar hoy, muestra los que más te deben', async () => {
+    m.resumen.mockResolvedValue({
+      total: 15000,
+      clientes_con_deuda: 2,
+      clientes: 2,
+      para_cobrar: [],
+      mas_deben: [
+        cliente({ id: 3, nombre: 'Rosa', saldo: 9000 }),
+        cliente({ id: 4, nombre: 'Juan', saldo: 6000 }),
+      ],
+      ultimos: [],
+    });
+    renderAt('/fiado');
+    expect(await screen.findByText('Nadie para cobrar hoy.')).toBeDefined();
+    const lista = screen.getByRole('list', { name: 'Los que más te deben' });
+    expect(within(lista).getAllByRole('button').map((b) => b.textContent)).toEqual([
+      expect.stringContaining('Rosa'),
+      expect.stringContaining('Juan'),
+    ]);
+    fireEvent.click(within(lista).getByRole('button', { name: /Rosa/ }));
+    expect(donde()).toBe('/fiado/clientes/3');
   });
 
   it('error de red con reintento', async () => {
     m.resumen.mockRejectedValueOnce(new Error('500 {"error":"Internal server error"}'));
     renderAt('/fiado');
     expect(await screen.findByText('Internal server error')).toBeDefined();
-    m.resumen.mockResolvedValue({ total: 0, clientes_con_deuda: 0, para_cobrar: [], ultimos: [] });
+    m.resumen.mockResolvedValue({
+      total: 0,
+      clientes_con_deuda: 0,
+      clientes: 0,
+      para_cobrar: [],
+      ultimos: [],
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Probar de nuevo' }));
     expect(await screen.findByText('Nadie para cobrar hoy.')).toBeDefined();
   });
 
   it('barra inferior: Inicio, Clientes, Ajustes y Más', async () => {
-    m.resumen.mockResolvedValue({ total: 0, clientes_con_deuda: 0, para_cobrar: [], ultimos: [] });
+    m.resumen.mockResolvedValue({
+      total: 0,
+      clientes_con_deuda: 0,
+      clientes: 0,
+      para_cobrar: [],
+      ultimos: [],
+    });
     renderAt('/fiado');
     const nav = screen.getByRole('navigation', { name: 'Navegación inferior' });
     expect(
@@ -205,7 +254,13 @@ describe('Avisos', () => {
   });
 
   it('la campanita del inicio muestra cuántos hay para cobrar y abre los avisos', async () => {
-    m.resumen.mockResolvedValue({ total: 0, clientes_con_deuda: 0, para_cobrar: [], ultimos: [] });
+    m.resumen.mockResolvedValue({
+      total: 0,
+      clientes_con_deuda: 0,
+      clientes: 0,
+      para_cobrar: [],
+      ultimos: [],
+    });
     m.avisos.mockResolvedValue({ ...sinAvisos, vencidos: [aviso()], sin_recordar: 2 });
     renderAt('/fiado');
     const campana = await screen.findByRole('button', { name: 'Avisos: 2 para cobrar' });
@@ -215,7 +270,13 @@ describe('Avisos', () => {
   });
 
   it('sin nada para cobrar, la campanita no lleva número', async () => {
-    m.resumen.mockResolvedValue({ total: 0, clientes_con_deuda: 0, para_cobrar: [], ultimos: [] });
+    m.resumen.mockResolvedValue({
+      total: 0,
+      clientes_con_deuda: 0,
+      clientes: 0,
+      para_cobrar: [],
+      ultimos: [],
+    });
     renderAt('/fiado');
     await screen.findByText('Nadie para cobrar hoy.');
     expect(screen.getByRole('button', { name: 'Avisos' }).textContent).toBe('');
@@ -257,7 +318,7 @@ describe('Clientes', () => {
     renderAt('/fiado/clientes');
 
     expect(await screen.findByRole('button', { name: /Marta Giménez/ })).toBeDefined();
-    expect(screen.getByText('a favor')).toBeDefined();
+    expect(screen.getByText('Pagó de más')).toBeDefined();
     expect(m.clientes).toHaveBeenLastCalledWith('', 'deuda');
 
     fireEvent.change(screen.getByLabelText('Buscar'), { target: { value: 'mar' } });
@@ -312,7 +373,7 @@ describe('Ficha', () => {
     expect(screen.getByText('Tiene $ 1.200 vencido.')).toBeDefined();
     expect(screen.getByText(/Pasó el límite de \$ 40\.000/).tagName).toBe('OUTPUT');
 
-    const historial = screen.getByRole('list', { name: 'Historial' });
+    const historial = screen.getByRole('list', { name: 'Todo lo anotado' });
     expect(within(historial).getByText('Corregido')).toBeDefined();
     expect(within(historial).getByText('+ $ 4.200').className).toContain('line-through');
     expect(within(historial).getByText(/Deshace un movimiento anterior/)).toBeDefined();
@@ -350,7 +411,7 @@ describe('Nuevo cliente', () => {
     expect(guardar.disabled).toBe(true);
 
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: ' Rosa ' } });
-    fireEvent.change(screen.getByLabelText('Límite de fiado (opcional)'), {
+    fireEvent.change(screen.getByLabelText('¿Hasta cuánto le fiás? (opcional)'), {
       target: { value: '$ 50.000' },
     });
     expect(guardar.disabled).toBe(false);
@@ -367,6 +428,36 @@ describe('Nuevo cliente', () => {
     expect(screen.getByTestId('toast-region').textContent).toContain('Guardaste a Rosa.');
   });
 
+  it('"¿Ya te debe algo?" manda el saldo inicial con clave; sin recargos', async () => {
+    m.crearCliente.mockResolvedValue(cliente({ id: 7, nombre: 'Rosa' }));
+    m.ficha.mockResolvedValue({ cliente: cliente({ id: 7 }), historial: [], recargo: null });
+    renderAt('/fiado/clientes/nuevo');
+
+    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Rosa' } });
+    fireEvent.change(await screen.findByLabelText('¿Ya te debe algo? (opcional)'), {
+      target: { value: '$ 8.500' },
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Guardar cliente' }));
+    });
+    expect(m.crearCliente).toHaveBeenCalledWith({
+      nombre: 'Rosa',
+      telefono: null,
+      limite: null,
+      saldo_inicial: 8500,
+      idempotency_key: expect.any(String),
+    });
+  });
+
+  it('con recargos activos también ofrece el saldo inicial (el aviso queda en la ficha)', async () => {
+    m.ajustes.mockResolvedValue({
+      ...ajustes,
+      recargo: { esquema: 'mes', tipo: 'pct', valor: 5, tolerancia: 7 },
+    });
+    renderAt('/fiado/clientes/nuevo');
+    expect(await screen.findByLabelText('¿Ya te debe algo? (opcional)')).toBeDefined();
+  });
+
   it('precarga ?nombre= y muestra el error del backend', async () => {
     m.crearCliente.mockRejectedValue(
       new Error('400 {"error":"nombre no puede superar 80 caracteres"}'),
@@ -378,6 +469,103 @@ describe('Nuevo cliente', () => {
     });
     expect(await screen.findByText('nombre no puede superar 80 caracteres')).toBeDefined();
     expect(donde()).toBe('/fiado/clientes/nuevo?nombre=Pepe');
+  });
+});
+
+// ─── Bienvenida (plan de adopción, fase 1) ──────────────────────────────────
+
+describe('Bienvenida', () => {
+  const vacio: Resumen = {
+    total: 0,
+    clientes_con_deuda: 0,
+    clientes: 0,
+    para_cobrar: [],
+    ultimos: [],
+  };
+
+  beforeEach(() => {
+    window.sessionStorage.clear();
+    m.ajustes.mockResolvedValue({ ...ajustes, comercio: '' });
+    m.resumen.mockResolvedValue(vacio);
+  });
+
+  it('un comercio sin nombre ni clientes va del Inicio a la bienvenida', async () => {
+    renderAt('/fiado');
+    await waitFor(() => expect(donde()).toBe('/fiado/bienvenida'));
+    expect(screen.getByRole('heading', { name: 'Arranquemos' })).toBeDefined();
+  });
+
+  it('con nombre de comercio o con clientes, el Inicio no redirige', async () => {
+    m.resumen.mockResolvedValue({ ...vacio, clientes: 2 });
+    renderAt('/fiado');
+    expect(await screen.findByText('Nadie para cobrar hoy.')).toBeDefined();
+    expect(donde()).toBe('/fiado');
+  });
+
+  it('guarda comercio, cliente y saldo, y cae en el Inicio', async () => {
+    m.guardarAjustes.mockResolvedValue({ ...ajustes, comercio: 'Kiosco Lu' });
+    m.crearCliente.mockResolvedValue(cliente({ id: 7, nombre: 'Rosa', saldo: 8500 }));
+    renderAt('/fiado/bienvenida');
+
+    const listo = screen.getByRole('button', { name: 'Listo, empezar' }) as HTMLButtonElement;
+    expect(listo.disabled).toBe(true);
+    fireEvent.change(screen.getByLabelText('¿Cómo se llama tu comercio?'), {
+      target: { value: ' Kiosco Lu ' },
+    });
+    fireEvent.change(screen.getByLabelText('¿Quién te debe más?'), {
+      target: { value: 'Rosa' },
+    });
+    fireEvent.change(screen.getByLabelText('Su teléfono (opcional)'), {
+      target: { value: '11 5555-0000' },
+    });
+    fireEvent.change(await screen.findByLabelText('¿Cuánto te debe hoy?'), {
+      target: { value: '8.500' },
+    });
+    expect(listo.disabled).toBe(false);
+
+    m.ajustes.mockResolvedValue({ ...ajustes, comercio: 'Kiosco Lu' });
+    m.resumen.mockResolvedValue({ ...vacio, total: 8500, clientes_con_deuda: 1, clientes: 1 });
+    await act(async () => {
+      fireEvent.click(listo);
+    });
+    expect(m.guardarAjustes).toHaveBeenCalledWith({ comercio: 'Kiosco Lu' });
+    expect(m.crearCliente).toHaveBeenCalledWith({
+      nombre: 'Rosa',
+      telefono: '11 5555-0000',
+      saldo_inicial: 8500,
+      idempotency_key: expect.any(String),
+    });
+    await waitFor(() => expect(donde()).toBe('/fiado'));
+    expect(await screen.findByText('$ 8.500', { selector: 'p' })).toBeDefined();
+    expect(screen.getByTestId('toast-region').textContent).toContain('Listo, ya anotaste a Rosa.');
+    expect(uso.registrarUso).toHaveBeenCalledWith('bienvenida_hecha', 'fiado');
+  });
+
+  it('sin monto crea el cliente sin saldo; un error se muestra y deja reintentar', async () => {
+    m.guardarAjustes.mockResolvedValue({ ...ajustes, comercio: 'Kiosco Lu' });
+    m.crearCliente.mockRejectedValueOnce(new Error('500 {"error":"Se cortó la conexión"}'));
+    renderAt('/fiado/bienvenida');
+    fireEvent.change(screen.getByLabelText('¿Cómo se llama tu comercio?'), {
+      target: { value: 'Kiosco Lu' },
+    });
+    fireEvent.change(screen.getByLabelText('¿Quién te debe más?'), {
+      target: { value: 'Rosa' },
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Listo, empezar' }));
+    });
+    expect(await screen.findByText('Se cortó la conexión')).toBeDefined();
+    expect(m.crearCliente).toHaveBeenCalledWith({ nombre: 'Rosa', telefono: null });
+    expect(donde()).toBe('/fiado/bienvenida');
+    expect(uso.registrarUso).not.toHaveBeenCalledWith('bienvenida_hecha', 'fiado');
+  });
+
+  it('"Lo hago después" vuelve al Inicio y no insiste', async () => {
+    renderAt('/fiado/bienvenida');
+    fireEvent.click(screen.getByRole('button', { name: 'Lo hago después' }));
+    expect(await screen.findByText('Nadie para cobrar hoy.')).toBeDefined();
+    expect(donde()).toBe('/fiado');
+    expect(uso.registrarUso).not.toHaveBeenCalledWith('bienvenida_hecha', 'fiado');
   });
 });
 
@@ -395,7 +583,7 @@ describe('Editar cliente', () => {
     expect((screen.getByLabelText('Teléfono (opcional)') as HTMLInputElement).value).toBe(
       '11 1234-5678',
     );
-    expect((screen.getByLabelText('Límite de fiado (opcional)') as HTMLInputElement).value).toBe(
+    expect((screen.getByLabelText('¿Hasta cuánto le fiás? (opcional)') as HTMLInputElement).value).toBe(
       '40000',
     );
   });
@@ -408,7 +596,7 @@ describe('Editar cliente', () => {
     fireEvent.change(await screen.findByLabelText('Nombre'), {
       target: { value: ' Marta Gómez ' },
     });
-    fireEvent.change(screen.getByLabelText('Límite de fiado (opcional)'), {
+    fireEvent.change(screen.getByLabelText('¿Hasta cuánto le fiás? (opcional)'), {
       target: { value: '' },
     });
     await act(async () => {

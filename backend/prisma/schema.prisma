@@ -352,7 +352,7 @@ model fiado_ajustes {
   user_id                Int      @id
   comercio               String   @default("") @db.Text
   alias                  String?  @db.Text
-  dias_deuda_vieja       Int      @default(30)
+  dias_deuda_vieja       Int      @default(15)
   plantilla_fiado        String?  @db.Text
   plantilla_pago         String?  @db.Text
   plantilla_recordatorio String?  @db.Text
@@ -370,7 +370,7 @@ model fiado_ajustes {
 // ---------------------------------------------------------------------------
 // fiado_avisos_recargo — APPEND-ONLY (trigger): cada vez que se le informaron
 // al cliente las condiciones de recargo, con el texto exacto de ese momento.
-// via: 'whatsapp' | 'informado' (CHECK en la migración).
+// via: 'whatsapp' | 'informado' | 'comprobante' (CHECK en la migración).
 // ---------------------------------------------------------------------------
 model fiado_avisos_recargo {
   id          Int      @id @default(autoincrement())
@@ -482,4 +482,18 @@ model fiado_terminos_aceptados {
 
   @@index([user_id, documento])
   @@map("fiado_terminos_aceptados")
+}
+
+// ---------------------------------------------------------------------------
+// tutoriales — videos de YouTube que carga el admin desde el panel y ven todos
+// los comercios en Ajustes. Se guarda sólo el id del video (11 caracteres), no
+// la URL: el link se arma en el front y no se puede colar cualquier dirección.
+// ---------------------------------------------------------------------------
+model tutoriales {
+  id         Int      @id @default(autoincrement())
+  titulo     String   @db.VarChar(80)
+  video_id   String   @db.VarChar(11)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("tutoriales")
 }

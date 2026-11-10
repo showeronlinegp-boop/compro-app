@@ -56,6 +56,9 @@ export interface ComercioHechos {
   /** Alguna vez la abrió instalada (desde el ícono) / desde un celular. */
   uso_instalada: boolean;
   uso_movil: boolean;
+  /** Abrió la bienvenida guiada de Fiado / la completó (uso_eventos). */
+  bienvenida_vista: boolean;
+  bienvenida_hecha: boolean;
   /** Recargos por atraso: opción prendida, recargos sumados y períodos "No cobrar". */
   recargos_activos: boolean;
   recargos_sumados: number;
@@ -279,6 +282,8 @@ export function embudo(comercios: readonly ComercioHechos[]): PasoEmbudo[] {
   const contar = (f: (c: ComercioHechos) => boolean) => comercios.filter(f).length;
   return [
     { paso: 'Se registró', comercios: comercios.length },
+    { paso: 'Vio la bienvenida', comercios: contar((c) => c.bienvenida_vista) },
+    { paso: 'Completó la bienvenida', comercios: contar((c) => c.bienvenida_hecha) },
     { paso: 'Puso el nombre del comercio', comercios: contar((c) => !!c.comercio?.trim()) },
     { paso: 'Cargó un cliente', comercios: contar((c) => c.primer_cliente !== null) },
     { paso: 'Anotó un fiado', comercios: contar((c) => c.primer_fiado !== null) },

@@ -429,6 +429,19 @@ describe('Fiado isolation: user A cannot read or write user B ledger', () => {
     });
   });
 
+  it('alta con saldo inicial: la misma clave en otro usuario no devuelve su cliente', async () => {
+    await withRollback(async (tx) => {
+      const repoA = makeFiadoRepo(tx, await seedUser(tx, 'a'));
+      const repoB = makeFiadoRepo(tx, await seedUser(tx, 'b'));
+      const alta = { ...sinDatos, saldo_inicial: 500, idempotency_key: 'alta' };
+      const cB = await repoB.crearCliente({ ...alta, nombre: 'Cliente de B' });
+      const cA = await repoA.crearCliente({ ...alta, nombre: 'Cliente de A' });
+      expect(cA.id).not.toBe(cB.id);
+      expect(cA).toMatchObject({ nombre: 'Cliente de A', saldo: 500 });
+      expect((await repoB.resumen()).total).toBe(500);
+    });
+  });
+
   it('ajustes por usuario', async () => {
     await withRollback(async (tx) => {
       const repoA = makeFiadoRepo(tx, await seedUser(tx, 'a'));

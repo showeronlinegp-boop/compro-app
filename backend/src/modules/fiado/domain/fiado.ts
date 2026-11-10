@@ -322,7 +322,17 @@ export interface ClienteInput {
   proximo_cobro: string | null;
   /** Sólo en la edición: no sugerirle recargos. */
   sin_recargo?: boolean;
+  /**
+   * Sólo en el alta: lo que ya le debía (del cuaderno). Se anota como un fiado
+   * "Saldo anterior" en la misma operación. Ausente = no debe nada.
+   */
+  saldo_inicial?: number;
+  /** Sólo con `saldo_inicial`: evita un cliente duplicado si se reenvía el alta. */
+  idempotency_key?: string;
 }
+
+/** Nota del fiado que crea el saldo inicial de un cliente nuevo. */
+export const NOTA_SALDO_INICIAL = 'Saldo anterior';
 
 const bad = (msg: string) => new FiadoError(400, msg);
 
@@ -355,13 +365,21 @@ function fechaOpcional(v: unknown, campo: string): string | null {
 /** Body completo de alta de cliente. */
 export function parseClienteInput(body: unknown): ClienteInput {
   const b = (body ?? {}) as Record<string, unknown>;
-  return {
+  const out: ClienteInput = {
     nombre: texto(b.nombre, 'nombre', 80, true) as string,
     telefono: texto(b.telefono, 'telefono', 30, false),
     etiqueta: texto(b.etiqueta, 'etiqueta', 30, false),
     limite: enteroOpcional(b.limite, 'limite'),
     proximo_cobro: fechaOpcional(b.proximo_cobro, 'proximo_cobro'),
   };
+  // 0 o vacío = no debe nada (no se anota un fiado en cero).
+  const saldo = enteroOpcional(b.saldo_inicial, 'saldo_inicial');
+  if (saldo) {
+    out.saldo_inicial = saldo;
+    const clave = texto(b.idempotency_key, 'idempotency_key', 64, false);
+    if (clave) out.idempotency_key = clave;
+  }
+  return out;
 }
 
 /** Body parcial (PATCH): sólo los campos presentes. */
@@ -483,11 +501,20 @@ export function parseOmitirRecargo(body: unknown): number {
   return n;
 }
 
+/**
+ * Cómo se le avisaron las condiciones de recargo: el mensaje de aviso por
+ * WhatsApp, "Ya se lo dije" (en persona), o dentro del comprobante de un fiado.
+ */
+export type ViaAviso = 'whatsapp' | 'informado' | 'comprobante';
+const VIAS_AVISO: readonly ViaAviso[] = ['whatsapp', 'informado', 'comprobante'];
+
 /** Body de POST /clientes/:id/aviso-recargo. */
-export function parseViaAviso(body: unknown): 'whatsapp' | 'informado' {
+export function parseViaAviso(body: unknown): ViaAviso {
   const via = ((body ?? {}) as Record<string, unknown>).via;
-  if (via !== 'whatsapp' && via !== 'informado') throw bad("via debe ser 'whatsapp' o 'informado'");
-  return via;
+  if (!VIAS_AVISO.includes(via as ViaAviso)) {
+    throw bad("via debe ser 'whatsapp', 'informado' o 'comprobante'");
+  }
+  return via as ViaAviso;
 }
 
 /** Orden de la lista de clientes. Empates: por nombre. */

@@ -45,6 +45,8 @@ function comercio(over: Partial<ComercioHechos> = {}): ComercioHechos {
     ultima_vista: null,
     uso_instalada: false,
     uso_movil: false,
+    bienvenida_vista: false,
+    bienvenida_hecha: false,
     recargos_activos: false,
     recargos_sumados: 0,
     recargos_no_cobrados: 0,
@@ -142,7 +144,7 @@ describe('embudo y adopción', () => {
   const d = ar('2026-10-13');
   const comercios = [
     comercio({ user_id: 1 }),
-    comercio({ user_id: 2, comercio: '  ', primer_cliente: d }),
+    comercio({ user_id: 2, comercio: '  ', primer_cliente: d, bienvenida_vista: true }),
     comercio({
       user_id: 3,
       comercio: 'Almacén',
@@ -152,6 +154,8 @@ describe('embudo y adopción', () => {
       fiados_con_vence: 1,
       clientes_con_telefono: 2,
       alias: true,
+      bienvenida_vista: true,
+      bienvenida_hecha: true,
     }),
     comercio({
       user_id: 4,
@@ -170,7 +174,12 @@ describe('embudo y adopción', () => {
   ];
 
   it('embudo: cuántos llegaron a cada paso (nombre en blanco no cuenta)', () => {
-    expect(embudo(comercios).map((p) => p.comercios)).toEqual([4, 2, 3, 2, 1, 1]);
+    expect(embudo(comercios).map((p) => p.paso).slice(0, 3)).toEqual([
+      'Se registró',
+      'Vio la bienvenida',
+      'Completó la bienvenida',
+    ]);
+    expect(embudo(comercios).map((p) => p.comercios)).toEqual([4, 2, 1, 2, 3, 2, 1, 1]);
   });
 
   it('adopción: sobre los que anotaron algún fiado', () => {

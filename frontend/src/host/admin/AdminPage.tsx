@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { ScreenHeader } from '../ui/ScreenHeader';
 import { FilterChips } from '../ui/controls';
 import { Card, DataCells, EmptyNote, List, ListRow, Notice, Section } from '../ui/surfaces';
+import { AdminTutoriales } from './AdminTutoriales';
 import { type UsoReporte, adminApi } from './api';
 import { fechaCorta, haceCuanto, lunesAR, porcentaje, semanaCorta } from './formato';
 import { Barras, LineasSemanales, MapaCohortes } from './graficos';
@@ -95,6 +96,7 @@ export function AdminPage({ modules }: { modules: readonly AppModule[] }) {
           >
             <Reporte datos={estado.datos} modules={modules} />
           </div>
+          <AdminTutoriales />
         </>
       )}
     </div>

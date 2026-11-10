@@ -3,10 +3,15 @@ import type { ReactNode } from 'react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HostApp } from '../../host/HostApp';
-import { borradorDe, configDe, equivalenteMensual } from './AjustesRecargo';
+import { borradorDe, configDe, ejemploRecargo, equivalenteMensual } from './AjustesRecargo';
 import type { Ajustes, Cliente, Ficha, Movimiento, RecargoSugerido } from './api';
 import { fiado } from './index';
-import { comprobante, comprobanteRecargos, recordatorio } from './mensajes';
+import {
+  PLANTILLAS_ORIGINALES,
+  comprobante,
+  comprobanteRecargos,
+  recordatorio,
+} from './mensajes';
 import { sinCortes } from './recargos';
 
 vi.mock('@clerk/clerk-react', () => ({
@@ -31,6 +36,7 @@ const m = vi.hoisted(() => ({
   sumarRecargos: vi.fn(),
   omitirRecargo: vi.fn(),
   avisarRecargo: vi.fn(),
+  crearMovimiento: vi.fn(),
   actualizarCliente: vi.fn(),
 }));
 
@@ -140,7 +146,13 @@ let open: { mock: { calls: unknown[][] }; mockRestore: () => void };
 beforeEach(() => {
   m.ajustes.mockResolvedValue(ajustes());
   m.avisos.mockResolvedValue({ vencidos: [], hoy: [], proximos: [], sin_recordar: 0 });
-  m.resumen.mockResolvedValue({ total: 0, clientes_con_deuda: 0, para_cobrar: [], ultimos: [] });
+  m.resumen.mockResolvedValue({
+    total: 0,
+    clientes_con_deuda: 0,
+    clientes: 0,
+    para_cobrar: [],
+    ultimos: [],
+  });
   m.ficha.mockResolvedValue(ficha());
   open = vi.spyOn(window, 'open').mockImplementation(() => null);
 });
@@ -231,11 +243,11 @@ describe('ficha: aviso de condiciones', () => {
     );
   });
 
-  it('"Cambio informado" registra el aviso sin abrir WhatsApp', async () => {
+  it('"Ya se lo dije" registra el aviso sin abrir WhatsApp', async () => {
     m.ficha.mockResolvedValueOnce(conAviso()).mockResolvedValue(ficha());
     m.avisarRecargo.mockResolvedValue({ cliente_id: 1, version: 1, via: 'informado' });
     renderAt('/fiado/clientes/1');
-    fireEvent.click(await screen.findByRole('button', { name: 'Cambio informado' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Ya se lo dije' }));
     await waitFor(() => expect(m.avisarRecargo).toHaveBeenCalledWith(1, 'informado'));
     expect(open).not.toHaveBeenCalled();
   });
@@ -431,6 +443,46 @@ describe('ajustes: recargo por atraso', () => {
     ]);
   });
 
+  it('mensajes y recargos van plegados y cerrados; el comercio queda a la vista', async () => {
+    m.ajustes.mockResolvedValue(
+      ajustes({
+        ...PLANTILLAS_ORIGINALES,
+        recargo: null,
+        recargo_condiciones: null,
+        recargo_version: 0,
+      }),
+    );
+    renderAt('/fiado/ajustes');
+    expect(await screen.findByLabelText('Nombre del comercio')).toBeDefined();
+    const plegables = document.querySelectorAll<HTMLDetailsElement>('form > details');
+    expect([...plegables].map((d) => d.querySelector('summary')?.textContent)).toEqual([
+      'Personalizar mensajesCambiá lo que dicen el comprobante y el recordatorio.',
+      'AvanzadoRecargo por atraso.',
+    ]);
+    expect([...plegables].every((d) => !d.open)).toBe(true);
+  });
+
+  it('cada mensaje va en su propio desplegable, cerrado, con si es el original', async () => {
+    m.ajustes.mockResolvedValue(ajustes({ ...PLANTILLAS_ORIGINALES, plantilla_pago: 'Gracias {nombre}' }));
+    renderAt('/fiado/ajustes');
+    await screen.findByLabelText('Nombre del comercio');
+    const mensajes = document.querySelectorAll<HTMLDetailsElement>('form > details details');
+    expect([...mensajes].map((d) => d.querySelector('summary')?.textContent)).toEqual([
+      'Cuando anotás un fiadoMensaje original',
+      'Cuando te paganMensaje propio',
+      'Cuando le recordás que pagueMensaje original',
+    ]);
+    expect([...mensajes].every((d) => !d.open)).toBe(true);
+    expect(mensajes[0]?.querySelector('textarea')).not.toBeNull();
+  });
+
+  it('el resumen avisa si hay mensajes propios o el recargo está prendido', async () => {
+    m.ajustes.mockResolvedValue(ajustes());
+    renderAt('/fiado/ajustes');
+    expect(await screen.findByText('Usás mensajes propios.')).toBeDefined();
+    expect(screen.getByText('Recargo por atraso: prendido.')).toBeDefined();
+  });
+
   it('prenderlo y guardar manda la configuración y avisa que hay que informar a los clientes', async () => {
     m.ajustes.mockResolvedValue(
       ajustes({ recargo: null, recargo_condiciones: null, recargo_version: 0 }),
@@ -543,6 +595,14 @@ describe('ajustes: recargo por atraso', () => {
   it('por día muestra el equivalente mensual del porcentaje', () => {
     const b = { ...borradorDe(null), activo: true, esquema: 'dia' as const };
     expect(equivalenteMensual({ ...b, valor: '0,5' })).toBe('Equivale a 15 % por mes.');
+    const mes = { ...borradorDe(null), activo: true };
+    expect(ejemploRecargo(mes)).toBe(
+      'Ejemplo: si un fiado de $ 10.000 se atrasa un mes (pasados los días de espera), se le suman $ 500.',
+    );
+    expect(ejemploRecargo({ ...mes, tipo: 'fijo', valor: '1.255' })).toBeNull();
+    expect(ejemploRecargo({ ...mes, tipo: 'fijo', valor: '1255' })).toContain('se le suman $ 1.250');
+    expect(ejemploRecargo({ ...mes, esquema: 'tramos' })).toContain('hasta 30 días');
+    expect(ejemploRecargo({ ...mes, valor: '' })).toBeNull();
     expect(equivalenteMensual({ ...b, tipo: 'fijo', valor: '50' })).toBeNull();
     expect(equivalenteMensual({ ...b, esquema: 'mes' })).toBeNull();
   });
@@ -550,9 +610,14 @@ describe('ajustes: recargo por atraso', () => {
   it('elegir "Por día" guarda ese esquema', async () => {
     m.guardarAjustes.mockResolvedValue(ajustes());
     renderAt('/fiado/ajustes');
-    fireEvent.click(await screen.findByRole('button', { name: 'Por día' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Cada día' }));
     expect(screen.getByLabelText('Recargo por cada día de atraso (%)')).toBeDefined();
     expect(screen.getByText(/Equivale a 150 % por mes/)).toBeDefined();
+    expect(
+      screen.getByText(
+        'Ejemplo: si un fiado de $ 10.000 se atrasa un día (pasados los días de espera), se le suman $ 500.',
+      ),
+    ).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
     await waitFor(() =>
       expect(m.guardarAjustes).toHaveBeenCalledWith(
@@ -575,12 +640,24 @@ describe('ajustes: recargo por atraso', () => {
 });
 
 describe('anotar y editar con recargos', () => {
-  it('a un cliente sin aviso no se le puede anotar un fiado (lleva a su ficha)', async () => {
-    m.ficha.mockResolvedValue(ficha({ cliente: cliente({ aviso_recargo_pendiente: true }) }));
+  it('a un cliente sin aviso se le anota igual: el comprobante lleva el aviso', async () => {
+    const sinAviso = cliente({ aviso_recargo_pendiente: true });
+    m.ficha.mockResolvedValue(ficha({ cliente: sinAviso }));
+    m.crearMovimiento.mockResolvedValue({
+      movimiento: mov({ id: 9, monto: 2000 }),
+      cliente: { ...sinAviso, saldo: sinAviso.saldo + 2000 },
+    });
+    m.avisarRecargo.mockResolvedValue({ cliente_id: 1, version: 1, via: 'comprobante' });
     renderAt('/fiado/anotar?cliente=1');
-    expect(await screen.findByText(/avisale las condiciones de recargo/)).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Ir a su ficha para avisarle' }));
-    expect(screen.getByTestId('donde').textContent).toBe('/fiado/clientes/1');
+    expect(await screen.findByText(/van a ir en el comprobante/)).toBeDefined();
+    for (const d of '2000') fireEvent.click(screen.getByRole('button', { name: d }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Anotar fiado' }).at(-1) as HTMLElement);
+
+    const burbuja = await screen.findByText(/Te aviso que si un fiado se atrasa, se cobra/);
+    expect(burbuja.textContent).not.toMatch(/\nSi se atrasa/);
+    expect(screen.getByText(/también le avisa las condiciones/)).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar por WhatsApp' }));
+    await waitFor(() => expect(m.avisarRecargo).toHaveBeenCalledWith(1, 'comprobante'));
   });
 
   it('editar cliente: "No sugerir recargos" sólo con recargos activos, y se guarda', async () => {
@@ -608,7 +685,7 @@ describe('inicio', () => {
   it('"Para cobrar hoy" marca con "Recargo" a quien tiene uno para decidir', async () => {
     m.resumen.mockResolvedValue({
       total: 28000,
-      clientes_con_deuda: 1,
+      clientes_con_deuda: 1, clientes: 1,
       para_cobrar: [{ ...cliente({ recargo_para_sumar: 600 }), recordado_hoy: false }],
       ultimos: [],
     });

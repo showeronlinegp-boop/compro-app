@@ -231,7 +231,7 @@ describe('Listo y Deshacer', () => {
     });
     expect(m.corregir).toHaveBeenCalledWith(50);
     await waitFor(() => expect(donde()).toBe('/fiado/clientes/1'));
-    expect(region.textContent).toContain('Queda anotado en el historial como corrección');
+    expect(region.textContent).toContain('Queda anotado que lo corregiste');
   });
 
   it('"Ahora no" vuelve al origen y cierra el toast de Deshacer', async () => {

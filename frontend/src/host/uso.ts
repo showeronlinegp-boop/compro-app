@@ -13,7 +13,7 @@ import { abiertaComoApp } from './install/instalar';
  */
 
 /** Tiene que coincidir con EVENTOS de backend/src/modules/uso/domain/evento.ts. */
-export type EventoUso = 'pantalla' | 'comprobante' | 'instalar';
+export type EventoUso = 'pantalla' | 'comprobante' | 'instalar' | 'bienvenida_hecha';
 
 interface Pendiente {
   evento: EventoUso;

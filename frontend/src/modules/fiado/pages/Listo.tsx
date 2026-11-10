@@ -55,7 +55,7 @@ export default function Listo() {
               Promise.resolve(),
             )
             .then(() => {
-              toast.show('Listo, lo deshicimos. Queda anotado en el historial como corrección.');
+              toast.show('Listo, lo borramos. Queda anotado que lo corregiste.');
               if (enPantalla) volver();
             })
             .catch((err) => toast.show(mensajeDeError(err)));
@@ -94,6 +94,12 @@ export default function Listo() {
           ajustes.data,
         )
       : comprobante(estado.tipo, total, cliente, ajustes.data, estado.resultado.movimiento.vence);
+  // Cliente sin avisar: el comprobante del fiado lleva el aviso de condiciones.
+  const avisaCondiciones =
+    estado.tipo === 'fiado' &&
+    cliente.aviso_recargo_pendiente &&
+    !cliente.sin_recargo &&
+    !!ajustes.data?.recargo_condiciones;
 
   return (
     <div className="flex flex-col gap-5 px-4 py-8">
@@ -107,7 +113,7 @@ export default function Listo() {
 
       <Card>
         <p className="m-0 text-body text-ink-muted">
-          {cliente.saldo < 0 ? 'Ahora tiene a favor' : 'Ahora te debe'}
+          {cliente.saldo < 0 ? 'Ahora te pagó de más' : 'Ahora te debe'}
         </p>
         <p className="m-0 font-display text-amount-m text-ink">{textoSaldo(cliente.saldo)}</p>
       </Card>
@@ -131,11 +137,21 @@ export default function Listo() {
               if (!ajustes.data) return;
               abrirWhatsApp(cliente.whatsapp, textoComprobante);
               registrarUso('comprobante', 'fiado');
+              // Si falla, el aviso sigue pendiente y la ficha lo vuelve a ofrecer.
+              if (avisaCondiciones) {
+                void fiadoApi.avisarRecargo(cliente.id, 'comprobante').catch(() => undefined);
+              }
               volver();
             }}
           >
             Enviar por WhatsApp
           </Button>
+          {avisaCondiciones && (
+            <p className="m-0 -mt-2 text-body-s text-ink-muted">
+              Este mensaje también le avisa las condiciones de recargo. Al mandarlo, queda anotado
+              que le avisaste.
+            </p>
+          )}
         </>
       )}
 

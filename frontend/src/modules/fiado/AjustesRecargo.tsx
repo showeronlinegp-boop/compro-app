@@ -1,5 +1,6 @@
 import { Button } from '../../host/ui/Button';
 import { FilterChips, TextField } from '../../host/ui/controls';
+import { formatMoney } from '../../host/ui/format';
 import { Card, Section } from '../../host/ui/surfaces';
 import { TERMINOS_RECARGO_URL } from './TerminosRecargo';
 import type { ConfigRecargo, EsquemaRecargo } from './api';
@@ -69,21 +70,49 @@ export function configDe(b: BorradorRecargo): Omit<ConfigRecargo, 'activado_el'>
 }
 
 const ESQUEMAS = [
-  { value: 'mes', label: 'Por mes' },
-  { value: 'semana', label: 'Por semana' },
-  { value: 'dia', label: 'Por día' },
+  { value: 'mes', label: 'Cada mes' },
+  { value: 'semana', label: 'Cada semana' },
+  { value: 'dia', label: 'Cada día' },
   { value: 'tramos', label: 'Por tramos' },
 ] as const;
 
 const TIPOS = [
-  { value: 'pct', label: 'Porcentaje' },
-  { value: 'fijo', label: 'Monto fijo' },
+  { value: 'pct', label: 'Un porcentaje' },
+  { value: 'fijo', label: 'Un monto fijo' },
 ] as const;
 
 const DESDE = [
-  { value: 'vencimiento', label: 'Desde el vencimiento' },
+  { value: 'vencimiento', label: 'Desde que vencieron' },
   { value: 'activacion', label: 'Desde hoy' },
 ] as const;
+
+/** Monto de ejemplo para que el comercio vea en pesos lo que configura. */
+const BASE_EJEMPLO = 10_000;
+
+/**
+ * Un ejemplo con números: cuánto se le suma a un fiado de $ 10.000 atrasado
+ * un período (o en el primer tramo). Redondea como el backend: múltiplos de
+ * $ 10, hacia abajo. null si todavía no hay un valor válido.
+ */
+export function ejemploRecargo(b: BorradorRecargo): string | null {
+  const abajo = (n: number) => Math.floor(n / 10) * 10;
+  let monto: number;
+  let cuando: string;
+  if (b.esquema === 'tramos') {
+    const t = b.tramos[0];
+    const pct = num(t?.pct ?? '');
+    if (!t || !Number.isFinite(pct) || pct <= 0) return null;
+    monto = abajo((BASE_EJEMPLO * pct) / 100);
+    cuando = t.hasta.trim() ? `hasta ${t.hasta.trim()} días` : 'unos días';
+  } else {
+    const v = num(b.valor);
+    if (!Number.isFinite(v) || v <= 0) return null;
+    monto = abajo(b.tipo === 'pct' ? (BASE_EJEMPLO * v) / 100 : v);
+    cuando = b.esquema === 'mes' ? 'un mes' : b.esquema === 'semana' ? 'una semana' : 'un día';
+  }
+  if (monto <= 0) return null;
+  return `Ejemplo: si un fiado de ${formatMoney(BASE_EJEMPLO)} se atrasa ${cuando} (pasados los días de espera), se le suman ${formatMoney(monto)}.`;
+}
 
 /**
  * Por día, el porcentaje engaña: 1 % por día son 30 % por mes. Mostramos el
@@ -114,14 +143,15 @@ export function SeccionRecargo({
     set({ tramos: b.tramos.map((t, j) => (j === i ? { ...t, ...patch } : t)) });
   const periodo = b.esquema === 'mes' ? 'mes' : b.esquema === 'semana' ? 'semana' : 'día';
   const equivalente = equivalenteMensual(b);
+  const ejemplo = ejemploRecargo(b);
 
   return (
     <Section title="Recargo por atraso">
       <Card>
         <div className="flex flex-col gap-4">
           <Interruptor
-            label="Sugerir recargos"
-            hint="Cuando un fiado se atrasa, te sugerimos el recargo en la ficha del cliente. Vos decidís si lo sumás."
+            label="Sugerir recargos cuando se atrasan"
+            hint="Te mostramos en la ficha del cliente cuánto sumarle. Nunca se suma solo: vos decidís."
             checked={b.activo}
             onChange={(activo) => set({ activo })}
           />
@@ -129,8 +159,9 @@ export function SeccionRecargo({
           {b.activo && (
             <>
               <p className="m-0 rounded-m bg-warn-bg p-3 text-body-s text-warn">
-                Antes de cobrarle recargos a un cliente tenés que avisarle las condiciones. Te lo
-                vamos a pedir en su ficha. Informarle es tu responsabilidad.{' '}
+                Tus clientes tienen que conocer las condiciones antes de que les sumes un recargo.
+                Van solas en el próximo comprobante de fiado, o se las avisás desde su ficha.
+                Informarle es tu responsabilidad.{' '}
                 <a
                   className="font-bold text-warn underline"
                   href={TERMINOS_RECARGO_URL}
@@ -142,9 +173,9 @@ export function SeccionRecargo({
               </p>
 
               <div className="flex flex-col gap-2">
-                <p className="m-0 text-caption text-ink-muted">Cómo se calcula</p>
+                <p className="m-0 text-caption text-ink-muted">¿Cada cuánto se suma?</p>
                 <FilterChips
-                  label="Cómo se calcula"
+                  label="¿Cada cuánto se suma?"
                   options={ESQUEMAS}
                   value={b.esquema}
                   onChange={(esquema) => set({ esquema })}
@@ -153,8 +184,9 @@ export function SeccionRecargo({
 
               {b.esquema !== 'tramos' ? (
                 <>
+                  <p className="m-0 -mb-2 text-caption text-ink-muted">¿Cuánto se suma?</p>
                   <FilterChips
-                    label="Porcentaje o monto fijo"
+                    label="¿Cuánto se suma?"
                     options={TIPOS}
                     value={b.tipo}
                     onChange={(tipo) => set({ tipo })}
@@ -231,20 +263,24 @@ export function SeccionRecargo({
                 </div>
               )}
 
+              {ejemplo && (
+                <p className="m-0 rounded-m bg-bg p-3 text-body-s text-ink">{ejemplo}</p>
+              )}
+
               <TextField
-                label="Días de gracia"
+                label="Días de espera"
                 inputMode="numeric"
                 value={b.tolerancia}
                 onChange={(e) => set({ tolerancia: e.target.value.replace(/\D/g, '').slice(0, 2) })}
-                hint="Después del vencimiento, cuántos días esperar antes de sugerir el primer recargo."
+                hint="Después de la fecha de pago, cuántos días esperar antes del primer recargo."
               />
 
               <div className="flex flex-col gap-2">
                 <p className="m-0 text-caption text-ink-muted">
-                  Las deudas que ya estaban atrasadas al activarlo se cuentan
+                  Los fiados que ya estaban atrasados cuando lo prendés, ¿desde cuándo cuentan?
                 </p>
                 <FilterChips
-                  label="Desde cuándo se cuentan las deudas atrasadas"
+                  label="Los fiados que ya estaban atrasados, ¿desde cuándo cuentan?"
                   options={DESDE}
                   value={b.desde}
                   onChange={(desde) => set({ desde })}

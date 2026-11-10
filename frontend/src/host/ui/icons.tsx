@@ -144,3 +144,11 @@ export const IconChevron = (p: IconProps) => (
     <path d="M9 5l7 7-7 7" />
   </Svg>
 );
+
+/** Video: un círculo con el triángulo de "reproducir". */
+export const IconPlay = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M10 8.5v7l6-3.5z" />
+  </Svg>
+);
