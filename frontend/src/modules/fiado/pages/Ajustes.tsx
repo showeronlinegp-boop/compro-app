@@ -23,11 +23,36 @@ import { useCarga } from '../useCarga';
 
 type Plantilla = 'plantilla_fiado' | 'plantilla_pago' | 'plantilla_recordatorio';
 
-const PLANTILLAS: { campo: Plantilla; label: string; vars: readonly Variable[] }[] = [
-  { campo: 'plantilla_fiado', label: 'Comprobante de fiado', vars: VARIABLES.fiado },
-  { campo: 'plantilla_pago', label: 'Comprobante de pago', vars: VARIABLES.pago },
-  { campo: 'plantilla_recordatorio', label: 'Recordatorio', vars: VARIABLES.recordatorio },
+/** `cuando`: el título del desplegable, en palabras de mostrador. */
+const PLANTILLAS: {
+  campo: Plantilla;
+  label: string;
+  cuando: string;
+  vars: readonly Variable[];
+}[] = [
+  {
+    campo: 'plantilla_fiado',
+    label: 'Comprobante de fiado',
+    cuando: 'Cuando anotás un fiado',
+    vars: VARIABLES.fiado,
+  },
+  {
+    campo: 'plantilla_pago',
+    label: 'Comprobante de pago',
+    cuando: 'Cuando te pagan',
+    vars: VARIABLES.pago,
+  },
+  {
+    campo: 'plantilla_recordatorio',
+    label: 'Recordatorio',
+    cuando: 'Cuando le recordás que pague',
+    vars: VARIABLES.recordatorio,
+  },
 ];
+
+/** El mensaje es el original (vacío = original). */
+const esOriginal = (campo: Plantilla, texto: string) =>
+  texto.trim() === '' || texto === PLANTILLAS_ORIGINALES[campo];
 
 /**
  * Ajustes de Fiado. A la vista, lo que todos usan: nombre del comercio, alias y
@@ -182,19 +207,31 @@ export default function Ajustes() {
           <Plegable
             titulo="Personalizar mensajes"
             resumen={
-              PLANTILLAS.some(
-                (p) =>
-                  form[p.campo].trim() !== '' &&
-                  form[p.campo] !== PLANTILLAS_ORIGINALES[p.campo],
-              )
+              PLANTILLAS.some((p) => !esOriginal(p.campo, form[p.campo]))
                 ? 'Usás mensajes propios.'
                 : 'Cambiá lo que dicen el comprobante y el recordatorio.'
             }
           >
-            <Card>
-              <div className="flex flex-col gap-5">
-                {PLANTILLAS.map((p) => (
-                  <div key={p.campo} className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2">
+              {PLANTILLAS.map((p) => (
+                <details key={p.campo} className="group/msg rounded-l bg-bg">
+                  <summary
+                    className={`flex items-center justify-between gap-3 min-h-touch px-4 py-3 cursor-pointer list-none rounded-l ${FOCUS_RING}`}
+                  >
+                    <span className="flex flex-col">
+                      <span className="text-body font-bold text-ink">{p.cuando}</span>
+                      <span className="text-body-s text-ink-muted">
+                        {esOriginal(p.campo, form[p.campo]) ? 'Mensaje original' : 'Mensaje propio'}
+                      </span>
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      className="flex-none text-ink transition-transform group-open/msg:rotate-90"
+                    >
+                      <IconChevron size={20} />
+                    </span>
+                  </summary>
+                  <div className="flex flex-col gap-2 px-4 pb-4">
                     <TextArea
                       ref={(el) => {
                         textareas.current[p.campo] = el;
@@ -227,9 +264,9 @@ export default function Ajustes() {
                       Volver al mensaje original
                     </Button>
                   </div>
-                ))}
-              </div>
-            </Card>
+                </details>
+              ))}
+            </div>
           </Plegable>
 
           <Plegable

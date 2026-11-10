@@ -453,12 +453,26 @@ describe('ajustes: recargo por atraso', () => {
     );
     renderAt('/fiado/ajustes');
     expect(await screen.findByLabelText('Nombre del comercio')).toBeDefined();
-    const plegables = document.querySelectorAll('details');
+    const plegables = document.querySelectorAll<HTMLDetailsElement>('form > details');
     expect([...plegables].map((d) => d.querySelector('summary')?.textContent)).toEqual([
       'Personalizar mensajesCambiá lo que dicen el comprobante y el recordatorio.',
       'AvanzadoRecargo por atraso.',
     ]);
     expect([...plegables].every((d) => !d.open)).toBe(true);
+  });
+
+  it('cada mensaje va en su propio desplegable, cerrado, con si es el original', async () => {
+    m.ajustes.mockResolvedValue(ajustes({ ...PLANTILLAS_ORIGINALES, plantilla_pago: 'Gracias {nombre}' }));
+    renderAt('/fiado/ajustes');
+    await screen.findByLabelText('Nombre del comercio');
+    const mensajes = document.querySelectorAll<HTMLDetailsElement>('form > details details');
+    expect([...mensajes].map((d) => d.querySelector('summary')?.textContent)).toEqual([
+      'Cuando anotás un fiadoMensaje original',
+      'Cuando te paganMensaje propio',
+      'Cuando le recordás que pagueMensaje original',
+    ]);
+    expect([...mensajes].every((d) => !d.open)).toBe(true);
+    expect(mensajes[0]?.querySelector('textarea')).not.toBeNull();
   });
 
   it('el resumen avisa si hay mensajes propios o el recargo está prendido', async () => {
